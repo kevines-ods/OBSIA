@@ -45,10 +45,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: cargo deny (licences + advisories)
         uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          working-directory: ./build
       - name: cargo audit
         uses: rustsec/audit-check@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          paths: ./build
 
   # Build Tauri multi-plateforme (projet Tauri v2 actif dans build/).
   build-tauri:
@@ -85,6 +88,7 @@ jobs:
         working-directory: ./build/src
       - name: Build Tauri (bundle)
         uses: tauri-apps/tauri-action@v0
-        working-directory: ./build
+        with:
+          projectPath: ./build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
