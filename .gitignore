@@ -1,0 +1,10 @@
+# Fichiers temporaires et fichiers générés
+/target/
+/node_modules/
+/dist/
+.env
+*.log
+*.tmp
+
+# Le framework vit dans build/ (ne pas l'ignorer)
+# Les artefacts internes (target/, node_modules/, dist/) sont gérés par build/.gitignore
