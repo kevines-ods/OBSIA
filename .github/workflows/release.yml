@@ -43,7 +43,14 @@ jobs:
         working-directory: ./build/src
       - name: Build Tauri (bundle + release)
         uses: tauri-apps/tauri-action@v0
-        working-directory: ./build
+        with:
+          projectPath: ./build
+          tagName: ${{ github.ref_name }}
+          releaseName: Release ${{ github.ref_name }}
+          releaseBody: |
+            See the assets to download this version and install.
+          releaseDraft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # macOS signing / notarization — à configurer dans GitHub Secrets
@@ -55,10 +62,3 @@ jobs:
           # Windows code signing — à configurer dans GitHub Secrets
           WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
           WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-        with:
-          tagName: ${{ github.ref_name }}
-          releaseName: Release ${{ github.ref_name }}
-          releaseBody: |
-            See the assets to download this version and install.
-          releaseDraft: false
-          prerelease: false
