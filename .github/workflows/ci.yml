@@ -46,7 +46,7 @@ jobs:
       - name: cargo deny (licences + advisories)
         uses: EmbarkStudios/cargo-deny-action@v2
         with:
-          working-directory: ./build
+          manifest-path: ./build/Cargo.toml
       - name: cargo audit
         uses: rustsec/audit-check@v2
         with:
