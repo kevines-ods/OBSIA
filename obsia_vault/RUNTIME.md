@@ -1,4 +1,4 @@
-# RUNTIME.md — Le runtime complet de OBSIA
+# RUNTIME.md — Le runtime complet de Obsia
 
 > Un SEUL fichier qui résume tout ce qui a été construit (structure + règles + agents +
 > skills + application). C'est le fichier à ouvrir en PREMIER si tu dois changer

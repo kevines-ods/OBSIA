@@ -6,5 +6,8 @@
 *.log
 *.tmp
 
+# Sauvegardes de reconstruction (local uniquement)
+.backup-reconstruction/
+
 # Le framework vit dans build/ (ne pas l'ignorer)
 # Les artefacts internes (target/, node_modules/, dist/) sont gérés par build/.gitignore

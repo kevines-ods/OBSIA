@@ -1,4 +1,4 @@
-# VAULT.md — Contrat d'exploitation du coffre OBSIA
+# VAULT.md — Contrat d'exploitation du coffre Obsia
 
 > Porte d'entrée pour l'humain ET pour l'agent "assistant". Lis ce fichier en
 > premier avant toute modification.
