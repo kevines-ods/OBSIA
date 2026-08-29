@@ -12,7 +12,7 @@ Système d'**orchestration agentic** natif Linux (Tauri/Rust), multi-fournisseur
   via des **patches** (revus), orchestrer des équipes d'agents.
 - **bibliothécaire** — indexe le coffre, récupère le contexte via les rétroliens.
 - **développeur** — génère/patche du code.
-- **assistant de bureau** — tâches bureautiques + automatisation.
+- **assistant-de-bureau** — tâches bureautiques + automatisation.
 
 ## 3. Flux de modification (patch)
 1. L'agent propose une modification.

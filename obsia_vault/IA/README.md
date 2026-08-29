@@ -12,9 +12,9 @@ IA/
 │   ├── skills-index.md
 │   └── providers.md
 ├── agents/              ← un fichier .md = un agent
+│   ├── assistant-de-bureau.md
 │   ├── bibliothécaire.md
-│   ├── développeur.md
-│   └── assistant de bureau.md
+│   └── développeur.md
 ├── skills/              ← un fichier .md = une compétence
 │   ├── obsidian-manager.md
 │   ├── web-research.md
@@ -30,13 +30,15 @@ IA/
 **Format d'un agent** (frontmatter + body) :
 ```markdown
 ---
-name: assistant de bureau
-role: assistant
+schema: 1
+kind: agent
+name: assistant-de-bureau
+description: Assiste au quotidien — documents, mail, calendrier, navigation web.
 skills: [officecli, cron]      ← skills activées par défaut
 mcp: [chrome-devtools]          ← outils structurés activés
-read-only: false
+read_only: false
 ---
-# Système prompt
+# Assistant de bureau
 ...
 ```
 

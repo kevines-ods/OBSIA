@@ -39,9 +39,9 @@ les fichiers sommaire énumére les dossiers présent avec eux dans le dossier p
 le tout doit étre tagé et lié par des rétro-liens.
 
 2- STRUCTURE DES AGENTS (dans le coffre obsia_vault/IA/agents/) :
+       - assistant-de-bureau.md
        - bibliothécaire.md
        - développeur.md
-       - assistant de bureau.md
     Chaque fichier agent contient son système prompt + la liste des skills/MCP qu'il peut utiliser.
     Grâce aux rétroliens entre les fichiers, le LLM mémorise son système prompt et va chercher
     SEULEMENT les skills/MCP qu'il a réellement besoin, au moment où il en a besoin.
