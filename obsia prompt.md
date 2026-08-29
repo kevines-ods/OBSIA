@@ -1,94 +1,71 @@
-je veux créer un systeme d'exploitation agentic natif linux, le systéme doit étre complétement modifiable à tavers le chat avec l'agent "assistant", l'interface complete doit etre modifiable,l'ajout de fonctionnalité à travers des patches. le systeme doit permettre des chats avec un agent spécifique mais aussi avec des équipes d'agents. mon systeme reposera en grande parti sur l'application obsidian que ce soit pour la memoire et la création d'agents.
+je veux créer un système d'orchestration agentic natif linux, complétement modifiable à
+travers le chat avec l'agent "assistant" : l'interface complète est modifiable, l'ajout
+de fonctionnalités passe par des patches. Le système permet des chats avec un agent
+spécifique mais aussi avec des équipes d'agents. Il repose en grande partie sur
+l'application Obsidian pour la mémoire et la création d'agents.
 
-1-dans obsidian une structure de mémoire sera créer :
-    dossier mémoire
-                dossier agent 1
-                           fichier.md sommaire
-                           dossier projets 1
-                                     fichier.md sommaire
-                                     fichier.md ../../..(date) ou titre
-                                     fichier.md ../../..(date) ou titre
-                                     fichier.md ../../..(date) ou titre 
-                           dossier projets 2
-                                      fichier.md sommaire
-                                      fichier.md ../../..(date) ou titre
-                                      fichier.md ../../..(date) ou titre
-                                      fichier.md ../../..(date) ou titre
-                           dossier projets 3
-                                      fichier.md sommaire
-                                      fichier.md ../../..(date) ou titre
-                                      fichier.md ../../..(date) ou titre
-                                      fichier.md ../../..(date) ou titre
-                 dossier agent 2
-                           fichier sommaire.md
-                           dossier projets 1
-                                      fichier.md sommaire
-                                      fichier.md ../../..(date) ou titre
-                                      fichier.md ../../..(date) ou titre
-                                      fichier.md ../../..(date) ou titre
-                           dossier projets 1
-                                      fichier.md sommaire
-                                      fichier.md ../../..(date) ou titre
-                                      fichier.md ../../..(date) ou titre
-                                      fichier.md ../../..(date) ou titre
-les fichiers sommaire énumére les dossiers présent avec eux dans le dossier parent et les décrivent à travers d'un court résumé.
-         exemple:  fichier de sommaire des dossiers projets:
-              projets 1: création d'un site web de comparaison      d'accesoires gaming
-              projets 2: création d'une application de bureau linux
+## 1- STRUCTURE DE LA MÉMOIRE (dans le coffre obsia_vault/mémoire/)
 
-le tout doit étre tagé et lié par des rétro-liens.
+```
+mémoire/
+└── <nom-agent>/              ← dossier au NOM de l'agent (jamais "agent 1")
+    ├── sommaire.md           ← index de l'agent (généré)
+    └── <nom-projet>/         ← dossier au NOM du projet (jamais "projets 1")
+        ├── sommaire.md       ← index du projet (généré)
+        └── AAAA-MM-JJ-titre.md
+```
 
-2- STRUCTURE DES AGENTS (dans le coffre obsia_vault/IA/agents/) :
-       - assistant-de-bureau.md
-       - bibliothécaire.md
-       - développeur.md
-    Chaque fichier agent contient son système prompt + la liste des skills/MCP qu'il peut utiliser.
-    Grâce aux rétroliens entre les fichiers, le LLM mémorise son système prompt et va chercher
-    SEULEMENT les skills/MCP qu'il a réellement besoin, au moment où il en a besoin.
+- Les fichiers `sommaire.md` énumèrent les sous-dossiers et les notes présentes
+  avec eux dans le dossier parent, avec un court résumé.
+- Ils sont **générés** par `obsia_vault/scripts/regenerate_sommaire.py`, jamais
+  édités à la main (ni par un agent).
+- Tout est tagué et lié par des rétroliens.
 
-3- STRUCTURE DES SKILLS (dans le coffre obsia_vault/IA/skills/) :
-       Les skills gèrent le RESTE du coffre. C'est crucial : un pipeline de maintenance.
-       - obsidian-manager.md  (le gestionnaire de coffre, en lecture seule)
-       - web-research.md, officecli.md, troubleshooting.md, cron.md, skill-créator.md
-       Un skill = une compétence réutilisable ("comment l'agent doit travailler").
+## 2- STRUCTURE DES AGENTS (obsia_vault/IA/agents/)
 
-4- OBSIDIAN-MANAGER = BIBLIOTHÉCAIRE (renommage fait) :
-       Le skill obsidian-manager a été renommé "bibliothécaire" et c'est son RÔLE :
-       gérer le coffre Obsidian (recherche, rétroliens, résumés, index). C'est LECTURE SEULE :
-       aucun écrit/déplacement/suppression. Il maintient les sommaire.md via
-       scripts/regenerate_sommaire.py (jamais à la main). C'est le seul agent autorisé à
-       "toucher" au coffre, et encore en lecture seule.
+- **assistant.md** — l'agent de base de l'app : modifie l'UI (React), ajoute des
+  fonctionnalités (backend Rust/Tauri), crée des skills. Seul agent autorisé sur
+  le framework `build/` (patch Git revu + `cargo check`/`clippy`/`test`).
+- Chaque fichier agent contient son system prompt + la liste des skills/MCP qu'il
+  peut utiliser, dans son frontmatter YAML.
+- Grâce aux rétroliens, le LLM mémorise son system prompt et va chercher
+  SEULEMENT les skills/MCP dont il a réellement besoin, au moment où il en a besoin.
 
-5- L'INTERFACE UTILISATEUR (Tauri/Rust, multi-fournisseur) :
-    Épurée : juste choisir un LLM. Un bouton "fournisseur" + menu déroulant pour sélectionner.
-    Trois zones : une zone de chat, une zone de contrôle (réflexions, écritures... des agents),
-    et une zone gestionnaire de fichier (le coffre Obsidian). Les zones de contrôle et de
-    gestionnaire de fichier sont à gauche et à droite et se réduisent. L'UI n'est qu'un
-    terminal humain sur le vrai système d'orchestration (le coffre).
+## 3- STRUCTURE DES SKILLS (obsia_vault/IA/skills/)
 
-fais moi des proposition concernant le projets, optimisation, faisabilité, je te mets en equipe à toi de distribuer les roles
+Les skills gèrent le RESTE du coffre. Un skill = une compétence réutilisable
+("comment l'agent doit travailler"), ce n'est jamais un agent.
 
+- **core** : `obsidian-manager` (gestion du coffre, lecture seule),
+  `createur-de-skill` (création de skills).
+- **outil** : `bureautique`, `conteneurs-docker`, `cron`, `diagnostic-linux`,
+  `mermaid`, `pdf`, `proxmox`, `remediation-linux`, `sauvegardes`, `traefik`.
 
-4- IMPORTANT ARCHITECTURE (à toujours respecter) :
-    On ne construit pas une "app" : on construit un SYSTÈME D'ORCHESTRATION AGENTIQUE.
-    L'UI (Tauri/Rust, multi-fournisseur) n'est qu'un terminal humain. Le vrai travail
-    se passe dans le coffre (obsia_vault). Les agents vivent UNIQUEMENT dans le coffre.
+## 4- OBSIDIAN-MANAGER EST UN SKILL (pas un agent)
 
-    - obsia_vault/  = LE COFFRE VIVANT : c'est le SEUL endroit où l'on exécute des choses.
-                     C'est ici que tout se passe (mémoire, agents, skills, MCP, scripts, git).
-                     C'est le système d'orchestration réel.
-    - Obsia/       = HISTORIQUE / PROTOTYPE (ancien projet "système d'exploitation"). NE PAS TOUCHER.
-                     À ne consulter qu'en lecture seule pour l'inspiration.
+Piège historique : `obsidian-manager` a longtemps été confondu avec un agent
+« bibliothécaire » qui n'a jamais existé en tant que fichier.
 
-    Dans obsia_vault/, seuls ces deux dossiers /IA/ comptent à ce stade :
-        /IA/agents/   et   /IA/skills/
-    Le reste (mémoire/, MCP/, system/, scripts/) est déjà propre : on ne le modifie pas sauf
-    pour respecter les règles du coffre (voir VAULT.md).
+- `obsidian-manager` est un **SKILL** : il gère le coffre Obsidian (recherche,
+  rétroliens, résumés, index) en **lecture seule**.
+- L'agent qui l'utilise est **`assistant`** (déclaré dans son frontmatter).
+- Il maintient les `sommaire.md` via `scripts/regenerate_sommaire.py` (jamais à
+  la main). Toute formulation suggérant qu'un skill est un agent est une erreur
+  à corriger, pas une convention à suivre (cf. `VAULT-CONTRACT.md` §1).
 
-    ADAPTATIONS DÉJÀ FAITES (rappel pour ne pas repartir de zéro) :
-        - L'ancien projet Obsia (système d'exploitation Linux) est OUBLIÉ : on ne reconstruit PAS ça.
-        - "système d'exploitation" → "système d'orchestration" (le terme n'était pas bon).
-        - Tauri/Rust + multi-fournisseur (local + API) : architecture de l'UI/terminal humain.
-        - Le coffre = un Obsidian (Markdown + rétroliens), portable, inspectable, sous Git.
-        - Dans obsia prompt.md (Obsia), seul le point 1 (mémoire) reste d'actualité.
-          Les points 2 et 3 ont été refondus en points 4 et 5 ci-dessous.
+## 5- L'INTERFACE UTILISATEUR (Tauri/Rust, multi-fournisseur)
+
+- Épurée : choisir un LLM. Un bouton "fournisseur" + menu déroulant.
+- Trois zones redimensionnables : chat, contrôle (réflexions/écritures des
+  agents), gestionnaire de fichier (le coffre). Les zones contrôle et
+  gestionnaire se réduisent.
+- L'UI n'est qu'un terminal humain sur le vrai système d'orchestration (le coffre).
+
+## 6- FRONTIÈRE ABSOLUE (à toujours respecter)
+
+- `obsia_vault/` = **LE COFFRE VIVANT** : mémoire, agents, skills, MCP, scripts,
+  git. C'est le système d'orchestration réel.
+- `build/` = **LE FRAMEWORK** : UI React + backend Rust/Tauri. Modifiable par
+  l'agent `assistant` uniquement, via patch revu.
+- Écriture dans le coffre : **lecture seule** sauf `brouillon/` — les
+  modifications passent par des patchs Git revus (cf. `VAULT-CONTRACT.md`).

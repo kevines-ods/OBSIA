@@ -22,22 +22,36 @@ def regen(path):
         return
     base = os.path.basename(to_rel(path))
     titre = base.split("—", 1)[1].strip() if "—" in base else "Sommaire"
-    sous = [d for d in os.listdir(parent)
-            if os.path.isdir(os.path.join(parent, d))]
-    rows = []
-    for d in sous:
-        rows.append("[%s](%s/%s/)| (sous-dossier)" % (d, to_rel(parent), d))
+    entries = []
+    for d in sorted(os.listdir(parent)):
+        p = os.path.join(parent, d)
+        if os.path.isdir(p):
+            entries.append("[%s](%s/)|sous-dossier" % (d, to_rel(p)))
+        elif d.endswith(".md") and d != "sommaire.md":
+            entries.append("[%s](%s)|note" % (d, to_rel(p)))
     out = "# " + titre + "\n\n"
     out += "> Généré automatiquement. Ne pas éditer à la main.\n\n"
-    out += "## Sous-dossiers\n\n"
-    out += "| Dossier | Contenu |\n|---|---|\n"
-    out += "\n".join(["| " + r + " |" for r in rows]) + "\n"
+    out += "## Contenu\n\n"
+    out += "| Élément | Type |\n|---|---|\n"
+    out += "\n".join(["| %s | %s |" % (e.split("|", 1)[0], e.split("|", 1)[1]) for e in entries]) + "\n"
     with open(full, "w", encoding="utf-8") as f:
         f.write(out)
 
 print("Régénération des sommaires…")
+created = 0
 for dirpath, dirs, files in os.walk(ROOT):
+    # Création des sommaire.md manquants, uniquement sous mémoire/
+    rel = to_rel(dirpath)
+    in_memoire = "mémoire" in rel.split(os.sep)
+    has_notes = any(f.endswith(".md") and f != "sommaire.md" for f in files)
+    a_contenu = has_notes or bool(dirs)
+    somm = os.path.join(dirpath, "sommaire.md")
+    if in_memoire and a_contenu and not os.path.isfile(somm):
+        with open(somm, "w", encoding="utf-8") as f:
+            f.write("# Sommaire\n\n> Généré automatiquement. Ne pas éditer à la main.\n")
+        created += 1
+        print("  + créé %s" % to_rel(somm))
     for fl in files:
         if fl == "sommaire.md":
             regen(os.path.join(dirpath, fl))
-print("Fait.")
+print("Fait. (%d sommaire.md créés)" % created)

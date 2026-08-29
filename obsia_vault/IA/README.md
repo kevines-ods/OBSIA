@@ -12,16 +12,20 @@ IA/
 │   ├── skills-index.md
 │   └── providers.md
 ├── agents/              ← un fichier .md = un agent
-│   ├── assistant-de-bureau.md
-│   ├── bibliothécaire.md
-│   └── développeur.md
+│   └── assistant.md
 ├── skills/              ← un fichier .md = une compétence
-│   ├── obsidian-manager.md
-│   ├── web-research.md
-│   ├── officecli.md
-│   ├── troubleshooting.md
+│   ├── bureautique.md
+│   ├── conteneurs-docker.md
+│   ├── createur-de-skill.md
 │   ├── cron.md
-│   └── skill-créator.md
+│   ├── diagnostic-linux.md
+│   ├── mermaid.md
+│   ├── obsidian-manager.md
+│   ├── pdf.md
+│   ├── proxmox.md
+│   ├── remediation-linux.md
+│   ├── sauvegardes.md
+│   └── traefik.md
 └── MCP/                 ← un fichier .md = un outil structuré
     ├── chrome-devtools.md
     └── git-hub.md
@@ -32,13 +36,16 @@ IA/
 ---
 schema: 1
 kind: agent
-name: assistant-de-bureau
-description: Assiste au quotidien — documents, mail, calendrier, navigation web.
-skills: [officecli, cron]      ← skills activées par défaut
-mcp: [chrome-devtools]          ← outils structurés activés
-read_only: false
+name: assistant
+description: Agent de base de l'app OBSIA — modifie l'UI, ajoute des fonctionnalités, crée des skills. Seul agent autorisé à toucher le framework build/.
+skills:
+  - createur-de-skill      ← une compétence par ligne (tirets YAML)
+  - obsidian-manager
+mcp:
+  - git-hub                ← outils structurés activés
+read_only: false           ← true = lecture seule absolue
 ---
-# Assistant de bureau
+# Assistant
 ...
 ```
 

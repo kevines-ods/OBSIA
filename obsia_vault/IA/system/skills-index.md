@@ -1,15 +1,19 @@
 # skills-index.md — Index des skills
 
-| Skill | Compétence | Agents | Type |
+| Skill | Type | Description courte | Utilisé par |
 |---|---|---|---|
-| [obsidian-manager](0-PROJETS/App,%20ia/Obsia/obsia_vault/IA/skills/obsidian-manager.md) | Gérer le coffre | bibliothécaire, assistant | **core** |
-| [web-research](web-research.md) | Recherche web | développeur, assistant | — |
-| [officecli](officecli.md) | Bureautique | assistant-de-bureau | — |
-| [troubleshooting](0-PROJETS/App,%20ia/Obsia/obsia_vault/IA/skills/troubleshooting.md) | Dépannage | développeur | — |
-| [cron](cron.md) | Tâches planifiées | assistant-de-bureau | — |
-| [skill-créator](skill-créator.md) | Créer des skills | développeur | **meta** |
+| [bureautique](../skills/bureautique.md) | outil | Créer, lire et modifier des documents bureautiques (LibreOffice) | assistant |
+| [conteneurs-docker](../skills/conteneurs-docker.md) | outil | Piloter des conteneurs Docker | assistant |
+| [createur-de-skill](../skills/createur-de-skill.md) | core | Créer et normaliser de nouveaux skills | assistant |
+| [cron](../skills/cron.md) | outil | Tâches planifiées (systemd timers) | assistant |
+| [diagnostic-linux](../skills/diagnostic-linux.md) | outil | Diagnostiquer un système Linux, lecture seule | assistant |
+| [mermaid](../skills/mermaid.md) | outil | Générer des diagrammes Mermaid | assistant |
+| [obsidian-manager](../skills/obsidian-manager.md) | core | Interroger le coffre : recherche, rétroliens, index | assistant |
+| [pdf](../skills/pdf.md) | outil | Manipuler des PDF | assistant |
+| [proxmox](../skills/proxmox.md) | outil | Inspecter un hôte Proxmox | assistant |
+| [remediation-linux](../skills/remediation-linux.md) | outil | Corriger un système Linux, actions ciblées | assistant |
+| [sauvegardes](../skills/sauvegardes.md) | outil | Vérifier les sauvegardes (lecture seule) | assistant |
+| [traefik](../skills/traefik.md) | outil | Inspecter/configurer Traefik | assistant |
 
-### Légende
-- **core** : chargé dans toutes les sessions.
-- **—** : chargé à la demande (routage par rétrolien).
-- **meta** : permet de créer d'autres skills.
+> `core` = indispensable au fonctionnement du coffre ; `outil` = compétence
+> ponctuelle. (cf. `VAULT-CONTRACT.md` §5)

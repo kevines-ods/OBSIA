@@ -2,9 +2,7 @@
 
 | Agent | Rôle | Skills | MCP | Lecture seule |
 |---|---|---|---|---|
-| [assistant-de-bureau](../agents/assistant-de-bureau.md) | assistant | officecli, cron | chrome-devtools | non |
-| [développeur](développeur.md) | dev | troubleshooting, skill-créator | git-hub | non |
-| [bibliothécaire](bibliothécaire.md) | indexation | obsidian-manager | — | **oui** |
+| [assistant](../agents/assistant.md) | agent de base de l'app — UI, fonctionnalités, skills, accès `build/` | createur-de-skill, obsidian-manager, mermaid, cron, pdf, bureautique, diagnostic-linux, remediation-linux, conteneurs-docker, sauvegardes | git-hub | non |
 
-> L'agent "assistant" (méta) n'a pas de fichier dédié ici : il orchestre dynamiquement
-> les agents ci-dessus selon la tâche.
+> Règle (cf. `VAULT-CONTRACT.md` §6) : un agent = un fichier dans `IA/agents/`,
+> nommé au `name` du frontmatter. Un skill n'est jamais un agent.
