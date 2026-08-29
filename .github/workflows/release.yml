@@ -42,7 +42,7 @@ jobs:
         run: npm run build
         working-directory: ./build/src
       - name: Build Tauri (bundle + release)
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@v1
         with:
           projectPath: ./build
           tagName: ${{ github.ref_name }}
