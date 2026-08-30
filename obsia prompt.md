@@ -1,8 +1,10 @@
-je veux créer un système d'orchestration agentic natif linux, complétement modifiable à
-travers le chat avec l'agent "assistant" : l'interface complète est modifiable, l'ajout
-de fonctionnalités passe par des patches. Le système permet des chats avec un agent
-spécifique mais aussi avec des équipes d'agents. Il repose en grande partie sur
-l'application Obsidian pour la mémoire et la création d'agents.
+je veux créer un système d'orchestration agentic natif linux. Le système permet
+des chats avec un agent spécifique mais aussi avec des équipes d'agents. Il
+repose en grande partie sur l'application Obsidian pour la mémoire et la
+création d'agents.
+
+> L'interface graphique et son périmètre de modification ne vivent plus dans ce
+> dépôt : cf. `HISTORIQUE.md`.
 
 ## 1- STRUCTURE DE LA MÉMOIRE (dans le coffre obsia_vault/mémoire/)
 
@@ -23,9 +25,8 @@ mémoire/
 
 ## 2- STRUCTURE DES AGENTS (obsia_vault/IA/agents/)
 
-- **assistant.md** — l'agent de base de l'app : modifie l'UI (React), ajoute des
-  fonctionnalités (backend Rust/Tauri), crée des skills. Seul agent autorisé sur
-  le framework `build/` (patch Git revu + `cargo check`/`clippy`/`test`).
+- **assistant.md** — l'agent de base : il orchestre le coffre et crée des
+  skills.
 - Chaque fichier agent contient son system prompt + la liste des skills/MCP qu'il
   peut utiliser, dans son frontmatter YAML.
 - Grâce aux rétroliens, le LLM mémorise son system prompt et va chercher
@@ -53,19 +54,9 @@ Piège historique : `obsidian-manager` a longtemps été confondu avec un agent
   la main). Toute formulation suggérant qu'un skill est un agent est une erreur
   à corriger, pas une convention à suivre (cf. `VAULT-CONTRACT.md` §1).
 
-## 5- L'INTERFACE UTILISATEUR (Tauri/Rust, multi-fournisseur)
-
-- Épurée : choisir un LLM. Un bouton "fournisseur" + menu déroulant.
-- Trois zones redimensionnables : chat, contrôle (réflexions/écritures des
-  agents), gestionnaire de fichier (le coffre). Les zones contrôle et
-  gestionnaire se réduisent.
-- L'UI n'est qu'un terminal humain sur le vrai système d'orchestration (le coffre).
-
-## 6- FRONTIÈRE ABSOLUE (à toujours respecter)
+## 5- FRONTIÈRE ABSOLUE (à toujours respecter)
 
 - `obsia_vault/` = **LE COFFRE VIVANT** : mémoire, agents, skills, MCP, scripts,
   git. C'est le système d'orchestration réel.
-- `build/` = **LE FRAMEWORK** : UI React + backend Rust/Tauri. Modifiable par
-  l'agent `assistant` uniquement, via patch revu.
 - Écriture dans le coffre : **lecture seule** sauf `brouillon/` — les
   modifications passent par des patchs Git revus (cf. `VAULT-CONTRACT.md`).

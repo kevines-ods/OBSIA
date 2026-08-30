@@ -1,13 +1,24 @@
-# Fichiers temporaires et fichiers générés
+# Artefacts de compilation
 /target/
 /node_modules/
 /dist/
-.env
 *.log
 *.tmp
 
-# Sauvegardes de reconstruction (local uniquement)
-.backup-reconstruction/
+# Secrets — le dépôt est public
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+id_rsa*
+acme.json
+config.php
 
-# Le framework vit dans build/ (ne pas l'ignorer)
-# Les artefacts internes (target/, node_modules/, dist/) sont gérés par build/.gitignore
+# Inventaires : gabarits versionnés, valeurs réelles hors dépôt
+inventaire-*.yml
+!inventaire-*.example.yml
+
+secrets/
+.archive/
+.backup-reconstruction/
