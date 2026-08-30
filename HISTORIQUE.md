@@ -9,47 +9,38 @@ reconstruise ce qui a été écarté.
 
 ---
 
-## L'interface graphique a quitté ce dépôt (30 août 2026)
+## Le dépôt n'est plus un monorepo (30 août 2026)
 
-Le dépôt a d'abord été un **monorepo** : le coffre `obsia_vault/` et le
-framework `build/` (interface React + backend Rust/Tauri) cohabitaient sous la
-même racine Git.
+OBSIA a d'abord réuni sous une même racine Git le coffre et l'interface
+graphique qui le consommait. Ce n'est plus le cas.
 
-Ce n'est plus le cas. Le coffre est seul ici ; l'interface vit dans son propre
-dépôt et consomme ce coffre sans en faire partie. L'historique complet de
-`build/` (29 commits) a été extrait avant retrait — rien n'a été perdu.
+Le coffre est désormais **seul et autonome**. Il ne nomme aucune interface,
+aucun langage, aucun outil de construction : il décrit *quoi* faire, et
+n'importe quel harness — Claude Code, OpenCode, Aider, Goose, ou une interface
+dédiée — fournit *avec quoi*.
 
-Ce qui suit décrit cet état révolu.
+L'interface vit dans son propre dépôt : **https://github.com/kevines-ods/ObsiaUi**.
+Son historique complet (29 commits) y a été transféré ; rien n'a été perdu.
 
-### Ancienne intention (obsia prompt.md, en-tête)
+### Ce qui a disparu du coffre avec ce changement
 
-> je veux créer un système d'orchestration agentic natif linux, complètement
-> modifiable à travers le chat avec l'agent « assistant » : l'interface complète
-> est modifiable, l'ajout de fonctionnalités passe par des patches.
+- Le **périmètre spécial** qui réservait une base de code extérieure à l'agent
+  `assistant`. Le contrat traite désormais toute intervention hors du coffre de
+  façon générique (`VAULT-CONTRACT.md` §3), sans nommer de projet ni imposer
+  d'outillage.
+- La description de l'interface (fenêtre à trois zones, sélecteur de
+  fournisseur, modification de l'UI par le chat). Cette ambition reste valable,
+  mais elle appartient à ObsiaUi.
+- Trois documents du coffre — `RUNTIME.md`, `VAULT.md`, `README.md` — qui
+  décrivaient le système à travers son interface et redisaient, parfois en se
+  contredisant, ce que le contrat énonce déjà. Deux règles qu'eux seuls
+  portaient ont été reprises dans le contrat : **sources et citations** (§8) et
+  **log des sessions** (§9).
 
-L'ambition « l'interface est modifiable par l'agent » reste valable, mais elle
-relève désormais du dépôt de l'interface, pas de celui-ci.
+### Esquisse d'architecture d'interface (ancien `RUNTIME.md` de la racine)
 
-### Ancienne section 5 — L'interface utilisateur (Tauri/Rust, multi-fournisseur)
-
-- Épurée : choisir un LLM. Un bouton "fournisseur" + menu déroulant.
-- Trois zones redimensionnables : chat, contrôle (réflexions/écritures des
-  agents), gestionnaire de fichier (le coffre). Les zones contrôle et
-  gestionnaire se réduisent.
-- L'UI n'est qu'un terminal humain sur le vrai système d'orchestration (le coffre).
-
-### Ancienne section 6 — Le framework `build/`
-
-> `build/` = **LE FRAMEWORK** : UI React + backend Rust/Tauri. Modifiable par
-> l'agent `assistant` uniquement, via patch revu.
-
-Le périmètre spécial accordé à l'agent `assistant` sur `build/`
-(cf. `VAULT-CONTRACT.md` §3) n'a plus d'objet dans ce dépôt.
-
-### Esquisse d'architecture backend (ancien `RUNTIME.md` de la racine)
-
-Le fichier `RUNTIME.md` qui vivait à la racine — distinct de celui du coffre, et
-source de confusion — ne contenait que ceci :
+Un `RUNTIME.md` vivait à la racine, distinct de celui du coffre — d'où des
+ouvertures du mauvais fichier. Son seul contenu propre :
 
 > ## Architecture backend
 > ### Modules principaux
@@ -58,7 +49,7 @@ source de confusion — ne contenait que ceci :
 > - `commands`: Commandes Tauri (IPC)
 > - `sandbox`: Sécurité et capability-based permissions
 
-Conservé ici pour mémoire ; concerne l'interface, donc l'autre dépôt.
+Conservé pour mémoire ; concerne l'interface, donc ObsiaUi.
 
 ### Dossiers du coffre parent (ancien `VAULT.md` de la racine)
 

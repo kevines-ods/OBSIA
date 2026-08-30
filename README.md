@@ -40,8 +40,9 @@ OBSIA/
 └── README.md
 ```
 
-L'interface graphique vit dans un dépôt séparé : elle consomme ce coffre, elle
-n'en fait pas partie.
+L'interface graphique vit dans un dépôt séparé — **[ObsiaUi](https://github.com/kevines-ods/ObsiaUi)** —
+et consomme ce coffre sans en faire partie. Le coffre, lui, ne connaît aucune
+interface : il fonctionne avec n'importe quel harness.
 
 ## Démarrage
 
