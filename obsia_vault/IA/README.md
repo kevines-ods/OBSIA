@@ -37,7 +37,7 @@ IA/
 schema: 1
 kind: agent
 name: assistant
-description: Agent de base de l'app OBSIA — modifie l'UI, ajoute des fonctionnalités, crée des skills. Seul agent autorisé à toucher le framework build/.
+description: Agent de base du coffre OBSIA — orchestre la mémoire, crée des skills, et prépare les patches soumis à revue.
 skills:
   - createur-de-skill      ← une compétence par ligne (tirets YAML)
   - obsidian-manager

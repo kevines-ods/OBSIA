@@ -1,31 +1,7 @@
 version: 2
 updates:
-  - package-ecosystem: "cargo"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "rust"
-    commit-message:
-      prefix: "chore(cargo)"
-
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "npm"
-    commit-message:
-      prefix: "chore(npm)"
-
+  # Ce dépôt ne contient que du Markdown et deux scripts Python sans
+  # dépendance : les écosystèmes cargo et npm ont disparu avec l'interface.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

@@ -36,7 +36,8 @@ erreur à corriger, pas une convention à suivre.
 ## 2. Écriture dans le coffre
 
 - Le coffre est en **lecture seule pour les agents**, à l'exception du dossier
-  `brouillon/` (écriture autorisée) et du périmètre spécial du §3.
+  `brouillon/` (écriture autorisée). Les interventions hors du coffre relèvent
+  du §3.
 - Toute modification durable passe par un **patch Git** soumis à revue humaine.
 - Aucune suppression sans archivage préalable dans `.archive/`.
 - Toute action touchant plusieurs fichiers exige un **preview** affiché avant
@@ -45,19 +46,24 @@ erreur à corriger, pas une convention à suivre.
   ils sont régénérés par `scripts/regenerate_sommaire.py` (chemin relatif depuis
   `IA/system/` : `../../scripts/regenerate_sommaire.py`).
 
-## 3. Périmètre spécial — accès au framework `build/`
+## 3. Périmètre hors du coffre
 
-L'agent **`assistant`** (agent de base de l'app) est le **seul** autorisé à lire
-et modifier le framework `build/` (UI React + backend Rust/Tauri).
+Ce coffre ne dépend d'aucun harness et n'en connaît aucun : il décrit *quoi*
+faire, le harness fournit *avec quoi*. Aucune base de code extérieure n'est
+nommée ici, et aucun agent n'en a le monopole.
 
-- Toute modification de `build/` passe par un **patch Git revu** — jamais de
-  commit direct sur `main`.
-- Toute modification backend Rust doit passer **`cargo check` + `cargo clippy` +
-  `cargo test`** avant validation.
-- **Jamais de secret** (clé API, token) dans le code : variables d'env ou config
-  chiffrée uniquement.
-- Ajouter une fonctionnalité = d'abord un **skill** documenté dans `IA/skills/`,
-  puis l'implémentation.
+Quand un agent dont le frontmatter porte `read_only: false` intervient sur un
+dépôt extérieur (interface, outillage, infrastructure), les règles suivantes
+s'appliquent — elles ne dépendent ni du langage ni du projet :
+
+- Toute modification passe par un **patch Git revu** — jamais de commit direct
+  sur la branche par défaut.
+- Les vérifications du projet visé (compilation, analyse statique, tests)
+  passent **avant** de proposer le patch.
+- **Jamais de secret** (clé API, jeton) dans le code : variables
+  d'environnement ou configuration hors dépôt uniquement.
+- Ajouter une fonctionnalité = d'abord un **skill** documenté dans
+  `IA/skills/`, puis l'implémentation.
 
 ## 4. Exécution de code
 
@@ -129,5 +135,17 @@ Tout fichier agent ou skill commence par un frontmatter YAML valide.
       `2-RESSOURCES`) ou sont-ils confinés à `obsia_vault/` ?
 
 Tant que cette case n'est pas cochée, le comportement par défaut est le plus
-restrictif : **confinement à `obsia_vault/`** (exception : l'agent `assistant`
-et le framework `build/`, cf. §3).
+restrictif : **confinement à `obsia_vault/`** (les interventions hors du coffre
+relèvent du §3).
+
+## 8. Sources et citations
+
+Une note durable distingue explicitement trois natures d'information :
+**évidence** (avec son URL source), **interprétation** et **synthèse produite
+par un agent**. Les URLs sont regroupées en fin de fichier.
+
+## 9. Log des sessions
+
+À la fin de chaque session de travail, une note est écrite dans
+`IA/system/session-log/AAAA-MM-JJ.md` : décisions prises, fichiers modifiés,
+questions restées ouvertes.
