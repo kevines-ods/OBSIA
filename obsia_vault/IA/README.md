@@ -7,10 +7,11 @@ Toutes les définitions d'agents, de compétences (skills) et d'outils structur�
 IA/
 ├── README.md
 ├── system/              ← contrat + index + fournisseurs (lecture seule)
-│   ├── VAULT-CONTRACT.md
+│   ├── VAULT-CONTRACT.md    ← fait foi
 │   ├── agents-index.md
 │   ├── skills-index.md
-│   └── providers.md
+│   ├── providers.md
+│   └── prompt-fondateur.md  ← intention d'origine, non normative
 ├── agents/              ← un fichier .md = un agent
 │   └── assistant.md
 ├── skills/              ← un fichier .md = une compétence

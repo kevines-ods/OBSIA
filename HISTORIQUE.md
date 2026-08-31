@@ -1,8 +1,10 @@
 # HISTORIQUE
 
 Ce fichier recueille ce qui a été décidé puis dépassé. Il n'a **aucune valeur
-normative** : les décisions en vigueur vivent dans `obsia prompt.md` et dans
-`obsia_vault/IA/system/VAULT-CONTRACT.md`, qui fait foi.
+normative** : les règles en vigueur vivent dans
+`obsia_vault/IA/system/VAULT-CONTRACT.md`, qui fait foi. L'intention d'origine,
+elle aussi non normative, est conservée dans
+`obsia_vault/IA/system/prompt-fondateur.md`.
 
 Il existe pour une seule raison : éviter qu'un agent relisant le dépôt
 reconstruise ce qui a été écarté.
