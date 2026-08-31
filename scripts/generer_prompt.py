@@ -6,7 +6,7 @@ Usage :
     ./generer_prompt.py                          # affiche sur la sortie standard
     ./generer_prompt.py -o prompt-systeme.md     # écrit dans un fichier
     ./generer_prompt.py --mcp                    # affiche aussi la config MCP à faire
-    ./generer_prompt.py --racine /chemin/obsia_vault
+    ./generer_prompt.py --racine /chemin/OBSIA
 
 Aucune dépendance externe : le frontmatter est lu par un analyseur minimal,
 suffisant pour le format strict défini dans VAULT-CONTRACT.md.

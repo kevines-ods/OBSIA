@@ -2,7 +2,7 @@
 
 > **Statut : intention d'origine, non normative.** Ce fichier dit *pourquoi*
 > OBSIA existe et quelle forme il devait prendre. Les règles qui s'appliquent
-> réellement vivent dans `obsia_vault/IA/system/VAULT-CONTRACT.md`, qui fait
+> réellement vivent dans `IA/system/VAULT-CONTRACT.md`, qui fait
 > foi : en cas de contradiction entre ce texte et le contrat, **le contrat
 > l'emporte**.
 >
@@ -15,7 +15,7 @@ des chats avec un agent spécifique mais aussi avec des équipes d'agents. Il
 repose en grande partie sur l'application Obsidian pour la mémoire et la
 création d'agents.
 
-## 1- STRUCTURE DE LA MÉMOIRE (dans le coffre obsia_vault/mémoire/)
+## 1- STRUCTURE DE LA MÉMOIRE (dans `mémoire/`)
 
 ```
 mémoire/
@@ -28,11 +28,11 @@ mémoire/
 
 - Les fichiers `sommaire.md` énumèrent les sous-dossiers et les notes présentes
   avec eux dans le dossier parent, avec un court résumé.
-- Ils sont **générés** par `obsia_vault/scripts/regenerate_sommaire.py`, jamais
+- Ils sont **générés** par `scripts/regenerate_sommaire.py`, jamais
   édités à la main (ni par un agent).
 - Tout est tagué et lié par des rétroliens.
 
-## 2- STRUCTURE DES AGENTS (obsia_vault/IA/agents/)
+## 2- STRUCTURE DES AGENTS (`IA/agents/`)
 
 - **assistant.md** — l'agent de base : il orchestre le coffre et crée des
   skills.
@@ -41,7 +41,7 @@ mémoire/
 - Grâce aux rétroliens, le LLM mémorise son system prompt et va chercher
   SEULEMENT les skills/MCP dont il a réellement besoin, au moment où il en a besoin.
 
-## 3- STRUCTURE DES SKILLS (obsia_vault/IA/skills/)
+## 3- STRUCTURE DES SKILLS (`IA/skills/`)
 
 Les skills gèrent le RESTE du coffre. Un skill = une compétence réutilisable
 ("comment l'agent doit travailler"), ce n'est jamais un agent.
@@ -65,7 +65,7 @@ Piège historique : `obsidian-manager` a longtemps été confondu avec un agent
 
 ## 5- FRONTIÈRE ABSOLUE (à toujours respecter)
 
-- `obsia_vault/` = **LE COFFRE VIVANT** : mémoire, agents, skills, MCP, scripts,
+- La racine du dépôt = **LE COFFRE VIVANT** : mémoire, agents, skills, MCP, scripts,
   git. C'est le système d'orchestration réel.
 - Écriture dans le coffre : **lecture seule** sauf `brouillon/` — les
   modifications passent par des patchs Git revus (cf. `VAULT-CONTRACT.md`).

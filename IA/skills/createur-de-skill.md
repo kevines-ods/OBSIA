@@ -105,7 +105,7 @@ Rappels qui découlent du contrat :
   **pas recopiées** dans le skill. On y renvoie.
 - Le nom du fichier est identique au champ `name`.
 - Les noms doivent être uniques dans tout le coffre parent, pas seulement dans
-  `obsia_vault/` — les rétroliens Obsidian ignorent la frontière git.
+  `OBSIA/` — les rétroliens Obsidian ignorent la frontière git.
 
 ## Procédure de création
 

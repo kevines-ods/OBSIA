@@ -72,7 +72,7 @@ un usage hors coffre (documentation, export, README GitHub).
 ​```mermaid
 graph TD
   agent[bibliothécaire] --> skill[obsidian-manager]
-  skill --> coffre[(obsia_vault)]
+  skill --> coffre[(OBSIA)]
 ​```
 ```
 

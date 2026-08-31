@@ -4,6 +4,9 @@
 Régénère automatiquement les sommaire.md depuis le système de fichiers.
 À exécuter AVANT tout commit pour garder un diff Git fiable.
 
+La racine du coffre est le dossier parent de ce script, c'est-à-dire la racine
+du dépôt.
+
 Usage :
     python scripts/regenerate_sommaire.py
 """
@@ -40,6 +43,8 @@ def regen(path):
 print("Régénération des sommaires…")
 created = 0
 for dirpath, dirs, files in os.walk(ROOT):
+    # La racine du dépôt est le coffre : écarter .git/, .github/ et consorts.
+    dirs[:] = [d for d in dirs if not d.startswith(".")]
     # Création des sommaire.md manquants, uniquement sous mémoire/
     rel = to_rel(dirpath)
     in_memoire = "mémoire" in rel.split(os.sep)

@@ -12,7 +12,7 @@ et tous les skills. Un fichier agent ou skill ne redéfinit jamais ces règles :
 il les référence. En cas de contradiction entre ce contrat et un autre fichier,
 **ce contrat fait foi**.
 
-Emplacement attendu : `obsia_vault/IA/system/VAULT-CONTRACT.md`
+Emplacement attendu : `IA/system/VAULT-CONTRACT.md`, depuis la racine du dépôt.
 
 ---
 
@@ -117,10 +117,13 @@ Tout fichier agent ou skill commence par un frontmatter YAML valide.
 
 ## 6. Nommage, rétroliens et mémoire
 
-- Le coffre est `obsia_vault/`, imbriqué dans un coffre Obsidian parent. Les
-  rétroliens Obsidian se résolvent à l'échelle du coffre entier, **pas** de
-  `obsia_vault/`.
-- Conséquence : les noms de notes doivent être **uniques dans tout le coffre**.
+- Le coffre est la **racine du dépôt** (`OBSIA/`) : il n'y a pas de sous-dossier
+  intermédiaire. Tous les chemins de ce contrat partent de cette racine.
+- Le dépôt est destiné à être cloné **dans** un coffre Obsidian préexistant,
+  appelé ici *coffre parent* (non versionné). Les rétroliens Obsidian se
+  résolvent à l'échelle de ce coffre parent, **pas** de `OBSIA/`.
+- Conséquence : les noms de notes doivent être **uniques dans tout le coffre
+  parent**, pas seulement dans `OBSIA/`.
 - Les liens vers ce contrat s'écrivent en chemin relatif depuis `IA/agents/` ou
   `IA/skills/` : `../system/VAULT-CONTRACT.md`.
 - **Structure de la mémoire** : `mémoire/<nom-agent>/<nom-projet>/AAAA-MM-JJ-titre.md`.
@@ -132,10 +135,10 @@ Tout fichier agent ou skill commence par un frontmatter YAML valide.
 À trancher explicitement et à consigner ici (aujourd'hui : non tranché) :
 
 - [ ] Les agents peuvent-ils lire le coffre parent (`0-PROJETS`, `1-CONCEPTS`,
-      `2-RESSOURCES`) ou sont-ils confinés à `obsia_vault/` ?
+      `2-RESSOURCES`) ou sont-ils confinés à `OBSIA/` ?
 
 Tant que cette case n'est pas cochée, le comportement par défaut est le plus
-restrictif : **confinement à `obsia_vault/`** (les interventions hors du coffre
+restrictif : **confinement à `OBSIA/`** (les interventions hors du coffre
 relèvent du §3).
 
 ## 8. Sources et citations

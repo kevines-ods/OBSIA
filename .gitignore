@@ -1,11 +1,11 @@
-# Artefacts de compilation
-/target/
-/node_modules/
-/dist/
+# Artefacts de compilation (à n'importe quelle profondeur)
+target/
+node_modules/
+dist/
 *.log
 *.tmp
 
-# Secrets — le dépôt est public
+# Secrets — le dépôt est public. NE JAMAIS COMMITTER DE CLÉ NI DE JETON.
 .env
 .env.*
 !.env.example

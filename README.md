@@ -25,24 +25,27 @@ nécessaire.
 ## Structure
 
 ```
-OBSIA/
-├── obsia_vault/             le coffre — tout le reste n'est que documentation
-│   ├── IA/
-│   │   ├── agents/          définition des agents
-│   │   ├── skills/          compétences réutilisables
-│   │   ├── MCP/             outils structurés
-│   │   └── system/          VAULT-CONTRACT.md (les règles), index,
-│   │                        prompt-fondateur.md (intention d'origine)
-│   ├── mémoire/             par agent → projet → entrées datées
-│   ├── brouillon/           seul dossier où un agent peut écrire
-│   └── scripts/
-│       ├── generer_prompt.py
-│       └── regenerate_sommaire.py
+OBSIA/                       le coffre — la racine du dépôt EST le coffre
+├── IA/
+│   ├── agents/              définition des agents
+│   ├── skills/              compétences réutilisables
+│   ├── MCP/                 outils structurés
+│   └── system/              VAULT-CONTRACT.md (les règles), index,
+│                            prompt-fondateur.md (intention d'origine)
+├── mémoire/                 par agent → projet → entrées datées
+├── brouillon/               seul dossier où un agent peut écrire
+├── scripts/
+│   ├── generer_prompt.py
+│   └── regenerate_sommaire.py
 ├── HISTORIQUE.md            ce qui a été décidé puis écarté
 ├── LICENSE                  AGPL-3.0-or-later
 ├── README.md
 └── .gitignore
 ```
+
+Il n'y a pas de sous-dossier « coffre » : le dépôt lui-même en tient lieu. Pour
+l'utiliser dans Obsidian, cloner `OBSIA/` **dans** un coffre Obsidian existant —
+c'est ce coffre-là qu'on appelle ici le *coffre parent*.
 
 L'interface graphique vit dans un dépôt séparé — **[ObsiaUi](https://github.com/kevines-ods/ObsiaUi)** —
 et consomme ce coffre sans en faire partie. Le coffre, lui, ne connaît aucune
@@ -53,8 +56,7 @@ interface : il fonctionne avec n'importe quel harness.
 ```bash
 git clone https://github.com/kevines-ods/OBSIA
 cd OBSIA
-python3 obsia_vault/scripts/generer_prompt.py \
-        --racine obsia_vault -o prompt-systeme.md --mcp
+python3 scripts/generer_prompt.py -o prompt-systeme.md --mcp
 ```
 
 Le fichier `prompt-systeme.md` produit est à donner comme prompt système au
@@ -103,7 +105,7 @@ Ce frontmatter est la frontière entre le coffre et tout programme qui le lit.
 
 ## Règles
 
-Elles vivent dans `obsia_vault/IA/system/VAULT-CONTRACT.md`, qui fait foi. En
+Elles vivent dans `IA/system/VAULT-CONTRACT.md`, qui fait foi. En
 résumé :
 
 - Le coffre est en lecture seule pour les agents. Les modifications passent par

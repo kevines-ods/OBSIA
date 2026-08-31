@@ -2,12 +2,36 @@
 
 Ce fichier recueille ce qui a été décidé puis dépassé. Il n'a **aucune valeur
 normative** : les règles en vigueur vivent dans
-`obsia_vault/IA/system/VAULT-CONTRACT.md`, qui fait foi. L'intention d'origine,
+`IA/system/VAULT-CONTRACT.md`, qui fait foi. L'intention d'origine,
 elle aussi non normative, est conservée dans
-`obsia_vault/IA/system/prompt-fondateur.md`.
+`IA/system/prompt-fondateur.md`.
 
 Il existe pour une seule raison : éviter qu'un agent relisant le dépôt
 reconstruise ce qui a été écarté.
+
+---
+
+## `obsia_vault/` a disparu : la racine du dépôt est le coffre (31 août 2026)
+
+Le coffre a longtemps vécu dans un sous-dossier `obsia_vault/`. Ce niveau
+n'avait plus de raison d'être une fois l'interface partie : le dossier du dépôt
+cloné fournit déjà l'encapsulation recherchée. Le chemin réel était
+`coffre-parent/OBSIA/obsia_vault/IA/…` — deux dossiers pour une seule frontière.
+
+`IA/`, `mémoire/`, `brouillon/` et `scripts/` vivent désormais à la racine.
+
+### Ce qu'il ne faut pas reconstruire
+
+- **Ne pas recréer `obsia_vault/`.** La racine du dépôt *est* le coffre. Un
+  chemin qui commence par `obsia_vault/` dans un fichier est une survivance à
+  corriger, pas une convention à suivre.
+- La distinction coffre / coffre parent, elle, **reste valable** : `OBSIA/` se
+  clone dans un coffre Obsidian préexistant et non versionné, dont les
+  rétroliens portent au-delà du dépôt (cf. `VAULT-CONTRACT.md` §6). C'est ce
+  coffre-là, et lui seul, qu'on appelle désormais « parent ».
+- Le `.gitignore` du sous-dossier a été fusionné dans celui de la racine ; ses
+  motifs `target/`, `node_modules/` et `dist/` y ont été dé-ancrés pour rester
+  actifs à toute profondeur.
 
 ---
 
@@ -57,7 +81,7 @@ Conservé pour mémoire ; concerne l'interface, donc ObsiaUi.
 
 Même situation : un `VAULT.md` de racine, doublon de celui du coffre, dont le
 seul contenu propre était la nomenclature du **coffre Obsidian parent** — celui
-qui contient `obsia_vault/` et qui n'est pas versionné :
+qui contient le dépôt et qui n'est pas versionné :
 
 > ### Dossiers
 > - `0-PROJETS`: Projets en cours
@@ -65,8 +89,8 @@ qui contient `obsia_vault/` et qui n'est pas versionné :
 > - `2-RESSOURCES`: Documentation et ressources externes
 
 Le périmètre de lecture de ce coffre parent reste non tranché
-(cf. `VAULT-CONTRACT.md` §7) : par défaut, les agents sont confinés à
-`obsia_vault/`.
+(cf. `VAULT-CONTRACT.md` §7) : par défaut, les agents sont confinés à la racine
+du dépôt.
 
 ---
 
