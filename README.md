@@ -26,18 +26,22 @@ nécessaire.
 
 ```
 OBSIA/
-├── obsia_vault/
+├── obsia_vault/             le coffre — tout le reste n'est que documentation
 │   ├── IA/
 │   │   ├── agents/          définition des agents
 │   │   ├── skills/          compétences réutilisables
 │   │   ├── MCP/             outils structurés
-│   │   └── system/          VAULT-CONTRACT.md — les règles
+│   │   └── system/          VAULT-CONTRACT.md (les règles), index,
+│   │                        prompt-fondateur.md (intention d'origine)
 │   ├── mémoire/             par agent → projet → entrées datées
+│   ├── brouillon/           seul dossier où un agent peut écrire
 │   └── scripts/
 │       ├── generer_prompt.py
 │       └── regenerate_sommaire.py
-├── .gitignore
-└── README.md
+├── HISTORIQUE.md            ce qui a été décidé puis écarté
+├── LICENSE                  AGPL-3.0-or-later
+├── README.md
+└── .gitignore
 ```
 
 L'interface graphique vit dans un dépôt séparé — **[ObsiaUi](https://github.com/kevines-ods/ObsiaUi)** —
@@ -129,6 +133,11 @@ révoquer le secret d'abord, nettoyer l'historique ensuite.
 
 ## Licence
 
+**GNU AGPL-3.0-or-later** — texte complet dans [`LICENSE`](LICENSE).
+
+Le copyleft est délibéré : un dérivé d'OBSIA reste libre, y compris s'il n'est
+jamais distribué mais seulement exposé à travers un réseau (§13 de la licence).
+
 Outils libres exclusivement. Vérifier la licence de tout skill importé d'une
 autre source avant de l'intégrer : certains catalogues publient sous licence
-restrictive.
+restrictive, et une licence incompatible avec l'AGPL ne peut pas entrer ici.

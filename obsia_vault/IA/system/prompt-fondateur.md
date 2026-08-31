@@ -1,10 +1,19 @@
-je veux créer un système d'orchestration agentic natif linux. Le système permet
+# Prompt fondateur — OBSIA
+
+> **Statut : intention d'origine, non normative.** Ce fichier dit *pourquoi*
+> OBSIA existe et quelle forme il devait prendre. Les règles qui s'appliquent
+> réellement vivent dans `obsia_vault/IA/system/VAULT-CONTRACT.md`, qui fait
+> foi : en cas de contradiction entre ce texte et le contrat, **le contrat
+> l'emporte**.
+>
+> Les chemins cités ci-dessous partent de la racine du dépôt.
+> L'interface graphique et son périmètre de modification ne vivent plus dans ce
+> dépôt : cf. `HISTORIQUE.md`.
+
+Je veux créer un système d'orchestration agentic natif Linux. Le système permet
 des chats avec un agent spécifique mais aussi avec des équipes d'agents. Il
 repose en grande partie sur l'application Obsidian pour la mémoire et la
 création d'agents.
-
-> L'interface graphique et son périmètre de modification ne vivent plus dans ce
-> dépôt : cf. `HISTORIQUE.md`.
 
 ## 1- STRUCTURE DE LA MÉMOIRE (dans le coffre obsia_vault/mémoire/)
 

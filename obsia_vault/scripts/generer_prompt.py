@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Génère le prompt système OBSI à partir des frontmatters du coffre.
+Génère le prompt système OBSIA à partir des frontmatters du coffre.
 
 Usage :
     ./generer_prompt.py                          # affiche sur la sortie standard
     ./generer_prompt.py -o prompt-systeme.md     # écrit dans un fichier
     ./generer_prompt.py --mcp                    # affiche aussi la config MCP à faire
-    ./generer_prompt.py --racine /chemin/obsi_vault
+    ./generer_prompt.py --racine /chemin/obsia_vault
 
 Aucune dépendance externe : le frontmatter est lu par un analyseur minimal,
 suffisant pour le format strict défini dans VAULT-CONTRACT.md.
@@ -107,7 +107,7 @@ def construire_prompt(racine: Path, agents: list[dict], skills: list[dict]) -> s
     lignes: list[str] = []
     a = lignes.append
 
-    a("Tu opères sur le coffre OBSI.")
+    a("Tu opères sur le coffre OBSIA.")
     a(f"Racine du coffre : {racine}")
     a("")
 
@@ -189,7 +189,7 @@ def construire_config_mcp(agents: list[dict]) -> tuple[str, list[str]]:
 # ---------------------------------------------------------------------- main
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Génère le prompt système OBSI.")
+    ap = argparse.ArgumentParser(description="Génère le prompt système OBSIA.")
     ap.add_argument("--racine", type=Path, default=RACINE_DEFAUT,
                     help="racine du coffre (défaut : parent de ce script)")
     ap.add_argument("-o", "--sortie", type=Path,
