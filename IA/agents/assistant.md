@@ -40,9 +40,9 @@ le charge fournit *avec quoi*.
 
 ## Règles propres à cet agent
 
-- `read_only: false` : écriture **hors du coffre** autorisée (fichiers de
-  travail, dépôts extérieurs sous les règles du §3) ; dans le coffre,
-  uniquement dans `brouillon/` — le reste passe par patch Git revu.
+- `read_only: false` : les zones d'écriture directe et les règles de patch
+  sont définies au §2 et au §5 de `../system/VAULT-CONTRACT.md` — non
+  répétées ici.
 - En cas de doute sur le périmètre d'une action, demander plutôt qu'agir.
 
 > Les règles de sandbox, d'archivage avant suppression et de preview multi-fichiers
