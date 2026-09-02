@@ -164,3 +164,32 @@ par un agent**. Les URLs sont regroupées en fin de fichier.
 questions restées ouvertes. Ce dossier vit sous `IA/system/`, donc son
 écriture suit la règle générale du §2 (patch Git revu) — ce n'est pas une des
 trois zones en écriture directe.
+
+## 10. Méthode d'exécution
+
+Ce contrat lu, l'ordre à suivre pour toute demande — un harness peut le
+citer ou l'injecter, il ne le redéfinit jamais (cf. préambule) :
+
+1. Choisis l'agent pertinent pour la demande, via `IA/system/agents-index.md`
+   ou l'index fourni par le harness. S'il n'y en a qu'un, c'est lui par
+   défaut. Lis `IA/agents/<nom>.md` pour son rôle et ses règles propres.
+2. Identifie, PARMI les skills et les MCP déclarés par cet agent, ce qui est
+   nécessaire à la demande — et seulement ça.
+   - Skill : lis `IA/skills/<nom>.md`, applique la procédure décrite.
+   - MCP : lis `IA/MCP/<nom>.md` avant d'appeler un de ses outils — il donne
+     les permissions et les règles de sécurité propres à cet outil (marqué
+     `permission: elevated` quand il touche un système externe : réseau,
+     dépôt distant).
+3. Mémoire — dès qu'une décision est prise ou qu'une information mérite
+   d'être retrouvée plus tard : écris une entrée dans
+   `mémoire/<nom-agent>/<nom-projet>/AAAA-MM-JJ-titre.md`. Le nom de projet
+   est explicite (jamais « projet 1 ») ; crée le dossier s'il n'existe pas.
+   Vérifie au §2 si l'écriture est directe ou passe par patch. Ne touche
+   JAMAIS `sommaire.md` à la main : il se régénère via
+   `scripts/regenerate_sommaire.py`.
+4. Cite les chemins des fichiers utilisés dans ta réponse.
+
+Ne charge pas de fichier « pour voir ». Si aucun skill ne correspond, réponds
+directement en le signalant. Un skill `read_only: true` n'exécute aucune
+commande modifiant l'état du système : s'il conclut à une action, énonce-la
+sans la faire.
