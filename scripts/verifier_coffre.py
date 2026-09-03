@@ -24,7 +24,7 @@ sys.dont_write_bytecode = True
 SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS))
 
-from generer_prompt import RACINE_DEFAUT, lire_frontmatter
+from generer_prompt import RACINE_DEFAUT, fichiers_declaratifs, lire_frontmatter
 
 RACINE = RACINE_DEFAUT
 
@@ -137,6 +137,36 @@ def verifier_references(agents, skills):
             avertir(s["_chemin"], "skill déclaré par aucun agent")
 
 
+def verifier_forme_dossier(dossier: Path, genre: str):
+    """Un skill en forme dossier doit porter son point d'entrée (§5).
+
+    Vérifie aussi que les fichiers extraits dans `references/` sont bien cités
+    depuis le corps : un fichier qu'on ne sait pas exister n'est jamais lu —
+    c'est la règle de `createur-de-skill`.
+    """
+    if not dossier.is_dir():
+        return
+    for sous in sorted(dossier.iterdir()):
+        if not sous.is_dir() or sous.name.startswith("."):
+            continue
+        entree = sous / (sous.name + ".md")
+        rel = sous.relative_to(RACINE)
+        if not entree.is_file():
+            erreur(rel, "dossier de %s sans point d'entrée `%s.md` (§5). "
+                        "Le point d'entrée porte le nom du dossier, pas `SKILL.md`."
+                   % (genre, sous.name))
+            continue
+
+        corps = entree.read_text(encoding="utf-8")
+        for annexe in sorted((sous / "references").glob("**/*")):
+            if not annexe.is_file():
+                continue
+            if annexe.name not in corps:
+                avertir(rel, "`references/%s` n'est cité nulle part dans `%s.md` — "
+                             "un fichier qu'on ne sait pas exister n'est jamais lu"
+                        % (annexe.relative_to(sous / "references").as_posix(), sous.name))
+
+
 def verifier_unicite_des_noms():
     """§6 : les noms de notes doivent être uniques dans tout le coffre parent.
 
@@ -146,7 +176,8 @@ def verifier_unicite_des_noms():
     banals = {"sommaire.md", "README.md"}          # légitimement répétés
     vus: dict[str, list[str]] = {}
     for chemin, sous, fichiers in os.walk(RACINE):
-        sous[:] = [d for d in sous if not d.startswith(".")]
+        sous[:] = [d for d in sous
+                   if not d.startswith(".") and d not in ("scripts", "assets")]
         for f in fichiers:
             if f.endswith(".md") and f not in banals:
                 vus.setdefault(f, []).append(
@@ -173,10 +204,16 @@ def verifier_derives():
 def main() -> int:
     silencieux = "--silencieux" in sys.argv
 
+    dossier_agents = RACINE / "IA" / "agents"
+    dossier_skills = RACINE / "IA" / "skills"
+
     agents = [fm for fm in (verifier_fichier(p, "agent")
-                            for p in sorted((RACINE / "IA" / "agents").glob("*.md"))) if fm]
+                            for p in fichiers_declaratifs(dossier_agents)) if fm]
     skills = [fm for fm in (verifier_fichier(p, "skill")
-                            for p in sorted((RACINE / "IA" / "skills").glob("*.md"))) if fm]
+                            for p in fichiers_declaratifs(dossier_skills)) if fm]
+
+    verifier_forme_dossier(dossier_agents, "agent")
+    verifier_forme_dossier(dossier_skills, "skill")
 
     if not agents:
         erreur("IA/agents/", "aucun agent valide trouvé")

@@ -40,14 +40,22 @@ Détail dans [[licences-et-logiciel-libre]].
 
 ## Infrastructure
 
-Déduite des skills du coffre, **non confirmée** par l'utilisateur à ce jour :
-un hôte **Proxmox** portant au moins une **VM Debian**, laquelle fait tourner
-des conteneurs **Docker** derrière **Traefik**, avec des sauvegardes à
-vérifier.
+**Confirmée par l'utilisateur le 2026-09-03.** Un hôte **Proxmox** portant au
+moins une **VM Debian**, laquelle fait tourner des conteneurs **Docker**
+derrière **Traefik**, avec des sauvegardes à vérifier.
 
-À confirmer ou corriger lors d'une prochaine session — et à ne jamais préciser
-davantage ici : adresses IP, noms d'hôtes internes et identifiants n'entrent
-pas dans le coffre (`VAULT-CONTRACT.md` §4).
+Conséquences pratiques :
+
+- le poste est sous Arch, les machines administrées sous Debian : ne pas
+  confondre `pacman` et `apt` selon la cible ;
+- une erreur HTTP sur un service hébergé se diagnostique par la couche —
+  `traefik` d'abord si le service répond en direct, `conteneurs-docker` si le
+  conteneur est mort, `proxmox` si le symptôme dépasse une machine ;
+- `proxmox` est en lecture seule et le reste : une commande malheureuse à ce
+  niveau affecte toutes les VM à la fois.
+
+Ne jamais préciser davantage ici : adresses IP, noms d'hôtes internes et
+identifiants n'entrent pas dans le coffre (`VAULT-CONTRACT.md` §4).
 
 ---
 
