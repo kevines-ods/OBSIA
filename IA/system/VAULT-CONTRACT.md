@@ -56,7 +56,7 @@ erreur à corriger, pas une convention à suivre.
   `skills-index.md` sont régénérés par les scripts du §11, qui donne la liste
   complète et la commande.
 - Ces trois zones sont les seules **du dépôt**. Hors du dépôt, une quatrième
-  zone est en écriture directe : `0-en vrac/` dans le coffre parent (§7).
+  zone est en écriture directe : `0-EN VRAC/` dans le coffre parent (§7).
 
 ## 3. Périmètre hors du coffre
 
@@ -209,20 +209,25 @@ Le coffre parent est donc en **lecture seule**, à une exception près :
 
 | Zone du coffre parent | Lecture | Écriture |
 | --- | --- | --- |
-| `0-en vrac/` | oui | **oui, directe** |
+| `0-EN VRAC/` | oui | **oui, directe** |
 | tout le reste (`0-PROJETS`, `1-CONCEPTS`, `2-RESSOURCES`, …) | oui | **non** |
 
 Précisions qui découlent de cette règle :
 
+- Le nom du dossier s'écrit `0-EN VRAC`, en capitales et avec une espace,
+  comme les autres dossiers du coffre parent. Le système de fichiers distingue
+  la casse : `0-en vrac` désignerait un autre dossier, et un agent qui le
+  créerait écrirait à côté. L'espace impose aussi de citer le chemin dans une
+  commande shell (`"$COFFRE/0-EN VRAC"`).
 - Le coffre parent **n'est pas versionné**. Un patch Git y est donc impossible :
-  hors de `0-en vrac/`, il n'existe aucune voie d'écriture, même soumise à
+  hors de `0-EN VRAC/`, il n'existe aucune voie d'écriture, même soumise à
   revue. « Lecture seule » y est absolu.
-- `0-en vrac/` est une zone de dépôt, comparable à `brouillon/` : contenus
+- `0-EN VRAC/` est une zone de dépôt, comparable à `brouillon/` : contenus
   provisoires, non garantis conservés. Un contenu qui doit durer est recopié
   dans `mémoire/<nom-agent>/` (§2), à l'intérieur du dépôt, où Git le suit.
 - Le coffre parent n'est **pas** un « dépôt extérieur » au sens du §3 : ce
   paragraphe vise des bases de code, pas des notes.
-- Les règles générales du §2 s'appliquent à `0-en vrac/` comme partout
+- Les règles générales du §2 s'appliquent à `0-EN VRAC/` comme partout
   ailleurs : aucune suppression sans archivage, preview obligatoire avant une
   action touchant plusieurs fichiers.
 - La règle d'unicité des noms de notes (§6) prend ici tout son sens : elle

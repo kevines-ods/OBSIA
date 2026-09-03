@@ -90,7 +90,7 @@ qui contient le dépôt et qui n'est pas versionné :
 
 Le périmètre de lecture de ce coffre parent a été tranché le 2026-09-03
 (cf. `VAULT-CONTRACT.md` §7) : les agents peuvent le lire, mais n'y écrivent
-que dans `0-en vrac/`. Le confinement à la racine du dépôt, qui valait par
+que dans `0-EN VRAC/`. Le confinement à la racine du dépôt, qui valait par
 défaut jusque-là, est levé.
 
 ---
