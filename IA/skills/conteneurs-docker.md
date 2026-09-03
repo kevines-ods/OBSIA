@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: conteneurs-docker
-description: Diagnostiquer et gérer des conteneurs Docker — état, journaux, volumes, réseaux, compose.
+description: Diagnostiquer et gérer des conteneurs Docker — état, journaux, volumes, réseaux, compose. À charger devant un conteneur qui redémarre, sature ou refuse de démarrer, et avant toute modification d'un compose.yml. Si le symptôme est une erreur HTTP renvoyée par le reverse proxy, commencer par `traefik`.
 type: outil
 read_only: false
 ---

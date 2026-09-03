@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: obsidian-manager
-description: Gérer le coffre Obsidian — recherche, rétroliens, résumés, index.
+description: Interroger le coffre — recherche plein texte, rétroliens, résumé d'une note, état des index. À charger dès qu'il faut retrouver quelque chose dans le coffre, ou vérifier ce qui existe déjà avant d'écrire une note nouvelle. Lit et rapporte seulement : n'écrit, ne déplace ni ne supprime rien.
 type: core
 read_only: true
 ---

@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: proxmox
-description: Inspecter un hôte Proxmox — VM, conteneurs LXC, stockage, cluster, ressources.
+description: Inspecter un hôte Proxmox — VM, conteneurs LXC, stockage, cluster, répartition des ressources. À charger quand le symptôme dépasse une seule machine, ou pour identifier une VM par son VMID avant d'en parler. Lecture seule non négociable : aucune commande `qm`, `pct` ou `pvesm` modifiant l'état.
 type: outil
 read_only: true
 ---

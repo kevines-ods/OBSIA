@@ -179,17 +179,18 @@ Coût : une heure d'écriture, zéro code. C'est le levier le plus rentable du
 lot, parce que le contrat §10.2 demande à l'agent de choisir ses skills à
 partir de l'index seul — et l'index actuel ne lui en donne pas les moyens.
 
-Avant :
-```yaml
-description: Manipuler des PDF
+Avant — la ligne de `skills-index.md` :
+```markdown
+| [pdf](../skills/pdf.md) | outil | Manipuler des PDF | assistant |
 ```
-Après :
+Après, dans le frontmatter du skill, sur **une seule ligne physique** :
 ```yaml
-description: >
-  Extraire, fusionner, découper ou remplir des PDF. À utiliser dès qu'un
-  fichier .pdf est en entrée ou en sortie. Ne pas utiliser pour du
-  traitement de texte bureautique — voir `bureautique`.
+description: Extraire texte et tableaux, fusionner, découper, pivoter, chiffrer, remplir des formulaires, appliquer l'OCR sur des PDF. À charger dès qu'un fichier .pdf est en entrée ou en sortie. Pas pour Word, Excel ou PowerPoint — voir `bureautique`.
 ```
+
+Le scalaire replié YAML (`description: >` suivi de lignes indentées) est
+**exclu** : `lire_frontmatter()` de `scripts/generer_prompt.py` ne le gère pas
+et renvoie littéralement `>` comme description. Vérifié le 2026-09-03.
 
 ### 2. Faire du `sommaire.md` une couche L1
 

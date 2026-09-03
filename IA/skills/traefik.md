@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: traefik
-description: Diagnostiquer Traefik — routage, labels, certificats TLS, services injoignables.
+description: Diagnostiquer Traefik — 404 et 502, labels, réseaux partagés, certificats TLS, service injoignable derrière le proxy. À charger dès qu'un service répond en direct mais pas par son nom de domaine. Si le conteneur lui-même est arrêté ou tué, commencer par `conteneurs-docker`.
 type: outil
 read_only: false
 ---
