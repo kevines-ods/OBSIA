@@ -55,6 +55,8 @@ erreur à corriger, pas une convention à suivre.
   même dans une zone en écriture directe : `sommaire.md`, `agents-index.md` et
   `skills-index.md` sont régénérés par les scripts du §11, qui donne la liste
   complète et la commande.
+- Ces trois zones sont les seules **du dépôt**. Hors du dépôt, une quatrième
+  zone est en écriture directe : `0-en vrac/` dans le coffre parent (§7).
 
 ## 3. Périmètre hors du coffre
 
@@ -171,16 +173,37 @@ Tout fichier agent ou skill commence par un frontmatter YAML valide.
   sujet (`licences-et-logiciel-libre.md`, pas `notes.md`) et respecte la règle
   d'unicité ci-dessus.
 
-## 7. Périmètre de lecture
+## 7. Périmètre de lecture et coffre parent
 
-À trancher explicitement et à consigner ici (aujourd'hui : non tranché) :
+- [x] **Tranché le 2026-09-03.** Les agents peuvent lire le coffre parent
+      (`0-PROJETS`, `1-CONCEPTS`, `2-RESSOURCES`, …). Le confinement à
+      `OBSIA/` qui valait par défaut est levé.
 
-- [ ] Les agents peuvent-ils lire le coffre parent (`0-PROJETS`, `1-CONCEPTS`,
-      `2-RESSOURCES`) ou sont-ils confinés à `OBSIA/` ?
+Le coffre parent est donc en **lecture seule**, à une exception près :
 
-Tant que cette case n'est pas cochée, le comportement par défaut est le plus
-restrictif : **confinement à `OBSIA/`** (les interventions hors du coffre
-relèvent du §3).
+| Zone du coffre parent | Lecture | Écriture |
+| --- | --- | --- |
+| `0-en vrac/` | oui | **oui, directe** |
+| tout le reste (`0-PROJETS`, `1-CONCEPTS`, `2-RESSOURCES`, …) | oui | **non** |
+
+Précisions qui découlent de cette règle :
+
+- Le coffre parent **n'est pas versionné**. Un patch Git y est donc impossible :
+  hors de `0-en vrac/`, il n'existe aucune voie d'écriture, même soumise à
+  revue. « Lecture seule » y est absolu.
+- `0-en vrac/` est une zone de dépôt, comparable à `brouillon/` : contenus
+  provisoires, non garantis conservés. Un contenu qui doit durer est recopié
+  dans `mémoire/<nom-agent>/` (§2), à l'intérieur du dépôt, où Git le suit.
+- Le coffre parent n'est **pas** un « dépôt extérieur » au sens du §3 : ce
+  paragraphe vise des bases de code, pas des notes.
+- Les règles générales du §2 s'appliquent à `0-en vrac/` comme partout
+  ailleurs : aucune suppression sans archivage, preview obligatoire avant une
+  action touchant plusieurs fichiers.
+- La règle d'unicité des noms de notes (§6) prend ici tout son sens : elle
+  porte sur le coffre parent entier, désormais lisible.
+- Lire n'est pas recopier. Le contenu du coffre parent ne migre pas dans
+  `OBSIA/` au fil des réponses : le dépôt est **public** (§4), le coffre
+  parent ne l'est pas.
 
 ## 8. Sources et citations
 
