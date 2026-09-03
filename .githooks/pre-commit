@@ -1,0 +1,37 @@
+#!/bin/sh
+# Crochet de pré-commit du coffre OBSIA.
+#
+# Refuse un commit qui laisserait le coffre incohérent : frontmatter invalide,
+# référence cassée, nom de note en double, ou fichier généré périmé.
+#
+# Installation (une fois par clone) :
+#     git config core.hooksPath .githooks
+#
+# Contournement ponctuel, si tu sais ce que tu fais :
+#     git commit --no-verify
+
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "pre-commit : python3 introuvable, vérification ignorée." >&2
+    exit 0
+fi
+
+racine=$(git rev-parse --show-toplevel) || exit 0
+cd "$racine" || exit 0
+
+if python3 scripts/verifier_coffre.py --silencieux; then
+    exit 0
+fi
+
+cat >&2 <<'MSG'
+
+Commit refusé : le coffre est incohérent (cf. IA/system/VAULT-CONTRACT.md §11).
+
+Si l'erreur porte sur un fichier généré périmé :
+
+    python3 scripts/regenerate_sommaire.py
+    python3 scripts/regenerate_index.py
+    git add -A
+
+Sinon, corriger la source signalée ci-dessus, puis recommencer.
+MSG
+exit 1

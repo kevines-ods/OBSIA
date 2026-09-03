@@ -117,6 +117,32 @@ Tout fichier agent ou skill commence par un frontmatter YAML valide.
 | --- | --- | --- |
 | `type` | `core` \| `outil` | `core` = indispensable au fonctionnement du coffre |
 
+**Emplacement d'un agent ou d'un skill**
+
+Deux formes, au choix :
+
+```
+IA/skills/pdf.md                 forme plate — par défaut
+IA/skills/pdf/pdf.md             forme dossier — quand le skill grossit
+IA/skills/pdf/references/        détails consultatifs, chargés au besoin
+IA/skills/pdf/scripts/           code exécuté, jamais chargé en contexte
+IA/skills/pdf/assets/            fichiers repris dans le résultat produit
+```
+
+Le point d'entrée porte **le nom du skill**, jamais `SKILL.md` : le `name` doit
+valoir le nom du fichier (ci-dessus), et le §6 impose l'unicité des noms de
+notes dans le coffre parent — une douzaine de `SKILL.md` la violerait.
+
+Passer à la forme dossier quand le corps approche des 500 lignes, ou quand une
+information est consultative plutôt que procédurale. Une information vit soit
+dans le corps, soit dans une référence — **jamais les deux**, sinon les deux
+divergent. Tout fichier de `references/` est **cité explicitement** depuis le
+corps, en disant quand le lire : un fichier qu'on ne sait pas exister n'est
+jamais consulté.
+
+Seuls `references/` contient des notes ; `scripts/` et `assets/` sont écartés
+du balayage des noms.
+
 **Règles de syntaxe**
 
 - Les listes s'écrivent en YAML, une entrée par ligne précédée d'un tiret.
@@ -272,8 +298,18 @@ un MCP inexistant, nom de note en double, fichier généré périmé. Il n'écri
 rien et sort en code 1.
 
 Il tourne en intégration continue à chaque poussée
-(`.github/workflows/verifier-coffre.yml`) et se lance à la main avant un
-commit :
+(`.github/workflows/verifier-coffre.yml`), et localement en crochet de
+pré-commit — à activer une fois par clone :
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Le crochet refuse alors un commit qui laisserait le coffre incohérent, et
+rappelle la commande de régénération. `git commit --no-verify` le contourne
+ponctuellement ; la CI, elle, ne se contourne pas.
+
+À lancer aussi à la main, avant un commit :
 
 ```bash
 python3 scripts/regenerate_sommaire.py
