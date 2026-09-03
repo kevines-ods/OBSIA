@@ -1,9 +1,14 @@
-# Sommaire
+# Sommaire — stack-tauri
 
-> Généré automatiquement. Ne pas éditer à la main.
+> Généré par `scripts/regenerate_sommaire.py` depuis le contenu des notes.
+> Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §2).
 
-## Contenu
+1 note, le 2026-08-20.
 
-| Élément | Type |
-|---|---|
-| [2026-08-20-specification-stack-tauri.md](mémoire/assistant/stack-tauri/2026-08-20-specification-stack-tauri.md) | note |
+## Notes
+
+| Note | Statut | Résumé |
+|---|---|---|
+| [Spécification stack Tauri/Rust + multi-fournisseur](2026-08-20-specification-stack-tauri.md) | — | Application de bureau native Linux capable d'orchestrer des agents IA. |
+
+> Chemin dans le coffre : `mémoire/assistant/stack-tauri/`

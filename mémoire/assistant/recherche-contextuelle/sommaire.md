@@ -1,9 +1,14 @@
-# Sommaire
+# Sommaire — recherche-contextuelle
 
-> Généré automatiquement. Ne pas éditer à la main.
+> Généré par `scripts/regenerate_sommaire.py` depuis le contenu des notes.
+> Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §2).
 
-## Contenu
+1 note, le 2026-08-15.
 
-| Élément | Type |
-|---|---|
-| [2026-08-15-recherche-contextuelle-agentic.md](mémoire/assistant/recherche-contextuelle/2026-08-15-recherche-contextuelle-agentic.md) | note |
+## Notes
+
+| Note | Statut | Résumé |
+|---|---|---|
+| [Recherche contextuelle sur l'écosystème agentic](2026-08-15-recherche-contextuelle-agentic.md) | — | Comparer les solutions existantes avant de construire. |
+
+> Chemin dans le coffre : `mémoire/assistant/recherche-contextuelle/`
