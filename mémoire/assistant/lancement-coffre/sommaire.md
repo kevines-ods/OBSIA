@@ -1,9 +1,14 @@
-# Sommaire
+# Sommaire — lancement-coffre
 
-> Généré automatiquement. Ne pas éditer à la main.
+> Généré par `scripts/regenerate_sommaire.py` depuis le contenu des notes.
+> Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §2).
 
-## Contenu
+1 note, le 2026-08-27.
 
-| Élément | Type |
-|---|---|
-| [2026-08-27-lancement-coffre-obsia.md](mémoire/assistant/lancement-coffre/2026-08-27-lancement-coffre-obsia.md) | note |
+## Notes
+
+| Note | Statut | Résumé |
+|---|---|---|
+| [Lancement du coffre OBSIA](2026-08-27-lancement-coffre-obsia.md) | 🟢 Actif — fondations posées. | Phase 0 validée. Prochaine étape : runtime d'agents (Phase 1). |
+
+> Chemin dans le coffre : `mémoire/assistant/lancement-coffre/`

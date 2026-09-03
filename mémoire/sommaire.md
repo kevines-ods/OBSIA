@@ -1,10 +1,20 @@
-# Sommaire
+# Sommaire — mémoire
 
-> Généré automatiquement. Ne pas éditer à la main.
+> Généré par `scripts/regenerate_sommaire.py` depuis le contenu des notes.
+> Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §2).
 
-## Contenu
+1 sous-dossier, 16 notes, du 2026-08-15 au 2026-09-03.
 
-| Élément | Type |
-|---|---|
-| [README.md](mémoire/README.md) | note |
-| [assistant](mémoire/assistant/) | sous-dossier |
+## Sous-dossiers
+
+| Dossier | Notes | Entrée représentative |
+|---|---|---|
+| [assistant](assistant/) | 15 | 2026-09-03 — Comparaison OBSIA / OpenViking |
+
+## Notes
+
+| Note | Statut | Résumé |
+|---|---|---|
+| [/mémoire/ — Substrat de mémoire](README.md) | — | Chaque sous-dossier `<agent>/` est l'espace mémoire d'un agent, nommé au nom de l'agent (jamais `agent 1`, `agent 2`… |
+
+> Chemin dans le coffre : `mémoire/`

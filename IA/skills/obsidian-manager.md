@@ -25,6 +25,16 @@ des index.
 4. Si les index sont désynchronisés : régénérer via
    `scripts/regenerate_sommaire.py`. Jamais à la main.
 
+Un `sommaire.md` porte, pour chaque note, son statut et son résumé, extraits de
+la note elle-même. Il est fait pour décider d'ouvrir une note **sans l'ouvrir** :
+le lire d'abord, ouvrir ensuite, et seulement ce qui est nécessaire.
+
+Vérifier qu'ils sont à jour sans rien écrire (sort en erreur s'ils sont périmés) :
+
+```bash
+python3 scripts/regenerate_sommaire.py --verifier
+```
+
 ## Outils
 
 Recherche plein texte dans les notes :

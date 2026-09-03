@@ -32,11 +32,13 @@ OBSIA/                       le coffre — la racine du dépôt EST le coffre
 │   ├── MCP/                 outils structurés
 │   └── system/              VAULT-CONTRACT.md (les règles), index,
 │                            prompt-fondateur.md (intention d'origine)
-├── mémoire/                 par agent → projet → entrées datées
-├── brouillon/               seul dossier où un agent peut écrire
+├── mémoire/                 par agent → profil, préférences, expériences, projets
+├── brouillon/               zone de travail libre
 ├── scripts/
-│   ├── generer_prompt.py
-│   └── regenerate_sommaire.py
+│   ├── generer_prompt.py    prompt système depuis les frontmatters
+│   ├── regenerate_index.py  agents-index.md et skills-index.md
+│   ├── regenerate_sommaire.py  les sommaire.md de mémoire/
+│   └── verifier_coffre.py   cohérence du coffre — utilisé en CI
 ├── HISTORIQUE.md            ce qui a été décidé puis écarté
 ├── LICENSE                  AGPL-3.0-or-later
 ├── README.md
@@ -64,6 +66,25 @@ harness. L'option `--mcp` liste en plus les serveurs MCP que les agents
 déclarent, avec un squelette de configuration à compléter.
 
 Régénérer le prompt après toute modification d'un agent ou d'un skill.
+
+## Vérifier le coffre
+
+Avant de committer :
+
+```bash
+python3 scripts/regenerate_sommaire.py
+python3 scripts/regenerate_index.py
+python3 scripts/verifier_coffre.py
+```
+
+`verifier_coffre.py` refuse un frontmatter invalide, un `name` qui ne
+correspond pas au nom du fichier, une liste écrite en chaîne, une description
+repliée sur plusieurs lignes, un agent déclarant un skill ou un MCP
+inexistant, un nom de note en double, ou un fichier généré périmé. Il n'écrit
+rien et sort en code 1.
+
+Les mêmes contrôles tournent en intégration continue à chaque poussée. Aucune
+dépendance : bibliothèque standard de Python uniquement.
 
 ## Format
 
@@ -112,7 +133,9 @@ résumé :
   des patches Git soumis à revue.
 - Aucune suppression sans archivage préalable.
 - Aperçu obligatoire avant toute action touchant plusieurs fichiers.
-- Les `sommaire.md` sont régénérés par script, jamais édités à la main.
+- Les fichiers générés — `sommaire.md`, `agents-index.md`, `skills-index.md` —
+  sont régénérés par script, jamais édités à la main. Si un index contredit un
+  frontmatter, le frontmatter a raison.
 - Un agent et un skill sont deux choses distinctes. Un agent décide ; un skill
   décrit une manière de faire.
 

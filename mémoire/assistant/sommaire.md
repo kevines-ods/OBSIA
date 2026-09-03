@@ -1,14 +1,27 @@
-# Sommaire
+# Sommaire — assistant
 
-> Généré automatiquement. Ne pas éditer à la main.
+> Généré par `scripts/regenerate_sommaire.py` depuis le contenu des notes.
+> Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §2).
 
-## Contenu
+8 sous-dossiers, 15 notes, du 2026-08-15 au 2026-09-03.
 
-| Élément | Type |
-|---|---|
-| [automatisation-bureautique](mémoire/assistant/automatisation-bureautique/) | sous-dossier |
-| [comparaison-openviking](mémoire/assistant/comparaison-openviking/) | sous-dossier |
-| [interface-panneaux](mémoire/assistant/interface-panneaux/) | sous-dossier |
-| [lancement-coffre](mémoire/assistant/lancement-coffre/) | sous-dossier |
-| [recherche-contextuelle](mémoire/assistant/recherche-contextuelle/) | sous-dossier |
-| [stack-tauri](mémoire/assistant/stack-tauri/) | sous-dossier |
+## Sous-dossiers
+
+| Dossier | Notes | Entrée représentative |
+|---|---|---|
+| [automatisation-bureautique](automatisation-bureautique/) | 1 | 2026-08-26 — Automatisation tâches bureau |
+| [comparaison-openviking](comparaison-openviking/) | 5 | 2026-09-03 — Comparaison OBSIA / OpenViking |
+| [expériences](expériences/) | 2 | Frontmatter du coffre — pièges vérifiés |
+| [interface-panneaux](interface-panneaux/) | 1 | 2026-08-22 — Plan d'interface (3 panneaux) |
+| [lancement-coffre](lancement-coffre/) | 1 | 2026-08-27 — Lancement du coffre OBSIA |
+| [préférences](préférences/) | 2 | Licences et logiciel libre |
+| [recherche-contextuelle](recherche-contextuelle/) | 1 | 2026-08-15 — Recherche contextuelle sur l'écosystème agentic |
+| [stack-tauri](stack-tauri/) | 1 | 2026-08-20 — Spécification stack Tauri/Rust + multi-fournisseur |
+
+## Notes
+
+| Note | Statut | Résumé |
+|---|---|---|
+| [Profil utilisateur](profil-utilisateur.md) | 🟢 Vivante — à compléter au fil des sessions. | Faits durables sur la personne qui utilise ce coffre. Cette note évite de redemander à chaque session ce qui a déjà été… |
+
+> Chemin dans le coffre : `mémoire/assistant/`
