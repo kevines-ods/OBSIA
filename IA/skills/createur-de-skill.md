@@ -62,9 +62,15 @@ un fichier qu'on ne sait pas exister n'est jamais consulté.
 
 ## Structure d'un skill
 
+Par défaut, un skill est **un seul fichier** : `IA/skills/<nom>.md`. C'est la
+forme de tous les skills du coffre aujourd'hui — le plus gros fait 187 lignes.
+
+Quand le corps approche des 500 lignes, ou qu'une information devient
+consultative plutôt que procédurale, passer à la **forme dossier** :
+
 ```
-nom-du-skill/
-├── SKILL.md          (obligatoire)
+IA/skills/<nom>/
+├── <nom>.md          point d'entrée — porte le nom du dossier, PAS `SKILL.md`
 ├── scripts/          code exécutable — déterministe, non chargé en contexte
 ├── references/       documentation à charger au besoin
 └── assets/           fichiers réutilisés dans la sortie (gabarits, polices)
@@ -73,9 +79,15 @@ nom-du-skill/
 - **`scripts/`** : quand le même code est réécrit sans arrêt, ou quand il faut
   un résultat fiable et reproductible.
 - **`references/`** : schémas, doc d'API, procédures détaillées. Une information
-  vit soit dans SKILL.md, soit dans une référence — **jamais les deux**, sinon
-  les deux divergent.
+  vit soit dans le corps, soit dans une référence — **jamais les deux**, sinon
+  les deux divergent. Chaque fichier extrait est **cité depuis le corps**, en
+  disant quand le lire ; `scripts/verifier_coffre.py` avertit sinon.
 - **`assets/`** : ce qui finit dans le résultat produit, pas dans le contexte.
+
+> Le nom `SKILL.md`, courant ailleurs, est écarté ici : le §5 du contrat exige
+> que le fichier porte le `name`, et le §6 l'unicité des noms de notes dans le
+> coffre parent. Douze fichiers `SKILL.md` rendraient les rétroliens Obsidian
+> ambigus.
 
 ## Ce qu'un skill ne doit PAS contenir
 

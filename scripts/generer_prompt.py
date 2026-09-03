@@ -77,6 +77,29 @@ def lire_frontmatter(chemin: Path) -> dict | None:
     return donnees
 
 
+def fichiers_declaratifs(dossier: Path) -> list[Path]:
+    """Les fichiers de déclaration d'un dossier d'agents ou de skills.
+
+    Deux formes admises (cf. VAULT-CONTRACT.md §5) :
+      - `<dossier>/<nom>.md`         — forme plate, par défaut ;
+      - `<dossier>/<nom>/<nom>.md`   — forme dossier, quand le skill grossit et
+                                       s'accompagne de references/, scripts/…
+
+    Le point d'entrée porte le nom du skill, pas `SKILL.md` : le §5 impose que
+    le fichier porte le `name`, et le §6 l'unicité des noms de notes dans le
+    coffre parent — une douzaine de `SKILL.md` la violerait.
+    """
+    if not dossier.is_dir():
+        return []
+    trouves = list(dossier.glob("*.md"))
+    for sous in dossier.iterdir():
+        if sous.is_dir() and not sous.name.startswith("."):
+            entree = sous / (sous.name + ".md")
+            if entree.is_file():
+                trouves.append(entree)
+    return sorted(trouves, key=lambda p: p.stem)
+
+
 def collecter(dossier: Path, genre: str) -> list[dict]:
     """Récupère les frontmatters valides d'un dossier, triés par nom."""
     if not dossier.is_dir():
@@ -84,7 +107,7 @@ def collecter(dossier: Path, genre: str) -> list[dict]:
         return []
 
     resultats = []
-    for fichier in sorted(dossier.glob("*.md")):
+    for fichier in fichiers_declaratifs(dossier):
         fm = lire_frontmatter(fichier)
         if not fm:
             print(f"  ! sans frontmatter : {fichier.name}", file=sys.stderr)
@@ -95,7 +118,7 @@ def collecter(dossier: Path, genre: str) -> list[dict]:
             continue
         if not fm.get("description"):
             print(f"  ! description manquante : {fichier.name}", file=sys.stderr)
-        fm["_fichier"] = fichier.name
+        fm["_fichier"] = fichier.relative_to(dossier).as_posix()
         resultats.append(fm)
 
     return resultats

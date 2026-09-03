@@ -86,7 +86,18 @@ rien et sort en code 1.
 Les mêmes contrôles tournent en intégration continue à chaque poussée. Aucune
 dépendance : bibliothèque standard de Python uniquement.
 
+Pour les lancer automatiquement avant chaque commit, une fois par clone :
+
+```bash
+git config core.hooksPath .githooks
+```
+
 ## Format
+
+Un skill est un fichier `IA/skills/<nom>.md`. Quand il grossit — au-delà de
+500 lignes environ — il devient un dossier `IA/skills/<nom>/` dont le point
+d'entrée s'appelle `<nom>.md`, et non `SKILL.md`, aux côtés de `references/`,
+`scripts/` et `assets/`. Détail dans `VAULT-CONTRACT.md` §5.
 
 Tout fichier agent ou skill commence par un frontmatter YAML strict.
 
