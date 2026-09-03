@@ -65,12 +65,15 @@ revanche sans dommage — testé également.
 
 ## Interprétation
 
-L'écart `proxmox` / `traefik` n'est pas une coquille d'index : c'est une
-**question ouverte sur le périmètre de l'agent**. Soit `assistant` doit
-mobiliser ces deux skills et sa liste est incomplète, soit ils attendent un
-agent d'infrastructure qui n'existe pas encore. Le contrat §10 demandant de
-demander plutôt que d'agir en cas de doute sur le périmètre, l'index dit la
-vérité (`—`) et la décision reste à prendre.
+L'écart `proxmox` / `traefik` n'était pas une coquille d'index : c'était une
+question de périmètre. **Tranchée le jour même** : `assistant` dispose de tous
+les skills du coffre ; sa liste était simplement incomplète. Les deux skills
+ont été ajoutés à `IA/agents/assistant.md`, entre `conteneurs-docker` et
+`sauvegardes`, où le bloc infrastructure se lit de bas en haut : conteneurs →
+reverse proxy → hyperviseur → sauvegardes.
+
+La spécialisation viendra par la création d'agents dédiés, pas par le retrait
+de skills à `assistant`.
 
 Le fait qu'un index maintenu à la main ait pu mentir pendant des mois sans que
 rien ne le signale est l'argument le plus concret en faveur du point 4 de
@@ -81,13 +84,15 @@ l'index depuis les frontmatters qui a fait tomber l'écart.
 
 ## Questions ouvertes
 
-- [ ] `assistant` doit-il déclarer `proxmox` et `traefik` ?
-- [ ] `skills-index.md` doit-il devenir un fichier généré par script, comme
-      `sommaire.md` ? La régénération de ce jour a été faite par un script
-      jetable. Le pérenniser relève du point 4.
-- [ ] Faut-il apprendre les scalaires repliés à `lire_frontmatter()` plutôt que
-      de les interdire ? Une ligne de 300 caractères reste pénible à relire
-      dans un éditeur.
+- [x] `assistant` doit-il déclarer `proxmox` et `traefik` ? — **Oui**, et tous
+      les autres. Les agents spécialisés viendront plus tard, par ajout.
+- [x] Faut-il apprendre les scalaires repliés à `lire_frontmatter()` ? —
+      **Non pour l'instant** : les lignes longues ne gênent pas à la relecture.
+      À rouvrir si l'usage dit le contraire.
+- [ ] `agents-index.md` et `skills-index.md` doivent-ils devenir des fichiers
+      générés par script, comme `sommaire.md` ? Les deux ont été régénérés ce
+      jour par un script **jetable**, donc rien n'empêche la prochaine
+      divergence. Le pérenniser relève du point 4.
 
 ---
 
