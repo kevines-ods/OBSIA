@@ -51,10 +51,10 @@ erreur à corriger, pas une convention à suivre.
 - Toute action touchant plusieurs fichiers exige un **preview** affiché avant
   exécution, listant les chemins concernés — que l'écriture soit directe ou
   passe par patch.
-- Les fichiers `sommaire.md` ne sont **jamais** édités à la main ni par un agent,
-  même dans une zone en écriture directe : ils sont régénérés par
-  `scripts/regenerate_sommaire.py` (chemin relatif depuis `IA/system/` :
-  `../../scripts/regenerate_sommaire.py`).
+- Les **fichiers générés** ne sont jamais édités à la main ni par un agent,
+  même dans une zone en écriture directe : `sommaire.md`, `agents-index.md` et
+  `skills-index.md` sont régénérés par les scripts du §11, qui donne la liste
+  complète et la commande.
 
 ## 3. Périmètre hors du coffre
 
@@ -136,9 +136,40 @@ Tout fichier agent ou skill commence par un frontmatter YAML valide.
   parent**, pas seulement dans `OBSIA/`.
 - Les liens vers ce contrat s'écrivent en chemin relatif depuis `IA/agents/` ou
   `IA/skills/` : `../system/VAULT-CONTRACT.md`.
-- **Structure de la mémoire** : `mémoire/<nom-agent>/<nom-projet>/AAAA-MM-JJ-titre.md`.
-  Les dossiers portent le **nom de l'agent** et le **nom du projet** — jamais
-  `agent 1`, `agent 2`, `projets 1`, `projets 2`, etc.
+- **Structure de la mémoire.** L'espace d'un agent porte son nom — jamais
+  `agent 1`, `agent 2` — et distingue ce qui est **daté** de ce qui est
+  **durable** :
+
+  ```
+  mémoire/<nom-agent>/
+  ├── profil-utilisateur.md          faits stables sur l'utilisateur et sa machine
+  ├── préférences/<sujet>.md         goûts et règles de conduite transversaux
+  ├── expériences/<sujet>.md         leçons réutilisables, tirées d'un cas réel
+  └── <nom-projet>/AAAA-MM-JJ-titre.md   avancement daté d'un projet
+  ```
+
+  Les noms de projet sont explicites — jamais `projets 1`, `projets 2`.
+
+- **Où écrire, selon la nature de l'information** :
+
+  | Ce qu'on a appris | Destination |
+  | --- | --- |
+  | un fait stable sur l'utilisateur, son poste, son infrastructure | `profil-utilisateur.md`, **mis à jour sur place** |
+  | un goût ou une règle qui vaudra pour d'autres projets | `préférences/<sujet>.md` |
+  | une leçon tirée d'un échec ou d'une manœuvre qui a marché | `expériences/<sujet>.md` |
+  | une décision ou un avancement propre à un projet | `<nom-projet>/AAAA-MM-JJ-titre.md` |
+
+  Les trois premières ne sont **pas datées** : une préférence qui change se
+  corrige, elle ne s'empile pas. Seules les notes de projet portent une date,
+  parce qu'elles racontent une chronologie.
+
+  Dans le doute, écrire dans le projet : une note de projet peut être distillée
+  plus tard vers `préférences/` ou `expériences/`, l'inverse fait perdre le
+  contexte.
+
+- Une note durable n'est utile que si elle est **retrouvée** : son nom dit son
+  sujet (`licences-et-logiciel-libre.md`, pas `notes.md`) et respecte la règle
+  d'unicité ci-dessus.
 
 ## 7. Périmètre de lecture
 
@@ -181,15 +212,51 @@ citer ou l'injecter, il ne le redéfinit jamais (cf. préambule) :
      `permission: elevated` quand il touche un système externe : réseau,
      dépôt distant).
 3. Mémoire — dès qu'une décision est prise ou qu'une information mérite
-   d'être retrouvée plus tard : écris une entrée dans
-   `mémoire/<nom-agent>/<nom-projet>/AAAA-MM-JJ-titre.md`. Le nom de projet
-   est explicite (jamais « projet 1 ») ; crée le dossier s'il n'existe pas.
-   Vérifie au §2 si l'écriture est directe ou passe par patch. Ne touche
-   JAMAIS `sommaire.md` à la main : il se régénère via
-   `scripts/regenerate_sommaire.py`.
+   d'être retrouvée plus tard : écris-la à l'emplacement que le §6 assigne à
+   sa nature — `profil-utilisateur.md`, `préférences/`, `expériences/`, ou le
+   dossier du projet. Crée le dossier s'il n'existe pas. Vérifie au §2 si
+   l'écriture est directe ou passe par patch.
+
+   Avant d'écrire une note durable, **lis celle qui existe déjà** sur le même
+   sujet : un fait qui change se corrige sur place, il ne se réécrit pas à
+   côté. Ne touche JAMAIS un fichier généré à la main — voir §11.
 4. Cite les chemins des fichiers utilisés dans ta réponse.
 
 Ne charge pas de fichier « pour voir ». Si aucun skill ne correspond, réponds
 directement en le signalant. Un skill `read_only: true` n'exécute aucune
 commande modifiant l'état du système : s'il conclut à une action, énonce-la
 sans la faire.
+
+## 11. Fichiers générés et vérification
+
+Certains fichiers du coffre **décrivent** d'autres fichiers. Ils sont produits
+par script, jamais saisis : écrits à la main, ils divergent de leur source sans
+que rien ne le signale.
+
+| Fichier | Produit par | Source de vérité |
+| --- | --- | --- |
+| `mémoire/**/sommaire.md` | `scripts/regenerate_sommaire.py` | le contenu des notes |
+| `IA/system/agents-index.md` | `scripts/regenerate_index.py` | le frontmatter des agents |
+| `IA/system/skills-index.md` | `scripts/regenerate_index.py` | le frontmatter des skills |
+
+Corollaire : si un index et un frontmatter se contredisent, **le frontmatter a
+raison**. On corrige la source, puis on régénère — jamais l'inverse.
+
+`scripts/verifier_coffre.py` refuse un coffre incohérent : frontmatter
+invalide, `name` différent du nom de fichier, liste écrite en chaîne,
+description repliée sur plusieurs lignes physiques, agent déclarant un skill ou
+un MCP inexistant, nom de note en double, fichier généré périmé. Il n'écrit
+rien et sort en code 1.
+
+Il tourne en intégration continue à chaque poussée
+(`.github/workflows/verifier-coffre.yml`) et se lance à la main avant un
+commit :
+
+```bash
+python3 scripts/regenerate_sommaire.py
+python3 scripts/regenerate_index.py
+python3 scripts/verifier_coffre.py
+```
+
+Ces scripts n'utilisent que la bibliothèque standard de Python, à dessein : le
+coffre ne doit dépendre d'aucune installation pour être vérifiable.

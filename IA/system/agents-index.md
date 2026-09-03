@@ -7,5 +7,5 @@
 > Règle (cf. `VAULT-CONTRACT.md` §6) : un agent = un fichier dans `IA/agents/`,
 > nommé au `name` du frontmatter. Un skill n'est jamais un agent.
 
-> Les colonnes Skills et MCP reproduisent les listes du frontmatter de l'agent,
-> qui fait foi.
+> Fichier **généré** par `scripts/regenerate_index.py` depuis les frontmatters,
+> qui font foi. Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §11).

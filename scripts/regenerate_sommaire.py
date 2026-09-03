@@ -213,7 +213,7 @@ def rendre(dossier: str, cumul: dict) -> str:
 
     if dossiers:
         L += ["## Sous-dossiers", "",
-              "| Dossier | Notes | Plus récente |", "|---|---|---|"]
+              "| Dossier | Notes | Entrée représentative |", "|---|---|---|"]
         for d in dossiers:
             infos = cumul.get(os.path.join(dossier, d))
             if not infos:
@@ -255,8 +255,10 @@ def main() -> int:
     for chemin in dossiers:
         notes = [lire_note(os.path.join(chemin, f)) for f in notes_de(chemin)]
         datees = [n for n in notes if n["date"]]
-        cumul[chemin] = {"notes": notes,
-                         "recente": max(datees, key=lambda n: n["date"]) if datees else None}
+        # À défaut de note datée (profil, préférences, expériences), la première
+        # note tient lieu de représentant : le dossier reste décrit.
+        representant = max(datees, key=lambda n: n["date"]) if datees else (notes[0] if notes else None)
+        cumul[chemin] = {"notes": notes, "recente": representant}
         cumul[chemin].update(agreger(chemin, cumul))
 
     perimes, ecrits = [], 0

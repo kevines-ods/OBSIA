@@ -1,0 +1,32 @@
+name: Vérifier le coffre
+
+# Le contrat pose des règles que rien ne contrôlait. Ce workflow les fait
+# respecter : frontmatters valides, références d'agents existantes, index et
+# sommaires à jour vis-à-vis des fichiers dont ils dérivent.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Aucune dépendance : les scripts du coffre n'utilisent que la
+      # bibliothèque standard, à dessein.
+      - name: Cohérence du coffre
+        run: python3 scripts/verifier_coffre.py
+
+      - name: Le prompt système se génère
+        run: python3 scripts/generer_prompt.py > /dev/null

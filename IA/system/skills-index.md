@@ -18,7 +18,7 @@
 > `core` = indispensable au fonctionnement du coffre ; `outil` = compétence
 > ponctuelle. (cf. `VAULT-CONTRACT.md` §5)
 
-> La colonne description reproduit **mot pour mot** le champ `description` du
-> frontmatter de chaque skill, qui fait foi. C'est le seul élément toujours
-> présent en contexte : il doit suffire à décider d'ouvrir le skill ou non,
-> sans le lire. Si les deux divergent, corriger l'index, pas le skill.
+> Fichier **généré** par `scripts/regenerate_index.py`. La colonne description
+> reproduit mot pour mot le champ `description` du frontmatter, qui fait foi :
+> c'est le seul élément toujours présent en contexte, il doit suffire à décider
+> d'ouvrir le skill sans le lire. Ne pas éditer à la main (§11).
