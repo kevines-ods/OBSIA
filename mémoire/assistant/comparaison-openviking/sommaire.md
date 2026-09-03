@@ -3,13 +3,14 @@
 > Généré par `scripts/regenerate_sommaire.py` depuis le contenu des notes.
 > Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §2).
 
-6 notes, le 2026-09-03.
+7 notes, le 2026-09-03.
 
 ## Notes
 
 | Note | Statut | Résumé |
 |---|---|---|
 | [Comparaison OBSIA / OpenViking](2026-09-03-comparaison-openviking.md) | 🟢 Analyse terminée. Aucune modification appliquée au coffre… | OpenViking et OBSIA ont eu la même intuition — le contexte d'un agent est une arborescence de fichiers, pas un nuage de… |
+| [Faut-il plus de couches de mémoire ? Et clôture de session](2026-09-03-couches-de-memoire-et-cloture.md) | 🟢 Tranché — pas de troisième couche. Skill… | Réponse mesurée à une question posée en session, puis application du point 6 de 2026-09-03-comparaison-openviking. |
 | [Réécriture des descriptions de skills](2026-09-03-descriptions-de-skills.md) | 🟢 Appliqué — 12 skills + `IA/system/skills-index.md`. | Application du point 1 de 2026-09-03-comparaison-openviking : donner à chaque skill une description qui dise quoi… |
 | [Forme dossier des skills, et crochet de pré-commit](2026-09-03-skill-dossier-et-crochet.md) | 🟢 Appliqué — forme dossier reconnue et contrôlée, crochet… | Application du point 5 de 2026-09-03-comparaison-openviking, plus le crochet Git laissé en question ouverte au point 4. |
 | [Sommaires enrichis en couche de résumé](2026-09-03-sommaires-enrichis.md) | 🟢 Appliqué — `scripts/regenerate_sommaire.py` réécrit, 8… | Application du point 2 de 2026-09-03-comparaison-openviking : faire du `sommaire.md` l'équivalent des couches L0/L1… |
