@@ -13,6 +13,8 @@ skills:
   - diagnostic-linux
   - remediation-linux
   - conteneurs-docker
+  - traefik
+  - proxmox
   - sauvegardes
 mcp:
   - git-hub

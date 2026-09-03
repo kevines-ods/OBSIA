@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: mermaid
-description: Générer des diagrammes Mermaid en SVG ou en ASCII — flux, séquences, états, classes, entités.
+description: Générer des diagrammes Mermaid en SVG — flux, séquences, états, classes, entités. À charger quand une structure, un enchaînement ou une machine à états se lit mieux en image qu'en texte. Inutile pour une simple liste ou un tableau, que le Markdown rend déjà.
 type: outil
 read_only: false
 ---

@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: bureautique
-description: Créer, lire et modifier des documents Word, Excel et PowerPoint — et convertir entre formats.
+description: Créer, lire et modifier des documents Word, Excel, PowerPoint et OpenDocument, et convertir entre formats. À charger dès qu'un fichier .docx, .xlsx, .pptx, .odt, .ods ou .odp est en entrée ou en sortie. Pas pour les PDF — voir `pdf`.
 type: outil
 read_only: false
 ---

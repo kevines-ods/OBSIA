@@ -22,3 +22,7 @@ inventaire-*.yml
 secrets/
 .archive/
 .backup-reconstruction/
+
+# Caches Python — créés par les scripts du coffre
+__pycache__/
+*.pyc

@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: remediation-linux
-description: Corriger un problème système Linux — redémarrer un service, libérer de l'espace, restaurer une configuration.
+description: Corriger un système Linux — redémarrer un service, libérer de l'espace, restaurer une configuration, revenir en arrière. À charger seulement après un constat écrit par `diagnostic-linux`, jamais seul. Chaque action est annoncée, puis vérifiée avant la suivante.
 type: outil
 read_only: false
 ---

@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: cron
-description: Planifier des tâches récurrentes — créer, lister, modifier, supprimer un déclenchement horaire.
+description: Planifier, lister, modifier ou supprimer une tâche récurrente via les timers systemd utilisateur. À charger dès qu'une action doit se répéter à heure fixe, et toujours avant d'en créer une, pour lister l'existant. Ne couvre ni le cron classique ni les tâches root.
 type: outil
 read_only: false
 ---
