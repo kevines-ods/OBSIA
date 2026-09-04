@@ -20,8 +20,10 @@ inventaire-*.yml
 !inventaire-*.example.yml
 
 secrets/
-.archive/
 .backup-reconstruction/
+
+# .archive/ n'est PAS ignoré : le §2 du contrat impose un archivage avant toute
+# suppression. Ignoré, cet archivage ne survivait pas à un clone neuf.
 
 # Caches Python — créés par les scripts du coffre
 __pycache__/

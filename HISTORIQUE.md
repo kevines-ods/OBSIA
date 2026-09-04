@@ -45,8 +45,10 @@ aucun langage, aucun outil de construction : il décrit *quoi* faire, et
 n'importe quel harness — Claude Code, OpenCode, Aider, Goose, ou une interface
 dédiée — fournit *avec quoi*.
 
-L'interface vit dans son propre dépôt : **https://github.com/kevines-ods/ObsiaUi**.
-Son historique complet (29 commits) y a été transféré ; rien n'a été perdu.
+L'interface a été transférée dans un dépôt distinct, avec son historique
+complet ; rien n'a été perdu. Ce dépôt n'est **pas nommé ici** : le coffre ne
+crée aucun lien vers une interface, fût-elle la sienne. Un lien est un
+attachement, et OBSIA n'en veut aucun.
 
 ### Ce qui a disparu du coffre avec ce changement
 
@@ -56,7 +58,7 @@ Son historique complet (29 commits) y a été transféré ; rien n'a été perdu
   d'outillage.
 - La description de l'interface (fenêtre à trois zones, sélecteur de
   fournisseur, modification de l'UI par le chat). Cette ambition reste valable,
-  mais elle appartient à ObsiaUi.
+  mais elle n'appartient plus à ce dépôt.
 - Trois documents du coffre — `RUNTIME.md`, `VAULT.md`, `README.md` — qui
   décrivaient le système à travers son interface et redisaient, parfois en se
   contredisant, ce que le contrat énonce déjà. Deux règles qu'eux seuls
@@ -66,16 +68,12 @@ Son historique complet (29 commits) y a été transféré ; rien n'a été perdu
 ### Esquisse d'architecture d'interface (ancien `RUNTIME.md` de la racine)
 
 Un `RUNTIME.md` vivait à la racine, distinct de celui du coffre — d'où des
-ouvertures du mauvais fichier. Son seul contenu propre :
+ouvertures du mauvais fichier. Son contenu propre décrivait l'architecture
+d'un backend d'interface : modules de fenêtrage, d'état, d'IPC et de sandbox.
 
-> ## Architecture backend
-> ### Modules principaux
-> - `app`: Gestion des fenêtres et menus Tauri
-> - `state`: Gestion de l'état (State<'_, T>)
-> - `commands`: Commandes Tauri (IPC)
-> - `sandbox`: Sécurité et capability-based permissions
-
-Conservé pour mémoire ; concerne l'interface, donc ObsiaUi.
+Il n'est pas reproduit ici. Il nommait un cadre applicatif précis, et le
+coffre ne nomme aucun outil d'interface — pas même pour mémoire. L'historique
+Git le conserve pour qui voudrait le relire.
 
 ### Dossiers du coffre parent (ancien `VAULT.md` de la racine)
 
@@ -95,13 +93,18 @@ défaut jusque-là, est levé.
 
 ---
 
-## Le bibliothécaire n'a jamais existé
+## Un agent qui n'a jamais existé
 
 Une confusion récurrente a fait croire que le skill `obsidian-manager` avait été
-renommé en un agent `bibliothécaire`.
+renommé en agent. Aucun fichier correspondant n'a jamais existé dans
+`IA/agents/` : `obsidian-manager` est un **skill**, utilisé par l'agent
+`assistant`.
 
-Aucun fichier `IA/agents/bibliothécaire.md` n'a jamais existé dans ce dépôt.
-`obsidian-manager` est un **skill**, utilisé par l'agent `assistant`.
+Le nom qu'on lui prêtait n'est plus écrit nulle part dans le coffre — pas même
+ici. Le citer, fût-ce pour le démentir, le maintient en vie : c'est ce qui
+l'avait fait survivre à plusieurs corrections. La règle est désormais au §1 du
+contrat : **seul `assistant` peut être nommé**, et
+`scripts/verifier_coffre.py` refuse tout autre nom d'agent.
 
 C'est ce qu'établit `VAULT-CONTRACT.md` §1, qui fait foi.
 

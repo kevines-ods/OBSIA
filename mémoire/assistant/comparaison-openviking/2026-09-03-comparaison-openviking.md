@@ -201,7 +201,7 @@ dans le tableau. Aucun LLM : l'information est déjà écrite dans les notes.
 ```markdown
 | Élément | Statut | Résumé |
 |---|---|---|
-| [2026-08-27-lancement-coffre-obsia.md](…) | 🟢 Actif | Fondations posées : orchestration, Tauri, coffre Obsidian |
+| [2026-08-27-lancement-coffre-obsia.md](…) | 🟢 Actif | Fondations posées : orchestration, multi-fournisseur, coffre Obsidian |
 ```
 
 Ajouter en tête du fichier un paragraphe d'une ligne décrivant le dossier =

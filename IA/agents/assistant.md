@@ -19,6 +19,7 @@ skills:
   - sauvegardes
 mcp:
   - git-hub
+  - chrome-devtools
 read_only: false
 ---
 

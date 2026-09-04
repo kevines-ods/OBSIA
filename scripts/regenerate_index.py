@@ -18,7 +18,8 @@ import sys
 sys.dont_write_bytecode = True                    # pas de __pycache__ dans le coffre
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from generer_prompt import RACINE_DEFAUT, collecter   # même lecteur que le prompt
+from generer_prompt import (RACINE_DEFAUT, collecter,   # même lecteur que le prompt
+                            lire_frontmatter)
 
 RACINE = RACINE_DEFAUT
 
@@ -63,6 +64,56 @@ def rendre_skills(agents: list[dict], skills: list[dict]) -> str:
     return "\n".join(L)
 
 
+def rendre_ia_readme(agents: list[dict], skills: list[dict], mcp: list[dict]) -> str:
+    """README de `IA/`, dérivé lui aussi des frontmatters.
+
+    Il énumérait ses fichiers à la main : `cloture-de-session` y a manqué
+    pendant plusieurs jours sans que rien ne le signale.
+    """
+    L = ["# /IA/ — Définition des agents, skills et outils", "",
+         "Toutes les définitions d'agents, de compétences (skills) et d'outils",
+         "structurés (MCP) vivent ici. C'est la partie déclarative du coffre.", "",
+         "Les règles de format sont au §5 de `system/VAULT-CONTRACT.md`, qui fait foi",
+         "et n'est pas reformulé ici.", "",
+         "## Agents — `IA/agents/`", ""]
+    for a in agents:
+        L.append("- **%s** — %s" % (a["name"], a.get("description", "")))
+    L += ["", "## Skills — `IA/skills/`", ""]
+    for s in skills:
+        L.append("- **%s** (`%s`) — %s"
+                 % (s["name"], s.get("type", "?"), s.get("description", "")))
+    L += ["", "## MCP — `IA/MCP/`", ""]
+    for m in mcp:
+        L.append("- **%s** (`%s`, permission `%s`) — %s"
+                 % (m["name"], m.get("transport", "?"), m.get("permission", "?"),
+                    m.get("description", "")))
+    L += ["",
+          "Gabarit de configuration à compléter côté harness : `MCP/mcp.example.json`.",
+          "",
+          "## `IA/system/`", "",
+          "- `VAULT-CONTRACT.md` — les règles. Fait foi.",
+          "- `agents-index.md`, `skills-index.md` — index générés (§11).",
+          "- `providers.md` — repère pour choisir un modèle. Aucune clé n'y vit.",
+          "- `prompt-fondateur.md` — intention d'origine, non normative.",
+          "- `session-log/` — une note par session de travail (§9).",
+          "",
+          "> Fichier **généré** par `scripts/regenerate_index.py` depuis les",
+          "> frontmatters, qui font foi. Ne pas éditer à la main (§11).",
+          ""]
+    return "\n".join(L)
+
+
+def lire_mcp(dossier) -> list[dict]:
+    """Frontmatters de IA/MCP/, triés par nom. Format décrit au §5."""
+    resultats = []
+    for chemin in sorted(dossier.glob("*.md")) if dossier.is_dir() else []:
+        fm = lire_frontmatter(chemin)
+        if fm and fm.get("kind") == "mcp":
+            fm["_fichier"] = chemin.name
+            resultats.append(fm)
+    return resultats
+
+
 def main() -> int:
     verifier = "--verifier" in sys.argv
 
@@ -72,9 +123,12 @@ def main() -> int:
         print("Aucun agent ou aucun skill collecté — index non régénéré.", file=sys.stderr)
         return 1
 
+    mcp = lire_mcp(RACINE / "IA" / "MCP")
+
     attendus = {
         RACINE / "IA" / "system" / "agents-index.md": rendre_agents(agents),
         RACINE / "IA" / "system" / "skills-index.md": rendre_skills(agents, skills),
+        RACINE / "IA" / "README.md": rendre_ia_readme(agents, skills, mcp),
     }
 
     perimes, ecrits = [], 0

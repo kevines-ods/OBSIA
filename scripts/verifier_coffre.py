@@ -117,6 +117,42 @@ def verifier_fichier(chemin: Path, genre: str) -> dict | None:
 
 # ---------------------------------------------------------------------- checks
 
+TRANSPORTS = ("stdio", "http")
+PERMISSIONS = ("normal", "elevated")
+
+
+def verifier_mcp(dossier: Path) -> list[dict]:
+    """Frontmatter des fichiers de IA/MCP/ (§5).
+
+    Format distinct de celui des agents et des skills : pas de `read_only`,
+    mais `transport` et `permission`.
+    """
+    resultats = []
+    for chemin in sorted(dossier.glob("*.md")) if dossier.is_dir() else []:
+        fm = lire_frontmatter(chemin)
+        rel = chemin.relative_to(RACINE)
+        if fm is None:
+            erreur(rel, "frontmatter absent ou non fermé")
+            continue
+        for champ in ("schema", "kind", "name", "description", "type",
+                      "transport", "permission"):
+            if champ not in fm:
+                erreur(rel, "champ obligatoire manquant : `%s` (§5)" % champ)
+        if fm.get("kind") != "mcp":
+            erreur(rel, "`kind: %s` attendu `mcp` (§5)" % fm.get("kind"))
+        if fm.get("name") and fm["name"] != chemin.stem:
+            erreur(rel, "`name: %s` ≠ nom du fichier `%s` (§5)" % (fm["name"], chemin.stem))
+        if fm.get("transport") not in TRANSPORTS:
+            erreur(rel, "`transport: %s` — attendu %s (§5)"
+                   % (fm.get("transport"), " ou ".join(TRANSPORTS)))
+        if fm.get("permission") not in PERMISSIONS:
+            erreur(rel, "`permission: %s` — attendu %s (§5)"
+                   % (fm.get("permission"), " ou ".join(PERMISSIONS)))
+        fm["_chemin"] = rel
+        resultats.append(fm)
+    return resultats
+
+
 def verifier_references(agents, skills):
     """Un agent ne déclare que des skills et des MCP qui existent."""
     connus = {s["name"] for s in skills if s.get("name")}
@@ -135,6 +171,12 @@ def verifier_references(agents, skills):
     for s in skills:
         if s.get("name") and s["name"] not in utilises:
             avertir(s["_chemin"], "skill déclaré par aucun agent")
+
+    actifs = {m for a in agents for m in a.get("mcp", [])}
+    for p in sorted((RACINE / "IA" / "MCP").glob("*.md")) if (RACINE / "IA" / "MCP").is_dir() else []:
+        if p.stem not in actifs:
+            avertir(p.relative_to(RACINE),
+                    "MCP déclaré par aucun agent — inutilisable en l'état (§10.2)")
 
 
 def verifier_forme_dossier(dossier: Path, genre: str):
@@ -165,6 +207,39 @@ def verifier_forme_dossier(dossier: Path, genre: str):
                 avertir(rel, "`references/%s` n'est cité nulle part dans `%s.md` — "
                              "un fichier qu'on ne sait pas exister n'est jamais lu"
                         % (annexe.relative_to(sous / "references").as_posix(), sous.name))
+
+
+# Formes réelles sous lesquelles un nom d'agent apparaît dans le coffre :
+#   l'agent `assistant`   ·   un agent « untel »   ·   agent[untel] --> …
+# Le nom capturé doit ressembler à un nom : lettres, chiffres, tirets, espaces.
+# Exclure « : » et « | » écarte `read_only: false` et les séparateurs de tableau.
+AGENT_NOMME = re.compile(
+    r"agents?\s*[«\"`\[]\s*([^\W\d_][\w \-]{1,39}?)\s*[»\"`\]]", re.UNICODE)
+
+
+def verifier_agents_nommes(agents):
+    """§1 : seul un agent qui a son fichier dans IA/agents/ peut être nommé.
+
+    Nommer un agent avant qu'il existe le fait exister dans les têtes — c'est
+    ainsi qu'un agent fantôme s'est installé dans ce coffre pendant des mois.
+    """
+    declares = {a["name"] for a in agents if a.get("name")}
+    for chemin in sorted(RACINE.rglob("*.md")):
+        if any(part.startswith(".") for part in chemin.relative_to(RACINE).parts):
+            continue
+        rel = chemin.relative_to(RACINE)
+        try:
+            texte = chemin.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        for cite in {m.group(1) for m in AGENT_NOMME.finditer(texte)}:
+            if cite in declares:
+                continue
+            # contre-exemples de nommage de dossier : ne désignent personne
+            if re.fullmatch(r"agents?\s*\d+", cite) or cite.startswith(("nom-", "<")):
+                continue
+            erreur(rel, "nomme l'agent `%s`, qui n'a pas de fichier dans "
+                        "IA/agents/ (§1 : seul un agent existant peut être nommé)" % cite)
 
 
 def verifier_unicite_des_noms():
@@ -220,7 +295,9 @@ def main() -> int:
     if not skills:
         erreur("IA/skills/", "aucun skill valide trouvé")
 
+    verifier_mcp(RACINE / "IA" / "MCP")
     verifier_references(agents, skills)
+    verifier_agents_nommes(agents)
     verifier_unicite_des_noms()
     verifier_derives()
 

@@ -67,12 +67,15 @@ Le gain se voit sur `mémoire/assistant/sommaire.md` : il listait six noms de
 dossiers. Il donne maintenant, pour chacun, son volume et sa note la plus
 récente datée. Décider où chercher ne demande plus d'ouvrir quoi que ce soit.
 
-La limite est visible sur `interface-panneaux` : son résumé est « Les deux
-panneaux latéraux sont réductibles. » — vrai, présent dans la note, mais
-secondaire. Cette note n'a ni `## Statut` ni `## Objectif`, et le générateur
-prend ce qu'il trouve. Ce n'est pas un défaut du script : c'est une note mal
-structurée pour l'extraction, et le sommaire le rend visible. La réponse est
-d'ajouter un chapeau à la note, pas de complexifier le générateur.
+La limite s'est vue sur une note dépourvue de chapeau et de `## Statut`, qui
+s'ouvrait sur un schéma en caractères d'encadrement : le générateur a pris la
+première phrase de prose qu'il a trouvée, vraie mais secondaire. Ce n'est pas
+un défaut du script — c'est une note mal structurée pour l'extraction, et le
+sommaire l'a rendu visible. La réponse est d'ajouter un chapeau à la note, pas
+de complexifier le générateur.
+
+(La note en question a depuis été archivée pour une autre raison ; la leçon,
+elle, vaut toujours.)
 
 Enseignement plus large : plus les notes suivent une structure régulière
 (chapeau, `## Statut`), meilleur est le sommaire. Le générateur récompense la

@@ -71,7 +71,7 @@ un usage hors coffre (documentation, export, README GitHub).
 ```markdown
 ​```mermaid
 graph TD
-  agent[bibliothécaire] --> skill[obsidian-manager]
+  agent[assistant] --> skill[obsidian-manager]
   skill --> coffre[(OBSIA)]
 ​```
 ```

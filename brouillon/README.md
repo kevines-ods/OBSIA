@@ -10,5 +10,7 @@ Zone d'**écriture autorisée** pour les agents `read_only: false`.
 - Dès qu'un contenu est stable, il est déplacé dans `mémoire/<agent>/<projet>/`
   — également en écriture directe, donc sans patch.
 - Cette zone est nettoyée régulièrement ; rien ici n'est garanti conservé.
-- Elle échappe aux sommaires générés et à `scripts/verifier_coffre.py` : rien
-  de ce qui vit ici n'est indexé.
+- Elle échappe aux **sommaires** générés : rien de ce qui vit ici n'y apparaît.
+  Elle n'échappe pas pour autant à `scripts/verifier_coffre.py` — le contrôle
+  d'unicité des noms de notes (§6) parcourt tout le dépôt, `brouillon/`
+  compris. Y déposer la copie d'une note existante fait échouer le commit.

@@ -49,9 +49,10 @@ Il n'y a pas de sous-dossier « coffre » : le dépôt lui-même en tient lieu. 
 l'utiliser dans Obsidian, cloner `OBSIA/` **dans** un coffre Obsidian existant —
 c'est ce coffre-là qu'on appelle ici le *coffre parent*.
 
-L'interface graphique vit dans un dépôt séparé — **[ObsiaUi](https://github.com/kevines-ods/ObsiaUi)** —
-et consomme ce coffre sans en faire partie. Le coffre, lui, ne connaît aucune
-interface : il fonctionne avec n'importe quel harness.
+Le coffre ne connaît aucune interface et n'en nomme aucune. Il décrit *quoi*
+faire ; le harness de ton choix fournit *avec quoi*. Rien ici ne dépend d'un
+programme particulier — c'est la condition pour qu'OBSIA reste libre de ses
+mouvements.
 
 ## Démarrage
 

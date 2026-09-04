@@ -1,4 +1,6 @@
 ---
+schema: 1
+kind: mcp
 name: chrome-devtools
 description: Navigation, capture et automatisation web via Chrome DevTools.
 type: tool
@@ -38,4 +40,6 @@ Liste complète et à jour : `docs/tool-reference.md` du dépôt officiel.
 - Ne naviguer que vers des URLs autorisées (listes blanches optionnelles).
 - Le profil lancé par `--isolated=true` est jetable — ne jamais le pointer
   vers un profil Chrome personnel contenant des sessions authentifiées.
-- Loguer chaque navigation dans `.audit/`.
+- Consigner les navigations dans le log de session (`VAULT-CONTRACT.md` §9) —
+  il n'y a pas de journal séparé. Y écrire la nature de la navigation, pas une
+  URL interne : le dépôt est public.
