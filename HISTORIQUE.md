@@ -88,9 +88,10 @@ qui contient le dépôt et qui n'est pas versionné :
 > - `1-CONCEPTS`: Idées et prototypes
 > - `2-RESSOURCES`: Documentation et ressources externes
 
-Le périmètre de lecture de ce coffre parent reste non tranché
-(cf. `VAULT-CONTRACT.md` §7) : par défaut, les agents sont confinés à la racine
-du dépôt.
+Le périmètre de lecture de ce coffre parent a été tranché le 2026-09-03
+(cf. `VAULT-CONTRACT.md` §7) : les agents peuvent le lire, mais n'y écrivent
+que dans `0-EN VRAC/`. Le confinement à la racine du dépôt, qui valait par
+défaut jusque-là, est levé.
 
 ---
 

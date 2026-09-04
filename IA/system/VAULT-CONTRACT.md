@@ -55,6 +55,8 @@ erreur à corriger, pas une convention à suivre.
   même dans une zone en écriture directe : `sommaire.md`, `agents-index.md` et
   `skills-index.md` sont régénérés par les scripts du §11, qui donne la liste
   complète et la commande.
+- Ces trois zones sont les seules **du dépôt**. Hors du dépôt, une quatrième
+  zone est en écriture directe : `0-EN VRAC/` dans le coffre parent (§7).
 
 ## 3. Périmètre hors du coffre
 
@@ -197,16 +199,42 @@ du balayage des noms.
   sujet (`licences-et-logiciel-libre.md`, pas `notes.md`) et respecte la règle
   d'unicité ci-dessus.
 
-## 7. Périmètre de lecture
+## 7. Périmètre de lecture et coffre parent
 
-À trancher explicitement et à consigner ici (aujourd'hui : non tranché) :
+- [x] **Tranché le 2026-09-03.** Les agents peuvent lire le coffre parent
+      (`0-PROJETS`, `1-CONCEPTS`, `2-RESSOURCES`, …). Le confinement à
+      `OBSIA/` qui valait par défaut est levé.
 
-- [ ] Les agents peuvent-ils lire le coffre parent (`0-PROJETS`, `1-CONCEPTS`,
-      `2-RESSOURCES`) ou sont-ils confinés à `OBSIA/` ?
+Le coffre parent est donc en **lecture seule**, à une exception près :
 
-Tant que cette case n'est pas cochée, le comportement par défaut est le plus
-restrictif : **confinement à `OBSIA/`** (les interventions hors du coffre
-relèvent du §3).
+| Zone du coffre parent | Lecture | Écriture |
+| --- | --- | --- |
+| `0-EN VRAC/` | oui | **oui, directe** |
+| tout le reste (`0-PROJETS`, `1-CONCEPTS`, `2-RESSOURCES`, …) | oui | **non** |
+
+Précisions qui découlent de cette règle :
+
+- Le nom du dossier s'écrit `0-EN VRAC`, en capitales et avec une espace,
+  comme les autres dossiers du coffre parent. Le système de fichiers distingue
+  la casse : `0-en vrac` désignerait un autre dossier, et un agent qui le
+  créerait écrirait à côté. L'espace impose aussi de citer le chemin dans une
+  commande shell (`"$COFFRE/0-EN VRAC"`).
+- Le coffre parent **n'est pas versionné**. Un patch Git y est donc impossible :
+  hors de `0-EN VRAC/`, il n'existe aucune voie d'écriture, même soumise à
+  revue. « Lecture seule » y est absolu.
+- `0-EN VRAC/` est une zone de dépôt, comparable à `brouillon/` : contenus
+  provisoires, non garantis conservés. Un contenu qui doit durer est recopié
+  dans `mémoire/<nom-agent>/` (§2), à l'intérieur du dépôt, où Git le suit.
+- Le coffre parent n'est **pas** un « dépôt extérieur » au sens du §3 : ce
+  paragraphe vise des bases de code, pas des notes.
+- Les règles générales du §2 s'appliquent à `0-EN VRAC/` comme partout
+  ailleurs : aucune suppression sans archivage, preview obligatoire avant une
+  action touchant plusieurs fichiers.
+- La règle d'unicité des noms de notes (§6) prend ici tout son sens : elle
+  porte sur le coffre parent entier, désormais lisible.
+- Lire n'est pas recopier. Le contenu du coffre parent ne migre pas dans
+  `OBSIA/` au fil des réponses : le dépôt est **public** (§4), le coffre
+  parent ne l'est pas.
 
 ## 8. Sources et citations
 
