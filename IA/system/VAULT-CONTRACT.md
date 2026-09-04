@@ -285,6 +285,26 @@ questions restées ouvertes. Ce dossier vit sous `IA/system/`, donc son
 écriture suit la règle générale du §2 (patch Git revu) — ce n'est pas une des
 trois zones en écriture directe.
 
+**Les actions à effet externe y figurent aussi** : tout appel d'un MCP
+`permission: elevated` et toute correction appliquée à un système. Une ligne
+suffit — quoi, où, résultat. Il n'existe **pas** de journal séparé : un fichier
+d'audit que personne ne relit ne sert à rien, alors que cette note passe par
+une revue.
+
+Deux limites, à connaître plutôt qu'à découvrir :
+
+- La note s'écrit **en fin de session**. Une session interrompue ne laisse
+  rien. C'est un journal de travail, pas un journal d'audit infalsifiable —
+  le coffre n'en fournit pas, et n'a pas vocation à en fournir.
+- Le dépôt est **public** (§4). On consigne la **nature** de l'action, pas
+  nécessairement sa cible : jamais d'adresse IP privée, de nom d'hôte interne,
+  d'URL interne ni d'identifiant. Une trace qui ne peut pas être publiée n'a
+  pas sa place dans ce dépôt — et c'est une raison de ne pas créer de journal
+  dédié, qui inviterait précisément à l'y mettre.
+
+Pour une trace vivante pendant la session, `brouillon/` est la zone du
+provisoire ; le skill `cloture-de-session` la consolide ici à la fermeture.
+
 ## 10. Méthode d'exécution
 
 Ce contrat lu, l'ordre à suivre pour toute demande — un harness peut le

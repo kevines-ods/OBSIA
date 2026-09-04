@@ -141,7 +141,11 @@ nécessaires sont toujours présents avant de redémarrer.
 1. Vérifier que le problème a disparu — avec la même commande qui l'avait montré.
 2. Vérifier que rien d'autre n'a cassé : `systemctl --failed`.
 3. Consigner : symptôme, cause, action, résultat. C'est ce qui rend la panne
-   suivante plus rapide à résoudre.
+   suivante plus rapide à résoudre. Deux destinations, selon la portée :
+   le **log de session** (`VAULT-CONTRACT.md` §9) pour la trace de l'action ;
+   `mémoire/<agent>/expériences/` si la leçon resservira ailleurs (§6).
+   Ni l'un ni l'autre ne reçoit d'adresse IP, de nom d'hôte interne ou
+   d'identifiant — le dépôt est public.
 
 ## Ce qui n'est pas dans le périmètre
 
