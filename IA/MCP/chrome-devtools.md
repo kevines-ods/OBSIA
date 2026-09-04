@@ -1,4 +1,6 @@
 ---
+schema: 1
+kind: mcp
 name: chrome-devtools
 description: Navigation, capture et automatisation web via Chrome DevTools.
 type: tool

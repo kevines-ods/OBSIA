@@ -27,9 +27,21 @@ Emplacement attendu : `IA/system/VAULT-CONTRACT.md`, depuis la racine du dépôt
 Un agent **utilise** des skills. Un skill n'est jamais un agent.
 
 Piège historique à ne pas reproduire : **`obsidian-manager` est un SKILL** ; il a
-longtemps été confondu avec un agent « bibliothécaire » qui n'existait pas en
-tant que fichier. Toute formulation suggérant qu'un skill est un agent est une
-erreur à corriger, pas une convention à suivre.
+longtemps été pris pour un agent qui n'a jamais existé en tant que fichier.
+Toute formulation suggérant qu'un skill est un agent est une erreur à corriger,
+pas une convention à suivre.
+
+**Un seul agent peut être nommé dans le coffre : `assistant`.** Aucun autre nom
+d'agent n'apparaît nulle part — ni dans un skill, ni dans un exemple, ni dans un
+diagramme, ni dans une note. Un agent n'existe que s'il a son fichier dans
+`IA/agents/` ; le nommer avant qu'il existe le fait exister dans les têtes, et
+c'est ainsi qu'un agent fantôme s'installe. Cette règle vaut aussi pour les
+noms cités en exemple : prendre un nom de skill, jamais un nom d'agent
+imaginaire. `scripts/verifier_coffre.py` la contrôle.
+
+Les tournures `agent 1`, `agent 2` restent employées ailleurs dans ce contrat :
+ce ne sont pas des noms d'agents mais des **contre-exemples de nommage de
+dossier**, et elles ne désignent personne.
 
 ---
 
@@ -47,14 +59,17 @@ erreur à corriger, pas une convention à suivre.
   reste protégé : toute modification durable y passe par un **patch Git**
   soumis à revue humaine. Les interventions hors du coffre relèvent du §3.
 - Aucune suppression sans archivage préalable dans `.archive/`, y compris dans
-  une zone en écriture directe.
+  une zone en écriture directe. Ce dossier est **versionné** : ignoré par Git,
+  il ne survivrait pas à un clone neuf et la règle ne promettrait rien. Rien
+  n'y est lu ni indexé — les dossiers commençant par un point sont écartés
+  partout.
 - Toute action touchant plusieurs fichiers exige un **preview** affiché avant
   exécution, listant les chemins concernés — que l'écriture soit directe ou
   passe par patch.
 - Les **fichiers générés** ne sont jamais édités à la main ni par un agent,
-  même dans une zone en écriture directe : `sommaire.md`, `agents-index.md` et
-  `skills-index.md` sont régénérés par les scripts du §11, qui donne la liste
-  complète et la commande.
+  même dans une zone en écriture directe : `sommaire.md`, `agents-index.md`,
+  `skills-index.md` et `IA/README.md` sont régénérés par les scripts du §11,
+  qui donne la liste complète et la commande.
 - Ces trois zones sont les seules **du dépôt**. Hors du dépôt, une quatrième
   zone est en écriture directe : `0-EN VRAC/` dans le coffre parent (§7).
 
@@ -92,7 +107,7 @@ Tout fichier agent ou skill commence par un frontmatter YAML valide.
 | Champ | Type | Obligatoire | Notes |
 | --- | --- | --- | --- |
 | `schema` | entier | oui | version du format. Actuellement `1`. |
-| `kind` | `agent` \| `skill` \| `contract` | oui | permet de valider le type sans se fier au dossier |
+| `kind` | `agent` \| `skill` \| `mcp` \| `contract` | oui | permet de valider le type sans se fier au dossier |
 | `name` | texte | oui | minuscules, tirets, **sans espaces**. Identique au nom du fichier. |
 | `description` | texte | oui | une ligne. Réutilisée par le générateur de sommaires. |
 | `read_only` | booléen | oui | cf. sémantique ci-dessous |
@@ -102,7 +117,7 @@ Tout fichier agent ou skill commence par un frontmatter YAML valide.
 | Valeur | Signification |
 | --- | --- |
 | `true` | **Lecture seule absolue** : aucune écriture nulle part (ni coffre, ni hors coffre, même via patch). |
-| `false` | **Écriture directe** dans `brouillon/`, `mémoire/<nom-agent>/`, et `IA/skills/` si `createur-de-skill` est déclaré (détail au §2) ; écriture hors coffre autorisée (§3) ; le reste du coffre passe par patch Git revu. |
+| `false` | **Écriture directe** dans `brouillon/`, `mémoire/<nom-agent>/`, et `IA/skills/` si `createur-de-skill` est déclaré (détail au §2), ainsi que `0-EN VRAC/` dans le coffre parent (§7) ; écriture hors coffre autorisée (§3) ; le reste du coffre passe par patch Git revu. |
 
 **Champs propres aux agents**
 
@@ -143,13 +158,33 @@ jamais consulté.
 Seuls `references/` contient des notes ; `scripts/` et `assets/` sont écartés
 du balayage des noms.
 
+**Champs propres aux MCP**
+
+Un fichier de `IA/MCP/` décrit un outil, pas un interlocuteur : il n'a ni
+`read_only` (il ne écrit rien par lui-même, c'est l'agent qui l'appelle) ni
+`skills`. Son frontmatter porte :
+
+| Champ | Type | Obligatoire | Notes |
+| --- | --- | --- | --- |
+| `schema` | entier | oui | comme partout, actuellement `1` |
+| `kind` | `mcp` | oui | |
+| `name` | texte | oui | identique au nom du fichier |
+| `description` | texte | oui | une ligne |
+| `type` | `tool` | oui | seule valeur à ce jour. À ne pas confondre avec le `type` d'un skill (`core`/`outil`) : même clé, vocabulaire distinct. |
+| `transport` | `stdio` \| `http` | oui | comment le harness joint le serveur |
+| `permission` | `normal` \| `elevated` | oui | `elevated` dès qu'un système externe est touché : réseau, dépôt distant, navigateur |
+
+Un MCP n'est utilisable que s'il est **déclaré par un agent** (§10.2). Un
+fichier de `IA/MCP/` que personne ne déclare est du code mort : le vérificateur
+le signale.
+
 **Règles de syntaxe**
 
 - Les listes s'écrivent en YAML, une entrée par ligne précédée d'un tiret.
   Jamais `skills: a, b` — ça vaut une chaîne de caractères, pas une liste.
 - Les clés utilisent l'underscore (`read_only`), pas le tiret.
 - Les noms (fichier, `name`) sont en minuscules avec tirets, **sans espaces**.
-  Les accents sont autorisés (`bibliothécaire`, `développeur`).
+  Les accents sont autorisés (`sauvegardes-chiffrées`, `diagnostic-réseau`).
 - Un champ déclaré dans le frontmatter n'est **pas** répété dans le corps du
   fichier : le frontmatter est la vérité machine.
 
@@ -292,6 +327,7 @@ que rien ne le signale.
 | `mémoire/**/sommaire.md` | `scripts/regenerate_sommaire.py` | le contenu des notes |
 | `IA/system/agents-index.md` | `scripts/regenerate_index.py` | le frontmatter des agents |
 | `IA/system/skills-index.md` | `scripts/regenerate_index.py` | le frontmatter des skills |
+| `IA/README.md` | `scripts/regenerate_index.py` | les frontmatters d'agents, skills et MCP |
 
 Corollaire : si un index et un frontmatter se contredisent, **le frontmatter a
 raison**. On corrige la source, puis on régénère — jamais l'inverse.

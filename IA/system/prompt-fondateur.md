@@ -8,7 +8,7 @@
 >
 > Les chemins cités ci-dessous partent de la racine du dépôt.
 > L'interface graphique et son périmètre de modification ne vivent plus dans ce
-> dépôt : cf. `HISTORIQUE.md`.
+> dépôt, et aucune interface n'y est nommée : cf. `HISTORIQUE.md`.
 
 Je veux créer un système d'orchestration agentic natif Linux. Le système permet
 des chats avec un agent spécifique mais aussi avec des équipes d'agents. Il
@@ -53,8 +53,9 @@ Les skills gèrent le RESTE du coffre. Un skill = une compétence réutilisable
 
 ## 4- OBSIDIAN-MANAGER EST UN SKILL (pas un agent)
 
-Piège historique : `obsidian-manager` a longtemps été confondu avec un agent
-« bibliothécaire » qui n'a jamais existé en tant que fichier.
+Piège historique : `obsidian-manager` a longtemps été pris pour un agent qui
+n'a jamais existé en tant que fichier. Le nom de cet agent imaginaire n'est
+plus cité nulle part dans le coffre (`VAULT-CONTRACT.md` §1).
 
 - `obsidian-manager` est un **SKILL** : il gère le coffre Obsidian (recherche,
   rétroliens, résumés, index) en **lecture seule**.

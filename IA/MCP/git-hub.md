@@ -1,4 +1,6 @@
 ---
+schema: 1
+kind: mcp
 name: git-hub
 description: Push/pull, PR, issues et review sur GitHub.
 type: tool

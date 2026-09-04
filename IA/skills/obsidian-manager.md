@@ -29,7 +29,21 @@ Un `sommaire.md` porte, pour chaque note, son statut et son résumé, extraits d
 la note elle-même. Il est fait pour décider d'ouvrir une note **sans l'ouvrir** :
 le lire d'abord, ouvrir ensuite, et seulement ce qui est nécessaire.
 
-Vérifier qu'ils sont à jour sans rien écrire (sort en erreur s'ils sont périmés) :
+## Périmètre de recherche
+
+Depuis le 2026-09-03, le **coffre parent** est lisible (§7) : la recherche ne
+s'arrête donc plus à `OBSIA/`. Deux conséquences pratiques :
+
+- une recherche lancée depuis la racine du dépôt ne voit **pas** le coffre
+  parent ; il faut remonter d'un cran pour l'atteindre ;
+- ce qu'on y trouve ne se recopie pas dans `OBSIA/` : le dépôt est public, le
+  coffre parent ne l'est pas (§7).
+
+Le coffre parent est en lecture seule, sauf `0-EN VRAC/`. Ce skill étant
+`read_only: true`, il n'écrit de toute façon nulle part.
+
+Vérifier que les index sont à jour sans rien écrire (sort en erreur s'ils sont
+périmés) :
 
 ```bash
 python3 scripts/regenerate_sommaire.py --verifier
