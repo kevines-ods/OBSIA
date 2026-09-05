@@ -43,12 +43,14 @@ instances reconstructibles (§12). Procédure dans le skill `cron`.
 ## `IA/system/`
 
 - `VAULT-CONTRACT.md` — les règles. Fait foi.
-- `agents-index.md`, `skills-index.md` — index générés (§11).
+- `agents-index.md`, `skills-index.md`, `taches-index.md` — index
+  générés (§11).
 - `providers.md` — repère pour choisir un modèle. Aucune clé n'y vit.
 - `prompt-fondateur.md` — intention d'origine, non normative.
 - `session-log/` — une note par session de travail (§9).
 
-Le registre des tâches planifiées vit à côté, dans `IA/tâches/` (§12).
+Le registre des tâches planifiées vit à côté, dans `IA/tâches/` (§12) ;
+`system/taches-index.md` en est l'index généré.
 
 > Fichier **généré** par `scripts/regenerate_index.py` depuis les
 > frontmatters, qui font foi. Ne pas éditer à la main (§11).

@@ -37,7 +37,7 @@ OBSIA/                       le coffre — la racine du dépôt EST le coffre
 ├── brouillon/               zone de travail libre
 ├── scripts/
 │   ├── generer_prompt.py    prompt système depuis les frontmatters
-│   ├── regenerate_index.py  agents-index.md et skills-index.md
+│   ├── regenerate_index.py  les trois index et IA/README.md
 │   ├── regenerate_sommaire.py  les sommaire.md de mémoire/
 │   └── verifier_coffre.py   cohérence du coffre — utilisé en CI
 ├── HISTORIQUE.md            ce qui a été décidé puis écarté
@@ -82,6 +82,10 @@ actif: true
 Le corps porte l'instruction — auto-suffisante, puisqu'au déclenchement il n'y
 a plus de conversation. Règles au §12 de `VAULT-CONTRACT.md`, procédure dans le
 skill `cron`.
+
+`IA/system/taches-index.md`, généré comme les autres index, met le registre en
+contexte permanent : un harness neuf sait que ces tâches existent. Il ne les
+crée pas pour autant sur la machine — l'instanciation reste un geste explicite.
 
 ## Démarrage
 
@@ -175,7 +179,7 @@ résumé :
 - Aucune suppression sans archivage préalable.
 - Aperçu obligatoire avant toute action touchant plusieurs fichiers.
 - Les fichiers générés — `sommaire.md`, `agents-index.md`, `skills-index.md`,
-  `IA/README.md` — sont régénérés par script, jamais édités à la main. Si un
+  `taches-index.md`, `IA/README.md` — sont régénérés par script, jamais édités à la main. Si un
   index contredit un frontmatter, le frontmatter a raison.
 - Un agent et un skill sont deux choses distinctes. Un agent décide ; un skill
   décrit une manière de faire.

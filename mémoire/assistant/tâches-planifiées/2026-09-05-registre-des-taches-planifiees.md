@@ -29,6 +29,11 @@ signale. Elles sont désormais déclarées dans `IA/tâches/`, qui fait foi.
   changement d'outillage met en danger.
 - **`IA/tâches/` n'est pas une zone d'écriture directe** : créer ou modifier
   une tâche passe par patch, comme le reste de `IA/`.
+- **`IA/system/taches-index.md` est généré et importé par `CLAUDE.md`**, comme
+  les deux autres index. Sans lui, le registre n'existait dans le contexte que
+  pour les harness lisant `generer_prompt.py` — asymétrie relevée par
+  l'utilisateur, corrigée le jour même. Le coût en contexte est d'une ligne par
+  tâche ; le bénéfice est qu'un harness neuf sait que la tâche existe.
 
 ## Évidence
 
@@ -41,6 +46,10 @@ signale. Elles sont désormais déclarées dans `IA/tâches/`, qui fait foi.
   `## Instruction`.
 - `python3 scripts/generer_prompt.py` fait désormais apparaître les tâches
   déclarées : un harness neuf apprend leur existence par le prompt système.
+
+- L'index seul ne suffit pas à recréer une tâche : il informe, il ne déclenche
+  rien. C'est justement ce qui permet de **constater** qu'une tâche déclarée ne
+  tourne nulle part — le point de départ de la réconciliation.
 
 ## Interprétation
 

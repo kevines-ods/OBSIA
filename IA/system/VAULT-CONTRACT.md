@@ -72,7 +72,8 @@ dossier**, et elles ne désignent personne.
   passe par patch.
 - Les **fichiers générés** ne sont jamais édités à la main ni par un agent,
   même dans une zone en écriture directe : `sommaire.md`, `agents-index.md`,
-  `skills-index.md` et `IA/README.md` sont régénérés par les scripts du §11,
+  `skills-index.md`, `taches-index.md` et `IA/README.md` sont régénérés par les
+  scripts du §11,
   qui donne la liste complète et la commande.
 - Ces trois zones sont les seules **du dépôt**. Hors du dépôt, une quatrième
   zone est en écriture directe : `0-EN VRAC/` dans le coffre parent (§7).
@@ -373,6 +374,7 @@ que rien ne le signale.
 | `mémoire/**/sommaire.md` | `scripts/regenerate_sommaire.py` | le contenu des notes |
 | `IA/system/agents-index.md` | `scripts/regenerate_index.py` | le frontmatter des agents |
 | `IA/system/skills-index.md` | `scripts/regenerate_index.py` | le frontmatter des skills |
+| `IA/system/taches-index.md` | `scripts/regenerate_index.py` | le frontmatter des tâches |
 | `IA/README.md` | `scripts/regenerate_index.py` | les frontmatters d'agents, skills, MCP et tâches |
 
 Corollaire : si un index et un frontmatter se contredisent, **le frontmatter a
@@ -438,6 +440,11 @@ Trois règles en découlent :
 Créer, modifier ou suspendre une tâche touche `IA/tâches/` : **patch Git revu**
 (§2). Instancier ou retirer une instance chez l'exécutant est une action à
 effet externe : une ligne dans le log de session (§9).
+
+`IA/system/taches-index.md` en est l'index généré, toujours présent en
+contexte : c'est par lui qu'un harness neuf apprend qu'une tâche existe.
+**Savoir n'est pas instancier** — l'index informe, il ne déclenche rien ; c'est
+ce qui permet de constater qu'une tâche déclarée ne tourne nulle part.
 
 La procédure — lister, créer, instancier, réconcilier — vit dans le skill
 `cron` (`IA/skills/cron.md`). Ce contrat ne nomme aucun exécutant : il dit
