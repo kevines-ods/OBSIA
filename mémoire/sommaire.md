@@ -3,13 +3,13 @@
 > Généré par `scripts/regenerate_sommaire.py` depuis le contenu des notes.
 > Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §2).
 
-1 sous-dossier, 18 notes, du 2026-08-15 au 2026-09-03.
+1 sous-dossier, 20 notes, du 2026-08-15 au 2026-09-05.
 
 ## Sous-dossiers
 
 | Dossier | Notes | Entrée représentative |
 |---|---|---|
-| [assistant](assistant/) | 17 | 2026-09-03 — Comparaison OBSIA / OpenViking |
+| [assistant](assistant/) | 19 | 2026-09-05 — Registre des tâches planifiées |
 
 ## Notes
 

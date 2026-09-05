@@ -19,8 +19,8 @@ choix — lit ces fichiers et exécute. Le coffre décrit *quoi* faire ; le harn
 fournit *avec quoi*.
 
 Le chargement est paresseux : le prompt système ne contient que l'index des
-agents et des skills. Le contenu d'un skill n'est lu que lorsqu'il devient
-nécessaire.
+agents, des skills et des tâches planifiées. Le contenu d'un skill n'est lu que
+lorsqu'il devient nécessaire.
 
 ## Structure
 
@@ -30,6 +30,7 @@ OBSIA/                       le coffre — la racine du dépôt EST le coffre
 │   ├── agents/              définition des agents
 │   ├── skills/              compétences réutilisables
 │   ├── MCP/                 outils structurés
+│   ├── tâches/              registre des tâches planifiées
 │   └── system/              VAULT-CONTRACT.md (les règles), index,
 │                            prompt-fondateur.md (intention d'origine)
 ├── mémoire/                 par agent → profil, préférences, expériences, projets
@@ -53,6 +54,34 @@ Le coffre ne connaît aucune interface et n'en nomme aucune. Il décrit *quoi*
 faire ; le harness de ton choix fournit *avec quoi*. Rien ici ne dépend d'un
 programme particulier — c'est la condition pour qu'OBSIA reste libre de ses
 mouvements.
+
+## Tâches planifiées
+
+Une tâche récurrente est déclarée dans `IA/tâches/<nom>.md` : quand, pour quel
+agent, et l'instruction exacte à lui envoyer. Ce fichier fait foi.
+
+Le timer systemd, le planificateur du harness ou le cron de la machine ne sont
+que des **instances** de cette déclaration : nommées `obsia-<nom>`, jetables,
+recréables depuis le registre. Changer de harness ou de machine ne perd donc
+plus rien — on relit le registre et on ré-instancie.
+
+```yaml
+---
+schema: 1
+kind: tâche
+name: revue-hebdomadaire-du-coffre
+description: Une ligne — quoi, et à quel rythme.
+mode: agent              # agent | commande
+quand: "0 9 * * 1"       # cron à 5 champs, entre guillemets
+fuseau: Europe/Paris
+agent: assistant
+actif: true
+---
+```
+
+Le corps porte l'instruction — auto-suffisante, puisqu'au déclenchement il n'y
+a plus de conversation. Règles au §12 de `VAULT-CONTRACT.md`, procédure dans le
+skill `cron`.
 
 ## Démarrage
 
@@ -81,8 +110,8 @@ python3 scripts/verifier_coffre.py
 `verifier_coffre.py` refuse un frontmatter invalide, un `name` qui ne
 correspond pas au nom du fichier, une liste écrite en chaîne, une description
 repliée sur plusieurs lignes, un agent déclarant un skill ou un MCP
-inexistant, un nom de note en double, ou un fichier généré périmé. Il n'écrit
-rien et sort en code 1.
+inexistant, une tâche sans instruction ou au `quand` non quoté, un nom de note
+en double, ou un fichier généré périmé. Il n'écrit rien et sort en code 1.
 
 Les mêmes contrôles tournent en intégration continue à chaque poussée. Aucune
 dépendance : bibliothèque standard de Python uniquement.
@@ -105,7 +134,7 @@ Tout fichier agent ou skill commence par un frontmatter YAML strict.
 ```yaml
 ---
 schema: 1
-kind: skill              # agent | skill | contract
+kind: skill              # agent | skill | mcp | tâche | contract
 name: nom-du-skill       # minuscules, tirets, identique au nom du fichier
 description: Une ligne — quoi et quand.
 type: core               # skills uniquement : core | outil
@@ -145,9 +174,9 @@ résumé :
   des patches Git soumis à revue.
 - Aucune suppression sans archivage préalable.
 - Aperçu obligatoire avant toute action touchant plusieurs fichiers.
-- Les fichiers générés — `sommaire.md`, `agents-index.md`, `skills-index.md` —
-  sont régénérés par script, jamais édités à la main. Si un index contredit un
-  frontmatter, le frontmatter a raison.
+- Les fichiers générés — `sommaire.md`, `agents-index.md`, `skills-index.md`,
+  `IA/README.md` — sont régénérés par script, jamais édités à la main. Si un
+  index contredit un frontmatter, le frontmatter a raison.
 - Un agent et un skill sont deux choses distinctes. Un agent décide ; un skill
   décrit une manière de faire.
 

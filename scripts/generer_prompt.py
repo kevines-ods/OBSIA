@@ -126,7 +126,8 @@ def collecter(dossier: Path, genre: str) -> list[dict]:
 
 # --------------------------------------------------------------------- rendu
 
-def construire_prompt(racine: Path, agents: list[dict], skills: list[dict]) -> str:
+def construire_prompt(racine: Path, agents: list[dict], skills: list[dict],
+                      taches: list[dict] | None = None) -> str:
     lignes: list[str] = []
     a = lignes.append
 
@@ -156,6 +157,19 @@ def construire_prompt(racine: Path, agents: list[dict], skills: list[dict]) -> s
             marque = " [lecture seule]" if sk.get("read_only") else ""
             desc = sk.get("description", "(sans description)")
             a(f"- **{sk['name']}**{marque} — {desc}")
+        a("")
+
+    if taches:
+        a("## Tâches planifiées déclarées")
+        a("")
+        a("Registre : IA/tâches/ — il fait foi. Les timers ou planificateurs qui")
+        a("les déclenchent ne sont que des instances reconstructibles (§12).")
+        a("")
+        for ta in taches:
+            etat = "" if ta.get("actif") else " [suspendue]"
+            a(f"- **{ta['name']}**{etat} — {ta.get('description', '(sans description)')}")
+            a(f"  ({ta.get('quand', '?')}, {ta.get('fuseau', '?')}, "
+              f"mode {ta.get('mode', '?')})")
         a("")
 
     a("## Méthode")
@@ -206,12 +220,13 @@ def main() -> int:
 
     agents = collecter(racine / "IA" / "agents", "agent")
     skills = collecter(racine / "IA" / "skills", "skill")
+    taches = collecter(racine / "IA" / "tâches", "tâche")
 
     if not agents and not skills:
         print("Aucun agent ni skill trouvé. Vérifie --racine.", file=sys.stderr)
         return 1
 
-    prompt = construire_prompt(racine, agents, skills)
+    prompt = construire_prompt(racine, agents, skills, taches)
 
     if args.sortie:
         args.sortie.write_text(prompt + "\n", encoding="utf-8")
