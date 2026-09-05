@@ -91,17 +91,28 @@ Une tâche = **au plus une instance vivante**, tous exécutants confondus. C'est
 à ça que sert `exécutant` : planifier la même chose côté harness *et* côté
 machine la déclencherait deux fois, sans qu'aucune erreur ne le signale.
 
-Le passage du registre aux timers systemd est outillé :
+Le passage du registre aux timers systemd est outillé. La séquence complète,
+une fois par machine :
 
 ```bash
-python3 IA/skills/cron/scripts/appliquer_taches.py             # aperçu
+mkdir -p ~/.config/obsia
+python3 IA/skills/cron/scripts/appliquer_taches.py --config > ~/.config/obsia/appliquer.conf
+$EDITOR ~/.config/obsia/appliquer.conf                          # renseigner commande_agent
+python3 IA/skills/cron/scripts/appliquer_taches.py              # aperçu, n'écrit rien
 python3 IA/skills/cron/scripts/appliquer_taches.py --appliquer  # exécute
 ```
 
-Il compare le registre aux unités `obsia-*` présentes, affiche le tableau des
-écarts, et n'écrit qu'avec `--appliquer`. C'est le seul script du dépôt qui
-dépende d'un exécutant — il vit donc dans le skill qui s'en sert, pas dans
-`scripts/`, qui reste utilisable sans rien installer.
+`--config` **n'écrit rien** : il affiche un gabarit, à rediriger soi-même. Ce
+fichier n'est pas versionné, et c'est délibéré — il nomme le harness qui lance
+un agent, ce que le coffre ne fait jamais (§3 de `VAULT-CONTRACT.md`). Tant que
+`commande_agent` est vide, une tâche `mode: agent` est **refusée** plutôt
+qu'instanciée inerte. Une tâche `mode: commande` n'a besoin d'aucune de ces
+deux premières lignes.
+
+Le script compare ensuite le registre aux unités `obsia-*` présentes, affiche
+le tableau des écarts, et n'écrit qu'avec `--appliquer`. C'est le seul script
+du dépôt qui dépende d'un exécutant — il vit donc dans le skill qui s'en sert,
+pas dans `scripts/`, qui reste utilisable sans rien installer.
 
 `IA/system/taches-index.md`, généré comme les autres index, met le registre en
 contexte permanent : un harness neuf sait que ces tâches existent. Il ne les
