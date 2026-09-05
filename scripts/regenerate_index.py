@@ -71,22 +71,27 @@ def rendre_taches(taches: list[dict]) -> str:
     qu'une tâche existe. Il ne la déclenche pas pour autant (§12).
     """
     L = ["# taches-index.md — Index des tâches planifiées", "",
-         "| Tâche | Quand | Fuseau | Mode | Agent | Active | Description |",
-         "|---|---|---|---|---|---|---|"]
+         "| Tâche | Quand | Fuseau | Mode | Exécutant | Agent | Active | Description |",
+         "|---|---|---|---|---|---|---|---|"]
     for t_ in taches:
-        L.append("| [%s](../tâches/%s) | `%s` | %s | %s | %s | %s | %s |"
+        L.append("| [%s](../tâches/%s) | `%s` | %s | %s | %s | %s | %s | %s |"
                  % (t_["name"], t_["_fichier"], t_.get("quand", "?"),
                     t_.get("fuseau", "?"), t_.get("mode", "?"),
-                    t_.get("agent", "—"),
+                    t_.get("exécutant", "?"), t_.get("agent", "—"),
                     "oui" if t_.get("actif") else "non",
                     t_.get("description", "")))
     if not taches:
-        L.append("| — | | | | | | Aucune tâche déclarée. |")
+        L.append("| — | | | | | | | Aucune tâche déclarée. |")
     L += ["",
           "> Le registre `IA/tâches/` **déclare** ; rien ne s'instancie tout seul.",
           "> Une tâche listée ici n'est pas forcément planifiée sur la machine",
           "> courante : charger le skill `cron` pour instancier ou réconcilier",
           "> (cf. `VAULT-CONTRACT.md` §12).",
+          "",
+          "> `Exécutant` dit qui a le droit de déclencher — et donc qui pas :",
+          "> une tâche = **au plus une instance vivante**, tous exécutants",
+          "> confondus. Planifier la même chose côté harness *et* côté machine",
+          "> la déclenche deux fois.",
           "",
           "> Fichier **généré** par `scripts/regenerate_index.py` depuis les",
           "> frontmatters, qui font foi. Ne pas éditer à la main (§11).",
@@ -127,9 +132,10 @@ def rendre_ia_readme(agents: list[dict], skills: list[dict], mcp: list[dict],
     if taches:
         for t_ in taches:
             suspendue = "" if t_.get("actif") else "  — **suspendue**"
-            L.append("- **%s** (`%s`, %s, mode `%s`) — %s%s"
+            L.append("- **%s** (`%s`, %s, mode `%s`, exécutant `%s`) — %s%s"
                      % (t_["name"], t_.get("quand", "?"), t_.get("fuseau", "?"),
-                        t_.get("mode", "?"), t_.get("description", ""), suspendue))
+                        t_.get("mode", "?"), t_.get("exécutant", "?"),
+                        t_.get("description", ""), suspendue))
     else:
         L.append("Aucune tâche déclarée.")
     L += ["",

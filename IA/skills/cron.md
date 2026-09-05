@@ -25,16 +25,26 @@ premier changement de harness ou de machine.
 **Clé de rapprochement : `obsia-<name>`.** Toute instance porte ce nom, quel
 que soit l'exécutant. C'est ce qui rend la réconciliation possible.
 
-## Choisir l'exécutant
+## Choisir l'exécutant — une fois, et une seule
 
-| Situation | Exécutant |
-| --- | --- |
-| `mode: commande` — une commande shell, aucun modèle requis | timer systemd utilisateur |
-| `mode: agent`, machine allumée, harness lançable en ligne de commande | timer systemd qui appelle le harness |
-| `mode: agent`, machine éteinte à l'heure dite, ou harness distant | planificateur du harness, s'il en a un |
+**Une tâche = au plus une instance vivante, tous exécutants confondus.** C'est
+l'invariant du registre (§12). Le champ `exécutant` le rend applicable : il
+dit qui a le droit de déclencher, donc qui n'en a pas.
 
-Le coffre ne privilégie aucun exécutant. Le seul choix qu'il impose est le nom
-de l'instance.
+| Besoin | `exécutant` | Instance |
+| --- | --- | --- |
+| toucher des fichiers locaux, ou `mode: commande` | `local` | timer systemd utilisateur |
+| machine allumée, harness lançable en ligne de commande | `local` | timer systemd qui appelle le harness |
+| partir même machine éteinte, ou travail purement distant | `harness` | planificateur du harness, s'il en a un |
+
+> ⚠️ **Le piège du double déclenchement.** Si le harness offre lui-même une
+> fonction de planification et que tu t'en sers, ça ne dispense pas de
+> déclarer la tâche au registre — et ça **interdit** d'instancier en plus un
+> timer local. Deux instances, deux déclenchements. La tâche porte alors
+> `exécutant: harness`, et l'étape 3 ne crée rien côté systemd.
+
+Le coffre ne privilégie aucun exécutant : il exige seulement qu'on en désigne
+un, et que l'instance porte le nom `obsia-<name>`.
 
 ## Procédure
 
@@ -53,8 +63,9 @@ Puis les instances réelles sur cette machine :
 systemctl --user list-timers --all 'obsia-*'
 ```
 
-Si le harness a son propre planificateur, lister aussi de son côté. Ne jamais
-créer avant d'avoir regardé les deux : un doublon déclenche deux fois.
+Si le harness a son propre planificateur, lister aussi de son côté — c'est la
+moitié de l'inventaire qu'on oublie. Ne jamais créer avant d'avoir regardé les
+deux : un doublon déclenche deux fois, et rien ne le signale.
 
 ### 2. Créer la tâche — patch Git
 
@@ -69,6 +80,7 @@ description: Une ligne — quoi, et à quel rythme.
 mode: agent
 quand: "0 9 * * 1"
 fuseau: Europe/Paris
+exécutant: local
 agent: assistant
 actif: true
 ---
@@ -82,9 +94,13 @@ Puis le corps : `## Intention`, et `## Instruction` (mode agent) ou
 
 `IA/tâches/` n'est pas une zone d'écriture directe : patch soumis à revue.
 
-### 3. Instancier
+### 3. Instancier — **à l'endroit déclaré, et nulle part ailleurs**
 
-**Timer systemd utilisateur** — deux fichiers dans `~/.config/systemd/user/`.
+Lire `exécutant` avant de faire quoi que ce soit. `local` → la section
+systemd ci-dessous. `harness` → la section suivante, et **rien** côté systemd.
+
+**Timer systemd utilisateur** (`exécutant: local`) — deux fichiers dans
+`~/.config/systemd/user/`.
 
 `obsia-<nom>.service` :
 
@@ -123,9 +139,13 @@ Sans lui, une tâche hebdomadaire saute une semaine entière.
 Pour qu'un timer survive à une déconnexion de session :
 `loginctl enable-linger $USER`.
 
-**Planificateur du harness** — mêmes règles : nom `obsia-<name>`, horaire
-converti dans le fuseau attendu (souvent UTC), et le corps `## Instruction`
-recopié **tel quel**, sans le reformuler.
+**Planificateur du harness** (`exécutant: harness`) — mêmes règles : nom
+`obsia-<name>`, horaire converti dans le fuseau attendu (souvent UTC), et le
+corps `## Instruction` recopié **tel quel**, sans le reformuler.
+
+Si le harness courant n'a pas de planificateur, ne pas basculer en local
+d'autorité : la tâche a été déclarée `harness` pour une raison. Le signaler,
+et laisser trancher — changer `exécutant` est un patch, pas une improvisation.
 
 ### 4. Vérifier — avant d'annoncer quoi que ce soit
 
@@ -152,15 +172,21 @@ comportement voulu : la suspension se déclare, elle ne s'improvise pas.
 
 ### 6. Réconcilier — après un changement de harness ou de machine
 
-C'est la raison d'être du registre. Comparer les deux listes de l'étape 1 :
+C'est la raison d'être du registre. Inventorier **tous** les exécutants avant
+de conclure — systemd *et* le planificateur du harness. Une tâche jugée
+« absente » parce qu'on n'a regardé qu'un seul côté, puis instanciée, devient
+un doublon : c'est la réconciliation elle-même qui casse alors la règle.
 
 | Écart | Lecture | Geste |
 | --- | --- | --- |
-| tâche `actif: true`, aucune instance | c'est le cas normal après migration | instancier (étape 3) |
-| tâche `actif: false`, instance présente | suspension jamais appliquée | désactiver l'instance |
-| instance `obsia-*` sans tâche au registre | tâche créée hors registre, ou renommée | retrouver l'intention, la déclarer, puis renommer l'instance |
+| `actif: true`, aucune instance nulle part | cas normal après migration | instancier chez l'exécutant déclaré (étape 3) |
+| `actif: true`, instance présente chez l'exécutant déclaré | rien à faire | ne pas toucher |
+| **instance des deux côtés** | double déclenchement en cours | retirer celle qui n'est pas chez l'exécutant déclaré, puis vérifier qu'il n'en reste qu'une |
+| instance présente, mais chez l'autre exécutant | déclaration et réalité ont divergé | soit déplacer l'instance, soit corriger `exécutant` par patch — jamais les deux à la fois |
+| `actif: false`, instance présente | suspension jamais appliquée | désactiver l'instance |
 | horaire divergent | le registre a raison | corriger l'instance |
-| instance sans préfixe `obsia-` | ne vient pas du coffre | ne pas y toucher |
+| instance `obsia-*` sans tâche au registre | créée hors registre, ou renommée | retrouver l'intention, la déclarer, puis renommer l'instance |
+| instance sans préfixe `obsia-` | ne vient pas du coffre | ne rien modifier, mais la **signaler une fois** : c'est peut-être une tâche à faire entrer au registre |
 
 Afficher le tableau des écarts **avant** d'agir : c'est une action
 multi-fichiers, le preview du §2 s'applique. Consigner ensuite les gestes
@@ -215,6 +241,9 @@ correctement.
 - Une tâche déclenchée n'échappe à aucune règle du contrat : ce que l'agent
   n'a pas le droit de faire en conversation, il ne l'a pas davantage à 9 h le
   lundi.
+- Avant de créer quoi que ce soit, se demander : est-ce que cette tâche
+  tourne déjà quelque part ? Un doublon ne produit aucune erreur, il produit
+  simplement deux fois l'effet — c'est la panne la plus discrète du lot.
 - Ne pas redemander confirmation quand la demande a déjà été formulée.
 - Confirmer en langage normal : nom de la tâche et horaire lisible, pas
   d'identifiant interne.

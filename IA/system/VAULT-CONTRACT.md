@@ -198,6 +198,7 @@ commande qu'elle déclenche qui agit, sous ses propres règles.
 | `mode` | `agent` \| `commande` | oui | `agent` : une instruction part vers un agent, il faut donc un harness. `commande` : une commande shell, qui tourne sans modèle. |
 | `quand` | texte **entre guillemets** | oui | cron à 5 champs — `"0 9 * * 1"`. Les guillemets ne sont pas décoratifs : `*/15 * * * *` non quoté est une ancre YAML invalide, et tout lecteur YAML réel refuse le fichier. |
 | `fuseau` | texte | oui | `Europe/Paris`, `UTC`… Un cron sans fuseau est ambigu, et les planificateurs distants raisonnent en UTC. |
+| `exécutant` | `local` \| `harness` | oui | **qui a le droit de la déclencher** — `local` : la machine (timer systemd, cron) ; `harness` : le planificateur du harness, quand il en a un. Ce n'est pas un état mais une contrainte : une tâche qui touche des fichiers locaux ne peut pas être `harness`, une tâche qui doit partir machine éteinte ne peut pas être `local`. |
 | `agent` | texte | si `mode: agent` | nom d'un agent existant (§1) |
 | `actif` | booléen | oui | `false` = déclarée mais non instanciée |
 
@@ -429,7 +430,15 @@ Trois règles en découlent :
 - **Le registre déclare une intention, jamais un état.** Ni identifiant
   d'instance, ni nom de machine, ni date du dernier déclenchement : ces
   informations vieillissent mal, et le dépôt est public (§9). L'état se lit
-  chez l'exécutant, au moment où on le demande.
+  chez l'exécutant, au moment où on le demande. `exécutant` n'y déroge pas :
+  il dit quelle **classe** d'exécutant a le droit de déclencher la tâche, pas
+  où elle tourne en ce moment — une règle, pas un constat.
+- **Une tâche = au plus une instance vivante, tous exécutants confondus.**
+  C'est l'invariant du registre. Sans lui, une tâche créée par le
+  planificateur du harness puis instanciée en timer local se déclenche deux
+  fois — et la réconciliation, qui ne regarderait qu'un seul exécutant,
+  fabriquerait elle-même le doublon en croyant réparer un manque. Le champ
+  `exécutant` du §5 tranche d'avance : il dit qui, et donc qui pas.
 - **Une instance porte le nom de sa tâche, préfixé `obsia-`.** C'est la seule
   clé qui permette de rapprocher registre et exécutant quel que soit ce
   dernier ; le préfixe distingue au passage ce qui vient du coffre de ce que

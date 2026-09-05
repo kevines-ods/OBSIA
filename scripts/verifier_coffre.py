@@ -165,6 +165,7 @@ def verifier_mcp(dossier: Path) -> list[dict]:
 
 
 MODES_TACHE = ("agent", "commande")
+EXECUTANTS = ("local", "harness")
 CORPS_ATTENDU = {"agent": "## Instruction", "commande": "## Commande"}
 
 
@@ -188,7 +189,7 @@ def verifier_taches(dossier: Path, agents: list[dict]) -> list[dict]:
             continue
 
         for champ in ("schema", "kind", "name", "description",
-                      "mode", "quand", "fuseau", "actif"):
+                      "mode", "quand", "fuseau", "exécutant", "actif"):
             if champ not in fm:
                 erreur(rel, "champ obligatoire manquant : `%s` (§5)" % champ)
 
@@ -223,6 +224,17 @@ def verifier_taches(dossier: Path, agents: list[dict]) -> list[dict]:
                         "(minute heure jour-du-mois mois jour-de-semaine) (§5)" % quand)
         elif isinstance(quand, int):
             erreur(rel, "`quand` doit être une chaîne entre guillemets, pas un nombre (§5)")
+
+        executant = fm.get("exécutant")
+        if executant not in EXECUTANTS:
+            erreur(rel, "`exécutant: %s` — attendu %s (§5). Sans lui, la "
+                        "réconciliation ne sait pas où la tâche doit tourner et "
+                        "peut créer un doublon (§12)."
+                   % (executant, " ou ".join(EXECUTANTS)))
+        elif executant == "harness" and mode == "commande":
+            avertir(rel, "`mode: commande` avec `exécutant: harness` — un "
+                         "planificateur distant n'atteint pas les fichiers de la "
+                         "machine. Vérifier que ce harness tourne bien en local.")
 
         fuseau = fm.get("fuseau")
         if isinstance(fuseau, str) and "/" not in fuseau and fuseau != "UTC":

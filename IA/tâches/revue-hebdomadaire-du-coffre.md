@@ -6,6 +6,7 @@ description: Régénérer index et sommaires, vérifier la cohérence du coffre,
 mode: agent
 quand: "0 9 * * 1"
 fuseau: Europe/Paris
+exécutant: local
 agent: assistant
 actif: true
 ---
@@ -17,6 +18,9 @@ actif: true
 Les fichiers générés du §11 se périment en silence, et une tâche instanciée sur
 une machine puis oubliée devient invisible. Un passage hebdomadaire remet les
 deux en cohérence tant que l'écart est petit.
+
+`exécutant: local` parce qu'elle a besoin d'un clone du coffre sous la main :
+un planificateur distant n'aurait rien à régénérer.
 
 C'est aussi la tâche de référence du registre : celle sur laquelle vérifier que
 la chaîne déclaration → instanciation → réconciliation fonctionne.

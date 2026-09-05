@@ -74,6 +74,7 @@ description: Une ligne — quoi, et à quel rythme.
 mode: agent              # agent | commande
 quand: "0 9 * * 1"       # cron à 5 champs, entre guillemets
 fuseau: Europe/Paris
+exécutant: local         # local | harness — qui a le droit de déclencher
 agent: assistant
 actif: true
 ---
@@ -82,6 +83,10 @@ actif: true
 Le corps porte l'instruction — auto-suffisante, puisqu'au déclenchement il n'y
 a plus de conversation. Règles au §12 de `VAULT-CONTRACT.md`, procédure dans le
 skill `cron`.
+
+Une tâche = **au plus une instance vivante**, tous exécutants confondus. C'est
+à ça que sert `exécutant` : planifier la même chose côté harness *et* côté
+machine la déclencherait deux fois, sans qu'aucune erreur ne le signale.
 
 `IA/system/taches-index.md`, généré comme les autres index, met le registre en
 contexte permanent : un harness neuf sait que ces tâches existent. Il ne les

@@ -35,6 +35,16 @@ signale. Elles sont désormais déclarées dans `IA/tâches/`, qui fait foi.
   l'utilisateur, corrigée le jour même. Le coût en contexte est d'une ligne par
   tâche ; le bénéfice est qu'un harness neuf sait que la tâche existe.
 
+- **Une tâche = au plus une instance vivante, tous exécutants confondus**, et
+  un champ `exécutant: local | harness` pour rendre l'invariant applicable.
+  Trou trouvé par l'utilisateur : un harness qui sait planifier crée sa propre
+  instance ; la réconciliation, ne regardant que systemd, aurait conclu
+  « aucune instance » et en aurait fabriqué une seconde. La procédure
+  fabriquait le doublon qu'elle prétendait prévenir.
+- **`exécutant` ne contredit pas « intention, jamais d'état »** : il déclare
+  quelle *classe* d'exécutant a le droit de déclencher — une règle — pas
+  l'endroit où la tâche tourne aujourd'hui — un constat.
+
 ## Évidence
 
 - `IA/skills/cron.md` d'avant écrivait directement dans
@@ -44,6 +54,8 @@ signale. Elles sont désormais déclarées dans `IA/tâches/`, qui fait foi.
   silencieusement inopérante — essai fait sur une copie jetable du coffre :
   `actif` non booléen, `quand` non quoté, agent inexistant, corps sans
   `## Instruction`.
+- Le contrôle de `exécutant` et l'avertissement `mode: commande` +
+  `exécutant: harness` vérifiés sur copie jetable.
 - `python3 scripts/generer_prompt.py` fait désormais apparaître les tâches
   déclarées : un harness neuf apprend leur existence par le prompt système.
 
@@ -60,8 +72,9 @@ hors de portée du vérificateur. Voir [[un-etat-non-declare-est-perdu]].
 
 ## Questions ouvertes
 
-- La réconciliation est décrite mais pas outillée : elle se fait à la lecture,
-  écran par écran. Un script `scripts/reconcilier_taches.py` (lecture seule,
+- La réconciliation reste décrite mais pas outillée : elle se fait à la
+  lecture, écran par écran — et elle doit maintenant inventorier **deux**
+  exécutants, ce qui la rend plus fastidieuse encore à la main. Un script `scripts/reconcilier_taches.py` (lecture seule,
   affichant le tableau des écarts) serait le prolongement naturel, mais il
   devrait interroger systemd — donc dépendre d'un exécutant, ce que le coffre
   évite jusqu'ici.
