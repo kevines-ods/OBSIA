@@ -30,3 +30,15 @@ Trois erreurs réelles ont été trouvées de cette façon en une seule session
 
 Signaler aussi ce qui n'a **pas** été fait, et pourquoi. Réduire le périmètre
 d'une demande est une décision de l'utilisateur, pas de l'agent.
+
+## Une question de l'utilisateur n'est pas une incompréhension
+
+Le 2026-09-05, deux questions formulées comme des demandes d'éclaircissement
+— « tu veux dire que… ? », « imaginons que… , on aura deux tâches ? » — ont
+chacune révélé un vrai trou de conception, dont un que la procédure écrite
+fabriquait elle-même.
+
+La conduite qui en découle : vérifier la prémisse contre le code **avant** de
+rassurer. Répondre « oui, c'est bien ça » à une question qui décrit un bug
+revient à le valider. Et quand la question a raison, le dire franchement,
+corriger, et nommer ce qui n'allait pas — pas l'enrober.
