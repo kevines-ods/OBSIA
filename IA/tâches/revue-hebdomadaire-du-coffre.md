@@ -35,7 +35,7 @@ python3 scripts/regenerate_index.py
 python3 scripts/verifier_coffre.py
 ```
 
-Charge ensuite le skill `cron` (`IA/skills/cron.md`) et applique sa section
+Charge ensuite le skill `cron` (`IA/skills/cron/cron.md`) et applique sa section
 « Réconcilier » entre `IA/tâches/` et les tâches réellement planifiées sur
 cette machine.
 

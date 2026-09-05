@@ -164,12 +164,14 @@ def construire_prompt(racine: Path, agents: list[dict], skills: list[dict],
         a("")
         a("Registre : IA/tâches/ — il fait foi. Les timers ou planificateurs qui")
         a("les déclenchent ne sont que des instances reconstructibles (§12).")
+        a("Une tâche = au plus UNE instance vivante : `exécutant` dit qui a le")
+        a("droit de la déclencher, donc qui pas.")
         a("")
         for ta in taches:
             etat = "" if ta.get("actif") else " [suspendue]"
             a(f"- **{ta['name']}**{etat} — {ta.get('description', '(sans description)')}")
             a(f"  ({ta.get('quand', '?')}, {ta.get('fuseau', '?')}, "
-              f"mode {ta.get('mode', '?')})")
+              f"mode {ta.get('mode', '?')}, exécutant {ta.get('exécutant', '?')})")
         a("")
 
     a("## Méthode")

@@ -14,6 +14,9 @@ qu'il mobilise, les serveurs MCP dont il dépend.
 Un **skill** est un fichier qui décrit une manière de faire : une procédure, des
 commandes, des pièges à éviter.
 
+Une **tâche** est un fichier qui décrit une action planifiée : quand la
+déclencher, pour quel agent, avec quelle instruction.
+
 Un **harness** — Claude Code, OpenCode, Aider, Goose, ou l'interface de ton
 choix — lit ces fichiers et exécute. Le coffre décrit *quoi* faire ; le harness
 fournit *avec quoi*.

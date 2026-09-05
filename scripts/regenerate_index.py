@@ -106,9 +106,10 @@ def rendre_ia_readme(agents: list[dict], skills: list[dict], mcp: list[dict],
     Il énumérait ses fichiers à la main : `cloture-de-session` y a manqué
     pendant plusieurs jours sans que rien ne le signale.
     """
-    L = ["# /IA/ — Définition des agents, skills et outils", "",
-         "Toutes les définitions d'agents, de compétences (skills) et d'outils",
-         "structurés (MCP) vivent ici. C'est la partie déclarative du coffre.", "",
+    L = ["# /IA/ — Définition des agents, skills, outils et tâches", "",
+         "Toutes les définitions d'agents, de compétences (skills), d'outils",
+         "structurés (MCP) et de tâches planifiées vivent ici. C'est la partie",
+         "déclarative du coffre.", "",
          "Les règles de format sont au §5 de `system/VAULT-CONTRACT.md`, qui fait foi",
          "et n'est pas reformulé ici.", "",
          "## Agents — `IA/agents/`", ""]

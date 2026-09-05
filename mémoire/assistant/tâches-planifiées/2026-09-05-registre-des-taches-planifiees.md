@@ -60,9 +60,15 @@ signale. Elles sont désormais déclarées dans `IA/tâches/`, qui fait foi.
   machine et le dépôt est public (§9) : l'esprit du §2 — rien n'est détruit —
   est tenu sans publier ce qui n'a pas à l'être.
 
+- **Le vérificateur contrôle les chemins cités et les liens Markdown** de
+  `IA/` et de la racine. Ajouté après un audit qui a trouvé cinq chemins morts
+  laissés par le passage du skill en forme dossier — dont celui que
+  l'instruction de la tâche demandait d'ouvrir au déclenchement. Consigné dans
+  [[index-maintenus-a-la-main]].
+
 ## Évidence
 
-- `IA/skills/cron.md` d'avant écrivait directement dans
+- Le skill `cron` d'avant écrivait directement dans
   `~/.config/systemd/user/` sans rien inscrire dans le coffre : aucune trace
   de la tâche côté OBSIA.
 - Le vérificateur détecte bien les quatre erreurs qui rendent une tâche
@@ -71,6 +77,10 @@ signale. Elles sont désormais déclarées dans `IA/tâches/`, qui fait foi.
   `## Instruction`.
 - Le contrôle de `exécutant` et l'avertissement `mode: commande` +
   `exécutant: harness` vérifiés sur copie jetable.
+- Audit de fin de séance : neuf omissions trouvées et corrigées — cinq chemins
+  morts, `tâche` absent des valeurs de `kind` au §5, `exécutant` absent du
+  prompt généré, l'en-tête de `IA/README.md` qui ignorait la section qu'il
+  liste, et le schéma du brouillon resté à un OBSIA sans tâches.
 - Conversion cron → `OnCalendar` validée par `systemd-analyze calendar` sur
   huit expressions, y compris `*/15 * * * *` → `*-*-* *:0/15:00` et
   `0 18 * * 1-5` → `Mon..Fri *-*-* 18:00:00`. Les champs numériques sont
@@ -101,10 +111,7 @@ hors de portée du vérificateur. Voir [[un-etat-non-declare-est-perdu]].
   un planificateur que le coffre s'interdit de nommer. C'est la moitié de
   l'inventaire qui dépend encore de la discipline de lecture.
 - Le script ne sait pas retirer une instance orpheline : il la signale et
-  s'arrête là. Volontaire — reste à voir si c'est vivable à l'usage. Un script `scripts/reconcilier_taches.py` (lecture seule,
-  affichant le tableau des écarts) serait le prolongement naturel, mais il
-  devrait interroger systemd — donc dépendre d'un exécutant, ce que le coffre
-  évite jusqu'ici.
+  s'arrête là. Volontaire — reste à voir si c'est vivable à l'usage.
 - Rien ne couvre encore la portabilité des **conversations** : la mémoire en
   est le substitut, l'historique brut reste chez le harness.
 

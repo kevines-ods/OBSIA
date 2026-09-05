@@ -351,6 +351,46 @@ def verifier_agents_nommes(agents):
                         "IA/agents/ (§1 : seul un agent existant peut être nommé)" % cite)
 
 
+# Un chemin cité entre accents graves, ou une cible de lien Markdown.
+CHEMIN_CITE = re.compile(
+    r"`((?:IA|scripts|mémoire|brouillon)/[^`\s]+\.(?:md|py|json|yml|sh))`")
+LIEN_MD = re.compile(r"\]\(([^)]+)\)")
+GABARIT = re.compile(r"[<>*…{]|AAAA|MM-JJ")          # chemins d'exemple, pas des cibles
+
+
+def verifier_chemins_cites():
+    """Un chemin cité dans `IA/` ou à la racine doit exister.
+
+    Déplacer un skill en forme dossier laisse derrière lui des chemins qui ne
+    mènent plus nulle part — dont, une fois, celui que l'instruction d'une
+    tâche demandait d'ouvrir au déclenchement. Rien ne le signalait.
+
+    Le contrôle s'arrête à `IA/` et aux documents de la racine : là, un chemin
+    faux **agit**. `mémoire/` est un récit, où une note ancienne cite
+    légitimement un état révolu ou reproduit un extrait d'index.
+    """
+    cibles = list((RACINE / "IA").rglob("*.md")) + list(RACINE.glob("*.md"))
+    for chemin in sorted(cibles):
+        rel = chemin.relative_to(RACINE)
+        if any(part.startswith(".") for part in rel.parts):
+            continue
+        texte = chemin.read_text(encoding="utf-8")
+        hors_code = re.sub(r"```.*?```", "", texte, flags=re.S)
+
+        for cite in sorted({m.group(1) for m in CHEMIN_CITE.finditer(hors_code)}):
+            if GABARIT.search(cite) or (RACINE / cite).exists():
+                continue
+            erreur(rel, "cite le chemin `%s`, qui n'existe pas" % cite)
+
+        for m in LIEN_MD.finditer(hors_code):
+            cible = m.group(1).split("#")[0].strip()
+            if (not cible or "://" in cible or cible.startswith("mailto:")
+                    or GABARIT.search(cible)):
+                continue
+            if not (chemin.parent / cible).exists():
+                erreur(rel, "lien Markdown cassé : `%s`" % cible)
+
+
 def verifier_unicite_des_noms():
     """§6 : les noms de notes doivent être uniques dans tout le coffre parent.
 
@@ -408,6 +448,7 @@ def main() -> int:
     taches = verifier_taches(RACINE / "IA" / "tâches", agents)
     verifier_references(agents, skills)
     verifier_agents_nommes(agents)
+    verifier_chemins_cites()
     verifier_unicite_des_noms()
     verifier_derives()
 

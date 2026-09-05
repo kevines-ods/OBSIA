@@ -30,3 +30,7 @@ jobs:
 
       - name: Le prompt système se génère
         run: python3 scripts/generer_prompt.py > /dev/null
+
+      # Sans --appliquer, il n'écrit rien : c'est un simple aperçu.
+      - name: Le registre des tâches se lit
+        run: python3 IA/skills/cron/scripts/appliquer_taches.py > /dev/null

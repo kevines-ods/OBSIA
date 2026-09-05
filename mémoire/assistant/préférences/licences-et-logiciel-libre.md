@@ -25,7 +25,7 @@ travers un réseau (§13 de la licence).
 - `IA/skills/pdf.md` a été **réécrit à neuf** plutôt que traduit : le skill
   d'origine était sous licence propriétaire et ne pouvait pas être republié
   dans un dépôt public, même traduit.
-- `IA/skills/cron.md` a abandonné un binaire propre à une autre application au
+- `IA/skills/cron/cron.md` a abandonné un binaire propre à une autre application au
   profit des timers systemd utilisateur, natifs et sans droits root.
 
 ## Interprétation

@@ -112,7 +112,7 @@ Tout fichier agent ou skill commence par un frontmatter YAML valide.
 | Champ | Type | Obligatoire | Notes |
 | --- | --- | --- | --- |
 | `schema` | entier | oui | version du format. Actuellement `1`. |
-| `kind` | `agent` \| `skill` \| `mcp` \| `contract` | oui | permet de valider le type sans se fier au dossier |
+| `kind` | `agent` \| `skill` \| `mcp` \| `tâche` \| `contract` | oui | permet de valider le type sans se fier au dossier |
 | `name` | texte | oui | minuscules, tirets, **sans espaces**. Identique au nom du fichier. |
 | `description` | texte | oui | une ligne. Réutilisée par le générateur de sommaires. |
 | `read_only` | booléen | oui | cf. sémantique ci-dessous |
@@ -226,7 +226,10 @@ Elle est obligatoire et contrôlée — une tâche sans elle ne déclenche rien.
 - Conséquence : les noms de notes doivent être **uniques dans tout le coffre
   parent**, pas seulement dans `OBSIA/`.
 - Les liens vers ce contrat s'écrivent en chemin relatif depuis `IA/agents/` ou
-  `IA/skills/` : `../system/VAULT-CONTRACT.md`.
+  `IA/skills/` : `../system/VAULT-CONTRACT.md`. Un skill en **forme dossier**
+  (§5) est un cran plus bas : `../../system/VAULT-CONTRACT.md`. Passer un skill
+  d'une forme à l'autre casse donc ses liens ; `scripts/verifier_coffre.py` les
+  contrôle.
 - **Structure de la mémoire.** L'espace d'un agent porte son nom — jamais
   `agent 1`, `agent 2` — et distingue ce qui est **daté** de ce qui est
   **durable** :
@@ -384,8 +387,14 @@ raison**. On corrige la source, puis on régénère — jamais l'inverse.
 `scripts/verifier_coffre.py` refuse un coffre incohérent : frontmatter
 invalide, `name` différent du nom de fichier, liste écrite en chaîne,
 description repliée sur plusieurs lignes physiques, agent déclarant un skill ou
-un MCP inexistant, tâche sans instruction ou au `quand` non quoté, nom de note
-en double, fichier généré périmé. Il n'écrit rien et sort en code 1.
+un MCP inexistant, tâche sans instruction ou au `quand` non quoté, chemin cité
+ou lien Markdown qui ne mène nulle part, nom de note en double, fichier généré
+périmé. Il n'écrit rien et sort en code 1.
+
+Le contrôle des chemins s'arrête à `IA/` et aux documents de la racine : là, un
+chemin faux **agit** — une instruction de tâche part au déclenchement, un skill
+dit d'ouvrir un fichier. `mémoire/` en est exempté : c'est un récit, où une
+note ancienne cite légitimement un état révolu.
 
 Il tourne en intégration continue à chaque poussée
 (`.github/workflows/verifier-coffre.yml`), et localement en crochet de
@@ -456,5 +465,5 @@ contexte : c'est par lui qu'un harness neuf apprend qu'une tâche existe.
 ce qui permet de constater qu'une tâche déclarée ne tourne nulle part.
 
 La procédure — lister, créer, instancier, réconcilier — vit dans le skill
-`cron` (`IA/skills/cron.md`). Ce contrat ne nomme aucun exécutant : il dit
+`cron` (`IA/skills/cron/cron.md`). Ce contrat ne nomme aucun exécutant : il dit
 *quoi* planifier, le harness fournit *avec quoi*.

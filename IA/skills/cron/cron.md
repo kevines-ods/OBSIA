@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: cron
-description: Gérer les tâches planifiées — registre `IA/tâches/`, instanciation chez l'exécutant via `scripts/appliquer_taches.py`, réconciliation après un changement de harness ou de machine. À charger dès qu'une action doit se répéter à heure fixe, et toujours avant d'en créer une. Ne couvre ni le cron système ni les tâches root.
+description: Gérer les tâches planifiées — registre `IA/tâches/`, instanciation outillée chez l'exécutant, réconciliation après un changement de harness ou de machine. À charger dès qu'une action doit se répéter à heure fixe, et toujours avant d'en créer une. Ne couvre ni le cron système ni les tâches root.
 type: outil
 read_only: false
 ---
@@ -28,7 +28,8 @@ que soit l'exécutant. C'est ce qui rend la réconciliation possible.
 ## Choisir l'exécutant — une fois, et une seule
 
 **Une tâche = au plus une instance vivante, tous exécutants confondus.** C'est
-l'invariant du registre (§12). Le champ `exécutant` le rend applicable : il
+l'invariant du registre (§12 de `../../system/VAULT-CONTRACT.md`, qui fait foi
+sur tout ce qui suit). Le champ `exécutant` le rend applicable : il
 dit qui a le droit de déclencher, donc qui n'en a pas.
 
 | Besoin | `exécutant` | Instance |
@@ -46,7 +47,7 @@ dit qui a le droit de déclencher, donc qui n'en a pas.
 Le coffre ne privilégie aucun exécutant : il exige seulement qu'on en désigne
 un, et que l'instance porte le nom `obsia-<name>`.
 
-## L'outil : `scripts/appliquer_taches.py`
+## L'outil : `IA/skills/cron/scripts/appliquer_taches.py`
 
 Il fait mécaniquement ce que les étapes 1, 3 et 6 décrivent à la main, pour le
 seul exécutant `local` :
