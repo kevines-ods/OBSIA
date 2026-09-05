@@ -46,18 +46,29 @@ def avertir(chemin, message):
 
 # ------------------------------------------------------------------ frontmatter
 
-def ligne_description_brute(chemin: Path) -> str | None:
-    """La ligne `description:` telle qu'écrite, pour détecter un scalaire replié."""
+def ligne_frontmatter_brute(chemin: Path, cle: str) -> str | None:
+    """La ligne `<cle>:` telle qu'écrite dans le frontmatter.
+
+    `lire_frontmatter()` normalise (déquote, convertit) ; certains contrôles
+    portent au contraire sur l'écriture littérale — un scalaire replié, des
+    guillemets absents.
+    """
     dans_fm = False
+    prefixe = cle + ":"
     for ligne in chemin.read_text(encoding="utf-8").splitlines():
         if ligne.strip() == "---":
             if dans_fm:
                 return None
             dans_fm = True
             continue
-        if dans_fm and ligne.startswith("description:"):
+        if dans_fm and ligne.startswith(prefixe):
             return ligne
     return None
+
+
+def ligne_description_brute(chemin: Path) -> str | None:
+    """La ligne `description:` telle qu'écrite, pour détecter un scalaire replié."""
+    return ligne_frontmatter_brute(chemin, "description")
 
 
 def verifier_fichier(chemin: Path, genre: str) -> dict | None:
@@ -153,6 +164,104 @@ def verifier_mcp(dossier: Path) -> list[dict]:
     return resultats
 
 
+MODES_TACHE = ("agent", "commande")
+EXECUTANTS = ("local", "harness")
+CORPS_ATTENDU = {"agent": "## Instruction", "commande": "## Commande"}
+
+
+def verifier_taches(dossier: Path, agents: list[dict]) -> list[dict]:
+    """Frontmatter et corps des fichiers de IA/tâches/ (§5, §12).
+
+    Une tâche déclare une intention planifiée. Trois erreurs la rendent
+    silencieusement inopérante — d'où trois contrôles :
+      · `quand` non quoté : `*/15 * * * *` est une ancre YAML invalide, tout
+        lecteur YAML réel refuse le fichier ;
+      · corps sans `## Instruction` (ou `## Commande`) : rien à déclencher ;
+      · `agent` inconnu : la tâche vise quelqu'un qui n'existe pas (§1).
+    """
+    resultats = []
+    noms_agents = {a["name"] for a in agents if a.get("name")}
+    for chemin in sorted(dossier.glob("*.md")) if dossier.is_dir() else []:
+        fm = lire_frontmatter(chemin)
+        rel = chemin.relative_to(RACINE)
+        if fm is None:
+            erreur(rel, "frontmatter absent ou non fermé")
+            continue
+
+        for champ in ("schema", "kind", "name", "description",
+                      "mode", "quand", "fuseau", "exécutant", "actif"):
+            if champ not in fm:
+                erreur(rel, "champ obligatoire manquant : `%s` (§5)" % champ)
+
+        if fm.get("kind") != "tâche":
+            erreur(rel, "`kind: %s` attendu `tâche` (§5)" % fm.get("kind"))
+        if fm.get("name") and fm["name"] != chemin.stem:
+            erreur(rel, "`name: %s` ≠ nom du fichier `%s` (§5)" % (fm["name"], chemin.stem))
+        if fm.get("name") and not NOM_VALIDE.match(fm["name"]):
+            erreur(rel, "`name: %s` — attendu : minuscules et tirets, sans espace (§5)"
+                   % fm["name"])
+        if not isinstance(fm.get("schema"), int):
+            erreur(rel, "`schema` doit être un entier (§5)")
+        if not isinstance(fm.get("actif"), bool):
+            erreur(rel, "`actif` doit valoir true ou false (§5)")
+        if not fm.get("description"):
+            erreur(rel, "`description` vide ou absente (§5)")
+
+        mode = fm.get("mode")
+        if mode not in MODES_TACHE:
+            erreur(rel, "`mode: %s` — attendu %s (§5)" % (mode, " ou ".join(MODES_TACHE)))
+
+        # `quand` : cron à 5 champs, écrit entre guillemets
+        brute = ligne_frontmatter_brute(chemin, "quand")
+        if brute:
+            valeur = brute.partition(":")[2].strip()
+            if not (valeur.startswith(('"', "'")) and valeur.endswith(('"', "'"))):
+                erreur(rel, "`quand` doit être écrit entre guillemets (§5) — sans eux, "
+                            "une expression comme */15 * * * * est une ancre YAML invalide")
+        quand = fm.get("quand")
+        if isinstance(quand, str) and len(quand.split()) != 5:
+            erreur(rel, "`quand: %s` — attendu cron à 5 champs "
+                        "(minute heure jour-du-mois mois jour-de-semaine) (§5)" % quand)
+        elif isinstance(quand, int):
+            erreur(rel, "`quand` doit être une chaîne entre guillemets, pas un nombre (§5)")
+
+        executant = fm.get("exécutant")
+        if executant not in EXECUTANTS:
+            erreur(rel, "`exécutant: %s` — attendu %s (§5). Sans lui, la "
+                        "réconciliation ne sait pas où la tâche doit tourner et "
+                        "peut créer un doublon (§12)."
+                   % (executant, " ou ".join(EXECUTANTS)))
+        elif executant == "harness" and mode == "commande":
+            avertir(rel, "`mode: commande` avec `exécutant: harness` — un "
+                         "planificateur distant n'atteint pas les fichiers de la "
+                         "machine. Vérifier que ce harness tourne bien en local.")
+
+        fuseau = fm.get("fuseau")
+        if isinstance(fuseau, str) and "/" not in fuseau and fuseau != "UTC":
+            avertir(rel, "`fuseau: %s` — attendu un identifiant IANA (`Europe/Paris`) "
+                         "ou `UTC`" % fuseau)
+
+        if mode == "agent":
+            vise = fm.get("agent")
+            if not vise:
+                erreur(rel, "`mode: agent` sans champ `agent` (§5)")
+            elif vise not in noms_agents:
+                erreur(rel, "vise l'agent `%s`, qui n'a pas de fichier dans "
+                            "IA/agents/ (§1)" % vise)
+        elif mode == "commande" and fm.get("agent"):
+            avertir(rel, "`mode: commande` avec un champ `agent` — ignoré au "
+                         "déclenchement, à retirer")
+
+        attendu = CORPS_ATTENDU.get(mode)
+        if attendu and attendu not in chemin.read_text(encoding="utf-8"):
+            erreur(rel, "corps sans section `%s` — la tâche ne déclenche rien (§5)"
+                   % attendu)
+
+        fm["_chemin"] = rel
+        resultats.append(fm)
+    return resultats
+
+
 def verifier_references(agents, skills):
     """Un agent ne déclare que des skills et des MCP qui existent."""
     connus = {s["name"] for s in skills if s.get("name")}
@@ -242,6 +351,46 @@ def verifier_agents_nommes(agents):
                         "IA/agents/ (§1 : seul un agent existant peut être nommé)" % cite)
 
 
+# Un chemin cité entre accents graves, ou une cible de lien Markdown.
+CHEMIN_CITE = re.compile(
+    r"`((?:IA|scripts|mémoire|brouillon)/[^`\s]+\.(?:md|py|json|yml|sh))`")
+LIEN_MD = re.compile(r"\]\(([^)]+)\)")
+GABARIT = re.compile(r"[<>*…{]|AAAA|MM-JJ")          # chemins d'exemple, pas des cibles
+
+
+def verifier_chemins_cites():
+    """Un chemin cité dans `IA/` ou à la racine doit exister.
+
+    Déplacer un skill en forme dossier laisse derrière lui des chemins qui ne
+    mènent plus nulle part — dont, une fois, celui que l'instruction d'une
+    tâche demandait d'ouvrir au déclenchement. Rien ne le signalait.
+
+    Le contrôle s'arrête à `IA/` et aux documents de la racine : là, un chemin
+    faux **agit**. `mémoire/` est un récit, où une note ancienne cite
+    légitimement un état révolu ou reproduit un extrait d'index.
+    """
+    cibles = list((RACINE / "IA").rglob("*.md")) + list(RACINE.glob("*.md"))
+    for chemin in sorted(cibles):
+        rel = chemin.relative_to(RACINE)
+        if any(part.startswith(".") for part in rel.parts):
+            continue
+        texte = chemin.read_text(encoding="utf-8")
+        hors_code = re.sub(r"```.*?```", "", texte, flags=re.S)
+
+        for cite in sorted({m.group(1) for m in CHEMIN_CITE.finditer(hors_code)}):
+            if GABARIT.search(cite) or (RACINE / cite).exists():
+                continue
+            erreur(rel, "cite le chemin `%s`, qui n'existe pas" % cite)
+
+        for m in LIEN_MD.finditer(hors_code):
+            cible = m.group(1).split("#")[0].strip()
+            if (not cible or "://" in cible or cible.startswith("mailto:")
+                    or GABARIT.search(cible)):
+                continue
+            if not (chemin.parent / cible).exists():
+                erreur(rel, "lien Markdown cassé : `%s`" % cible)
+
+
 def verifier_unicite_des_noms():
     """§6 : les noms de notes doivent être uniques dans tout le coffre parent.
 
@@ -296,8 +445,10 @@ def main() -> int:
         erreur("IA/skills/", "aucun skill valide trouvé")
 
     verifier_mcp(RACINE / "IA" / "MCP")
+    taches = verifier_taches(RACINE / "IA" / "tâches", agents)
     verifier_references(agents, skills)
     verifier_agents_nommes(agents)
+    verifier_chemins_cites()
     verifier_unicite_des_noms()
     verifier_derives()
 
@@ -314,8 +465,8 @@ def main() -> int:
         return 1
 
     if not silencieux:
-        print("Coffre cohérent : %d agent(s), %d skill(s), index et sommaires à jour."
-              % (len(agents), len(skills)))
+        print("Coffre cohérent : %d agent(s), %d skill(s), %d tâche(s), "
+              "index et sommaires à jour." % (len(agents), len(skills), len(taches)))
     return 0
 
 

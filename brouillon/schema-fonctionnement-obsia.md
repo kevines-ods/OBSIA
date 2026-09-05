@@ -14,9 +14,15 @@ graph TD
   A -->|actions structurées| M["MCP<br/>IA/MCP/"]
   A -->|écrit| ME["mémoire/assistant/<br/>écriture directe"]
   A -->|écrit| B["brouillon/<br/>écriture directe"]
-  A -->|patch Git revu| P["reste du coffre<br/>IA/system, IA/agents"]
-  SC["scripts/*.py"] -->|régénèrent| G["sommaire.md<br/>agents-index.md<br/>skills-index.md"]
+  A -->|patch Git revu| P["reste du coffre<br/>IA/system, IA/agents, IA/tâches"]
+  T["tâches<br/>IA/tâches/"] -.déclenchent.-> A
+  T -->|instanciées en| I["timer systemd<br/>ou planificateur du harness<br/>obsia-&lt;nom&gt;"]
+  SC["scripts/*.py"] -->|régénèrent| G["sommaire.md<br/>agents-index.md<br/>skills-index.md<br/>taches-index.md<br/>IA/README.md"]
 ```
+
+Le registre `IA/tâches/` fait foi ; l'instance qui déclenche réellement — timer
+systemd ou planificateur du harness — en est une copie jetable, et il n'y en a
+jamais plus d'une par tâche (§12).
 
 Rendu SVG vérifié hors coffre avec :
 

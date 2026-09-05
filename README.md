@@ -14,13 +14,16 @@ qu'il mobilise, les serveurs MCP dont il dépend.
 Un **skill** est un fichier qui décrit une manière de faire : une procédure, des
 commandes, des pièges à éviter.
 
+Une **tâche** est un fichier qui décrit une action planifiée : quand la
+déclencher, pour quel agent, avec quelle instruction.
+
 Un **harness** — Claude Code, OpenCode, Aider, Goose, ou l'interface de ton
 choix — lit ces fichiers et exécute. Le coffre décrit *quoi* faire ; le harness
 fournit *avec quoi*.
 
 Le chargement est paresseux : le prompt système ne contient que l'index des
-agents et des skills. Le contenu d'un skill n'est lu que lorsqu'il devient
-nécessaire.
+agents, des skills et des tâches planifiées. Le contenu d'un skill n'est lu que
+lorsqu'il devient nécessaire.
 
 ## Structure
 
@@ -30,13 +33,14 @@ OBSIA/                       le coffre — la racine du dépôt EST le coffre
 │   ├── agents/              définition des agents
 │   ├── skills/              compétences réutilisables
 │   ├── MCP/                 outils structurés
+│   ├── tâches/              registre des tâches planifiées
 │   └── system/              VAULT-CONTRACT.md (les règles), index,
 │                            prompt-fondateur.md (intention d'origine)
 ├── mémoire/                 par agent → profil, préférences, expériences, projets
 ├── brouillon/               zone de travail libre
 ├── scripts/
 │   ├── generer_prompt.py    prompt système depuis les frontmatters
-│   ├── regenerate_index.py  agents-index.md et skills-index.md
+│   ├── regenerate_index.py  les trois index et IA/README.md
 │   ├── regenerate_sommaire.py  les sommaire.md de mémoire/
 │   └── verifier_coffre.py   cohérence du coffre — utilisé en CI
 ├── HISTORIQUE.md            ce qui a été décidé puis écarté
@@ -53,6 +57,55 @@ Le coffre ne connaît aucune interface et n'en nomme aucune. Il décrit *quoi*
 faire ; le harness de ton choix fournit *avec quoi*. Rien ici ne dépend d'un
 programme particulier — c'est la condition pour qu'OBSIA reste libre de ses
 mouvements.
+
+## Tâches planifiées
+
+Une tâche récurrente est déclarée dans `IA/tâches/<nom>.md` : quand, pour quel
+agent, et l'instruction exacte à lui envoyer. Ce fichier fait foi.
+
+Le timer systemd, le planificateur du harness ou le cron de la machine ne sont
+que des **instances** de cette déclaration : nommées `obsia-<nom>`, jetables,
+recréables depuis le registre. Changer de harness ou de machine ne perd donc
+plus rien — on relit le registre et on ré-instancie.
+
+```yaml
+---
+schema: 1
+kind: tâche
+name: revue-hebdomadaire-du-coffre
+description: Une ligne — quoi, et à quel rythme.
+mode: agent              # agent | commande
+quand: "0 9 * * 1"       # cron à 5 champs, entre guillemets
+fuseau: Europe/Paris
+exécutant: local         # local | harness — qui a le droit de déclencher
+agent: assistant
+actif: true
+---
+```
+
+Le corps porte l'instruction — auto-suffisante, puisqu'au déclenchement il n'y
+a plus de conversation. Règles au §12 de `VAULT-CONTRACT.md`, procédure dans le
+skill `cron`.
+
+Une tâche = **au plus une instance vivante**, tous exécutants confondus. C'est
+à ça que sert `exécutant` : planifier la même chose côté harness *et* côté
+machine la déclencherait deux fois, sans qu'aucune erreur ne le signale.
+
+Le passage du registre aux timers systemd est outillé :
+
+```bash
+python3 IA/skills/cron/scripts/appliquer_taches.py             # aperçu
+python3 IA/skills/cron/scripts/appliquer_taches.py --appliquer  # exécute
+```
+
+Il compare le registre aux unités `obsia-*` présentes, affiche le tableau des
+écarts, et n'écrit qu'avec `--appliquer`. C'est le seul script du dépôt qui
+dépende d'un exécutant — il vit donc dans le skill qui s'en sert, pas dans
+`scripts/`, qui reste utilisable sans rien installer.
+
+`IA/system/taches-index.md`, généré comme les autres index, met le registre en
+contexte permanent : un harness neuf sait que ces tâches existent. Il ne les
+crée pas pour autant sur la machine — l'instanciation reste un geste explicite.
 
 ## Démarrage
 
@@ -81,8 +134,8 @@ python3 scripts/verifier_coffre.py
 `verifier_coffre.py` refuse un frontmatter invalide, un `name` qui ne
 correspond pas au nom du fichier, une liste écrite en chaîne, une description
 repliée sur plusieurs lignes, un agent déclarant un skill ou un MCP
-inexistant, un nom de note en double, ou un fichier généré périmé. Il n'écrit
-rien et sort en code 1.
+inexistant, une tâche sans instruction ou au `quand` non quoté, un nom de note
+en double, ou un fichier généré périmé. Il n'écrit rien et sort en code 1.
 
 Les mêmes contrôles tournent en intégration continue à chaque poussée. Aucune
 dépendance : bibliothèque standard de Python uniquement.
@@ -105,7 +158,7 @@ Tout fichier agent ou skill commence par un frontmatter YAML strict.
 ```yaml
 ---
 schema: 1
-kind: skill              # agent | skill | contract
+kind: skill              # agent | skill | mcp | tâche | contract
 name: nom-du-skill       # minuscules, tirets, identique au nom du fichier
 description: Une ligne — quoi et quand.
 type: core               # skills uniquement : core | outil
@@ -145,9 +198,9 @@ résumé :
   des patches Git soumis à revue.
 - Aucune suppression sans archivage préalable.
 - Aperçu obligatoire avant toute action touchant plusieurs fichiers.
-- Les fichiers générés — `sommaire.md`, `agents-index.md`, `skills-index.md` —
-  sont régénérés par script, jamais édités à la main. Si un index contredit un
-  frontmatter, le frontmatter a raison.
+- Les fichiers générés — `sommaire.md`, `agents-index.md`, `skills-index.md`,
+  `taches-index.md`, `IA/README.md` — sont régénérés par script, jamais édités à la main. Si un
+  index contredit un frontmatter, le frontmatter a raison.
 - Un agent et un skill sont deux choses distinctes. Un agent décide ; un skill
   décrit une manière de faire.
 

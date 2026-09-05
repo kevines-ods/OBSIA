@@ -50,8 +50,25 @@ début, et les liens qu'il produisait étaient faux depuis le début.
 - `scripts/verifier_coffre.py` refuse un coffre incohérent, et tourne en CI à
   chaque poussée.
 
+## Le cas du chemin cité en prose (2026-09-05)
+
+Un chemin écrit dans une phrase décrit un fichier, exactement comme un index :
+même dérive, même silence. Déplacer `IA/skills/cron.md` en
+`IA/skills/cron/cron.md` a laissé cinq chemins morts derrière lui — dont celui
+que **l'instruction d'une tâche planifiée** demandait d'ouvrir au
+déclenchement. Aucun n'aurait été vu avant la panne.
+
+`scripts/verifier_coffre.py` contrôle désormais les chemins cités et les liens
+Markdown de `IA/` et de la racine. Il s'arrête là : `mémoire/` est un récit,
+où une note ancienne cite légitimement un état révolu. Le contrôle vise ce qui
+**agit**, pas ce qui raconte.
+
 ## Généralisation
 
 Avant d'écrire un fichier qui en décrit d'autres, se poser la question : d'où
 vient l'information ? Si elle existe déjà ailleurs, ce fichier doit être
 produit, jamais saisi.
+
+Et quand l'information ne peut pas être produite — un chemin dans une phrase,
+un lien dans une note — elle doit au moins être **vérifiée**. Écrire à la main
+ce qui décrit autre chose n'est acceptable que sous contrôle.

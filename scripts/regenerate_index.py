@@ -64,15 +64,52 @@ def rendre_skills(agents: list[dict], skills: list[dict]) -> str:
     return "\n".join(L)
 
 
-def rendre_ia_readme(agents: list[dict], skills: list[dict], mcp: list[dict]) -> str:
+def rendre_taches(taches: list[dict]) -> str:
+    """Index des tâches planifiées — pendant de `skills-index.md` pour `IA/tâches/`.
+
+    Toujours présent en contexte : c'est par lui qu'un harness neuf apprend
+    qu'une tâche existe. Il ne la déclenche pas pour autant (§12).
+    """
+    L = ["# taches-index.md — Index des tâches planifiées", "",
+         "| Tâche | Quand | Fuseau | Mode | Exécutant | Agent | Active | Description |",
+         "|---|---|---|---|---|---|---|---|"]
+    for t_ in taches:
+        L.append("| [%s](../tâches/%s) | `%s` | %s | %s | %s | %s | %s | %s |"
+                 % (t_["name"], t_["_fichier"], t_.get("quand", "?"),
+                    t_.get("fuseau", "?"), t_.get("mode", "?"),
+                    t_.get("exécutant", "?"), t_.get("agent", "—"),
+                    "oui" if t_.get("actif") else "non",
+                    t_.get("description", "")))
+    if not taches:
+        L.append("| — | | | | | | | Aucune tâche déclarée. |")
+    L += ["",
+          "> Le registre `IA/tâches/` **déclare** ; rien ne s'instancie tout seul.",
+          "> Une tâche listée ici n'est pas forcément planifiée sur la machine",
+          "> courante : charger le skill `cron` pour instancier ou réconcilier",
+          "> (cf. `VAULT-CONTRACT.md` §12).",
+          "",
+          "> `Exécutant` dit qui a le droit de déclencher — et donc qui pas :",
+          "> une tâche = **au plus une instance vivante**, tous exécutants",
+          "> confondus. Planifier la même chose côté harness *et* côté machine",
+          "> la déclenche deux fois.",
+          "",
+          "> Fichier **généré** par `scripts/regenerate_index.py` depuis les",
+          "> frontmatters, qui font foi. Ne pas éditer à la main (§11).",
+          ""]
+    return "\n".join(L)
+
+
+def rendre_ia_readme(agents: list[dict], skills: list[dict], mcp: list[dict],
+                     taches: list[dict]) -> str:
     """README de `IA/`, dérivé lui aussi des frontmatters.
 
     Il énumérait ses fichiers à la main : `cloture-de-session` y a manqué
     pendant plusieurs jours sans que rien ne le signale.
     """
-    L = ["# /IA/ — Définition des agents, skills et outils", "",
-         "Toutes les définitions d'agents, de compétences (skills) et d'outils",
-         "structurés (MCP) vivent ici. C'est la partie déclarative du coffre.", "",
+    L = ["# /IA/ — Définition des agents, skills, outils et tâches", "",
+         "Toutes les définitions d'agents, de compétences (skills), d'outils",
+         "structurés (MCP) et de tâches planifiées vivent ici. C'est la partie",
+         "déclarative du coffre.", "",
          "Les règles de format sont au §5 de `system/VAULT-CONTRACT.md`, qui fait foi",
          "et n'est pas reformulé ici.", "",
          "## Agents — `IA/agents/`", ""]
@@ -90,17 +127,45 @@ def rendre_ia_readme(agents: list[dict], skills: list[dict], mcp: list[dict]) ->
     L += ["",
           "Gabarit de configuration à compléter côté harness : `MCP/mcp.example.json`.",
           "",
+          "## Tâches planifiées — `IA/tâches/`", "",
+          "Le registre fait foi ; timers et planificateurs n'en sont que des",
+          "instances reconstructibles (§12). Procédure dans le skill `cron`.", ""]
+    if taches:
+        for t_ in taches:
+            suspendue = "" if t_.get("actif") else "  — **suspendue**"
+            L.append("- **%s** (`%s`, %s, mode `%s`, exécutant `%s`) — %s%s"
+                     % (t_["name"], t_.get("quand", "?"), t_.get("fuseau", "?"),
+                        t_.get("mode", "?"), t_.get("exécutant", "?"),
+                        t_.get("description", ""), suspendue))
+    else:
+        L.append("Aucune tâche déclarée.")
+    L += ["",
           "## `IA/system/`", "",
           "- `VAULT-CONTRACT.md` — les règles. Fait foi.",
-          "- `agents-index.md`, `skills-index.md` — index générés (§11).",
+          "- `agents-index.md`, `skills-index.md`, `taches-index.md` — index",
+          "  générés (§11).",
           "- `providers.md` — repère pour choisir un modèle. Aucune clé n'y vit.",
           "- `prompt-fondateur.md` — intention d'origine, non normative.",
           "- `session-log/` — une note par session de travail (§9).",
+          "",
+          "Le registre des tâches planifiées vit à côté, dans `IA/tâches/` (§12) ;",
+          "`system/taches-index.md` en est l'index généré.",
           "",
           "> Fichier **généré** par `scripts/regenerate_index.py` depuis les",
           "> frontmatters, qui font foi. Ne pas éditer à la main (§11).",
           ""]
     return "\n".join(L)
+
+
+def lire_taches(dossier) -> list[dict]:
+    """Frontmatters de IA/tâches/, triés par nom. Format décrit au §5."""
+    resultats = []
+    for chemin in sorted(dossier.glob("*.md")) if dossier.is_dir() else []:
+        fm = lire_frontmatter(chemin)
+        if fm and fm.get("kind") == "tâche":
+            fm["_fichier"] = chemin.name
+            resultats.append(fm)
+    return resultats
 
 
 def lire_mcp(dossier) -> list[dict]:
@@ -124,11 +189,13 @@ def main() -> int:
         return 1
 
     mcp = lire_mcp(RACINE / "IA" / "MCP")
+    taches = lire_taches(RACINE / "IA" / "tâches")
 
     attendus = {
         RACINE / "IA" / "system" / "agents-index.md": rendre_agents(agents),
         RACINE / "IA" / "system" / "skills-index.md": rendre_skills(agents, skills),
-        RACINE / "IA" / "README.md": rendre_ia_readme(agents, skills, mcp),
+        RACINE / "IA" / "system" / "taches-index.md": rendre_taches(taches),
+        RACINE / "IA" / "README.md": rendre_ia_readme(agents, skills, mcp, taches),
     }
 
     perimes, ecrits = [], 0

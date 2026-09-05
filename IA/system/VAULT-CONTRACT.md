@@ -23,8 +23,11 @@ Emplacement attendu : `IA/system/VAULT-CONTRACT.md`, depuis la racine du dépôt
 | **agent** | un interlocuteur | `IA/agents/` | possède un system prompt, mène une conversation, décide |
 | **skill** | une compétence | `IA/skills/` | décrit *comment* faire une chose, ne décide pas |
 | **MCP** | un outil | `IA/MCP/` | expose des actions structurées |
+| **tâche** | une action planifiée | `IA/tâches/` | dit quoi déclencher, quand, pour quel agent ; ne décide pas |
 
-Un agent **utilise** des skills. Un skill n'est jamais un agent.
+Un agent **utilise** des skills. Un skill n'est jamais un agent. Une tâche
+n'est ni l'un ni l'autre : elle *déclenche* un agent, qui charge ensuite les
+skills dont il a besoin.
 
 Piège historique à ne pas reproduire : **`obsidian-manager` est un SKILL** ; il a
 longtemps été pris pour un agent qui n'a jamais existé en tant que fichier.
@@ -55,9 +58,10 @@ dossier**, et elles ne désignent personne.
     autre agent ;
   - `IA/skills/` — uniquement s'il déclare le skill `createur-de-skill` dans
     son frontmatter.
-- Tout le reste du coffre (`IA/agents/`, `IA/system/`, la structure du dépôt)
-  reste protégé : toute modification durable y passe par un **patch Git**
-  soumis à revue humaine. Les interventions hors du coffre relèvent du §3.
+- Tout le reste du coffre (`IA/agents/`, `IA/system/`, `IA/tâches/`, la
+  structure du dépôt) reste protégé : toute modification durable y passe par un
+  **patch Git** soumis à revue humaine. Les interventions hors du coffre
+  relèvent du §3.
 - Aucune suppression sans archivage préalable dans `.archive/`, y compris dans
   une zone en écriture directe. Ce dossier est **versionné** : ignoré par Git,
   il ne survivrait pas à un clone neuf et la règle ne promettrait rien. Rien
@@ -68,7 +72,8 @@ dossier**, et elles ne désignent personne.
   passe par patch.
 - Les **fichiers générés** ne sont jamais édités à la main ni par un agent,
   même dans une zone en écriture directe : `sommaire.md`, `agents-index.md`,
-  `skills-index.md` et `IA/README.md` sont régénérés par les scripts du §11,
+  `skills-index.md`, `taches-index.md` et `IA/README.md` sont régénérés par les
+  scripts du §11,
   qui donne la liste complète et la commande.
 - Ces trois zones sont les seules **du dépôt**. Hors du dépôt, une quatrième
   zone est en écriture directe : `0-EN VRAC/` dans le coffre parent (§7).
@@ -107,7 +112,7 @@ Tout fichier agent ou skill commence par un frontmatter YAML valide.
 | Champ | Type | Obligatoire | Notes |
 | --- | --- | --- | --- |
 | `schema` | entier | oui | version du format. Actuellement `1`. |
-| `kind` | `agent` \| `skill` \| `mcp` \| `contract` | oui | permet de valider le type sans se fier au dossier |
+| `kind` | `agent` \| `skill` \| `mcp` \| `tâche` \| `contract` | oui | permet de valider le type sans se fier au dossier |
 | `name` | texte | oui | minuscules, tirets, **sans espaces**. Identique au nom du fichier. |
 | `description` | texte | oui | une ligne. Réutilisée par le générateur de sommaires. |
 | `read_only` | booléen | oui | cf. sémantique ci-dessous |
@@ -178,6 +183,29 @@ Un MCP n'est utilisable que s'il est **déclaré par un agent** (§10.2). Un
 fichier de `IA/MCP/` que personne ne déclare est du code mort : le vérificateur
 le signale.
 
+**Champs propres aux tâches**
+
+Un fichier de `IA/tâches/` décrit une action planifiée. Il n'a pas de
+`read_only` : une tâche n'écrit rien par elle-même — c'est l'agent ou la
+commande qu'elle déclenche qui agit, sous ses propres règles.
+
+| Champ | Type | Obligatoire | Notes |
+| --- | --- | --- | --- |
+| `schema` | entier | oui | comme partout, actuellement `1` |
+| `kind` | `tâche` | oui | |
+| `name` | texte | oui | identique au nom du fichier |
+| `description` | texte | oui | une ligne |
+| `mode` | `agent` \| `commande` | oui | `agent` : une instruction part vers un agent, il faut donc un harness. `commande` : une commande shell, qui tourne sans modèle. |
+| `quand` | texte **entre guillemets** | oui | cron à 5 champs — `"0 9 * * 1"`. Les guillemets ne sont pas décoratifs : `*/15 * * * *` non quoté est une ancre YAML invalide, et tout lecteur YAML réel refuse le fichier. |
+| `fuseau` | texte | oui | `Europe/Paris`, `UTC`… Un cron sans fuseau est ambigu, et les planificateurs distants raisonnent en UTC. |
+| `exécutant` | `local` \| `harness` | oui | **qui a le droit de la déclencher** — `local` : la machine (timer systemd, cron) ; `harness` : le planificateur du harness, quand il en a un. Ce n'est pas un état mais une contrainte : une tâche qui touche des fichiers locaux ne peut pas être `harness`, une tâche qui doit partir machine éteinte ne peut pas être `local`. |
+| `agent` | texte | si `mode: agent` | nom d'un agent existant (§1) |
+| `actif` | booléen | oui | `false` = déclarée mais non instanciée |
+
+Le corps du fichier porte ce que le frontmatter ne peut pas contenir : une
+section `## Instruction` en `mode: agent`, `## Commande` en `mode: commande`.
+Elle est obligatoire et contrôlée — une tâche sans elle ne déclenche rien.
+
 **Règles de syntaxe**
 
 - Les listes s'écrivent en YAML, une entrée par ligne précédée d'un tiret.
@@ -198,7 +226,10 @@ le signale.
 - Conséquence : les noms de notes doivent être **uniques dans tout le coffre
   parent**, pas seulement dans `OBSIA/`.
 - Les liens vers ce contrat s'écrivent en chemin relatif depuis `IA/agents/` ou
-  `IA/skills/` : `../system/VAULT-CONTRACT.md`.
+  `IA/skills/` : `../system/VAULT-CONTRACT.md`. Un skill en **forme dossier**
+  (§5) est un cran plus bas : `../../system/VAULT-CONTRACT.md`. Passer un skill
+  d'une forme à l'autre casse donc ses liens ; `scripts/verifier_coffre.py` les
+  contrôle.
 - **Structure de la mémoire.** L'espace d'un agent porte son nom — jamais
   `agent 1`, `agent 2` — et distingue ce qui est **daté** de ce qui est
   **durable** :
@@ -347,7 +378,8 @@ que rien ne le signale.
 | `mémoire/**/sommaire.md` | `scripts/regenerate_sommaire.py` | le contenu des notes |
 | `IA/system/agents-index.md` | `scripts/regenerate_index.py` | le frontmatter des agents |
 | `IA/system/skills-index.md` | `scripts/regenerate_index.py` | le frontmatter des skills |
-| `IA/README.md` | `scripts/regenerate_index.py` | les frontmatters d'agents, skills et MCP |
+| `IA/system/taches-index.md` | `scripts/regenerate_index.py` | le frontmatter des tâches |
+| `IA/README.md` | `scripts/regenerate_index.py` | les frontmatters d'agents, skills, MCP et tâches |
 
 Corollaire : si un index et un frontmatter se contredisent, **le frontmatter a
 raison**. On corrige la source, puis on régénère — jamais l'inverse.
@@ -355,8 +387,14 @@ raison**. On corrige la source, puis on régénère — jamais l'inverse.
 `scripts/verifier_coffre.py` refuse un coffre incohérent : frontmatter
 invalide, `name` différent du nom de fichier, liste écrite en chaîne,
 description repliée sur plusieurs lignes physiques, agent déclarant un skill ou
-un MCP inexistant, nom de note en double, fichier généré périmé. Il n'écrit
-rien et sort en code 1.
+un MCP inexistant, tâche sans instruction ou au `quand` non quoté, chemin cité
+ou lien Markdown qui ne mène nulle part, nom de note en double, fichier généré
+périmé. Il n'écrit rien et sort en code 1.
+
+Le contrôle des chemins s'arrête à `IA/` et aux documents de la racine : là, un
+chemin faux **agit** — une instruction de tâche part au déclenchement, un skill
+dit d'ouvrir un fichier. `mémoire/` en est exempté : c'est un récit, où une
+note ancienne cite légitimement un état révolu.
 
 Il tourne en intégration continue à chaque poussée
 (`.github/workflows/verifier-coffre.yml`), et localement en crochet de
@@ -380,3 +418,52 @@ python3 scripts/verifier_coffre.py
 
 Ces scripts n'utilisent que la bibliothèque standard de Python, à dessein : le
 coffre ne doit dépendre d'aucune installation pour être vérifiable.
+
+---
+
+## 12. Tâches planifiées
+
+Une tâche planifiée est déclarée **dans le coffre**, jamais seulement chez
+celui qui l'exécute. Le fichier `IA/tâches/<nom>.md` est la source de vérité ;
+le timer systemd, le planificateur du harness ou le cron de la machine n'en
+sont que des **instances** — jetables, reconstructibles.
+
+Le motif est le même qu'au §11 pour les index : ce qui n'existe qu'à un seul
+endroit se perd sans que rien ne le signale. Sans registre, changer de harness
+ou de machine efface silencieusement des tâches dont plus personne ne connaît
+l'existence. Avec registre, la perte se répare : on relit le registre et on
+ré-instancie.
+
+Trois règles en découlent :
+
+- **Le registre déclare une intention, jamais un état.** Ni identifiant
+  d'instance, ni nom de machine, ni date du dernier déclenchement : ces
+  informations vieillissent mal, et le dépôt est public (§9). L'état se lit
+  chez l'exécutant, au moment où on le demande. `exécutant` n'y déroge pas :
+  il dit quelle **classe** d'exécutant a le droit de déclencher la tâche, pas
+  où elle tourne en ce moment — une règle, pas un constat.
+- **Une tâche = au plus une instance vivante, tous exécutants confondus.**
+  C'est l'invariant du registre. Sans lui, une tâche créée par le
+  planificateur du harness puis instanciée en timer local se déclenche deux
+  fois — et la réconciliation, qui ne regarderait qu'un seul exécutant,
+  fabriquerait elle-même le doublon en croyant réparer un manque. Le champ
+  `exécutant` du §5 tranche d'avance : il dit qui, et donc qui pas.
+- **Une instance porte le nom de sa tâche, préfixé `obsia-`.** C'est la seule
+  clé qui permette de rapprocher registre et exécutant quel que soit ce
+  dernier ; le préfixe distingue au passage ce qui vient du coffre de ce que
+  l'utilisateur a planifié par ailleurs.
+- **L'instruction d'une tâche est auto-suffisante.** Au déclenchement il n'y a
+  plus de conversation : le corps du fichier est tout ce qui sera reçu.
+
+Créer, modifier ou suspendre une tâche touche `IA/tâches/` : **patch Git revu**
+(§2). Instancier ou retirer une instance chez l'exécutant est une action à
+effet externe : une ligne dans le log de session (§9).
+
+`IA/system/taches-index.md` en est l'index généré, toujours présent en
+contexte : c'est par lui qu'un harness neuf apprend qu'une tâche existe.
+**Savoir n'est pas instancier** — l'index informe, il ne déclenche rien ; c'est
+ce qui permet de constater qu'une tâche déclarée ne tourne nulle part.
+
+La procédure — lister, créer, instancier, réconcilier — vit dans le skill
+`cron` (`IA/skills/cron/cron.md`). Ce contrat ne nomme aucun exécutant : il dit
+*quoi* planifier, le harness fournit *avec quoi*.
