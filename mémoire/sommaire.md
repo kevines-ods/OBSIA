@@ -3,13 +3,13 @@
 > Généré par `scripts/regenerate_sommaire.py` depuis le contenu des notes.
 > Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §2).
 
-1 sous-dossier, 20 notes, du 2026-08-15 au 2026-09-05.
+1 sous-dossier, 22 notes, du 2026-08-15 au 2026-09-05.
 
 ## Sous-dossiers
 
 | Dossier | Notes | Entrée représentative |
 |---|---|---|
-| [assistant](assistant/) | 19 | 2026-09-05 — Registre des tâches planifiées |
+| [assistant](assistant/) | 21 | 2026-09-05 — Outillage des tâches, et l'audit qui a suivi |
 
 ## Notes
 
