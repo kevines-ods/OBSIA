@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: cron
-description: Gérer les tâches planifiées — registre `IA/tâches/`, instanciation chez l'exécutant, réconciliation après un changement de harness ou de machine. À charger dès qu'une action doit se répéter à heure fixe, et toujours avant d'en créer une. Ne couvre ni le cron système ni les tâches root.
+description: Gérer les tâches planifiées — registre `IA/tâches/`, instanciation chez l'exécutant via `scripts/appliquer_taches.py`, réconciliation après un changement de harness ou de machine. À charger dès qu'une action doit se répéter à heure fixe, et toujours avant d'en créer une. Ne couvre ni le cron système ni les tâches root.
 type: outil
 read_only: false
 ---
@@ -46,6 +46,39 @@ dit qui a le droit de déclencher, donc qui n'en a pas.
 Le coffre ne privilégie aucun exécutant : il exige seulement qu'on en désigne
 un, et que l'instance porte le nom `obsia-<name>`.
 
+## L'outil : `scripts/appliquer_taches.py`
+
+Il fait mécaniquement ce que les étapes 1, 3 et 6 décrivent à la main, pour le
+seul exécutant `local` :
+
+```bash
+python3 IA/skills/cron/scripts/appliquer_taches.py             # aperçu, n'écrit rien
+python3 IA/skills/cron/scripts/appliquer_taches.py --appliquer  # exécute
+python3 IA/skills/cron/scripts/appliquer_taches.py --config     # gabarit de config
+```
+
+L'aperçu **est** le preview du §2 : le lancer d'abord, montrer le tableau,
+n'appliquer qu'ensuite. Il ne touche que les unités préfixées `obsia-`, et
+laisse en place toute instance orpheline — une instance dont on ignore
+l'intention ne se supprime pas en aveugle.
+
+Deux choses qu'il ne fera pas à ta place :
+
+- **`mode: agent` exige une configuration locale.** Le coffre ne nomme aucun
+  harness (§3) : la commande qui lance un agent vit dans
+  `~/.config/obsia/appliquer.conf`, hors dépôt. Sans elle, le script refuse
+  d'instancier une tâche `mode: agent` plutôt que d'en poser une inerte.
+- **`exécutant: harness` n'est pas de son ressort.** Il se contente de
+  signaler le cas — et de crier `DOUBLON` si un timer local existe malgré
+  tout.
+
+Ce qu'il retire est archivé sous `~/.local/share/obsia/archive/`, **hors du
+dépôt** : une unité systemd porte des chemins de la machine, et le dépôt est
+public (§9). L'esprit du §2 est respecté — rien n'est détruit — sans publier
+ce qui n'a pas à l'être.
+
+Lire le tableau de l'étape 6 pour interpréter ses verdicts : ce sont les mêmes.
+
 ## Procédure
 
 ### 1. Lister — toujours en premier
@@ -61,6 +94,7 @@ Puis les instances réelles sur cette machine :
 
 ```bash
 systemctl --user list-timers --all 'obsia-*'
+python3 IA/skills/cron/scripts/appliquer_taches.py    # registre et instances confrontés
 ```
 
 Si le harness a son propre planificateur, lister aussi de son côté — c'est la
@@ -98,6 +132,10 @@ Puis le corps : `## Intention`, et `## Instruction` (mode agent) ou
 
 Lire `exécutant` avant de faire quoi que ce soit. `local` → la section
 systemd ci-dessous. `harness` → la section suivante, et **rien** côté systemd.
+
+Pour `exécutant: local`, `appliquer_taches.py --appliquer` fait tout ce qui
+suit. Ce qui suit reste utile pour comprendre ce qu'il pose, et pour le faire
+à la main là où il ne tourne pas.
 
 **Timer systemd utilisateur** (`exécutant: local`) — deux fichiers dans
 `~/.config/systemd/user/`.
@@ -172,8 +210,10 @@ comportement voulu : la suspension se déclare, elle ne s'improvise pas.
 
 ### 6. Réconcilier — après un changement de harness ou de machine
 
-C'est la raison d'être du registre. Inventorier **tous** les exécutants avant
-de conclure — systemd *et* le planificateur du harness. Une tâche jugée
+C'est la raison d'être du registre. `appliquer_taches.py` produit ce tableau
+pour l'exécutant `local` ; le côté harness reste à inventorier à la main, et
+c'est justement la moitié qu'on oublie. Inventorier **tous** les exécutants
+avant de conclure — systemd *et* le planificateur du harness. Une tâche jugée
 « absente » parce qu'on n'a regardé qu'un seul côté, puis instanciée, devient
 un doublon : c'est la réconciliation elle-même qui casse alors la règle.
 

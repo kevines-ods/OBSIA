@@ -88,6 +88,18 @@ Une tâche = **au plus une instance vivante**, tous exécutants confondus. C'est
 à ça que sert `exécutant` : planifier la même chose côté harness *et* côté
 machine la déclencherait deux fois, sans qu'aucune erreur ne le signale.
 
+Le passage du registre aux timers systemd est outillé :
+
+```bash
+python3 IA/skills/cron/scripts/appliquer_taches.py             # aperçu
+python3 IA/skills/cron/scripts/appliquer_taches.py --appliquer  # exécute
+```
+
+Il compare le registre aux unités `obsia-*` présentes, affiche le tableau des
+écarts, et n'écrit qu'avec `--appliquer`. C'est le seul script du dépôt qui
+dépende d'un exécutant — il vit donc dans le skill qui s'en sert, pas dans
+`scripts/`, qui reste utilisable sans rien installer.
+
 `IA/system/taches-index.md`, généré comme les autres index, met le registre en
 contexte permanent : un harness neuf sait que ces tâches existent. Il ne les
 crée pas pour autant sur la machine — l'instanciation reste un geste explicite.
