@@ -22,6 +22,7 @@ skills:
 mcp:
   - git-hub
   - chrome-devtools
+  - obsidian
 read_only: false
 ---
 
