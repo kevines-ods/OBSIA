@@ -33,6 +33,7 @@ et n'est pas reformulé ici.
 
 - **chrome-devtools** (`stdio`, permission `elevated`) — Navigation, capture et automatisation web via Chrome DevTools.
 - **git-hub** (`http`, permission `elevated`) — Push/pull, PR, issues et review sur GitHub.
+- **obsidian** (`stdio`, permission `normal`) — Accéder au coffre ouvert dans Obsidian via son API REST locale — recherche, lecture, création et mise à jour de notes, rétroliens, tags. À charger quand une action porte sur une note du coffre parent, ou quand un rétrolien doit être garanti indexé par Obsidian.
 
 Gabarit de configuration à compléter côté harness : `MCP/mcp.example.json`.
 
