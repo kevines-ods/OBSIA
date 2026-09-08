@@ -17,6 +17,7 @@ skills:
   - traefik
   - proxmox
   - sauvegardes
+  - traitement-des-notes
 mcp:
   - git-hub
   - chrome-devtools

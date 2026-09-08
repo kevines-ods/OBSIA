@@ -371,9 +371,15 @@ qu'Obsidian indexe. Trois conditions pour que ça marche :
 survit aux déplacements, un lien par chemin casse. Écrire
 `[[Obsidian MOC]]`, pas `[[SAVOIRS/Obsidian MOC]]`.
 
-Tant que la convention de tags et de frontmatter du coffre parent n'est pas
-établie (elle le sera, puis appliquée rétroactivement), poser au minimum les
-tags et les rétroliens ; ne pas inventer de schéma.
+Les **tags** du coffre parent suivent un vocabulaire contrôlé : le registre
+`IA/system/tags-du-coffre-parent.md` fait foi. On ne pose jamais un tag hors
+liste — un tag nouveau se propose par patch sur ce registre. Les tags générés
+librement par une IA, sans cohérence, surchargent les recherches : à éviter.
+Le frontmatter minimal d'une note de connaissance porte `type` (concept |
+revue | projet | personnel | note) et `tags` ; `source` s'ajoute pour une note
+venue de l'extérieur. La procédure de traitement vit dans le skill
+`traitement-des-notes` (`IA/skills/traitement-des-notes/traitement-des-notes.md`),
+le passage rétroactif sur les notes existantes dans son `scripts/`.
 
 ### 7.6 Accès du harness
 
@@ -394,8 +400,8 @@ Ce gabarit est versionné ; la configuration réelle ne l'est pas.
 1. Lister `EN-VRAC/` : notes brutes à traiter, parfois un simple titre.
 2. Pour chacune : lire et comprendre l'intention ; vérifier par la recherche
    qu'une note équivalente n'existe pas déjà (7.5).
-3. Remplir dans `EN-VRAC/` : corps, tags, rétroliens (frontmatter selon la
-   convention à venir).
+3. Remplir dans `EN-VRAC/` : corps, tags du vocabulaire contrôlé, rétroliens
+   (frontmatter minimal `type` + `tags`).
 4. Décider la destination selon la nature : projet → `PROJETS/` ; revue,
    article, transcription → `DOCUMENTS/` ; fait personnel → `PERSONNELS/` ;
    concept → `SAVOIRS/`.

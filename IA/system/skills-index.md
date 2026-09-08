@@ -15,6 +15,7 @@
 | [remediation-linux](../skills/remediation-linux.md) | outil | Corriger un système Linux — redémarrer un service, libérer de l'espace, restaurer une configuration, revenir en arrière. À charger seulement après un constat écrit par `diagnostic-linux`, jamais seul. Chaque action est annoncée, puis vérifiée avant la suivante. | assistant |
 | [sauvegardes](../skills/sauvegardes.md) | core | Vérifier que les sauvegardes existent, sont récentes, respectent la règle 3-2-1, et se restaurent réellement. À charger avant toute action risquant de détruire des données, et lors d'un contrôle périodique. Ne restaure jamais par-dessus l'original et ne supprime aucune sauvegarde. | assistant |
 | [traefik](../skills/traefik.md) | outil | Diagnostiquer Traefik — 404 et 502, labels, réseaux partagés, certificats TLS, service injoignable derrière le proxy. À charger dès qu'un service répond en direct mais pas par son nom de domaine. Si le conteneur lui-même est arrêté ou tué, commencer par `conteneurs-docker`. | assistant |
+| [traitement-des-notes](../skills/traitement-des-notes/traitement-des-notes.md) | outil | Traiter les notes brutes du coffre parent — remplir, tagger (vocabulaire contrôlé), rétrolier, prévisualiser dans _maintenance/, classer depuis EN-VRAC et mettre à jour notes_remplies. À charger pour toute note brute ou toute note déposée dans SAVOIRS à compléter. | assistant |
 
 > `core` = indispensable au fonctionnement du coffre ; `outil` = compétence
 > ponctuelle. (cf. `VAULT-CONTRACT.md` §5)
