@@ -2,6 +2,7 @@
 
 | Tâche | Quand | Fuseau | Mode | Exécutant | Agent | Active | Description |
 |---|---|---|---|---|---|---|---|
+| [revue-des-notes-du-coffre](../tâches/revue-des-notes-du-coffre.md) | `0 10 * * 1` | Europe/Paris | agent | local | assistant | oui | Traiter les notes brutes du coffre parent — remplir et classer celles d'EN-VRAC, compléter celles déposées dans SAVOIRS, et signaler les tags hors vocabulaire contrôlé. À charger via le skill traitement-des-notes. |
 | [revue-hebdomadaire-du-coffre](../tâches/revue-hebdomadaire-du-coffre.md) | `0 9 * * 1` | Europe/Paris | agent | local | assistant | oui | Régénérer index et sommaires, vérifier la cohérence du coffre, et réconcilier le registre des tâches avec ce qui tourne réellement. |
 
 > Le registre `IA/tâches/` **déclare** ; rien ne s'instancie tout seul.
