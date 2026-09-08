@@ -31,16 +31,27 @@ le lire d'abord, ouvrir ensuite, et seulement ce qui est nécessaire.
 
 ## Périmètre de recherche
 
-Depuis le 2026-09-03, le **coffre parent** est lisible (§7) : la recherche ne
-s'arrête donc plus à `OBSIA/`. Deux conséquences pratiques :
+Depuis le 2026-09-08, le **coffre parent** est votre base de connaissances et
+il est lisible (§7) : la recherche couvre `_maintenance/`, `PROJETS/`,
+`DOCUMENTS/`, `PERSONNELS/`, `SAVOIRS/` et `EN-VRAC/`, dès que le harness
+donne accès à la racine du coffre (§7.6).
 
-- une recherche lancée depuis la racine du dépôt ne voit **pas** le coffre
-  parent ; il faut remonter d'un cran pour l'atteindre ;
-- ce qu'on y trouve ne se recopie pas dans `OBSIA/` : le dépôt est public, le
-  coffre parent ne l'est pas (§7).
+Le dépôt OBSIA est cloné **à la racine du coffre parent** : les dossiers de
+connaissance sont un cran au-dessus, leur chemin commence par `../` depuis la
+racine du dépôt. Une recherche lancée depuis la racine du dépôt ne les voit
+pas ; il faut remonter d'un cran pour les atteindre :
 
-Le coffre parent est en lecture seule, sauf `0-EN VRAC/`. Ce skill étant
-`read_only: true`, il n'écrit de toute façon nulle part.
+```bash
+rg "motif" ../SAVOIRS --glob "*.md"
+```
+
+Deux règles du contrat s'appliquent toujours :
+
+- ce qu'on trouve dans le coffre parent ne se recopie **pas** dans `OBSIA/` :
+  le dépôt est public, le coffre parent ne l'est pas (§7.2) ;
+- ce skill est `read_only: true` : il lit et rapporte partout, il n'écrit
+  nulle part. Les zones d'écriture du coffre parent sont au §7.3, réservées
+  aux agents `read_only: false`.
 
 Vérifier que les index sont à jour sans rien écrire (sort en erreur s'ils sont
 périmés) :
