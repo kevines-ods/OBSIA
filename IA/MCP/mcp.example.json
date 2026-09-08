@@ -1,5 +1,14 @@
 {
   "mcpServers": {
+    "coffre-parent": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/chemin/absolu/vers/la/racine/du/coffre"
+      ]
+    },
     "git-hub": {
       "type": "http",
       "url": "https://api.githubcopilot.com/mcp/",

@@ -50,13 +50,33 @@ OBSIA/                       le coffre — la racine du dépôt EST le coffre
 ```
 
 Il n'y a pas de sous-dossier « coffre » : le dépôt lui-même en tient lieu. Pour
-l'utiliser dans Obsidian, cloner `OBSIA/` **dans** un coffre Obsidian existant —
-c'est ce coffre-là qu'on appelle ici le *coffre parent*.
+l'utiliser, cloner `OBSIA/` **à la racine** de votre coffre Obsidian, côte à
+côte avec vos dossiers de connaissance, et ouvrir Obsidian sur ce coffre entier
+(et non sur `OBSIA/` seul) : c'est la condition pour que les rétroliens se
+résolvent à l'échelle du coffre (§7).
 
 Le coffre ne connaît aucune interface et n'en nomme aucune. Il décrit *quoi*
 faire ; le harness de ton choix fournit *avec quoi*. Rien ici ne dépend d'un
 programme particulier — c'est la condition pour qu'OBSIA reste libre de ses
 mouvements.
+
+## Le coffre parent — votre base de connaissances
+
+OBSIA est le cœur ; le coffre qui l'entoure est votre base de connaissances.
+Le dépôt se clone à la racine de ce coffre parent, qui contient aussi :
+`_maintenance/`, `PROJETS/`, `DOCUMENTS/`, `PERSONNELS/`, `SAVOIRS/` et
+`EN-VRAC/`. Seul `OBSIA/` est versionné.
+
+La structure de premier niveau est fixe (seul vous la modifiez). Les agents
+lisent tout le coffre parent, remplissent les notes d'`EN-VRAC/` (corps, tags,
+rétroliens) puis les classent, complètent les notes déposées dans `SAVOIRS/`,
+et consignent previews et actions dans `_maintenance/`. Les règles complètes
+sont au §7 de `IA/system/VAULT-CONTRACT.md`.
+
+Pour que les agents atteignent le coffre parent, le harness doit avoir accès à
+sa racine — pas seulement à `OBSIA/` : dossier de travail ouvert sur le coffre,
+ou serveur MCP « fichiers » (gabarit `IA/MCP/mcp.example.json`, entrée
+`coffre-parent`). La configuration réelle vit hors dépôt.
 
 ## Tâches planifiées
 
@@ -230,7 +250,7 @@ git diff --cached | grep -iE "password|token|api[_-]key|BEGIN.*PRIVATE KEY"
 ```
 
 Un secret poussé puis effacé reste dans l'historique Git. Si cela arrive :
-révoquer le secret d'abord, nettoyer l'historique ensuite.
+révoguer le secret d'abord, nettoyer l'historique ensuite.
 
 ## Licence
 

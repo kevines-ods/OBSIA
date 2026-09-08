@@ -75,8 +75,9 @@ dossier**, et elles ne désignent personne.
   `skills-index.md`, `taches-index.md` et `IA/README.md` sont régénérés par les
   scripts du §11,
   qui donne la liste complète et la commande.
-- Ces trois zones sont les seules **du dépôt**. Hors du dépôt, une quatrième
-  zone est en écriture directe : `0-EN VRAC/` dans le coffre parent (§7).
+- Ces trois zones sont les seules **du dépôt**. Hors du dépôt, les écritures
+  dans le coffre parent suivent le §7 : zones d'écriture (7.3), preview et
+  registre consignés dans `_maintenance/` (7.4).
 
 ## 3. Périmètre hors du coffre
 
@@ -122,7 +123,7 @@ Tout fichier agent ou skill commence par un frontmatter YAML valide.
 | Valeur | Signification |
 | --- | --- |
 | `true` | **Lecture seule absolue** : aucune écriture nulle part (ni coffre, ni hors coffre, même via patch). |
-| `false` | **Écriture directe** dans `brouillon/`, `mémoire/<nom-agent>/`, et `IA/skills/` si `createur-de-skill` est déclaré (détail au §2), ainsi que `0-EN VRAC/` dans le coffre parent (§7) ; écriture hors coffre autorisée (§3) ; le reste du coffre passe par patch Git revu. |
+| `false` | **Écriture directe** dans `brouillon/`, `mémoire/<nom-agent>/`, et `IA/skills/` si `createur-de-skill` est déclaré (détail au §2), ainsi que dans les zones du coffre parent que le §7 ouvre (7.3) ; écriture hors coffre autorisée (§3) ; le reste du coffre passe par patch Git revu. |
 
 **Champs propres aux agents**
 
@@ -265,42 +266,141 @@ Elle est obligatoire et contrôlée — une tâche sans elle ne déclenche rien.
   sujet (`licences-et-logiciel-libre.md`, pas `notes.md`) et respecte la règle
   d'unicité ci-dessus.
 
-## 7. Périmètre de lecture et coffre parent
+## 7. Le coffre parent — la base de connaissances
 
-- [x] **Tranché le 2026-09-03.** Les agents peuvent lire le coffre parent
-      (`0-PROJETS`, `1-CONCEPTS`, `2-RESSOURCES`, …). Le confinement à
-      `OBSIA/` qui valait par défaut est levé.
+Le dépôt OBSIA est cloné **à la racine du coffre parent**, côte à côte avec
+les dossiers de connaissance. Ce coffre parent est la base de connaissances
+primordiale : il se lit, s'enrichit et s'administre — par l'utilisateur, et
+par les agents qui y accèdent selon ce paragraphe. Seul `OBSIA/` est
+versionné ; les autres dossiers ne le sont pas.
 
-Le coffre parent est donc en **lecture seule**, à une exception près :
+### 7.1 La structure — fixe
 
-| Zone du coffre parent | Lecture | Écriture |
-| --- | --- | --- |
-| `0-EN VRAC/` | oui | **oui, directe** |
-| tout le reste (`0-PROJETS`, `1-CONCEPTS`, `2-RESSOURCES`, …) | oui | **non** |
+La structure de premier niveau est **fixe**. Seul l'utilisateur crée, renomme
+ou supprime un dossier de premier niveau. Les agents ne modifient jamais cette
+structure : ils travaillent dans les dossiers existants, sans y créer de
+sous-structure de premier niveau.
 
-Précisions qui découlent de cette règle :
+| Dossier | Rôle |
+| --- | --- |
+| `OBSIA/` | le dépôt, versionné — agents, skills, tâches, mémoire d'OBSIA |
+| `_maintenance/` | journaux, astuces de débogage, previews consignés, registre des notes traitées |
+| `PROJETS/` | les projets en cours ou à venir |
+| `DOCUMENTS/` | revues, articles web, transcriptions YouTube |
+| `PERSONNELS/` | contexte personnel : configuration matérielle/logicielle, préférences, CV… |
+| `SAVOIRS/` | les connaissances accumulées — un fichier Markdown = un concept |
+| `EN-VRAC/` | zone de dépôt : notes brutes, parfois un simple titre à traiter |
 
-- Le nom du dossier s'écrit `0-EN VRAC`, en capitales et avec une espace,
-  comme les autres dossiers du coffre parent. Le système de fichiers distingue
-  la casse : `0-en vrac` désignerait un autre dossier, et un agent qui le
-  créerait écrirait à côté. L'espace impose aussi de citer le chemin dans une
-  commande shell (`"$COFFRE/0-EN VRAC"`).
-- Le coffre parent **n'est pas versionné**. Un patch Git y est donc impossible :
-  hors de `0-EN VRAC/`, il n'existe aucune voie d'écriture, même soumise à
-  revue. « Lecture seule » y est absolu.
-- `0-EN VRAC/` est une zone de dépôt, comparable à `brouillon/` : contenus
-  provisoires, non garantis conservés. Un contenu qui doit durer est recopié
-  dans `mémoire/<nom-agent>/` (§2), à l'intérieur du dépôt, où Git le suit.
-- Le coffre parent n'est **pas** un « dépôt extérieur » au sens du §3 : ce
-  paragraphe vise des bases de code, pas des notes.
-- Les règles générales du §2 s'appliquent à `0-EN VRAC/` comme partout
-  ailleurs : aucune suppression sans archivage, preview obligatoire avant une
-  action touchant plusieurs fichiers.
-- La règle d'unicité des noms de notes (§6) prend ici tout son sens : elle
-  porte sur le coffre parent entier, désormais lisible.
-- Lire n'est pas recopier. Le contenu du coffre parent ne migre pas dans
-  `OBSIA/` au fil des réponses : le dépôt est **public** (§4), le coffre
-  parent ne l'est pas.
+Déplacer un dossier de premier niveau (ex. `OBSIA/` dans `PROJETS/`) est une
+décision de l'utilisateur, pas des agents.
+
+### 7.2 Lecture
+
+Les agents `read_only: false` peuvent **lire tout le coffre parent** dès que
+le harness donne accès à sa racine (7.6) : la recherche couvre
+`_maintenance/`, `PROJETS/`, `DOCUMENTS/`, `PERSONNELS/`, `SAVOIRS/` et
+`EN-VRAC/`. Le coffre parent étant un cran au-dessus du dépôt, un chemin y
+commence par `../` depuis la racine d'OBSIA.
+
+Le coffre parent n'est **pas** un « dépôt extérieur » au sens du §3 : ce
+paragraphe vise des bases de code, pas des notes.
+
+Lire n'est pas recopier : le coffre parent est privé, le dépôt est public
+(§4). Rien du coffre parent ne migre dans `OBSIA/` au fil des réponses, et
+aucun secret du coffre parent n'entre dans le dépôt.
+
+### 7.3 Écriture — zones autorisées
+
+Le coffre parent n'étant pas versionné, il n'y a **pas de patch Git**
+possible. Les écritures autorisées d'un agent `read_only: false` y sont
+directes, limitées et tracées (7.4) :
+
+- `EN-VRAC/` — remplir une note, poser tags et rétroliens, préparer le
+  classement ;
+- `SAVOIRS/` — compléter une note que l'utilisateur y a déposée (tags,
+  rétroliens, corps manquant), sans en changer le sens ni la déplacer ;
+- `_maintenance/` — consigner previews, actions et registre des notes
+  traitées ;
+- le **classement** : déplacer une note d'`EN-VRAC/` vers sa destination
+  (`PROJETS/`, `DOCUMENTS/`, `PERSONNELS/`, `SAVOIRS/`) une fois traitée.
+
+Toute autre écriture dans `PROJETS/`, `DOCUMENTS/`, `PERSONNELS/` est hors
+périmètre : on n'y modifie pas un contenu existant sans demande explicite, on
+n'y déplace ni n'y supprime rien, et le **seul ajout** autorisé est le dépôt
+d'une note classée venue d'`EN-VRAC/`.
+
+`PERSONNELS/` appelle une prudence particulière : contenu privé et sensible.
+Le lire sur demande explicite, et n'y écrire que pour y classer une note dont
+la nature est manifestement personnelle.
+
+### 7.4 Preview et traçabilité — `_maintenance/`
+
+Sans Git, **le preview tient lieu de trace**. Avant toute action qui touche
+plusieurs fichiers, déplace une note ou écrit hors d'`EN-VRAC/`, l'agent :
+
+1. affiche le preview — fichiers concernés, contenu final, destination ;
+2. en **conserve une copie datée dans `_maintenance/`** ;
+3. exécute, puis consigne l'action (quoi, où, résultat) dans `_maintenance/`,
+   comme au §9.
+
+Le registre des notes traitées (`_maintenance/notes_remplies`) liste les notes
+déjà remplies — surtout celles de `SAVOIRS/` que l'utilisateur dépose brutes.
+Une note qui y figure n'est pas à revérifier ; le registre est mis à jour
+après chaque traitement. (Nom et format exacts du registre : à confirmer par
+l'utilisateur.)
+
+### 7.5 Rétroliens et tags — comment ça marche
+
+Un rétrolien Obsidian est **du texte** : `[[Nom de la note]]`. L'agent écrit
+ce lien dans un fichier du coffre ; Obsidian l'affiche automatiquement dès
+qu'il relit le fichier. Aucune API ni aucun greffon n'est requis pour *créer*
+un rétrolien — il faut seulement que le lien soit écrit dans un fichier
+qu'Obsidian indexe. Trois conditions pour que ça marche :
+
+- le coffre est ouvert dans Obsidian **à sa racine** (le dossier qui contient
+  `OBSIA/` et les autres) : les rétroliens se résolvent à l'échelle du coffre
+  entier, jamais de `OBSIA/` seul ;
+- les **noms de notes sont uniques** dans tout le coffre parent (§6) : avant
+  de créer une note ou un lien, vérifier qu'aucun nom identique n'existe
+  ailleurs — la recherche du skill `obsidian-manager`, qui couvre le coffre
+  parent, le dit ;
+- le lien cible **existe** : `[[Nom]]` vers une note absente n'affiche qu'une
+  « note non créée » et ne relie rien.
+
+Écrire `[[Nom exact de la note]]`, sans chemin de dossier : un lien par nom
+survit aux déplacements, un lien par chemin casse. Écrire
+`[[Obsidian MOC]]`, pas `[[SAVOIRS/Obsidian MOC]]`.
+
+Tant que la convention de tags et de frontmatter du coffre parent n'est pas
+établie (elle le sera, puis appliquée rétroactivement), poser au minimum les
+tags et les rétroliens ; ne pas inventer de schéma.
+
+### 7.6 Accès du harness
+
+Le coffre ne nomme aucun harness (§3) : la manière de donner accès au coffre
+parent appartient à la configuration de chaque harness, **hors dépôt**. Le
+besoin est unique : le harness doit pouvoir **lire et écrire dans la racine du
+coffre parent** (le dossier qui contient `OBSIA/`), pas seulement dans
+`OBSIA/`.
+
+Trois voies, au choix du harness : ouvrir la racine du coffre comme dossier de
+travail ; y ajouter les dossiers de connaissance comme répertoires de travail
+supplémentaires ; ou monter un serveur MCP « fichiers » — le gabarit vit dans
+`IA/MCP/mcp.example.json`, entrée `coffre-parent`, à compléter du chemin réel.
+Ce gabarit est versionné ; la configuration réelle ne l'est pas.
+
+### 7.7 Cycle d'une note d'`EN-VRAC/`
+
+1. Lister `EN-VRAC/` : notes brutes à traiter, parfois un simple titre.
+2. Pour chacune : lire et comprendre l'intention ; vérifier par la recherche
+   qu'une note équivalente n'existe pas déjà (7.5).
+3. Remplir dans `EN-VRAC/` : corps, tags, rétroliens (frontmatter selon la
+   convention à venir).
+4. Décider la destination selon la nature : projet → `PROJETS/` ; revue,
+   article, transcription → `DOCUMENTS/` ; fait personnel → `PERSONNELS/` ;
+   concept → `SAVOIRS/`.
+5. Afficher le preview et le consigner dans `_maintenance/` (7.4).
+6. Classer (déplacer), puis mettre à jour `_maintenance/notes_remplies`.
 
 ## 8. Sources et citations
 

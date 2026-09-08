@@ -40,13 +40,24 @@ Détail dans [[licences-et-logiciel-libre]].
 
 ## Coffre Obsidian
 
-Le dépôt `OBSIA/` est cloné dans un coffre Obsidian personnel, non versionné,
-qui contient au moins `0-PROJETS`, `1-CONCEPTS`, `2-RESSOURCES` et
-`0-EN VRAC`. Ce dernier est la zone de dépôt de l'utilisateur : c'est le seul
-endroit du coffre parent où un agent écrit.
+Le dépôt `OBSIA/` est cloné **à la racine** du coffre Obsidian personnel, non
+versionné. Sa structure de premier niveau est fixe (modifiable par
+l'utilisateur seul) :
 
-La règle complète est au §7 de `IA/system/VAULT-CONTRACT.md`, qui fait foi —
-elle n'est pas recopiée ici.
+- `OBSIA/` — le dépôt, seul versionné : agents, skills, tâches, mémoire ;
+- `_maintenance/` — journaux, astuces de débogage, previews consignés,
+  registre des notes traitées (`notes_remplies`) ;
+- `PROJETS/` — projets en cours ou à venir ;
+- `DOCUMENTS/` — revues, articles web, transcriptions YouTube ;
+- `PERSONNELS/` — contexte personnel, configuration matérielle/logicielle,
+  préférences, CV ;
+- `SAVOIRS/` — connaissances accumulées, un fichier = un concept ;
+- `EN-VRAC/` — zone de dépôt : notes brutes que l'agent remplit, tagge,
+  rétrolie, puis classe dans l'un des autres dossiers.
+
+Les règles complètes (lecture, zones d'écriture, preview consigné dans
+`_maintenance/`) sont au §7 de `IA/system/VAULT-CONTRACT.md`, qui fait foi —
+elles ne sont pas recopiées ici.
 
 ## Infrastructure
 

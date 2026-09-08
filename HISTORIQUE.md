@@ -11,6 +11,30 @@ reconstruise ce qui a été écarté.
 
 ---
 
+## La structure du coffre parent a changé (8 septembre 2026)
+
+L'utilisateur a réorganisé son coffre parent. Les noms `0-PROJETS`,
+`1-CONCEPTS`, `2-RESSOURCES` et `0-EN VRAC`, qui figuraient dans le §7 du
+contrat et dans cette page, ne décrivent plus rien de réel.
+
+La structure en vigueur est désormais : `OBSIA/` (le dépôt, versionné, cloné à
+la racine du coffre), `_maintenance/`, `PROJETS/`, `DOCUMENTS/`,
+`PERSONNELS/`, `SAVOIRS/` et `EN-VRAC/`. La règle complète est au §7 de
+`IA/system/VAULT-CONTRACT.md`, qui fait foi.
+
+### Ce qu'il ne faut pas reconstruire
+
+- **Ne pas réintroduire `0-PROJETS`, `1-CONCEPTS`, `2-RESSOURCES` ni
+  `0-EN VRAC`** ailleurs que dans l'historique : ce sont des noms périmés.
+- La zone de dépôt s'appelle désormais `EN-VRAC/`, et la traçabilité des
+  écritures du coffre parent vit dans `_maintenance/` (previews et registre
+  des notes traitées) — sans Git, la trace remplace le patch.
+- Le dépôt OBSIA est cloné à la racine du coffre parent ; il n'est plus rangé
+  sous `PROJETS/`. Il gagnera à terme le statut d'infrastructure principale,
+  sans changement d'emplacement pour le coffre.
+
+---
+
 ## `obsia_vault/` a disparu : la racine du dépôt est le coffre (31 août 2026)
 
 Le coffre a longtemps vécu dans un sous-dossier `obsia_vault/`. Ce niveau
@@ -47,7 +71,7 @@ dédiée — fournit *avec quoi*.
 
 L'interface a été transférée dans un dépôt distinct, avec son historique
 complet ; rien n'a été perdu. Ce dépôt n'est **pas nommé ici** : le coffre ne
-crée aucun lien vers une interface, fût-elle la sienne. Un lien est un
+crée aucun lien vers une interface, fût-ce la sienne. Un lien est un
 attachement, et OBSIA n'en veut aucun.
 
 ### Ce qui a disparu du coffre avec ce changement
