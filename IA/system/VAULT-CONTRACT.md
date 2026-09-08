@@ -395,6 +395,10 @@ supplémentaires ; ou monter un serveur MCP « fichiers » — le gabarit vit da
 `IA/MCP/mcp.example.json`, entrée `coffre-parent`, à compléter du chemin réel.
 Ce gabarit est versionné ; la configuration réelle ne l'est pas.
 
+Des gabarits d'intégration par harness vivent dans
+`IA/system/adaptateurs-harness/README.md` : des exemples d'adaptation, jamais
+des règles — la configuration réelle reste hors dépôt.
+
 ### 7.7 Cycle d'une note d'`EN-VRAC/`
 
 1. Lister `EN-VRAC/` : notes brutes à traiter, parfois un simple titre.
