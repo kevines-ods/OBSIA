@@ -60,14 +60,15 @@ prévisualiser, classer, tracer. La règle d'ensemble est au §7 de
 
 ## Passage rétroactif (notes existantes)
 
-Le script `scripts/appliquer_convention_parent.py` ajoute le frontmatter
-minimal aux notes du coffre parent qui en manquent, reprend les tags inline
-existants et signale ceux qui sortent du vocabulaire. Il ne modifie rien par
-défaut : lancer l'aperçu d'abord, appliquer ensuite.
+Le script `IA/skills/traitement-des-notes/scripts/appliquer_convention_parent.py`
+ajoute le frontmatter minimal aux notes du coffre parent qui en manquent,
+reprend les tags inline existants et signale ceux qui sortent du vocabulaire.
+Il ne modifie rien par défaut : lancer l'aperçu d'abord, appliquer ensuite,
+depuis la racine du dépôt OBSIA :
 
 ```bash
-python3 scripts/appliquer_convention_parent.py              # aperçu, n'écrit rien
-python3 scripts/appliquer_convention_parent.py --appliquer  # applique
+python3 IA/skills/traitement-des-notes/scripts/appliquer_convention_parent.py              # aperçu, n'écrit rien
+python3 IA/skills/traitement-des-notes/scripts/appliquer_convention_parent.py --appliquer  # applique
 ```
 
 C'est un outil de votre machine : il lit le coffre parent réel. Il ne tourne
