@@ -18,6 +18,7 @@ skills:
   - proxmox
   - sauvegardes
   - traitement-des-notes
+  - cartographie-du-coffre
 mcp:
   - git-hub
   - chrome-devtools
