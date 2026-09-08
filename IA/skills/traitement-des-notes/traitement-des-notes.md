@@ -64,12 +64,18 @@ Le script `IA/skills/traitement-des-notes/scripts/appliquer_convention_parent.py
 ajoute le frontmatter minimal aux notes du coffre parent qui en manquent,
 reprend les tags inline existants et signale ceux qui sortent du vocabulaire.
 Il ne modifie rien par défaut : lancer l'aperçu d'abord, appliquer ensuite,
-depuis la racine du dépôt OBSIA :
+depuis la racine du dépôt OBSIA.
+
+Un dossier à la fois, car le `type` posé dépend du dossier :
 
 ```bash
-python3 IA/skills/traitement-des-notes/scripts/appliquer_convention_parent.py              # aperçu, n'écrit rien
-python3 IA/skills/traitement-des-notes/scripts/appliquer_convention_parent.py --appliquer  # applique
+python3 IA/skills/traitement-des-notes/scripts/appliquer_convention_parent.py                     # SAVOIRS → concept
+python3 IA/skills/traitement-des-notes/scripts/appliquer_convention_parent.py --dossier DOCUMENTS  # revue
+python3 IA/skills/traitement-des-notes/scripts/appliquer_convention_parent.py --dossier EN-VRAC    # tags seulement
 ```
+
+Dans `EN-VRAC/`, aucun `type` n'est figé : il sera décidé au classement, quand
+la note rejoindra sa destination. Après l'aperçu, appliquer avec `--appliquer`.
 
 C'est un outil de votre machine : il lit le coffre parent réel. Il ne tourne
 pas en CI.
