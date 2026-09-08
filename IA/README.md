@@ -14,6 +14,7 @@ et n'est pas reformulé ici.
 ## Skills — `IA/skills/`
 
 - **bureautique** (`outil`) — Créer, lire et modifier des documents Word, Excel, PowerPoint et OpenDocument, et convertir entre formats. À charger dès qu'un fichier .docx, .xlsx, .pptx, .odt, .ods ou .odp est en entrée ou en sortie. Pas pour les PDF — voir `pdf`.
+- **cartographie-du-coffre** (`outil`) — Dresser la carte des connaissances du coffre parent — concepts de SAVOIRS, notes orphelines, doublons, tags hors vocabulaire, liens manquants. À charger pour faire le point sur la santé du coffre ou avant une réorganisation. Lit et propose, n'écrit rien.
 - **cloture-de-session** (`core`) — Clore une session de travail — écrire la note de projet, en distiller ce qui est durable vers profil/préférences/expériences, proposer le log du §9. À charger quand une session se termine ou qu'un lot de travail est livré. Pas pour écrire une note isolée en cours de route.
 - **conteneurs-docker** (`outil`) — Diagnostiquer et gérer des conteneurs Docker — état, journaux, volumes, réseaux, compose. À charger devant un conteneur qui redémarre, sature ou refuse de démarrer, et avant toute modification d'un compose.yml. Si le symptôme est une erreur HTTP renvoyée par le reverse proxy, commencer par `traefik`.
 - **createur-de-skill** (`core`) — Concevoir un nouveau skill OBSIA ou en réviser un — périmètre, dosage, découpage, frontmatter. À charger avant d'écrire ou de modifier un fichier de `IA/skills/`, y compris pour n'en changer que la description. Ne sert pas à exécuter un skill existant.
