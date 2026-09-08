@@ -3,19 +3,24 @@
 """
 Applique la convention du coffre parent aux notes qui en manquent.
 
-Lit un dossier du coffre parent (SAVOIRS/ par défaut), ajoute le frontmatter
-minimal (`type` + `tags`) aux notes qui n'en ont pas, reprend les tags inline
-existants, et signale les tags qui sortent du vocabulaire contrôlé
-(IA/system/tags-du-coffre-parent.md).
+Lit un dossier du coffre parent et ajoute le frontmatter minimal aux notes qui
+n'en ont pas, reprend les tags inline existants, et signale les tags qui
+sortent du vocabulaire contrôlé (IA/system/tags-du-coffre-parent.md).
+
+Par dossier, le `type` posé diffère : `SAVOIRS` → concept, `DOCUMENTS` → revue,
+`PROJETS` → projet, `PERSONNELS` → personnel. Pour `EN-VRAC`, aucun `type`
+n'est figé : il est décidé au classement, quand la note rejoint sa destination
+(skill `traitement-des-notes`).
 
 Sécurité : ne modifie RIEN par défaut — l'aperçu d'abord, --appliquer ensuite.
 Les fichiers qui ont déjà un frontmatter partiel ne sont pas réécrits, ils sont
 signalés. Bibliothèque standard uniquement ; outil de la machine, pas de CI.
 
 Usage :
-    python3 appliquer_convention_parent.py                 # aperçu, n'écrit rien
-    python3 appliquer_convention_parent.py --appliquer     # écrit les notes sans frontmatter
-    python3 appliquer_convention_parent.py --dossier SAVOIRS
+    python3 appliquer_convention_parent.py                 # SAVOIRS, aperçu
+    python3 appliquer_convention_parent.py --appliquer
+    python3 appliquer_convention_parent.py --dossier DOCUMENTS
+    python3 appliquer_convention_parent.py --dossier EN-VRAC
     python3 appliquer_convention_parent.py --racine /chemin/du/coffre
 """
 
@@ -28,6 +33,8 @@ CONTRAT_REL = Path("IA") / "system" / "VAULT-CONTRACT.md"
 REGISTRE_REL = Path("IA") / "system" / "tags-du-coffre-parent.md"
 
 TAG = re.compile(r"^[a-zà-ÿ][\wà-ÿ-]*$", re.UNICODE)
+# Dossiers de connaissance : un type est posé. EN-VRAC en est absent : le type
+# y est décidé au classement, pas figé d'avance.
 TYPES = {"SAVOIRS": "concept", "DOCUMENTS": "revue",
          "PROJETS": "projet", "PERSONNELS": "personnel"}
 
@@ -115,8 +122,11 @@ def tags_inline(texte: str) -> list[str]:
     return trouves
 
 
-def bloc_frontmatter(type_note: str, tags: list[str]) -> str:
-    lignes = ["---", "type: %s" % type_note]
+def bloc_frontmatter(type_note: str | None, tags: list[str]) -> str:
+    """Bloc YAML minimal ; `type` absent si type_note est None (EN-VRAC)."""
+    lignes = ["---"]
+    if type_note:
+        lignes.append("type: %s" % type_note)
     if tags:
         lignes.append("tags:")
         lignes += ["  - %s" % t for t in tags]
@@ -170,7 +180,7 @@ def main() -> int:
         print("Aucune note Markdown dans %s" % dossier)
         return 0
 
-    type_defaut = TYPES.get(args.dossier.upper(), "note")
+    type_note = TYPES.get(args.dossier.upper())   # None pour EN-VRAC : pas de type figé
     a_ecrire: list[tuple[Path, str]] = []
     hors_globaux: dict[str, int] = {}
 
@@ -187,7 +197,7 @@ def main() -> int:
         if info["hors"]:
             print("   ⚠ hors vocabulaire : %s" % ", ".join("#%s" % t for t in info["hors"]))
         if info["statut"] == "frontmatter à créer":
-            nouveau = bloc_frontmatter(type_defaut, info["tags"])
+            nouveau = bloc_frontmatter(type_note, info["tags"])
             a_ecrire.append((n, nouveau + "\n\n" + info["texte"]))
 
     if hors_globaux:
