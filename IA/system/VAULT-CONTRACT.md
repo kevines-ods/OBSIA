@@ -34,13 +34,18 @@ longtemps été pris pour un agent qui n'a jamais existé en tant que fichier.
 Toute formulation suggérant qu'un skill est un agent est une erreur à corriger,
 pas une convention à suivre.
 
-**Un seul agent peut être nommé dans le coffre : `assistant`.** Aucun autre nom
-d'agent n'apparaît nulle part — ni dans un skill, ni dans un exemple, ni dans un
-diagramme, ni dans une note. Un agent n'existe que s'il a son fichier dans
-`IA/agents/` ; le nommer avant qu'il existe le fait exister dans les têtes, et
-c'est ainsi qu'un agent fantôme s'installe. Cette règle vaut aussi pour les
-noms cités en exemple : prendre un nom de skill, jamais un nom d'agent
-imaginaire. `scripts/verifier_coffre.py` la contrôle.
+**Un agent n'est nommé que s'il a son fichier dans `IA/agents/`.** Lesquels
+existent, c'est `agents-index.md` qui le dit — pas ce contrat, qui vieillirait
+à chaque agent ajouté. Aucun autre nom n'apparaît nulle part : ni dans un
+skill, ni dans un exemple, ni dans un diagramme, ni dans une note. Nommer un
+agent avant qu'il existe le fait exister dans les têtes, et c'est ainsi qu'un
+agent fantôme s'installe. La règle vaut aussi pour les noms cités en exemple :
+prendre un nom de skill, jamais un nom d'agent imaginaire.
+`scripts/verifier_coffre.py` la contrôle.
+
+Le coffre n'a longtemps porté qu'un agent, et cette règle s'écrivait « un seul
+agent peut être nommé ». La formulation confondait l'interdiction — les agents
+fantômes — avec un plafond qui n'a jamais été l'intention.
 
 Les tournures `agent 1`, `agent 2` restent employées ailleurs dans ce contrat :
 ce ne sont pas des noms d'agents mais des **contre-exemples de nommage de
@@ -270,6 +275,14 @@ Elle est obligatoire et contrôlée — une tâche sans elle ne déclenche rien.
   plus tard vers `préférences/` ou `expériences/`, l'inverse fait perdre le
   contexte.
 
+- **Un fait sur l'utilisateur ne se duplique pas d'un agent à l'autre.**
+  `profil-utilisateur.md` décrit la personne, pas l'agent : il reste **unique
+  dans le coffre**, ce que la règle d'unicité des noms ci-dessus impose de
+  toute façon, et vit dans `mémoire/assistant/profil-utilisateur.md`. Tout
+  agent le lit ; celui qui n'est pas chez lui le complète par patch (§2). Ce
+  qu'un agent apprend sur **sa propre manière de travailler** reste, lui, dans
+  son `expériences/`.
+
 - Une note durable n'est utile que si elle est **retrouvée** : son nom dit son
   sujet (`licences-et-logiciel-libre.md`, pas `notes.md`) et respecte la règle
   d'unicité ci-dessus.
@@ -313,7 +326,7 @@ sous-structure de premier niveau.
 | `Mon coffre/` | la racine — le coffre Obsidian lui-même, ouvert à ce niveau |
 | `OBSIA/` | le dépôt, versionné — agents, skills, tâches, mémoire d'OBSIA |
 | `_maintenance/` | journaux, astuces de débogage, previews consignés, registre des notes traitées |
-| `PROJETS/` | les projets en cours ou à venir |
+| `PROJETS/` | les projets en cours ou à venir — notes, et le dépôt git du projet quand il en a un (7.3) |
 | `DOCUMENTS/` | revues, articles web, transcriptions YouTube |
 | `PERSONNELS/` | contexte personnel : configuration matérielle/logicielle, préférences, CV… |
 | `SAVOIRS/` | les connaissances accumulées — un fichier Markdown = un concept |
@@ -351,10 +364,19 @@ directes, limitées et tracées (7.4) :
 - `_maintenance/` — consigner previews, actions et registre des notes
   traitées ;
 - le **classement** : déplacer une note d'`EN-VRAC/` vers sa destination
-  (`PROJETS/`, `DOCUMENTS/`, `PERSONNELS/`, `SAVOIRS/`) une fois traitée.
+  (`PROJETS/`, `DOCUMENTS/`, `PERSONNELS/`, `SAVOIRS/`) une fois traitée ;
+- `PROJETS/<nom-du-projet>/` — **le dépôt git d'un projet construit ici** :
+  l'agent y crée le dossier, y écrit le code et ses documents, y commite.
+  C'est un dépôt à part entière, versionné pour lui-même, et la seule zone du
+  coffre parent où du code vit. Le §3 s'y applique intégralement : patch revu,
+  vérifications du projet passées avant de proposer, aucun secret dans le
+  dépôt. Ce dossier est **exclu de l'index d'Obsidian** — sans quoi le
+  Markdown du dépôt et de ses dépendances entre dans la recherche du coffre et
+  fait tomber l'unicité des noms de notes (§6) dès le deuxième projet.
 
-Toute autre écriture dans `PROJETS/`, `DOCUMENTS/`, `PERSONNELS/` est hors
-périmètre : on n'y modifie pas un contenu existant sans demande explicite, on
+Une **note** de `PROJETS/` n'est pas un dépôt de projet : elle reste protégée
+comme le reste. Hors des dépôts de projet, toute autre écriture dans
+`PROJETS/`, `DOCUMENTS/`, `PERSONNELS/` est hors périmètre : on n'y modifie pas un contenu existant sans demande explicite, on
 n'y déplace ni n'y supprime rien, et le **seul ajout** autorisé est le dépôt
 d'une note classée venue d'`EN-VRAC/`.
 
