@@ -34,7 +34,7 @@ et n'est pas reformulé ici.
 - **chrome-devtools** (`stdio`, permission `elevated`) — Navigation, capture et automatisation web via Chrome DevTools.
 - **coffre-parent** (`stdio`, permission `elevated`) — Lire et écrire dans les fichiers du coffre parent `Mon coffre/` via un serveur MCP « fichiers » monté sur sa racine. À charger quand le harness n'ouvre pas déjà la racine du coffre comme dossier de travail. Le serveur peut écrire partout ; les zones autorisées restent celles du §7.3.
 - **git-hub** (`http`, permission `elevated`) — Push/pull, PR, issues et review sur GitHub.
-- **obsidian** (`stdio`, permission `normal`) — Accéder au coffre ouvert dans Obsidian via son API REST locale — recherche, lecture, création et mise à jour de notes, rétroliens, tags. À charger quand une action porte sur une note du coffre parent, ou quand un rétrolien doit être garanti indexé par Obsidian.
+- **obsidian** (`stdio`, permission `normal`) — Lire, chercher et modifier les notes du coffre `Mon coffre/` via l'API REST locale du plugin Obsidian. À charger quand une écriture doit être indexée par Obsidian sur-le-champ — un rétrolien visible dans le graphe sans rouvrir l'application. Expose `delete_file`, que le contrat interdit d'appeler.
 
 Gabarit de configuration à compléter côté harness : `MCP/mcp.example.json`.
 

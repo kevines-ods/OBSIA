@@ -3,14 +3,14 @@
 > Généré par `scripts/regenerate_sommaire.py` depuis le contenu des notes.
 > Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §2).
 
-7 sous-dossiers, 22 notes, du 2026-08-15 au 2026-09-05.
+7 sous-dossiers, 23 notes, du 2026-08-15 au 2026-09-05.
 
 ## Sous-dossiers
 
 | Dossier | Notes | Entrée représentative |
 |---|---|---|
 | [automatisation-bureautique](automatisation-bureautique/) | 1 | 2026-08-26 — Automatisation des tâches bureautiques |
-| [comparaison-openviking](comparaison-openviking/) | 7 | 2026-09-03 — Comparaison OBSIA / OpenViking |
+| [comparaison-openviking](comparaison-openviking/) | 8 | 2026-09-03 — Comparaison OBSIA / OpenViking |
 | [expériences](expériences/) | 6 | Un vérificateur vert ne prouve que ce qu'il regarde |
 | [lancement-coffre](lancement-coffre/) | 1 | 2026-08-27 — Lancement du coffre OBSIA |
 | [préférences](préférences/) | 3 | Licences et logiciel libre |
