@@ -10,4 +10,4 @@ Agent CLI configurable (fichier `opencode.json`). Pas de mécanisme
 2. Ouvrir le coffre : lancer OpenCode à la racine du coffre (parent d'OBSIA),
    ou déclarer le bloc MCP `coffre-parent` (commun.md) dans `opencode.json`.
 3. Fournir `prompt-systeme.md` comme instruction de démarrage, puis vérifier
-   l'accès à `../SAVOIRS/`.
+   l'accès à `Mon coffre/SAVOIRS/`.

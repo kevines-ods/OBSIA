@@ -63,20 +63,21 @@ mouvements.
 ## Le coffre parent — votre base de connaissances
 
 OBSIA est le cœur ; le coffre qui l'entoure est votre base de connaissances.
-Le dépôt se clone à la racine de ce coffre parent, qui contient aussi :
+Il s'appelle `Mon coffre/`, et le dépôt se clone à sa racine, à côté de
 `_maintenance/`, `PROJETS/`, `DOCUMENTS/`, `PERSONNELS/`, `SAVOIRS/` et
 `EN-VRAC/`. Seul `OBSIA/` est versionné.
 
 La structure de premier niveau est fixe (seul vous la modifiez). Les agents
 lisent tout le coffre parent, remplissent les notes d'`EN-VRAC/` (corps, tags,
 rétroliens) puis les classent, complètent les notes déposées dans `SAVOIRS/`,
-et consignent previews et actions dans `_maintenance/`. Les règles complètes
+et consignent previews et actions dans `_maintenance/`. `EN-VRAC/` est un
+**tampon** : une session de rangement le vide entièrement. Les règles complètes
 sont au §7 de `IA/system/VAULT-CONTRACT.md`.
 
 Pour que les agents atteignent le coffre parent, le harness doit avoir accès à
 sa racine — pas seulement à `OBSIA/` : dossier de travail ouvert sur le coffre,
-ou serveur MCP « fichiers » (gabarit `IA/MCP/mcp.example.json`, entrée
-`coffre-parent`). La configuration réelle vit hors dépôt.
+ou serveur MCP « fichiers » (fiche `IA/MCP/coffre-parent.md`, gabarit
+`IA/MCP/mcp.example.json`). La configuration réelle vit hors dépôt.
 
 ## Tâches planifiées
 

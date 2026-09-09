@@ -178,7 +178,7 @@ Un fichier de `IA/MCP/` décrit un outil, pas un interlocuteur : il n'a ni
 | `description` | texte | oui | une ligne |
 | `type` | `tool` | oui | seule valeur à ce jour. À ne pas confondre avec le `type` d'un skill (`core`/`outil`) : même clé, vocabulaire distinct. |
 | `transport` | `stdio` \| `http` | oui | comment le harness joint le serveur |
-| `permission` | `normal` \| `elevated` | oui | `elevated` dès qu'un système externe est touché : réseau, dépôt distant, navigateur |
+| `permission` | `normal` \| `elevated` | oui | `elevated` dès qu'un système externe est touché : réseau, dépôt distant, navigateur. `normal` gradue la prudence **avant** l'appel ; il ne dispense jamais de consigner l'usage après (§9). |
 
 Un MCP n'est utilisable que s'il est **déclaré par un agent** (§10.2). Un
 fichier de `IA/MCP/` que personne ne déclare est du code mort : le vérificateur
@@ -226,11 +226,19 @@ Elle est obligatoire et contrôlée — une tâche sans elle ne déclenche rien.
   résolvent à l'échelle de ce coffre parent, **pas** de `OBSIA/`.
 - Conséquence : les noms de notes doivent être **uniques dans tout le coffre
   parent**, pas seulement dans `OBSIA/`.
-- Les liens vers ce contrat s'écrivent en chemin relatif depuis `IA/agents/` ou
-  `IA/skills/` : `../system/VAULT-CONTRACT.md`. Un skill en **forme dossier**
-  (§5) est un cran plus bas : `../../system/VAULT-CONTRACT.md`. Passer un skill
-  d'une forme à l'autre casse donc ses liens ; `scripts/verifier_coffre.py` les
-  contrôle.
+- Les liens vers ce contrat s'écrivent en chemin relatif, et la profondeur
+  dépend de la forme du skill (§5) :
+
+  ```
+  depuis IA/agents/ ou IA/skills/          ../system/VAULT-CONTRACT.md
+  depuis IA/skills/<nom>/ (forme dossier)  ../../system/VAULT-CONTRACT.md
+  ```
+
+  Passer un skill d'une forme à l'autre casse donc ses liens.
+  `scripts/verifier_coffre.py` résout tout chemin relatif cité — entre accents
+  graves comme en lien Markdown — depuis le fichier qui le cite, et refuse
+  celui qui ne mène nulle part. Les chemins du coffre parent (§7) en sont
+  exclus : ils désignent des dossiers hors du dépôt.
 - **Structure de la mémoire.** L'espace d'un agent porte son nom — jamais
   `agent 1`, `agent 2` — et distingue ce qui est **daté** de ce qui est
   **durable** :
@@ -274,6 +282,25 @@ primordiale : il se lit, s'enrichit et s'administre — par l'utilisateur, et
 par les agents qui y accèdent selon ce paragraphe. Seul `OBSIA/` est
 versionné ; les autres dossiers ne le sont pas.
 
+**Le coffre parent s'appelle `Mon coffre/`.** C'est son nom, et c'est ainsi
+qu'on le désigne partout dans la documentation :
+
+| Ce qu'on veut dire | Comment l'écrire |
+| --- | --- |
+| un dossier du coffre parent | `Mon coffre/SAVOIRS/` — jamais `../SAVOIRS/` |
+| le dépôt lui-même | `Mon coffre/OBSIA/`, ou son chemin interne (`IA/skills/…`) |
+| un fichier du dépôt, depuis un autre fichier du dépôt | relatif : `../system/VAULT-CONTRACT.md` |
+
+La règle tient en une phrase : **`../` ne sert qu'à naviguer à l'intérieur du
+dépôt**, jamais à désigner le coffre parent. Sans elle, le même `../` veut dire
+deux choses selon la cible — relatif au fichier ici, relatif au répertoire de
+travail là — et c'est ainsi qu'un skill finit par pointer à côté.
+
+Une **commande** reste une exception assumée : lancée depuis la racine du
+dépôt, elle atteint le coffre parent par `..` (`rg "motif" ../SAVOIRS`). C'est
+du shell, pas une désignation. Un chemin absolu, lui, contient une espace et
+se cite : `"$HOME/Mon coffre/SAVOIRS"`.
+
 ### 7.1 La structure — fixe
 
 La structure de premier niveau est **fixe**. Seul l'utilisateur crée, renomme
@@ -283,6 +310,7 @@ sous-structure de premier niveau.
 
 | Dossier | Rôle |
 | --- | --- |
+| `Mon coffre/` | la racine — le coffre Obsidian lui-même, ouvert à ce niveau |
 | `OBSIA/` | le dépôt, versionné — agents, skills, tâches, mémoire d'OBSIA |
 | `_maintenance/` | journaux, astuces de débogage, previews consignés, registre des notes traitées |
 | `PROJETS/` | les projets en cours ou à venir |
@@ -299,8 +327,9 @@ décision de l'utilisateur, pas des agents.
 Les agents `read_only: false` peuvent **lire tout le coffre parent** dès que
 le harness donne accès à sa racine (7.6) : la recherche couvre
 `_maintenance/`, `PROJETS/`, `DOCUMENTS/`, `PERSONNELS/`, `SAVOIRS/` et
-`EN-VRAC/`. Le coffre parent étant un cran au-dessus du dépôt, un chemin y
-commence par `../` depuis la racine d'OBSIA.
+`EN-VRAC/`. Ces dossiers se désignent par leur nom complet depuis la racine
+(`Mon coffre/SAVOIRS/`) ; dans une commande lancée depuis la racine du dépôt,
+ils s'atteignent par `..`.
 
 Le coffre parent n'est **pas** un « dépôt extérieur » au sens du §3 : ce
 paragraphe vise des bases de code, pas des notes.
@@ -329,9 +358,16 @@ périmètre : on n'y modifie pas un contenu existant sans demande explicite, on
 n'y déplace ni n'y supprime rien, et le **seul ajout** autorisé est le dépôt
 d'une note classée venue d'`EN-VRAC/`.
 
-`PERSONNELS/` appelle une prudence particulière : contenu privé et sensible.
-Le lire sur demande explicite, et n'y écrire que pour y classer une note dont
-la nature est manifestement personnelle.
+`PERSONNELS/` porte du contenu **personnel mais non critique** : configuration
+matérielle, préférences, CV. Il **participe au graphe de liens** comme les
+autres dossiers — ces notes doivent être reliées au reste, sinon elles ne
+servent à rien. Un agent le lit donc librement pour établir des rétroliens et
+pour répondre.
+
+Deux limites tiennent quand même : on n'y **écrit** que pour y classer une note
+dont la nature est manifestement personnelle (§7.3 ci-dessus), et son contenu
+ne migre jamais dans `OBSIA/`, qui est public (§7.2). Un secret — mot de passe,
+jeton, clé — n'a sa place ni ici ni ailleurs (§4).
 
 ### 7.4 Preview et traçabilité — `_maintenance/`
 
@@ -343,11 +379,12 @@ plusieurs fichiers, déplace une note ou écrit hors d'`EN-VRAC/`, l'agent :
 3. exécute, puis consigne l'action (quoi, où, résultat) dans `_maintenance/`,
    comme au §9.
 
-Le registre des notes traitées (`_maintenance/notes_remplies`) liste les notes
-déjà remplies — surtout celles de `SAVOIRS/` que l'utilisateur dépose brutes.
-Une note qui y figure n'est pas à revérifier ; le registre est mis à jour
-après chaque traitement. (Nom et format exacts du registre : à confirmer par
-l'utilisateur.)
+Le registre des notes traitées est le fichier
+**`Mon coffre/_maintenance/notes_remplies.md`** — une note Markdown, pour
+qu'Obsidian l'indexe et la rende consultable comme le reste. Il liste les
+notes déjà remplies, surtout celles de `SAVOIRS/` que l'utilisateur dépose
+brutes. Une note qui y figure n'est pas à revérifier ; le registre est mis à
+jour après chaque traitement.
 
 ### 7.5 Rétroliens et tags — comment ça marche
 
@@ -391,15 +428,29 @@ coffre parent** (le dossier qui contient `OBSIA/`), pas seulement dans
 
 Trois voies, au choix du harness : ouvrir la racine du coffre comme dossier de
 travail ; y ajouter les dossiers de connaissance comme répertoires de travail
-supplémentaires ; ou monter un serveur MCP « fichiers » — le gabarit vit dans
-`IA/MCP/mcp.example.json`, entrée `coffre-parent`, à compléter du chemin réel.
-Ce gabarit est versionné ; la configuration réelle ne l'est pas.
+supplémentaires ; ou monter le serveur MCP « fichiers » décrit par
+`IA/MCP/coffre-parent.md` — sa fiche donne ses permissions, le gabarit de
+configuration vit dans `IA/MCP/mcp.example.json`, entrée `coffre-parent`, à
+compléter du chemin réel. Ce gabarit est versionné ; la configuration réelle
+ne l'est pas.
+
+Comme tout MCP, celui-là n'est utilisable que **déclaré par un agent** (§5) :
+un serveur de fichiers braqué sur la racine du coffre peut écrire partout,
+alors que le §7.3 n'ouvre que quatre zones. C'est la fiche, pas le serveur,
+qui porte cette limite — d'où l'obligation de la lire avant d'appeler un de
+ses outils (§10.2).
 
 Des gabarits d'intégration par harness vivent dans
 `IA/system/adaptateurs-harness/README.md` : des exemples d'adaptation, jamais
 des règles — la configuration réelle reste hors dépôt.
 
 ### 7.7 Cycle d'une note d'`EN-VRAC/`
+
+`EN-VRAC/` est un **dossier tampon**, pas une destination : il ne stocke rien
+durablement. Une session de rangement le traite **en entier**, et il est vide
+quand elle se termine. Conséquence pratique : rien ne s'appuie sur son contenu
+— une note d'`EN-VRAC/` n'est jamais une cible de rétrolien stable, puisqu'elle
+aura changé de dossier avant qu'on la relise.
 
 1. Lister `EN-VRAC/` : notes brutes à traiter, parfois un simple titre.
 2. Pour chacune : lire et comprendre l'intention ; vérifier par la recherche
@@ -410,7 +461,10 @@ des règles — la configuration réelle reste hors dépôt.
    article, transcription → `DOCUMENTS/` ; fait personnel → `PERSONNELS/` ;
    concept → `SAVOIRS/`.
 5. Afficher le preview et le consigner dans `_maintenance/` (7.4).
-6. Classer (déplacer), puis mettre à jour `_maintenance/notes_remplies`.
+6. Classer (déplacer), puis mettre à jour
+   `Mon coffre/_maintenance/notes_remplies.md`.
+7. En fin de session, vérifier qu'`EN-VRAC/` est bien vide — c'est le critère
+   d'achèvement. Ce qui reste est ce qui n'a pas pu être tranché : le dire.
 
 ## 8. Sources et citations
 
@@ -426,9 +480,15 @@ questions restées ouvertes. Ce dossier vit sous `IA/system/`, donc son
 écriture suit la règle générale du §2 (patch Git revu) — ce n'est pas une des
 trois zones en écriture directe.
 
-**Les actions à effet externe y figurent aussi** : tout appel d'un MCP
-`permission: elevated` et toute correction appliquée à un système. Une ligne
-suffit — quoi, où, résultat. Il n'existe **pas** de journal séparé : un fichier
+**Les actions à effet externe y figurent aussi** : **tout appel de MCP, quel
+que soit son `permission`**, et toute correction appliquée à un système. Une
+ligne suffit — quoi, où, résultat.
+
+`permission: normal` dit qu'un outil ne sort pas de la machine ; il ne dispense
+pas d'en consigner l'usage. Un serveur « local » qui crée et modifie des notes
+du coffre parent produit des effets aussi durables qu'un serveur distant, et
+le coffre parent n'a pas d'historique Git pour les rattraper. Ce que la
+permission gradue, c'est la prudence avant d'appeler — pas la trace après. Il n'existe **pas** de journal séparé : un fichier
 d'audit que personne ne relit ne sert à rien, alors que cette note passe par
 une revue.
 
@@ -505,6 +565,18 @@ Le contrôle des chemins s'arrête à `IA/` et aux documents de la racine : là,
 chemin faux **agit** — une instruction de tâche part au déclenchement, un skill
 dit d'ouvrir un fichier. `mémoire/` en est exempté : c'est un récit, où une
 note ancienne cite légitimement un état révolu.
+
+Trois précisions sur ce contrôle, parce qu'un contrôle qu'on croit plus large
+qu'il n'est vaut moins que pas de contrôle du tout :
+
+- il couvre les chemins **depuis la racine du dépôt** (`IA/…`, `scripts/…`) et
+  les chemins **relatifs**, résolus depuis le fichier qui les cite — c'est
+  cette seconde forme qui casse quand un skill change de forme (§6) ;
+- il couvre les **scripts appelés dans un bloc de code** (`python3 …`) : c'est
+  là que vivent les commandes qu'une tâche exécutera vraiment. Le reste d'un
+  bloc de code n'est pas contrôlé — on y écrit des arborescences d'exemple ;
+- il **écarte les chemins du coffre parent** (§7) : ils désignent des dossiers
+  hors du dépôt, que le vérificateur ne peut pas voir.
 
 Il tourne en intégration continue à chaque poussée
 (`.github/workflows/verifier-coffre.yml`), et localement en crochet de

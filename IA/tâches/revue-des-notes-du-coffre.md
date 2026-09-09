@@ -15,8 +15,8 @@ actif: true
 
 ## Intention
 
-`EN-VRAC/` est la zone de dépôt : des notes y attendent d'être remplies puis
-classées, et des notes déposées brutes dans `SAVOIRS/` attendent d'être
+`EN-VRAC/` est un **tampon** : des notes y attendent d'être remplies puis
+classées, et le dossier doit être vide en fin de passage, et des notes déposées brutes dans `SAVOIRS/` attendent d'être
 complétées. Sans passage régulier, la file grossit et la base de connaissances
 vieillit.
 
@@ -29,20 +29,23 @@ Charge le skill `traitement-des-notes`
 (`IA/skills/traitement-des-notes/traitement-des-notes.md`) et applique sa
 procédure, depuis la racine du dépôt OBSIA :
 
-1. Liste `../EN-VRAC/` : pour chaque note brute, vérifie par la recherche
+1. Liste `Mon coffre/EN-VRAC/` (`ls ../EN-VRAC/` depuis la racine du dépôt) :
+   pour chaque note brute, vérifie par la recherche
    (`obsidian-manager`) qu'une note équivalente n'existe pas déjà, remplis le
    corps, pose le frontmatter minimal et les tags du vocabulaire contrôlé
    (`IA/system/tags-du-coffre-parent.md`), crée les rétroliens, puis classe la
-   note selon sa nature vers `../PROJETS/`, `../DOCUMENTS/`, `../PERSONNELS/`
-   ou `../SAVOIRS/`.
-2. Vérifie `../_maintenance/notes_remplies`, puis complète les notes de
-   `../SAVOIRS/` déposées brutes qui n'y figurent pas encore.
+   note selon sa nature vers `Mon coffre/PROJETS/`,
+   `Mon coffre/DOCUMENTS/`, `Mon coffre/PERSONNELS/` ou `Mon coffre/SAVOIRS/`.
+2. Vérifie `Mon coffre/_maintenance/notes_remplies.md`, puis complète les notes de
+   `Mon coffre/SAVOIRS/` déposées brutes qui n'y figurent pas encore.
 3. Consigne chaque preview (copie datée) et chaque action dans
-   `../_maintenance/` (§7.4) et tiens le registre `notes_remplies` à jour.
+   `Mon coffre/_maintenance/` (§7.4) et tiens le registre `notes_remplies.md` à jour.
 
 Tout tag rencontré hors du vocabulaire contrôlé est **signalé**, jamais posé :
 propose son ajout au registre par patch, ou son retrait. Ne modifie rien hors
 des zones du §7.3.
 
 Rapporte en clair : notes traitées et classées, notes complétées, tags hors
-vocabulaire signalés, fichiers de `../_maintenance/` écrits.
+vocabulaire signalés, fichiers de `Mon coffre/_maintenance/` écrits. Termine en
+disant si `EN-VRAC/` est vide : c'est le critère d'achèvement (§7.7), et ce qui
+y reste est ce que tu n'as pas su trancher.

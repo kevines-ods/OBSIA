@@ -37,4 +37,4 @@ ouvrir la racine du coffre comme dossier de travail.
 ## Vérification après branchement
 
 Une conversation de test doit pouvoir : lister la racine du coffre (`..`),
-lire une note de `../SAVOIRS/`, et retrouver le registre des tags.
+lire une note de `Mon coffre/SAVOIRS/`, et retrouver le registre des tags.

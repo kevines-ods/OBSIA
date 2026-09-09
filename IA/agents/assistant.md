@@ -23,6 +23,7 @@ mcp:
   - git-hub
   - chrome-devtools
   - obsidian
+  - coffre-parent
 read_only: false
 ---
 
