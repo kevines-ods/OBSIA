@@ -56,6 +56,21 @@ moins qu'un document absent, parce qu'il donne l'illusion du cadrage. D'où
 les critères de franchissement écrits en toutes lettres dans le fichier de
 l'agent, et l'aperçu HTML que l'utilisateur doit **voir**, pas seulement lire.
 
+## Le trou que la relecture a montré
+
+Le protocole livré d'abord savait **penser** et **livrer**, pas **construire** :
+l'étape de construction n'avait aucun skill, et la mise en ligne s'appuyait sur
+deux skills de diagnostic. L'utilisateur l'a vu immédiatement — « il a la
+procédure mais rien pour la construire réellement ».
+
+Leçon réutilisable, valable pour tout protocole en étapes : une table dont une
+case « skill » est vide n'est pas une étape libre, c'est une étape non pensée.
+La table rend le trou visible ; encore faut-il la lire comme un inventaire, pas
+comme une illustration.
+
+Trois skills l'ont comblé — `amorcage-du-projet`, `construction-dune-tranche`,
+`mise-en-ligne` — et `sauvegardes` est entré dans la liste de l'agent.
+
 ## Questions ouvertes
 
 - Le protocole n'a jamais tourné. Huit à quinze questions à la porte 2 est un
@@ -65,6 +80,9 @@ l'agent, et l'aperçu HTML que l'utilisateur doit **voir**, pas seulement lire.
   vérifier qu'il a été fait ; l'oubli se verra à la recherche polluée.
 - La mémoire de `batisseur` n'existe pas encore comme dossier : elle naîtra à
   son premier projet.
+- Aucune licence par défaut pour les projets : la question est posée à chaque
+  démarrage. C'est un choix de l'utilisateur, pas un oubli — reste à voir si
+  la question devient lassante à la cinquième fois.
 
 ## Synthèse IA
 
