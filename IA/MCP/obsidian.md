@@ -35,9 +35,19 @@ vérifier sa documentation.
 
 ## Permissions
 
-- `normal` : le serveur ne touche que le coffre local. Les écritures restent
-  régies par le contrat — zones du §7.3 pour le coffre parent, §2 pour le
-  dépôt — et se consignent au §9 quand elles touchent le coffre parent.
+`normal` : le serveur ne sort pas de la machine — il parle à Obsidian sur
+`127.0.0.1`. C'est tout ce que ce niveau dit, et il gradue la **prudence avant
+l'appel**, rien d'autre.
+
+Deux choses qu'il ne dispense pas :
+
+- **Consigner l'usage.** Tout appel de MCP laisse une ligne dans le log de
+  session (§9), quel que soit son `permission`. Ce serveur crée et modifie des
+  notes du coffre parent, qui n'a pas d'historique Git : la trace du §9 et le
+  preview du §7.4 sont tout ce qui reste pour savoir ce qui s'est passé.
+- **Respecter les zones.** Écrire *par* Obsidian ne change rien aux droits :
+  zones du §7.3 pour le coffre parent, §2 pour le dépôt. Le serveur, lui,
+  accepterait n'importe quelle écriture.
 
 ## Sécurité
 
@@ -46,4 +56,6 @@ vérifier sa documentation.
 - Le plugin Local REST API n'écoute que sur `127.0.0.1` par défaut : ne pas
   l'exposer sur le réseau.
 - Les écritures restent soumises au contrat : lecture seule selon
-  `read_only`, zones autorisées, preview consigné (§7.4).
+  `read_only`, zones autorisées, preview consigné (§7.4), usage consigné (§9).
+- `mcp-obsidian` est un serveur tiers : c'est lui qui porte la clé API et qui
+  atteint le coffre. Le choisir revient à lui accorder cet accès.

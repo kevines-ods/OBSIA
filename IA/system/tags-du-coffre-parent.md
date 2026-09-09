@@ -17,8 +17,9 @@ par des IA, sans cohérence. On utilise donc un **vocabulaire contrôlé** :
   LLM la retrouve, quel que soit le coffre : c'est la portabilité.
 
 Écriture d'un tag : minuscules, sans espace. Le tiret est admis
-(`home-assistant`, `reverse-proxy`). Les accents sont admis (`réseau`,
-`préférence`), tels qu'ils existent déjà.
+(`home-assistant`, `reverse-proxy`). Les accents sont **écrits** (`réseau`,
+`préférence`, `sécurité`) : un vocabulaire à moitié accentué se cherche deux
+fois.
 
 ## Type d'une note (frontmatter `type`)
 
@@ -44,17 +45,30 @@ groupement.
 | Logiciel | `software` |
 | Personnel | `personnel`, `partage`, `préférence` |
 
-## Tags candidats (à valider au fil)
+## Tags candidats — **pas encore utilisables**
 
-Des candidats fréquents, ajoutés à la liste existante dès qu'une note les
-justifie : `obsidian`, `obsia`, `automation`, `git`, `github`, `conteneurs`,
-`securite`, `documentation`.
+Ces mots reviennent souvent et feraient sans doute de bons tags. Ils ne sont
+**pas** dans le vocabulaire tant que l'utilisateur ne les y a pas validés :
+tant qu'un tag figure ici et non dans la table ci-dessus, un agent ne le pose
+sur aucune note et l'outillage le compte comme hors vocabulaire.
+
+> `obsidian`, `obsia`, `automation`, `git`, `github`, `conteneurs`,
+> `sécurité`, `documentation`
+
+Rencontrer l'un d'eux dans une note existante se **signale** — comme n'importe
+quel tag hors liste. Le faire passer dans la table demande une validation de
+l'utilisateur, par la procédure ci-dessous.
+
+C'est volontairement rigide : « à valider au fil » revenait à autoriser
+l'improvisation sous un autre nom, et l'improvisation est exactement ce que ce
+registre existe pour empêcher.
 
 ## Procédure d'ajout d'un tag
 
 1. Vérifier qu'aucun tag existant ne convient déjà (c'est le cas le plus
    fréquent : un « nouveau » tag est souvent un doublon).
-2. Proposer l'ajout ici par patch soumis à revue, en le rangeant dans le
-   domaine le plus proche.
+2. Proposer l'ajout **dans la table du vocabulaire**, par patch soumis à revue,
+   en le rangeant dans le domaine le plus proche. Ajouter un mot à la liste des
+   candidats ne l'autorise pas : seule la table fait foi.
 3. Une fois ajouté, l'utiliser dans les nouvelles notes ; le passage
    rétroactif sur les notes existantes reste optionnel.

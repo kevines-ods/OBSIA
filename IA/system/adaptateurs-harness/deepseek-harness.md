@@ -11,7 +11,7 @@ Harness « tout est plugin », compatible MCP et skills.
    du harness (l'emplacement exact dépend de la version — menu/plugin MCP).
 3. Charger `prompt-systeme.md` comme base de la session (via patch/profile ou
    instruction de démarrage, selon la version).
-4. Vérifier l'accès au coffre : demander la liste de `../SAVOIRS/`.
+4. Vérifier l'accès au coffre : demander la liste de `Mon coffre/SAVOIRS/`.
 
 > À compléter avec la configuration réelle (format d'un plugin MCP DSH) quand
 > tu y auras accès.

@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: obsidian-manager
-description: Interroger le coffre — recherche plein texte, rétroliens, résumé d'une note, état des index. À charger dès qu'il faut retrouver quelque chose dans le coffre, ou vérifier ce qui existe déjà avant d'écrire une note nouvelle. Lit et rapporte seulement : n'écrit, ne déplace ni ne supprime rien.
+description: Interroger le dépôt OBSIA et le coffre parent `Mon coffre/` — recherche plein texte, rétroliens, résumé d'une note, état des index. À charger dès qu'il faut retrouver quelque chose, ou vérifier ce qui existe déjà avant d'écrire une note nouvelle. Lit et rapporte seulement : n'écrit, ne déplace ni ne supprime rien.
 type: core
 read_only: true
 ---
@@ -18,12 +18,15 @@ des index.
 ## Procédure
 
 1. Lire `../system/VAULT-CONTRACT.md`.
-2. Localiser le ou les projets concernés via `/mémoire/<agent>/<projet>/sommaire.md` et les
-   rétroliens.
+2. Localiser le ou les projets concernés via `mémoire/<agent>/<projet>/sommaire.md`
+   et les rétroliens.
 3. Extraire le contexte pertinent, en citant systématiquement les chemins des
    fichiers utilisés.
-4. Si les index sont désynchronisés : régénérer via
-   `scripts/regenerate_sommaire.py`. Jamais à la main.
+4. Si les index sont désynchronisés : le **dire**, sans y toucher. Ce skill
+   est `read_only: true` — il constate, il ne répare pas (§10 du contrat).
+   La commande de constat est plus bas (`--verifier`, qui n'écrit rien) ; la
+   régénération relève d'une action assumée par l'agent, jamais d'un effet de
+   bord de la recherche.
 
 Un `sommaire.md` porte, pour chaque note, son statut et son résumé, extraits de
 la note elle-même. Il est fait pour décider d'ouvrir une note **sans l'ouvrir** :
@@ -31,15 +34,15 @@ le lire d'abord, ouvrir ensuite, et seulement ce qui est nécessaire.
 
 ## Périmètre de recherche
 
-Depuis le 2026-09-08, le **coffre parent** est votre base de connaissances et
-il est lisible (§7) : la recherche couvre `_maintenance/`, `PROJETS/`,
-`DOCUMENTS/`, `PERSONNELS/`, `SAVOIRS/` et `EN-VRAC/`, dès que le harness
-donne accès à la racine du coffre (§7.6).
+Depuis le 2026-09-08, le **coffre parent** — `Mon coffre/` — est votre base de
+connaissances et il est lisible (§7) : la recherche couvre
+`Mon coffre/_maintenance/`, `PROJETS/`, `DOCUMENTS/`, `PERSONNELS/`,
+`SAVOIRS/` et `EN-VRAC/`, dès que le harness donne accès à la racine du coffre
+(§7.6).
 
-Le dépôt OBSIA est cloné **à la racine du coffre parent** : les dossiers de
-connaissance sont un cran au-dessus, leur chemin commence par `../` depuis la
-racine du dépôt. Une recherche lancée depuis la racine du dépôt ne les voit
-pas ; il faut remonter d'un cran pour les atteindre :
+Le dépôt est cloné **à la racine de ce coffre** : une recherche lancée depuis
+la racine du dépôt ne voit que le dépôt. Il faut remonter d'un cran — c'est le
+seul emploi de `..` que le §7 autorise, celui d'une commande :
 
 ```bash
 rg "motif" ../SAVOIRS --glob "*.md"
@@ -53,8 +56,9 @@ Deux règles du contrat s'appliquent toujours :
   nulle part. Les zones d'écriture du coffre parent sont au §7.3, réservées
   aux agents `read_only: false`.
 
-Vérifier que les index sont à jour sans rien écrire (sort en erreur s'ils sont
-périmés) :
+Vérifier que les index sont à jour **sans rien écrire** — c'est la seule forme
+que ce skill emploie, et celle que l'étape 4 de la procédure appelle (elle sort
+en erreur si les index sont périmés) :
 
 ```bash
 python3 scripts/regenerate_sommaire.py --verifier

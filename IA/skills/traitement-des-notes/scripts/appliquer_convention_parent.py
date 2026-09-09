@@ -51,15 +51,29 @@ def trouver_racine_depot(script: Path) -> Path | None:
     return None
 
 
+SECTION_VOCABULAIRE = "## Vocabulaire"
+
+
 def lire_registre(racine: Path) -> set[str]:
-    """Tags du vocabulaire contrôlé, pris dans le registre versionné."""
+    """Tags du vocabulaire contrôlé, pris dans le registre versionné.
+
+    Seule la table de la section « Vocabulaire » fait foi. Lire *toutes* les
+    lignes de tableau du fichier ramassait aussi la table « Type d'une note » :
+    `concept`, `revue`, `projet` et `note` passaient alors pour des tags, et une
+    note taguée `#projet` était déclarée conforme. La section des **candidats**
+    est écartée pour la raison inverse : ces mots ne sont pas encore validés.
+    """
     try:
         texte = (racine / REGISTRE_REL).read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError):
         return set()
     connus: set[str] = set()
+    dans_section = False
     for ligne in texte.splitlines():
-        if not ligne.startswith("| "):
+        if ligne.startswith("## "):
+            dans_section = ligne.startswith(SECTION_VOCABULAIRE)
+            continue
+        if not dans_section or not ligne.startswith("| "):
             continue
         for m in re.finditer(r"`([^`]+)`", ligne):
             if TAG.match(m.group(1)):

@@ -354,8 +354,29 @@ def verifier_agents_nommes(agents):
 # Un chemin cité entre accents graves, ou une cible de lien Markdown.
 CHEMIN_CITE = re.compile(
     r"`((?:IA|scripts|mémoire|brouillon)/[^`\s]+\.(?:md|py|json|yml|sh))`")
+# Un chemin relatif cité — `../system/VAULT-CONTRACT.md`. C'est la forme
+# employée partout dans le coffre, et celle qui casse quand un skill passe de
+# la forme plate à la forme dossier (§6) : elle se résout depuis le fichier
+# qui la cite, pas depuis la racine.
+CHEMIN_RELATIF = re.compile(r"`(\.\.?/[^`\s]+\.(?:md|py|json|yml|sh))`")
+# Un script réellement appelé dans un bloc de code. Le reste d'un bloc n'est
+# pas contrôlé — on y écrit des arborescences d'exemple — mais une commande,
+# elle, s'exécute : c'est ce que l'instruction d'une tâche fera au
+# déclenchement.
+SCRIPT_APPELE = re.compile(r"(?:python3?|bash|sh)\s+([\w./\-]+\.(?:py|sh))")
 LIEN_MD = re.compile(r"\]\(([^)]+)\)")
 GABARIT = re.compile(r"[<>*…{]|AAAA|MM-JJ")          # chemins d'exemple, pas des cibles
+
+# Dossiers du coffre parent (§7.1) : hors du dépôt, donc invisibles d'ici.
+# Un chemin qui les vise n'est pas cassé, il désigne autre chose.
+COFFRE_PARENT = ("SAVOIRS", "PROJETS", "DOCUMENTS", "PERSONNELS",
+                 "EN-VRAC", "_maintenance", "Mon coffre")
+
+
+def vise_le_coffre_parent(chemin: str) -> bool:
+    """Le chemin désigne-t-il un dossier du coffre parent plutôt que le dépôt ?"""
+    segments = [s for s in chemin.split("/") if s not in ("", ".", "..")]
+    return bool(segments) and segments[0] in COFFRE_PARENT
 
 
 def verifier_chemins_cites():
@@ -368,6 +389,18 @@ def verifier_chemins_cites():
     Le contrôle s'arrête à `IA/` et aux documents de la racine : là, un chemin
     faux **agit**. `mémoire/` est un récit, où une note ancienne cite
     légitimement un état révolu ou reproduit un extrait d'index.
+
+    Trois formes sont contrôlées, parce que trois formes cassent :
+
+      · le chemin depuis la racine du dépôt — `IA/skills/x.md` ;
+      · le chemin **relatif**, résolu depuis le fichier qui le cite — c'est
+        celui qui casse quand un skill change de forme (§6), et il est resté
+        des mois hors du filet ;
+      · le **script appelé dans un bloc de code** — le reste d'un bloc est
+        illustratif, mais une commande s'exécute.
+
+    Les chemins du coffre parent (§7.1) sont écartés : ils désignent des
+    dossiers hors du dépôt, que ce script ne peut pas voir.
     """
     cibles = list((RACINE / "IA").rglob("*.md")) + list(RACINE.glob("*.md"))
     for chemin in sorted(cibles):
@@ -381,6 +414,27 @@ def verifier_chemins_cites():
             if GABARIT.search(cite) or (RACINE / cite).exists():
                 continue
             erreur(rel, "cite le chemin `%s`, qui n'existe pas" % cite)
+
+        # chemins relatifs : résolus depuis le fichier qui les cite
+        for cite in sorted({m.group(1) for m in CHEMIN_RELATIF.finditer(hors_code)}):
+            if GABARIT.search(cite) or vise_le_coffre_parent(cite):
+                continue
+            if (chemin.parent / cite).exists():
+                continue
+            erreur(rel, "cite le chemin relatif `%s`, qui ne mène nulle part "
+                        "depuis ce fichier (§6)" % cite)
+
+        # scripts appelés dans un bloc de code : eux s'exécutent
+        for bloc in re.findall(r"```.*?```", texte, flags=re.S):
+            for script in sorted({m.group(1) for m in SCRIPT_APPELE.finditer(bloc)}):
+                if GABARIT.search(script) or vise_le_coffre_parent(script):
+                    continue
+                depuis_racine = (RACINE / script).exists()
+                depuis_fichier = (chemin.parent / script).exists()
+                if depuis_racine or depuis_fichier:
+                    continue
+                erreur(rel, "appelle le script `%s` dans un bloc de code, "
+                            "et ce fichier n'existe pas (§11)" % script)
 
         for m in LIEN_MD.finditer(hors_code):
             cible = m.group(1).split("#")[0].strip()
