@@ -28,13 +28,14 @@
     },
     "obsidian": {
       "type": "stdio",
-      "command": "npx",
+      "command": "uvx",
       "args": [
-        "-y",
         "mcp-obsidian"
       ],
       "env": {
-        "OBSIDIAN_API_KEY": "${OBSIDIAN_API_KEY}"
+        "OBSIDIAN_API_KEY": "${OBSIDIAN_API_KEY}",
+        "OBSIDIAN_HOST": "127.0.0.1",
+        "OBSIDIAN_PORT": "27124"
       }
     }
   }
