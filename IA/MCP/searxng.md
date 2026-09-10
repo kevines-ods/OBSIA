@@ -38,12 +38,31 @@ des résultats, sans piloter un navigateur.
 l'instance SearXNG, qui interroge elle-même des moteurs tiers. C'est ce
 caractère qui justifie le niveau.
 
+## Où vit l'URL
+
+Le harness lit sa configuration **au démarrage**, avant qu'un agent existe : le
+coffre ne peut donc pas *fournir* l'URL — il la **conserve**. Deux endroits,
+deux rôles, le motif du §12 (un registre décrit, une instance agit) :
+
+| Où | Rôle | Ce qu'on y met |
+| --- | --- | --- |
+| la configuration du harness, hors dépôt | **l'instance** — ce que le serveur utilise pour démarrer | l'URL réelle |
+| une note d'inventaire du coffre parent | **le registre** — ce qui existe, et où vit la configuration | l'URL, la machine, le chemin de la configuration |
+
+L'URL est une **adresse interne**, pas un secret : une note du coffre parent la
+porte sans difficulté. Un jeton, lui, n'entrerait pas dans une note (§4).
+
+Les deux copies peuvent diverger — un port changé d'un seul côté ne se signale
+nulle part. Après toute modification de l'instance, mettre à jour la note.
+(Partager une valeur unique par lien symbolique est une autre voie, non traitée
+ici.)
+
 ## Sécurité
 
-- **L'URL de l'instance n'entre jamais dans le dépôt.** Elle vit dans la
-  configuration du harness, hors dépôt — le dépôt est public, et une adresse
-  interne n'y a pas sa place (§9). `mcp.example.json` ne porte qu'une URL
-  fictive.
+- **L'URL de l'instance n'entre jamais dans `OBSIA/`.** Le dépôt est public, et
+  une adresse interne n'y a pas sa place (§9). Elle vit dans la configuration du
+  harness et dans la note d'inventaire du coffre parent (voir « Où vit l'URL »).
+  `mcp.example.json` ne porte qu'une URL fictive.
 - **Une instance auto-hébergée n'est pas pour autant privée** : SearXNG
   interroge des moteurs externes, qui voient la requête. Ne pas y mettre de
   contenu du coffre parent — ni un extrait de note, ni un nom de projet.
