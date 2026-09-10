@@ -35,6 +35,12 @@ trancher, et se dit comme tel.
 - Le **frontmatter minimal** d'une note de connaissance : `type` (parmi
   `concept`, `revue`, `projet`, `personnel`, `note`) et `tags`. `source`
   (URL) s'ajoute pour une note venue de l'extérieur (`DOCUMENTS/`).
+- La **`description`** — un champ d'une seule ligne — n'est pas obligatoire,
+  mais c'est elle que les index du coffre parent reprennent pour décider
+  d'ouvrir une note **sans l'ouvrir**. L'écrire au remplissage, quand la note
+  dit de quoi elle parle ; à défaut, les index se rabattent sur le premier
+  titre. Le passage rétroactif ne la pose pas : elle demande un jugement sur le
+  contenu.
 - Les **rétroliens** s'écrivent `[[Nom exact de la note]]`, sans chemin de
   dossier, vers des notes existantes et au nom unique (§7.5).
 
@@ -45,7 +51,7 @@ trancher, et se dit comme tel.
 2. Vérifier par la recherche (`obsidian-manager`) qu'une note équivalente
    n'existe pas déjà — sinon proposer la fusion au lieu d'un doublon.
 3. Remplir le corps dans la note, sans dénaturer l'intention de départ.
-4. Poser le frontmatter minimal (`type`, `tags` du vocabulaire) et les
+4. Poser le frontmatter (`type`, `tags` du vocabulaire, `description`) et les
    rétroliens vers les notes liées.
 5. Décider la destination : projet → `Mon coffre/PROJETS/` ; revue, article,
    transcription → `Mon coffre/DOCUMENTS/` ; fait personnel → `Mon coffre/PERSONNELS/` ;
@@ -59,7 +65,7 @@ trancher, et se dit comme tel.
 1. Vérifier dans `Mon coffre/_maintenance/notes_remplies.md` que la note n'a pas déjà été
    traitée ; si elle y figure, ne rien refaire.
 2. Compléter : frontmatter minimal si absent, tags du vocabulaire, rétroliens,
-   corps manquant — sans changer le sens ni déplacer le fichier.
+   `description`, corps manquant — sans changer le sens ni déplacer le fichier.
 3. Prévisualiser si plusieurs fichiers sont touchés (copie datée dans
    `Mon coffre/_maintenance/`), puis consigner la note dans `notes_remplies.md`.
 
@@ -84,6 +90,25 @@ la note rejoindra sa destination. Après l'aperçu, appliquer avec `--appliquer`
 
 C'est un outil de votre machine : il lit le coffre parent réel. Il ne tourne
 pas en CI.
+
+## Index du coffre parent
+
+Les index — `Mon coffre/_maintenance/index-<dossier>.md`, un par dossier du
+coffre parent — sont produits depuis les notes elles-mêmes, par
+`IA/skills/traitement-des-notes/scripts/indexer_coffre_parent.py`. Le skill
+`recherche` les lit avant les notes : ils servent à décider d'ouvrir une note
+sans l'ouvrir.
+
+Après un traitement de notes, les régénérer :
+
+```bash
+python3 IA/skills/traitement-des-notes/scripts/indexer_coffre_parent.py --verifier    # constate, n'écrit rien
+python3 IA/skills/traitement-des-notes/scripts/indexer_coffre_parent.py --appliquer   # écrit, après l'aperçu
+```
+
+L'aperçu s'affiche par défaut : `--appliquer` est requis pour écrire (§7.4).
+Comme le passage rétroactif, c'est un outil de votre machine — il lit le coffre
+parent réel et ne tourne pas en CI.
 
 ## Garde-fous
 

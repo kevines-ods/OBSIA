@@ -7,6 +7,7 @@ skills:
   - createur-de-skill
   - cloture-de-session
   - obsidian-manager
+  - recherche
   - mermaid
   - cron
   - pdf
@@ -24,6 +25,7 @@ mcp:
   - chrome-devtools
   - obsidian
   - coffre-parent
+  - searxng
 read_only: false
 ---
 
