@@ -3,13 +3,14 @@
 > Généré par `scripts/regenerate_sommaire.py` depuis le contenu des notes.
 > Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §2).
 
-6 notes.
+7 notes.
 
 ## Notes
 
 | Note | Statut | Résumé |
 |---|---|---|
 | [Un vérificateur vert ne prouve que ce qu'il regarde](angles-morts-dun-verificateur.md) | 🟢 Vérifiée le 2026-09-09 — trois erreurs réelles trouvées… | Leçon réutilisable sur les contrôles automatiques. Vaut pour tout script de validation, dans ce coffre comme ailleurs. |
+| [Coder avant le cadrage fait grossir l'outil, jamais converger](coder-avant-le-cadrage-fait-grossir-loutil.md) | 🟢 Vérifiée — le 2026-09-11, en comparant des harnais pour… | Leçon tirée du daemon AIo (dépôt `ia-orchestrator`), construit comme harness candidat pour piloter OBSIA depuis le PC… |
 | [Frontmatter du coffre — pièges vérifiés](frontmatter-du-coffre-obsia.md) | 🟢 Vérifiée le 2026-09-03 sur un coffre jetable. | Leçon réutilisable sur le lecteur de frontmatter d'OBSIA. À relire avant de toucher au frontmatter d'un agent ou d'un… |
 | [Un index maintenu à la main finit par mentir](index-maintenus-a-la-main.md) | 🟢 Vérifiée — trois erreurs réelles trouvées en une session. | Leçon générale, tirée d'un cas concret. Vaut pour tout fichier qui décrit d'autres fichiers. |
 | [Nommer un agent le fait exister](nommer-un-agent-le-fait-exister.md) | 🟢 Vérifiée le 2026-09-04 — le nom a disparu, un contrôle… | Leçon tirée d'un agent fantôme resté quatre corrections dans le coffre. Vaut pour tout nom cité dans une documentation… |
