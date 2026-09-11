@@ -172,8 +172,8 @@ du balayage des noms.
 **Champs propres aux MCP**
 
 Un fichier de `IA/MCP/` décrit un outil, pas un interlocuteur : il n'a ni
-`read_only` (il ne fait qu'exposer des actions à appeler) ni `skills`. Son
-frontmatter porte :
+`read_only` (il ne écrit rien par lui-même, c'est l'agent qui l'appelle) ni
+`skills`. Son frontmatter porte :
 
 | Champ | Type | Obligatoire | Notes |
 | --- | --- | --- | --- |
