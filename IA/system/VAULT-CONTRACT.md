@@ -375,10 +375,11 @@ directes, limitées et tracées (7.4) :
   fait tomber l'unicité des noms de notes (§6) dès le deuxième projet.
 
 Une **note** de `PROJETS/` n'est pas un dépôt de projet : elle reste protégée
-comme le reste. Hors des dépôts de projet, toute autre écriture dans
-`PROJETS/`, `DOCUMENTS/`, `PERSONNELS/` est hors périmètre : on n'y modifie pas un contenu existant sans demande explicite, on
-n'y déplace ni n'y supprime rien, et le **seul ajout** autorisé est le dépôt
-d'une note classée venue d'`EN-VRAC/`.
+comme le reste. Hors des dépôts de projet, une écriture dans `PROJETS/`,
+`DOCUMENTS/` ou `PERSONNELS/` se limite au **dépôt d'une note classée venue
+d'`EN-VRAC/`**, et à rien d'autre. On n'y modifie **jamais** une note
+existante, même à la demande de l'utilisateur : une note à enrichir repasse
+d'abord par `EN-VRAC/`, puis est classée. On n'y déplace ni n'y supprime rien.
 
 `PERSONNELS/` porte du contenu **personnel mais non critique** : configuration
 matérielle, préférences, CV. Il **participe au graphe de liens** comme les
