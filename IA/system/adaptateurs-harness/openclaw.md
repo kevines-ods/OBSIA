@@ -2,6 +2,10 @@
 
 **Statut : gabarit v1 — à valider sur machine réelle.**
 
+> « OpenClaw 2.0 » est un **alias de release** (la `2026.8.1`) ; le paquet, lui,
+> est **versionné par date** (`v2026.9.3`, …). Ne pas confondre l'alias et le
+> numéro de paquet.
+
 OpenClaw est un assistant personnel autonome (skills + MCP), pas un agent CLI
 calqué sur un répertoire de travail. L'intégration vise l'accès au coffre
 comme base de connaissances et la reprise des tâches.

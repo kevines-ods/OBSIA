@@ -35,7 +35,8 @@ OBSIA/                       le coffre — la racine du dépôt EST le coffre
 │   ├── MCP/                 outils structurés
 │   ├── tâches/              registre des tâches planifiées
 │   └── system/              VAULT-CONTRACT.md (les règles), index,
-│                            prompt-fondateur.md (intention d'origine)
+│                            prompt-fondateur.md (intention d'origine),
+│                            adaptateurs-harness/ (gabarits d'intégration)
 ├── mémoire/                 par agent → profil, préférences, expériences, projets
 ├── brouillon/               zone de travail libre
 ├── scripts/
@@ -78,6 +79,9 @@ Pour que les agents atteignent le coffre parent, le harness doit avoir accès à
 sa racine — pas seulement à `OBSIA/` : dossier de travail ouvert sur le coffre,
 ou serveur MCP « fichiers » (fiche `IA/MCP/coffre-parent.md`, gabarit
 `IA/MCP/mcp.example.json`). La configuration réelle vit hors dépôt.
+
+Les **gabarits d'intégration par harness** — Claude Code, OpenCode, OpenClaw,
+DeepSeek Harness, AionUi/ObsiaUi — vivent dans `IA/system/adaptateurs-harness/`.
 
 ## Tâches planifiées
 
