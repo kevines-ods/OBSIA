@@ -81,7 +81,8 @@ ou serveur MCP « fichiers » (fiche `IA/MCP/coffre-parent.md`, gabarit
 `IA/MCP/mcp.example.json`). La configuration réelle vit hors dépôt.
 
 Les **gabarits d'intégration par harness** — Claude Code, OpenCode, OpenClaw,
-DeepSeek Harness, AionUi/ObsiaUi — vivent dans `IA/system/adaptateurs-harness/`.
+DeepSeek Harness, AionUi/ObsiaUi, LibreChat — vivent dans
+`IA/system/adaptateurs-harness/`.
 
 ## Tâches planifiées
 
@@ -91,7 +92,7 @@ agent, et l'instruction exacte à lui envoyer. Ce fichier fait foi.
 Le timer systemd, le planificateur du harness ou le cron de la machine ne sont
 que des **instances** de cette déclaration : nommées `obsia-<nom>`, jetables,
 recréables depuis le registre. Changer de harness ou de machine ne perd donc
-plus rien — on relit le registre et on ré-instancie.
+plus rien — on relit le registre et on ré-instanciе.
 
 ```yaml
 ---
