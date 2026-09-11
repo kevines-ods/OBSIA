@@ -92,7 +92,7 @@ agent, et l'instruction exacte à lui envoyer. Ce fichier fait foi.
 Le timer systemd, le planificateur du harness ou le cron de la machine ne sont
 que des **instances** de cette déclaration : nommées `obsia-<nom>`, jetables,
 recréables depuis le registre. Changer de harness ou de machine ne perd donc
-plus rien — on relit le registre et on ré-instanciе.
+plus rien — on relit le registre et on ré-instancie.
 
 ```yaml
 ---
