@@ -26,10 +26,14 @@ atteint depuis plusieurs appareils.
    frontmatter donne le nom, le corps porte les instructions, `skills` et `mcp`
    disent ce qu'il mobilise. Le coffre reste la source de vérité : ne pas
    recopier un agent dans l'interface, le référencer.
-5. **Tâches planifiées.** Ne rien présumer : tant qu'il n'est pas vérifié que
-   l'interface expose un planificateur, une tâche reste `exécutant: local` et
-   s'instancie sur la machine (§12). Une tâche = au plus une instance vivante,
-   tous exécutants confondus.
+5. **Tâches planifiées.** L'interface prévoit des exécutions planifiées
+   (*scheduled chats*, *scheduled agents*) : une tâche du registre peut donc,
+   en principe, s'y instancier en `exécutant: harness` au lieu de `local`.
+   Deux réserves avant de s'y fier. La forme du `quand` du coffre est un cron
+   à cinq champs avec fuseau (§5), à confronter à ce que l'interface accepte
+   réellement. Et l'invariant du §12 tient : **au plus une instance vivante,
+   tous exécutants confondus** — instancier la même tâche des deux côtés la
+   déclencherait deux fois, sans qu'aucune erreur ne le signale.
 6. **Vérifier après branchement** — comme pour tout harness : lister la racine
    du coffre, lire une note de `Mon coffre/SAVOIRS/`, retrouver le registre des
    tags. Si `SAVOIRS/` n'apparaît pas, le serveur n'est pas monté sur la bonne
