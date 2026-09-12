@@ -119,6 +119,35 @@ Rappels qui découlent du contrat :
 - Les noms doivent être uniques dans tout le coffre parent, pas seulement dans
   `OBSIA/` — les rétroliens Obsidian ignorent la frontière git.
 
+## La table des rationalisations
+
+Un skill procédural finit par une table des **excuses que l'agent se donne
+pour sauter l'étape**, et de ce qui les rend fausses :
+
+```markdown
+## Rationalisations
+
+| Ce qu'on se dit | La réalité |
+| --- | --- |
+| « j'écrirai les tests après » | non. Et écrits après, ils testent l'implémentation, pas le comportement |
+| « je relance la suite pour être sûr » | après une exécution propre, la relancer sans avoir rien changé n'apporte rien |
+```
+
+Ce n'est pas de la décoration. Une procédure dit quoi faire ; elle ne résiste
+pas à la phrase qui la contourne — et c'est toujours la même poignée de
+phrases. Les écrire, c'est les désarmer d'avance : l'agent qui se surprend à
+les formuler reconnaît le raccourci au lieu de le prendre.
+
+Deux règles pour qu'elle serve :
+
+- **la colonne de gauche se cite au discours direct**, telle qu'on se la dit.
+  Une excuse reformulée en langage technique ne se reconnaît plus ;
+- **la colonne de droite donne la conséquence concrète**, pas un rappel de la
+  règle. « Le `skip` restera » agit ; « c'est interdit » non.
+
+Une table de cinq à sept lignes suffit. Au-delà, on y range des règles qui
+appartiennent au corps du skill.
+
 ## Procédure de création
 
 1. Écrire d'abord le `description` du frontmatter. S'il est difficile à écrire,
@@ -129,3 +158,4 @@ Rappels qui découlent du contrat :
 4. Relire en supprimant : chaque phrase que le modèle connaît déjà est du poids
    mort.
 5. Vérifier qu'aucune règle du contrat n'a été recopiée par inadvertance.
+6. Écrire la table des rationalisations — les excuses, pas les règles.
