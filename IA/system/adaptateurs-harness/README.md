@@ -36,3 +36,4 @@ gabarit rempli ne se re-versionne pas.
 - `deepseek-harness.md` — DeepSeek Harness (DSH)
 - `openclaw.md` — OpenClaw 2.0
 - `aionui-obsiaui.md` — AionUi / ObsiaUi (interface)
+- `librechat.md` — LibreChat

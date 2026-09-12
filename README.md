@@ -81,7 +81,8 @@ ou serveur MCP « fichiers » (fiche `IA/MCP/coffre-parent.md`, gabarit
 `IA/MCP/mcp.example.json`). La configuration réelle vit hors dépôt.
 
 Les **gabarits d'intégration par harness** — Claude Code, OpenCode, OpenClaw,
-DeepSeek Harness, AionUi/ObsiaUi — vivent dans `IA/system/adaptateurs-harness/`.
+DeepSeek Harness, AionUi/ObsiaUi, LibreChat — vivent dans
+`IA/system/adaptateurs-harness/`.
 
 ## Tâches planifiées
 
