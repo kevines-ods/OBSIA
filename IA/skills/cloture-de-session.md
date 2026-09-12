@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: cloture-de-session
-description: Clore une session de travail — écrire la note de projet, en distiller ce qui est durable vers profil/préférences/expériences, proposer le log du §9. À charger quand une session se termine ou qu'un lot de travail est livré. Pas pour écrire une note isolée en cours de route.
+description: Clore une séance de travail — consigner ce qui a été décidé dans la note de projet, en distiller ce qui est durable vers profil/préférences/expériences, proposer le log du §9. À charger en fin de séance, quand une session se termine ou qu'un lot de travail est livré. Pas pour écrire une note isolée en cours de route.
 type: core
 read_only: false
 ---

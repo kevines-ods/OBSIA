@@ -3,13 +3,13 @@
 > Généré par `scripts/regenerate_sommaire.py` depuis le contenu des notes.
 > Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §2).
 
-1 sous-dossier, 26 notes, du 2026-08-15 au 2026-09-12.
+1 sous-dossier, 27 notes, du 2026-08-15 au 2026-09-12.
 
 ## Sous-dossiers
 
 | Dossier | Notes | Entrée représentative |
 |---|---|---|
-| [assistant](assistant/) | 25 | 2026-09-12 — Quatre skills reprises d'addyosmani, dont un garde qui tourne |
+| [assistant](assistant/) | 26 | 2026-09-12 — Quatre skills reprises d'addyosmani, dont un garde qui tourne |
 
 ## Notes
 

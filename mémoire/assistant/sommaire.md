@@ -3,13 +3,13 @@
 > Généré par `scripts/regenerate_sommaire.py` depuis le contenu des notes.
 > Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §2).
 
-8 sous-dossiers, 25 notes, du 2026-08-15 au 2026-09-12.
+8 sous-dossiers, 26 notes, du 2026-08-15 au 2026-09-12.
 
 ## Sous-dossiers
 
 | Dossier | Notes | Entrée représentative |
 |---|---|---|
-| [agent-batisseur](agent-batisseur/) | 2 | 2026-09-12 — Quatre skills reprises d'addyosmani, dont un garde qui tourne |
+| [agent-batisseur](agent-batisseur/) | 3 | 2026-09-12 — Quatre skills reprises d'addyosmani, dont un garde qui tourne |
 | [automatisation-bureautique](automatisation-bureautique/) | 1 | 2026-08-26 — Automatisation des tâches bureautiques |
 | [comparaison-openviking](comparaison-openviking/) | 8 | 2026-09-03 — Comparaison OBSIA / OpenViking |
 | [expériences](expériences/) | 6 | Un vérificateur vert ne prouve que ce qu'il regarde |

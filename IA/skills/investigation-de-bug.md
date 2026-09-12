@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: investigation-de-bug
-description: Investiguer un symptôme en quatre phases validées — localiser et reproduire, trois hypothèses classées et falsifiables, instrumenter pour trancher, corriger au minimum — sans jamais proposer de correctif avant la phase 4. À charger dès qu'un comportement observé diffère du comportement attendu, y compris en pleine construction. Exige le symptôme ET l'attendu avant de démarrer.
+description: Investiguer un bogue en quatre phases validées — localiser et reproduire, trois hypothèses classées et falsifiables, instrumenter pour trancher, corriger au minimum — sans jamais proposer de correctif avant la phase 4. À charger dès que ça plante, qu'un message d'erreur tombe, qu'un résultat est faux, ou que ce qui marchait hier ne marche plus. Exige le symptôme ET l'attendu avant de démarrer.
 type: outil
 read_only: false
 ---
