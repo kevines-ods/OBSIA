@@ -61,14 +61,26 @@ elles ne sont pas recopiées ici.
 
 ## Infrastructure
 
-**Confirmée par l'utilisateur le 2026-09-03.** Un hôte **Proxmox** portant au
-moins une **VM Debian**, laquelle fait tourner des conteneurs **Docker**
-derrière **Traefik**, avec des sauvegardes à vérifier.
+**Confirmée par l'utilisateur le 2026-09-03, précisée le 2026-09-12.** Un
+hôte **Proxmox** portant au moins deux VM, volontairement séparées :
+
+- une **VM Debian**, qui fait tourner les conteneurs **Docker** personnels et
+  divers, derrière **Traefik**, avec des sauvegardes à vérifier ;
+- une **VM Fedora**, réservée à **tout ce qui est IA** — l'utilisateur préfère
+  isoler cet usage plutôt que de le mélanger aux conteneurs personnels de la
+  VM Debian.
+
+Le poste de travail (CachyOS) a **Docker installé** : c'est là que se font les
+premiers tests d'un service avant d'envisager son hébergement sur la VM
+Fedora.
 
 Conséquences pratiques :
 
-- le poste est sous Arch, les machines administrées sous Debian : ne pas
-  confondre `pacman` et `apt` selon la cible ;
+- le poste est sous Arch (`pacman`/`paru`), la VM Debian sous `apt`, la VM
+  Fedora sous `dnf` — ne pas confondre le gestionnaire de paquets selon la
+  cible ;
+- un service lié à l'IA vise la **VM Fedora** pour son hébergement final, pas
+  la VM Debian : les deux ne se substituent pas l'une à l'autre ;
 - une erreur HTTP sur un service hébergé se diagnostique par la couche —
   `traefik` d'abord si le service répond en direct, `conteneurs-docker` si le
   conteneur est mort, `proxmox` si le symptôme dépasse une machine ;
