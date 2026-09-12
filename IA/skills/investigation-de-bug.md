@@ -26,6 +26,10 @@ Deux éléments sont nécessaires. Si l'un manque, le demander et attendre :
 
 Sans l'attendu, on ne cherche pas un bug : on lit du code au hasard.
 
+Si le symptôme s'observe dans un navigateur, `test-navigateur` fournit les
+observations de la phase 1 — console, DOM rendu, requête réelle — au lieu de
+les supposer.
+
 ## Les quatre phases
 
 Chacune se termine par un arrêt et une validation explicite. Aucun correctif
@@ -70,6 +74,10 @@ brouillent le diff et la revue ne distingue plus le correctif du reste.
 
 Retirer les traces de la phase 3. Le message de commit explique la **cause**,
 pas le symptôme.
+
+Le correctif ne tient que verrouillé par un test : `tests-dabord` — un test
+qui reproduit le bogue, qui échoue avant la correction, et qui reste dans la
+suite. Corriger sans lui, c'est signer pour corriger une seconde fois.
 
 ## Après
 

@@ -63,6 +63,10 @@ curl -I https://<domaine>         # 5. il répond par son nom de domaine, en TLS
 rien de ce que voit un visiteur : c'est le code HTTP renvoyé par l'URL réelle
 qui fait foi, lu et non supposé.
 
+Un code 200 ne dit pourtant pas que la page **fonctionne** : elle peut
+répondre et casser au chargement. Pour une interface, `test-navigateur`
+termine le travail — console vide, DOM rendu, capture de la page en ligne.
+
 ## 4. Le retour arrière — écrit avant de déployer
 
 Avant la première commande, écrire la commande qui ramène à l'état d'avant :

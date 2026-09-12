@@ -68,6 +68,10 @@ La porte 5 n'est franchie que quand l'utilisateur a **vu** l'aperçu. Un
 système validé sur sa description seule est validé sur un malentendu : les
 mots « bleu profond » ne montrent pas le bleu.
 
+`test-navigateur` sert ici deux fois : pour produire la capture de l'aperçu,
+et pour lire son arbre d'accessibilité — contraste, étiquettes, ordre de
+tabulation — tant que rien n'est encore construit.
+
 ### 4. Ajustements, puis écriture
 
 Sur demande d'ajustement, proposer deux ou trois variantes **pour cette

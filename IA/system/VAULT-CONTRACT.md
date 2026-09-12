@@ -591,6 +591,15 @@ un MCP inexistant, tâche sans instruction ou au `quand` non quoté, chemin cit�
 ou lien Markdown qui ne mène nulle part, nom de note en double, fichier généré
 périmé. Il n'écrit rien et sort en code 1.
 
+Il **avertit** en plus, sans refuser, quand un skill dit de charger un skill
+que l'agent qui le déclare ne possède pas : la consigne est alors
+inapplicable pour cet agent, et la procédure s'arrête là sans que rien ne le
+dise. Un avertissement et non une erreur, pour deux raisons — la détection
+repose sur le verbe employé, donc sur une heuristique ; et l'absence peut être
+**voulue**, une frontière de périmètre plutôt qu'un oubli. C'est alors au
+skill qui renvoie de l'énoncer, et à l'exemption du vérificateur de porter la
+raison.
+
 `scripts/evaluer_routage.py` contrôle autre chose, que le précédent ne voit
 pas : le **déclenchement**. La `description` d'un skill est le seul élément
 toujours présent en contexte, donc la seule chose qui décide qu'un skill se
