@@ -52,6 +52,17 @@ Annoncer le candidat recommandé, la raison principale en une phrase, et **ce
 qu'on perd** en le choisissant. Un choix sans coût annoncé est un choix mal
 compris.
 
+Les faits qui servent la comparaison — licence exacte, version maintenue,
+option disponible — se vérifient par `verification-aux-sources`, jamais de
+mémoire : c'est précisément le genre d'affirmation qu'un modèle produit avec
+assurance et six mois de retard.
+
+Un choix de pile est structurant et coûteux à défaire. Le soumettre à une
+relecture qui cherche à le faire tomber avant qu'il tienne est le bon réflexe
+— mais cette relecture appartient à l'agent `contradicteur`, et n'a de valeur
+que menée dans une session neuve. La proposer à l'utilisateur ; ne pas jouer
+les deux rôles dans la même conversation.
+
 ### 5. Écrire `docs/STACK.md`
 
 ```markdown

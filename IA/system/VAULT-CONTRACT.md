@@ -283,6 +283,13 @@ Elle est obligatoire et contrôlée — une tâche sans elle ne déclenche rien.
   qu'un agent apprend sur **sa propre manière de travailler** reste, lui, dans
   son `expériences/`.
 
+- **Un agent `read_only: true` n'a pas d'espace mémoire.** Le §5 lui interdit
+  toute écriture, y compris par patch : il n'a donc pas de dossier sous
+  `mémoire/`, et rien à y régénérer. Ses constats vivent le temps de la
+  conversation, et c'est à l'agent qui reprend le travail d'en écrire la
+  leçon. La contrepartie est réelle et s'assume : un constat non repris est
+  un constat perdu.
+
 - Une note durable n'est utile que si elle est **retrouvée** : son nom dit son
   sujet (`licences-et-logiciel-libre.md`, pas `notes.md`) et respecte la règle
   d'unicité ci-dessus.
@@ -584,6 +591,37 @@ un MCP inexistant, tâche sans instruction ou au `quand` non quoté, chemin cit�
 ou lien Markdown qui ne mène nulle part, nom de note en double, fichier généré
 périmé. Il n'écrit rien et sort en code 1.
 
+Il **avertit** en plus, sans refuser, quand un skill dit de charger un skill
+que l'agent qui le déclare ne possède pas : la consigne est alors
+inapplicable pour cet agent, et la procédure s'arrête là sans que rien ne le
+dise. Un avertissement et non une erreur, pour deux raisons — la détection
+repose sur le verbe employé, donc sur une heuristique ; et l'absence peut être
+**voulue**, une frontière de périmètre plutôt qu'un oubli. C'est alors au
+skill qui renvoie de l'énoncer, et à l'exemption du vérificateur de porter la
+raison.
+
+`scripts/evaluer_routage.py` contrôle autre chose, que le précédent ne voit
+pas : le **déclenchement**. La `description` d'un skill est le seul élément
+toujours présent en contexte, donc la seule chose qui décide qu'un skill se
+charge — et rien ne vérifiait qu'elle porte les mots que l'utilisateur
+emploie. Le script lit le registre `IA/system/routage-attendu.md`, classe les
+skills par proximité lexicale pour chaque demande, et sort en 1 si le skill
+attendu n'atteint pas le rang exigé ou si deux descriptions se ressemblent
+trop.
+
+Deux choses à savoir, pour ne pas lui prêter plus qu'il ne fait :
+
+- la mesure est **lexicale**, pas sémantique. Elle attrape les deux pannes
+  réelles — un mot que l'utilisateur dit et qui manque à la description, une
+  description trop large qui passe devant la bonne — et rien d'autre ;
+- **un échec veut dire « corriger la description »**, pas « corriger le
+  registre ». Une attente ne se relâche que lorsqu'elle demande l'impossible
+  à une mesure lexicale, et cela s'écrit dans le registre avec sa raison.
+
+Ses exemptions — les paires de skills qui se ressemblent légitimement — vivent
+**dans le script**, jamais dans le frontmatter d'un skill : un skill qui se
+déclare lui-même dispensé d'un contrôle annule le contrôle.
+
 Le contrôle des chemins s'arrête à `IA/` et aux documents de la racine : là, un
 chemin faux **agit** — une instruction de tâche part au déclenchement, un skill
 dit d'ouvrir un fichier. `mémoire/` en est exempté : c'est un récit, où une
@@ -619,6 +657,13 @@ ponctuellement ; la CI, elle, ne se contourne pas.
 python3 scripts/regenerate_sommaire.py
 python3 scripts/regenerate_index.py
 python3 scripts/verifier_coffre.py
+python3 scripts/evaluer_routage.py
+```
+
+Pour savoir quel skill répondrait à une demande, sans rien vérifier :
+
+```bash
+python3 scripts/evaluer_routage.py --explique "ça plante quand je clique"
 ```
 
 Ces scripts n'utilisent que la bibliothèque standard de Python, à dessein : le

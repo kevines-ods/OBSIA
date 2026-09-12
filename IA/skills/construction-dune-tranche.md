@@ -34,11 +34,20 @@ personne ne peut la contredire.
 Écrite après coup, la vérification épouse ce qui a été construit au lieu de
 vérifier ce qui était demandé.
 
+**Comment l'écrire : `tests-dabord`** — le test rouge avant le code, et la
+règle qui va avec : on le voit échouer pour la bonne raison avant d'écrire la
+moindre ligne.
+
 ## 3. Construire de bout en bout, le plus risqué d'abord
 
 La tranche traverse toutes les couches. Commencer par celle dont on est le
 moins sûr : c'est là qu'on veut découvrir le problème, tant qu'il ne reste
 rien à jeter.
+
+Dès qu'on écrit du code **propre à une bibliothèque** — une route, un appel
+d'API, un motif de cadriciel : charger `verification-aux-sources`. La
+documentation officielle avant la mémoire du modèle, qui produit du code
+plausible et périmé sans le signaler.
 
 ## 4. Ne jamais élargir la tranche en cours
 
@@ -64,10 +73,17 @@ une capture d'écran via le navigateur pour une interface. « Ça devrait
 marcher » n'est pas une démonstration, et c'est la phrase qui précède la
 plupart des retours en arrière.
 
+Pour une interface : `test-navigateur`. Il ouvre la page, lit le DOM rendu et
+la console, et produit la capture. Une interface décrite n'est pas une
+interface vue.
+
 ## 6. Cocher, puis livrer
 
 Cocher les critères d'acceptation dans `docs/PLAN.md`, committer ce
-changement avec la tranche, puis charger `livraison-git`. Ne pas commencer la
+changement avec la tranche, puis charger `livraison-git`.
+
+Avant de livrer, le garde de `plancher-qualite` doit sortir en 0 : il refuse
+les cinq gestes par lesquels une tranche passe au vert sans être meilleure. Ne pas commencer la
 tranche suivante avant que celle-ci soit livrée : deux tranches ouvertes en
 même temps se contaminent et la revue ne sait plus quoi regarder.
 

@@ -59,6 +59,10 @@ Si le projet n'a encore rien à vérifier, écrire la plus petite qui soit vraie
 — démarrer et voir qu'il démarre. Une commande minuscule qui existe vaut mieux
 qu'une suite de tests qui n'existera jamais.
 
+C'est aussi le moment de `plancher-qualite` : le niveau de qualité s'écrit
+dans `CONSTRAINTS.md` **ici**, à l'amorçage, pas quand un contrôle commence à
+gêner. Les deux skills se chargent l'un après l'autre.
+
 ## 5. Une CI qui lance exactement cette commande
 
 Pas plus. Une CI qui fait autre chose que la vérification locale crée deux

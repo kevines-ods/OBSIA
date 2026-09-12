@@ -2,7 +2,8 @@
 # Crochet de pré-commit du coffre OBSIA.
 #
 # Refuse un commit qui laisserait le coffre incohérent : frontmatter invalide,
-# référence cassée, nom de note en double, ou fichier généré périmé.
+# référence cassée, nom de note en double, fichier généré périmé — ou un skill
+# dont la description ne le ferait pas se déclencher sur une demande réaliste.
 #
 # Installation (une fois par clone) :
 #     git config core.hooksPath .githooks
@@ -19,7 +20,19 @@ racine=$(git rev-parse --show-toplevel) || exit 0
 cd "$racine" || exit 0
 
 if python3 scripts/verifier_coffre.py --silencieux; then
-    exit 0
+    if python3 scripts/evaluer_routage.py >/dev/null; then
+        exit 0
+    fi
+    cat >&2 <<'MSG'
+
+Commit refusé : un skill ne se déclencherait pas sur une demande réaliste
+(cf. IA/system/VAULT-CONTRACT.md §11). Le détail :
+
+    python3 scripts/evaluer_routage.py
+
+Corriger la `description` du skill — c'est elle qui décide du déclenchement.
+MSG
+    exit 1
 fi
 
 cat >&2 <<'MSG'

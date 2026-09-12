@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: investigation-de-bug
-description: Investiguer un symptôme en quatre phases validées — localiser et reproduire, trois hypothèses classées et falsifiables, instrumenter pour trancher, corriger au minimum — sans jamais proposer de correctif avant la phase 4. À charger dès qu'un comportement observé diffère du comportement attendu, y compris en pleine construction. Exige le symptôme ET l'attendu avant de démarrer.
+description: Investiguer un bogue en quatre phases validées — localiser et reproduire, trois hypothèses classées et falsifiables, instrumenter pour trancher, corriger au minimum — sans jamais proposer de correctif avant la phase 4. À charger dès que ça plante, qu'un message d'erreur tombe, qu'un résultat est faux, ou que ce qui marchait hier ne marche plus. Exige le symptôme ET l'attendu avant de démarrer.
 type: outil
 read_only: false
 ---
@@ -25,6 +25,10 @@ Deux éléments sont nécessaires. Si l'un manque, le demander et attendre :
 - **l'attendu** — ce qui aurait dû se passer.
 
 Sans l'attendu, on ne cherche pas un bug : on lit du code au hasard.
+
+Si le symptôme s'observe dans un navigateur, `test-navigateur` fournit les
+observations de la phase 1 — console, DOM rendu, requête réelle — au lieu de
+les supposer.
 
 ## Les quatre phases
 
@@ -70,6 +74,10 @@ brouillent le diff et la revue ne distingue plus le correctif du reste.
 
 Retirer les traces de la phase 3. Le message de commit explique la **cause**,
 pas le symptôme.
+
+Le correctif ne tient que verrouillé par un test : `tests-dabord` — un test
+qui reproduit le bogue, qui échoue avant la correction, et qui reste dans la
+suite. Corriger sans lui, c'est signer pour corriger une seconde fois.
 
 ## Après
 

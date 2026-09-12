@@ -28,6 +28,12 @@ jobs:
       - name: Cohérence du coffre
         run: python3 scripts/verifier_coffre.py
 
+      # Le contrôle du déclenchement : la description d'un skill porte-t-elle
+      # les mots que l'utilisateur emploie, et deux descriptions se
+      # marchent-elles dessus ? Voir VAULT-CONTRACT.md §11.
+      - name: Routage des skills
+        run: python3 scripts/evaluer_routage.py
+
       - name: Le prompt système se génère
         run: python3 scripts/generer_prompt.py > /dev/null
 

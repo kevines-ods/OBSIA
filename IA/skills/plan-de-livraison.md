@@ -79,6 +79,12 @@ Aucune — démarrable immédiatement.
 
 ## Après l'écriture
 
+Les critères d'acceptation d'une tranche disent si on a construit **la bonne
+chose** ; ils ne disent pas si c'est **assez bon**. Cette seconde question est
+la même pour toutes les tranches, et se décide une fois — dans le
+`CONSTRAINTS.md` de `plancher-qualite`. Une tranche est finie quand les deux
+sont satisfaites.
+
 On construit **une tranche à la fois**, et on ne commence pas la suivante
 avant que les critères d'acceptation de la précédente passent. Une tranche
 finie se livre par `livraison-git` ; on ne les empile pas pour livrer en bloc.

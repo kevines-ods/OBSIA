@@ -288,6 +288,54 @@ def verifier_references(agents, skills):
                     "MCP déclaré par aucun agent — inutilisable en l'état (§10.2)")
 
 
+# « charger X », « relève de X » : une consigne, pas une simple mention.
+CONSIGNE_SKILL = re.compile(r"(?:charger|c'est|relève de)\s+`([^\W_][\w-]{2,39})`")
+
+# Frontières assumées : le skill visé est volontairement hors de portée de cet
+# agent, et le skill qui renvoie vers lui l'énonce. Les exemptions vivent ici,
+# dans le vérificateur, jamais dans le frontmatter du fichier contrôlé : un
+# fichier qui se déclare lui-même dispensé annule le contrôle.
+RENVOIS_ADMIS = {
+    ("diagnostic-linux", "remediation-linux", "batisseur"):
+        "constater n'implique pas le droit de corriger la machine ; "
+        "diagnostic-linux énonce la frontière et rend la main",
+}
+
+
+def verifier_portee_des_renvois(agents, skills):
+    """Un skill renvoie-t-il vers un skill hors de portée de son agent ?
+
+    Le §10.2 fait choisir PARMI les skills déclarés par l'agent. Un skill qui
+    dit « charger `X` » alors que l'agent qui le déclare n'a pas `X` donne une
+    consigne inapplicable : la procédure s'arrête là sans que rien ne le dise.
+
+    Avertissement et non erreur : la détection repose sur le verbe employé,
+    donc sur une heuristique. Et l'absence peut être **voulue** — une
+    frontière de périmètre plutôt qu'un oubli ; c'est alors au skill de
+    l'énoncer.
+    """
+    connus = {s["name"]: s for s in skills if s.get("name")}
+    for nom, fm in connus.items():
+        proprios = [a for a in agents if nom in a.get("skills", [])]
+        if not proprios:
+            continue
+        chemin = RACINE / fm["_chemin"]
+        try:
+            texte = chemin.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        vises = {m.group(1) for m in CONSIGNE_SKILL.finditer(texte)} & set(connus)
+        for vise in sorted(vises - {nom}):
+            hors = [a["name"] for a in proprios if vise not in a.get("skills", [])]
+            hors = [h for h in hors
+                    if (nom, vise, h) not in RENVOIS_ADMIS]
+            if hors:
+                avertir(fm["_chemin"],
+                        "dit de charger `%s`, que %s ne déclare pas — consigne "
+                        "inapplicable pour lui, ou frontière à énoncer (§10.2)"
+                        % (vise, " et ".join("`%s`" % h for h in hors)))
+
+
 def verifier_forme_dossier(dossier: Path, genre: str):
     """Un skill en forme dossier doit porter son point d'entrée (§5).
 
@@ -501,6 +549,7 @@ def main() -> int:
     verifier_mcp(RACINE / "IA" / "MCP")
     taches = verifier_taches(RACINE / "IA" / "tâches", agents)
     verifier_references(agents, skills)
+    verifier_portee_des_renvois(agents, skills)
     verifier_agents_nommes(agents)
     verifier_chemins_cites()
     verifier_unicite_des_noms()

@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: mise-en-ligne
-description: Empaqueter une application et la publier derrière le reverse proxy — image et compose, réseau partagé, labels de routage, secrets par variables d'environnement hors dépôt, sauvegarde des volumes vérifiée avant la première mise en ligne, retour arrière écrit d'avance, puis vérification réelle de l'URL. À charger pour publier une application neuve ou une nouvelle version. Pour réparer un service déjà en ligne, charger `conteneurs-docker` ou `traefik`.
+description: Empaqueter une application et la déployer derrière le reverse proxy — image et compose, réseau partagé, labels de routage, secrets par variables d'environnement hors dépôt, sauvegarde des volumes vérifiée avant la première mise en ligne, retour arrière écrit d'avance, puis vérification réelle de l'URL. À charger pour déployer ou publier une application neuve, ou en livrer une nouvelle version. Pour réparer un service déjà en ligne, charger `conteneurs-docker` ou `traefik`.
 type: outil
 read_only: false
 ---
@@ -62,6 +62,10 @@ curl -I https://<domaine>         # 5. il répond par son nom de domaine, en TLS
 **L'étape 5 est la seule qui prouve quelque chose.** Un conteneur `Up` ne dit
 rien de ce que voit un visiteur : c'est le code HTTP renvoyé par l'URL réelle
 qui fait foi, lu et non supposé.
+
+Un code 200 ne dit pourtant pas que la page **fonctionne** : elle peut
+répondre et casser au chargement. Pour une interface, `test-navigateur`
+termine le travail — console vide, DOM rendu, capture de la page en ligne.
 
 ## 4. Le retour arrière — écrit avant de déployer
 

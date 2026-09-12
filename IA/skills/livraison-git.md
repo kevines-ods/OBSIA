@@ -41,6 +41,11 @@ Pour ce coffre-ci, les vérifications sont dans `scripts/verifier_coffre.py` ;
 pour un autre dépôt, elles sont dans son fichier de contribution ou sa
 configuration d'intégration continue. Les trouver, pas les inventer.
 
+Si le projet a un `CONSTRAINTS.md`, le garde de `plancher-qualite` passe
+**aussi**, et avant la poussée : il voit dans le diff ce qu'aucune suite de
+tests ne voit — un test mis en `skip`, une assertion retirée, un seuil
+desserré.
+
 ## 3. Commit
 
 ```bash
@@ -71,8 +76,18 @@ Titre court. Corps en deux parties : **Ce que ça change** (une à trois puces)
 et **Comment le vérifier** (les étapes exactes pour rejouer le comportement).
 Renvoyer l'URL à l'utilisateur.
 
+La PR se crée par le MCP `git-hub` — lire `IA/MCP/git-hub.md` avant le
+premier appel (§10.2) : il est en `permission: elevated` et écrit sur un dépôt
+distant.
+
 La PR est le moment de la revue humaine exigée par le §3. Ne pas la fusionner
 soi-même.
+
+Une relecture du diff peut précéder la soumission — cinq axes, constats
+classés par gravité — mais elle ne se mène pas ici : elle appartient à
+l'agent `contradicteur`, en lecture seule, et **dans une session neuve**.
+Relire son propre diff dans la conversation qui l'a produit ne réfute rien ;
+ça valide ses propres conclusions. Proposer la relecture, ne pas la simuler.
 
 ## 6. Consigner
 

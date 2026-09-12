@@ -17,6 +17,12 @@ qui sature.
 > explicitement. Si un diagnostic conclut à une action, l'énoncer — ne pas la
 > faire.
 
+Un agent peut déclarer ce skill **sans** déclarer `remediation-linux` : ce
+n'est pas un oubli, c'est une frontière. Corriger une machine n'appartient
+alors pas à cet agent. Dans ce cas le constat se termine par l'action
+énoncée, et la main est rendue à un agent qui a le droit d'agir — jamais par
+une correction menée quand même (§10).
+
 ## Règles
 
 1. **Ne jamais exécuter une commande qui modifie l'état.** Pas de `restart`, pas
