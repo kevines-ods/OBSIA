@@ -27,6 +27,31 @@ npx -y @mermaid-js/mermaid-cli -h
 paru -S mermaid-cli
 ```
 
+`-h` répond même quand la génération échouera : il prouve l'installation, pas
+le rendu. Sous le capot, `mermaid-cli` pilote un Chromium par Puppeteer, et ce
+Chromium refuse de démarrer là où il n'y a ni session graphique ni utilisateur
+non privilégié — conteneur, VM sans bureau, intégration continue. L'erreur
+vient alors de `@puppeteer/browsers`, sans jamais nommer Mermaid.
+
+Le prérequis à vérifier est donc **que la commande arrive au bout**, sur un
+diagramme jetable :
+
+```bash
+echo "graph LR; A-->B" | npx -y @mermaid-js/mermaid-cli -i /dev/stdin -o /tmp/essai.svg
+```
+
+Si elle échoue, passer une configuration Puppeteer avec `-p` :
+
+```bash
+echo '{"args":["--no-sandbox","--disable-gpu","--disable-dev-shm-usage"]}' > pptr.json
+npx -y @mermaid-js/mermaid-cli -p pptr.json -i diagramme.mmd -o diagramme.svg
+```
+
+Ces options désactivent des protections du navigateur : elles se réservent à la
+machine sans bureau qui les exige. Sur un poste avec session graphique — CachyOS
+et KDE en l'occurrence — elles sont inutiles, et les traîner par habitude
+affaiblit le navigateur pour rien.
+
 ## Utilisation
 
 Depuis un fichier :
