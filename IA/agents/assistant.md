@@ -6,6 +6,7 @@ description: Agent de base du coffre OBSIA — orchestre la mémoire, crée des 
 skills:
   - createur-de-skill
   - cloture-de-session
+  - compilation-des-lecons
   - obsidian-manager
   - recherche
   - mermaid
