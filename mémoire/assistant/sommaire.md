@@ -3,7 +3,7 @@
 > Généré par `scripts/regenerate_sommaire.py` depuis le contenu des notes.
 > Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §2).
 
-8 sous-dossiers, 27 notes, du 2026-08-15 au 2026-09-12.
+9 sous-dossiers, 28 notes, du 2026-08-15 au 2026-09-13.
 
 ## Sous-dossiers
 
@@ -11,6 +11,7 @@
 |---|---|---|
 | [agent-batisseur](agent-batisseur/) | 3 | 2026-09-12 — Quatre skills reprises d'addyosmani, dont un garde qui tourne |
 | [automatisation-bureautique](automatisation-bureautique/) | 1 | 2026-08-26 — Automatisation des tâches bureautiques |
+| [choix-du-harness](choix-du-harness/) | 1 | 2026-09-13 — OpenCode retenu, et pourquoi les autres sont écartés |
 | [comparaison-openviking](comparaison-openviking/) | 8 | 2026-09-03 — Comparaison OBSIA / OpenViking |
 | [expériences](expériences/) | 7 | Un vérificateur vert ne prouve que ce qu'il regarde |
 | [lancement-coffre](lancement-coffre/) | 1 | 2026-08-27 — Lancement du coffre OBSIA |
