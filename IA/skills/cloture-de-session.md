@@ -68,7 +68,31 @@ place ; il ne s'écrit pas une seconde fois à côté. C'est la règle du §10.3
 Ce qui ne remonte jamais : un détail d'exécution, une supposition non vérifiée,
 un secret, ou une leçon qu'on n'a pas réellement éprouvée.
 
-### 4. Surveiller la taille
+### 4. Compiler la leçon — sinon elle ne servira jamais
+
+Une leçon rangée dans `expériences/` ne change rien tant que le skill que
+l'agent lit pour agir ne la porte pas. Pour chaque leçon écrite à l'étape 3,
+une question : **quel skill aurait évité ça ?**
+
+| Réponse | Ce qu'on fait |
+| --- | --- |
+| aucun skill n'est en cause | rien — la leçon reste une note, c'est une réponse valable |
+| un skill existant | le modifier via `createur-de-skill` |
+| le geste n'a pas de skill | le noter comme skill à créer, sans le créer dans la foulée |
+
+Ce qui passe dans le skill est **la règle**, pas le récit : le skill dit quoi
+faire, la note garde le symptôme, la cause et comment on l'a su. Recopier la
+note dans le skill l'alourdit et fait diverger les deux à la première
+correction.
+
+Dans les deux derniers cas, ajouter une ligne à
+`IA/system/impact-des-skills.md` — dossier `IA/system/`, donc **patch soumis à
+revue** comme le log de session (§2).
+
+**Une seule leçon compilée par clôture.** Deux skills modifiés dans le même
+patch, et plus rien ne dit lequel a aidé.
+
+### 5. Surveiller la taille
 
 Une note de projet dépassant **~6 000 caractères** mérite d'être découpée ou
 résumée. Repère mesuré le 2026-09-03 : la note moyenne du coffre fait 3 200
@@ -80,7 +104,7 @@ couche d'index.
 find mémoire -name '*.md' ! -name sommaire.md -exec wc -m {} \; | sort -rn | head -5
 ```
 
-### 5. Proposer le log de session
+### 6. Proposer le log de session
 
 `IA/system/session-log/AAAA-MM-JJ.md` — décisions, fichiers modifiés, questions
 ouvertes. Ce dossier vit sous `IA/system/` : **patch soumis à revue**, jamais
@@ -89,7 +113,7 @@ d'écriture directe (§9).
 Le log raconte la séance ; la note de projet documente le sujet. Les deux ne
 disent pas la même chose et ne se remplacent pas.
 
-### 6. Régénérer et vérifier
+### 7. Régénérer et vérifier
 
 ```bash
 python3 scripts/regenerate_sommaire.py

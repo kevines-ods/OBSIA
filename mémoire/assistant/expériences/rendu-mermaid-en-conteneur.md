@@ -49,3 +49,13 @@ La plupart du temps la question ne se pose pas : `IA/skills/mermaid.md` demande
 de préférer le **bloc Mermaid brut** au SVG dans une note du coffre, et
 Obsidian rend ce bloc lui-même, sans Chromium. Le rendu SVG n'est utile que
 pour un export hors coffre — un README GitHub, par exemple.
+
+## Compilée dans un skill
+
+Le 2026-09-13, la règle qui en découle — vérifier que la commande *arrive au
+bout*, et passer une configuration Puppeteer là où il n'y a pas de session
+graphique — est entrée dans `IA/skills/mermaid.md`, section « Prérequis ».
+Cette note garde le récit : l'erreur trompeuse de `@puppeteer/browsers`, et ce
+que chacune des trois options évite.
+
+Le lien et la date de revue vivent dans `IA/system/impact-des-skills.md`.
