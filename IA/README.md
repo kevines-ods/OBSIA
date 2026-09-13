@@ -67,6 +67,7 @@ instances reconstructibles (§12). Procédure dans le skill `cron`.
 
 - **revue-des-notes-du-coffre** (`0 10 * * 1`, Europe/Paris, mode `agent`, exécutant `local`) — Traiter les notes brutes du coffre parent — remplir et classer celles d'EN-VRAC, compléter celles déposées dans SAVOIRS, et signaler les tags hors vocabulaire contrôlé. À charger via le skill traitement-des-notes.
 - **revue-hebdomadaire-du-coffre** (`0 9 * * 1`, Europe/Paris, mode `agent`, exécutant `local`) — Régénérer index et sommaires, vérifier la cohérence du coffre, et réconcilier le registre des tâches avec ce qui tourne réellement.
+- **revue-mensuelle-des-lecons** (`0 11 1 * *`, Europe/Paris, mode `agent`, exécutant `local`) — Statuer sur les modifications de skill dont la date de revue est passée — confirmer ou annuler — puis compiler au plus une leçon accumulée. Une par mois, jamais deux.  — **suspendue**
 
 ## `IA/system/`
 
