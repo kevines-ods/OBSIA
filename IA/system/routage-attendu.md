@@ -65,6 +65,8 @@ descriptions et tranche.
 | « relis ce diff et dis-moi ce qui cloche avant que je fusionne » | revue-de-code | 3 | — |
 | « cette décision d'architecture me paraît risquée, cherche ce qui la ferait tomber » | relecture-adverse | 3 | — |
 | « combien de ressources restent sur l'hôte de virtualisation ? » | proxmox | 3 | — |
+| « on refait la même erreur alors qu'une note la documente déjà » | compilation-des-lecons | 3 | — |
+| « fais redescendre les leçons de la mémoire dans les skills » | compilation-des-lecons | 3 | createur-de-skill |
 
 ## Une attente qui a été corrigée, et pourquoi
 
