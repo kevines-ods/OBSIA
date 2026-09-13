@@ -62,10 +62,16 @@ Vérifiée dans la documentation des projets, pas à l'usage.
   chemins, des motifs et des URL. [5]
 - **Modèles.** 75+ fournisseurs, modèles locaux pris en charge, déclarables
   côte à côte et permutables en session. [6]
-- **Téléphone.** Clients mobiles Android (F-Droid) et iOS existants,
-  connectés à un serveur auto-hébergé par réseau local, tunnel ou VPN, avec
-  reprise des sessions ouvertes ailleurs. **Ce sont des projets tiers**, pas
-  officiels. [7][8]
+- **Téléphone.** Clients mobiles Android et iOS existants, connectés à un
+  serveur auto-hébergé par réseau local, tunnel ou VPN, avec reprise des
+  sessions ouvertes ailleurs. **Aucun n'est officiel** : la documentation du
+  projet énumère ses interfaces — terminal, ligne de commande, navigateur,
+  application de bureau, extension d'éditeur — et il n'y a pas de mobile dans
+  la liste. Au moins quatre clients concurrents circulent, plusieurs sur les
+  magasins d'applications, ce qui suffit à en faire paraître un officiel.
+  Celui publié sous `com.logicedge.opencodemobile` est le client **libre**
+  également distribué sur F-Droid : son code est auditable, et sa fiche dit
+  elle-même qu'il n'est pas affilié au projet. [7][8][14]
 - **OpenClaw.** Le mieux placé sur l'accès téléphone : 23+ messageries, MCP
   client *et* serveur, multi-agents, conversation qui vit sur le serveur. Mais
   CVE-2026-25253 — prise de contrôle en un clic menant à exécution de code, y
@@ -98,8 +104,9 @@ d'outils, bac à sable, mDNS coupé) et ce sera son arbitrage, pas le mien.
 coûteraient : la syntaxe `@` d'import de `CLAUDE.md` n'est peut-être pas
 résolue par ce harness — contournée d'avance en listant les fichiers un par un,
 donc sans risque ; les clients mobiles sont tiers, donc leur qualité n'est pas
-garantie dans la durée — le navigateur reste le repli ; et rien de tout cela
-n'a tourné sur la VM.
+garantie dans la durée — le navigateur reste le repli, et un client reçoit le
+mot de passe du serveur, ce qui vaut de préférer celui dont le code se lit ;
+et rien de tout cela n'a tourné sur la VM.
 
 ## Synthèse IA
 
@@ -128,3 +135,4 @@ l'agent pouvait ignorer. Devenir `permission: deny` change sa nature.
 11. https://blog.elest.io/librechat-vs-openwebui-vs-lobe-chat-which-to-self-host-in-2026/
 12. https://dev.to/lynkr/run-openhands-on-any-model-you-want-1mnd
 13. https://en.wikipedia.org/wiki/Goose_(AI_agent)
+14. https://play.google.com/store/apps/details?id=com.logicedge.opencodemobile
