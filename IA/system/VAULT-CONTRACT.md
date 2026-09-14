@@ -59,8 +59,10 @@ dossier**, et elles ne désignent personne.
 - Un agent `read_only: false` peut écrire **directement, sans patch**, dans
   trois zones seulement :
   - `brouillon/` — sans restriction ;
-  - `mémoire/<son-propre-nom-d'agent>/` — jamais dans le dossier mémoire d'un
-    autre agent ;
+  - `mémoire/`, **sauf le dossier d'un autre agent** : la mémoire partagée
+    (`profil-utilisateur.md`, `préférences/`, `projets/`) est ouverte à tous
+    les agents ; `mémoire/<nom-agent>/` n'appartient qu'à l'agent qui le
+    porte. Le détail de qui écrit quoi et où vit au §6 ;
   - `IA/skills/` — uniquement s'il déclare le skill `createur-de-skill` dans
     son frontmatter.
 - Tout le reste du coffre (`IA/agents/`, `IA/system/`, `IA/tâches/`, la
@@ -128,7 +130,7 @@ Tout fichier agent ou skill commence par un frontmatter YAML valide.
 | Valeur | Signification |
 | --- | --- |
 | `true` | **Lecture seule absolue** : aucune écriture nulle part (ni coffre, ni hors coffre, même via patch). |
-| `false` | **Écriture directe** dans `brouillon/`, `mémoire/<nom-agent>/`, et `IA/skills/` si `createur-de-skill` est déclaré (détail au §2), ainsi que dans les zones du coffre parent que le §7 ouvre (7.3) ; écriture hors coffre autorisée (§3) ; le reste du coffre passe par patch Git revu. |
+| `false` | **Écriture directe** dans `brouillon/`, `mémoire/` sauf le dossier d'un autre agent, et `IA/skills/` si `createur-de-skill` est déclaré (détail au §2), ainsi que dans les zones du coffre parent que le §7 ouvre (7.3) ; écriture hors coffre autorisée (§3) ; le reste du coffre passe par patch Git revu. |
 
 **Champs propres aux agents**
 
@@ -244,51 +246,63 @@ Elle est obligatoire et contrôlée — une tâche sans elle ne déclenche rien.
   graves comme en lien Markdown — depuis le fichier qui le cite, et refuse
   celui qui ne mène nulle part. Les chemins du coffre parent (§7) en sont
   exclus : ils désignent des dossiers hors du dépôt.
-- **Structure de la mémoire.** L'espace d'un agent porte son nom — jamais
-  `agent 1`, `agent 2` — et distingue ce qui est **daté** de ce qui est
-  **durable** :
+- **Structure de la mémoire.** La mémoire se partage sur un seul axe : **ce
+  que la note décrit**. Ce qui décrit l'utilisateur ou un chantier est commun
+  à tous les agents et vit à la racine ; ce qu'un agent a appris en
+  travaillant reste chez lui.
 
   ```
-  mémoire/<nom-agent>/
-  ├── profil-utilisateur.md          faits stables sur l'utilisateur et sa machine
-  ├── préférences/<sujet>.md         goûts et règles de conduite transversaux
-  ├── expériences/<sujet>.md         leçons réutilisables, tirées d'un cas réel
-  └── <nom-projet>/AAAA-MM-JJ-titre.md   avancement daté d'un projet
+  mémoire/
+  ├── profil-utilisateur.md              faits stables sur l'utilisateur et sa machine
+  ├── préférences/<sujet>.md             goûts et règles de conduite transversaux
+  ├── projets/<nom-projet>/AAAA-MM-JJ-titre.md   avancement daté d'un chantier
+  └── <nom-agent>/
+      └── expériences/<sujet>.md         leçons réutilisables, tirées d'un cas réel
   ```
 
-  Les noms de projet sont explicites — jamais `projets 1`, `projets 2`.
+  L'espace d'un agent porte son nom — jamais `agent 1`, `agent 2`. Les noms de
+  projet sont explicites — jamais `projets 1`, `projets 2` — et disent le
+  chantier, pas qui l'a mené : `construction-du-batisseur`, pas
+  `agent-batisseur`, qu'on lirait comme l'espace mémoire d'un agent.
 
 - **Où écrire, selon la nature de l'information** :
 
-  | Ce qu'on a appris | Destination |
-  | --- | --- |
-  | un fait stable sur l'utilisateur, son poste, son infrastructure | `profil-utilisateur.md`, **mis à jour sur place** |
-  | un goût ou une règle qui vaudra pour d'autres projets | `préférences/<sujet>.md` |
-  | une leçon tirée d'un échec ou d'une manœuvre qui a marché | `expériences/<sujet>.md` |
-  | une décision ou un avancement propre à un projet | `<nom-projet>/AAAA-MM-JJ-titre.md` |
+  | Ce qu'on a appris | Destination | Commun ? |
+  | --- | --- | --- |
+  | un fait stable sur l'utilisateur, son poste, son infrastructure | `mémoire/profil-utilisateur.md`, **mis à jour sur place** | oui |
+  | un goût ou une règle qui vaudra pour d'autres projets | `mémoire/préférences/<sujet>.md` | oui |
+  | une décision ou un avancement propre à un projet | `mémoire/projets/<nom-projet>/AAAA-MM-JJ-titre.md` | oui |
+  | une leçon tirée d'un échec ou d'une manœuvre qui a marché | `mémoire/<nom-agent>/expériences/<sujet>.md` | non — chez l'agent |
 
-  Les trois premières ne sont **pas datées** : une préférence qui change se
-  corrige, elle ne s'empile pas. Seules les notes de projet portent une date,
-  parce qu'elles racontent une chronologie.
+  Les deux premières ne sont **pas datées** : une préférence qui change se
+  corrige, elle ne s'empile pas. `expériences/` ne l'est pas non plus. Seules
+  les notes de projet portent une date, parce qu'elles racontent une
+  chronologie.
 
   Dans le doute, écrire dans le projet : une note de projet peut être distillée
   plus tard vers `préférences/` ou `expériences/`, l'inverse fait perdre le
   contexte.
 
-- **Un fait sur l'utilisateur ne se duplique pas d'un agent à l'autre.**
-  `profil-utilisateur.md` décrit la personne, pas l'agent : il reste **unique
-  dans le coffre**, ce que la règle d'unicité des noms ci-dessus impose de
-  toute façon, et vit dans `mémoire/assistant/profil-utilisateur.md`. Tout
-  agent le lit ; celui qui n'est pas chez lui le complète par patch (§2). Ce
-  qu'un agent apprend sur **sa propre manière de travailler** reste, lui, dans
-  son `expériences/`.
+- **Rien de ce qui décrit l'utilisateur ne vit chez un agent.**
+  `profil-utilisateur.md` décrit la personne, `préférences/` décrit ses règles :
+  ni l'un ni l'autre n'appartient à l'agent qui les a écrits. Les ranger chez
+  un agent obligeait les autres à passer par patch pour corriger un fait sur
+  leur propre utilisateur — une exception dont la racine dispense. Tout agent
+  `read_only: false` les corrige **directement, sur place** (§2).
+
+  Un projet ne vit pas chez un agent non plus, et pour une raison qu'on ne
+  voit qu'après coup : un chantier ouvert par un agent et repris par un autre
+  aurait vu son histoire coupée en deux dossiers, sans que rien ne le signale.
+  Ce qu'un agent apprend sur **sa propre manière de travailler** reste, lui,
+  dans son `expériences/` : c'est la seule chose qui lui appartienne vraiment.
 
 - **Un agent `read_only: true` n'a pas d'espace mémoire.** Le §5 lui interdit
   toute écriture, y compris par patch : il n'a donc pas de dossier sous
-  `mémoire/`, et rien à y régénérer. Ses constats vivent le temps de la
-  conversation, et c'est à l'agent qui reprend le travail d'en écrire la
-  leçon. La contrepartie est réelle et s'assume : un constat non repris est
-  un constat perdu.
+  `mémoire/`, et rien à y régénérer. Il **lit** en revanche toute la mémoire
+  commune — profil, préférences, projets — comme n'importe quel agent. Ses
+  constats, eux, vivent le temps de la conversation, et c'est à l'agent qui
+  reprend le travail d'en écrire la leçon. La contrepartie est réelle et
+  s'assume : un constat non repris est un constat perdu.
 
 - Une note durable n'est utile que si elle est **retrouvée** : son nom dit son
   sujet (`licences-et-logiciel-libre.md`, pas `notes.md`) et respecte la règle
@@ -553,9 +567,10 @@ citer ou l'injecter, il ne le redéfinit jamais (cf. préambule) :
      dépôt distant).
 3. Mémoire — dès qu'une décision est prise ou qu'une information mérite
    d'être retrouvée plus tard : écris-la à l'emplacement que le §6 assigne à
-   sa nature — `profil-utilisateur.md`, `préférences/`, `expériences/`, ou le
-   dossier du projet. Crée le dossier s'il n'existe pas. Vérifie au §2 si
-   l'écriture est directe ou passe par patch.
+   sa nature — `mémoire/profil-utilisateur.md`, `mémoire/préférences/`,
+   `mémoire/projets/<nom-projet>/`, ou ton propre `expériences/`. Crée le
+   dossier s'il n'existe pas. Vérifie au §2 si l'écriture est directe ou passe
+   par patch.
 
    Avant d'écrire une note durable, **lis celle qui existe déjà** sur le même
    sujet : un fait qui change se corrige sur place, il ne se réécrit pas à
@@ -625,7 +640,11 @@ déclare lui-même dispensé d'un contrôle annule le contrôle.
 Le contrôle des chemins s'arrête à `IA/` et aux documents de la racine : là, un
 chemin faux **agit** — une instruction de tâche part au déclenchement, un skill
 dit d'ouvrir un fichier. `mémoire/` en est exempté : c'est un récit, où une
-note ancienne cite légitimement un état révolu.
+note ancienne cite légitimement un état révolu. `IA/system/session-log/` l'est
+aussi, pour la même raison et bien qu'il vive sous `IA/` : un log dit ce qui a
+été fait ce jour-là, aux chemins de ce jour-là. Le corriger après un
+déplacement lui ferait annoncer la création d'un fichier à un endroit qui
+n'existait pas encore — on falsifierait le récit pour faire taire le contrôle.
 
 Trois précisions sur ce contrôle, parce qu'un contrôle qu'on croit plus large
 qu'il n'est vaut moins que pas de contrôle du tout :

@@ -18,7 +18,7 @@ des index.
 ## Procédure
 
 1. Lire `../system/VAULT-CONTRACT.md`.
-2. Localiser le ou les projets concernés via `mémoire/<agent>/<projet>/sommaire.md`
+2. Localiser le ou les projets concernés via `mémoire/projets/<nom-projet>/sommaire.md`
    et les rétroliens.
 3. Extraire le contexte pertinent, en citant systématiquement les chemins des
    fichiers utilisés.

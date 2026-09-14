@@ -12,7 +12,7 @@ plusieurs machines.
 Cette fiche reste un **gabarit d'intégration**, pas une recommandation : le
 coffre ne choisit aucun harness (`../VAULT-CONTRACT.md` §3). La comparaison qui
 a mené à s'y intéresser, et ce qu'elle a écarté, vivent dans
-`mémoire/assistant/choix-du-harness/2026-09-13-opencode-retenu-et-les-ecartes.md`.
+`mémoire/projets/choix-du-harness/2026-09-13-opencode-retenu-et-les-ecartes.md`.
 
 ---
 

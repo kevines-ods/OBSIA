@@ -13,4 +13,4 @@
 | [Portabilité entre harness — l'exigence fondatrice](portabilite-entre-harness.md) | 🟢 Établie — énoncée par l'utilisateur le 2026-09-05, en… | Ce n'est pas une préférence de confort : c'est le critère qui tranche les décisions de conception. Devant un choix, la… |
 | [Style des réponses attendu](style-des-reponses.md) | 🟢 Établie — énoncée par l'utilisateur, confirmée à l'usage. | Répondre en français. Expliquer ce qui est fait, pas seulement le faire : les connaissances en codage sont modestes et… |
 
-> Chemin dans le coffre : `mémoire/assistant/préférences/`
+> Chemin dans le coffre : `mémoire/préférences/`

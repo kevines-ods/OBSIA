@@ -37,7 +37,8 @@ OBSIA/                       le coffre — la racine du dépôt EST le coffre
 │   └── system/              VAULT-CONTRACT.md (les règles), index,
 │                            prompt-fondateur.md (intention d'origine),
 │                            adaptateurs-harness/ (gabarits d'intégration)
-├── mémoire/                 par agent → profil, préférences, expériences, projets
+├── mémoire/                 commun → profil, préférences, projets ;
+│                            par agent → expériences
 ├── brouillon/               zone de travail libre
 ├── scripts/
 │   ├── generer_prompt.py    prompt système depuis les frontmatters

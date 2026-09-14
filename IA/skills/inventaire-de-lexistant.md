@@ -28,7 +28,7 @@ phrase, le balayage ramène tout et ne conclut rien.
 | Source | Ce qu'on y cherche | Comment |
 | --- | --- | --- |
 | le coffre parent | notes, décisions, comparatifs déjà écrits | recherche plein texte via `obsidian-manager` |
-| la mémoire d'OBSIA | ce qui a déjà été tranché, et pourquoi | `mémoire/` — dossiers de projet et `expériences/` |
+| la mémoire d'OBSIA | ce qui a déjà été tranché, et pourquoi | `mémoire/projets/`, et `expériences/` de chaque agent |
 | les dépôts | tentatives précédentes, code réutilisable | `ls` du coffre parent, puis `git log` de chacun |
 | la machine | ce qui est déjà installé et qui marche | l'inventaire logiciel du poste et des conteneurs |
 

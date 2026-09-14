@@ -11,4 +11,4 @@
 |---|---|---|
 | [Recherche contextuelle sur l'écosystème agentic](2026-08-15-recherche-contextuelle-agentic.md) | — | Comparer les solutions existantes avant de construire. |
 
-> Chemin dans le coffre : `mémoire/assistant/recherche-contextuelle/`
+> Chemin dans le coffre : `mémoire/projets/recherche-contextuelle/`

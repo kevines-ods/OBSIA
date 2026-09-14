@@ -438,6 +438,13 @@ def verifier_chemins_cites():
     faux **agit**. `mémoire/` est un récit, où une note ancienne cite
     légitimement un état révolu ou reproduit un extrait d'index.
 
+    `IA/system/session-log/` est écarté pour la même raison, bien qu'il vive
+    sous `IA/` : un log dit ce qui a été fait ce jour-là, aux chemins de ce
+    jour-là. Le corriger après un déplacement lui ferait annoncer la création
+    d'un fichier à un endroit qui n'existait pas encore — on falsifierait le
+    récit pour faire taire le contrôle. Un log n'agit jamais : personne ne
+    l'ouvre pour exécuter ce qu'il décrit.
+
     Trois formes sont contrôlées, parce que trois formes cassent :
 
       · le chemin depuis la racine du dépôt — `IA/skills/x.md` ;
@@ -454,6 +461,8 @@ def verifier_chemins_cites():
     for chemin in sorted(cibles):
         rel = chemin.relative_to(RACINE)
         if any(part.startswith(".") for part in rel.parts):
+            continue
+        if rel.parts[:3] == ("IA", "system", "session-log"):
             continue
         texte = chemin.read_text(encoding="utf-8")
         hors_code = re.sub(r"```.*?```", "", texte, flags=re.S)

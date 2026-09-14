@@ -140,12 +140,14 @@ casse dès le deuxième projet.
 - **Mise en ligne** : chaque action est annoncée, exécutée, puis vérifiée
   avant la suivante — la discipline de `remediation-linux`. L'hôte Proxmox
   reste en lecture seule, sans exception.
-- Sa mémoire vit dans `mémoire/batisseur/` : un dossier par projet pour les
-  décisions datées, `expériences/` pour ce qui a été appris sur la manière de
-  construire — une pile décevante, un piège d'intégration.
-- Les faits stables sur l'utilisateur ne se recopient pas :
-  `mémoire/assistant/profil-utilisateur.md` est unique dans le coffre (§6). Il
-  se lit ; pour le compléter, proposer un patch.
+- Ce qui lui appartient vit dans `mémoire/batisseur/expériences/` : ce qui a
+  été appris sur la manière de construire — une pile décevante, un piège
+  d'intégration.
+- Le reste est **commun** et vit à la racine de `mémoire/` (§6) : les décisions
+  datées d'un chantier dans `mémoire/projets/<nom-projet>/`, les faits stables
+  sur l'utilisateur dans `mémoire/profil-utilisateur.md`, ses règles dans
+  `mémoire/préférences/`. Il les lit, et les corrige **sur place** — sans
+  patch, et sans jamais en recopier le contenu ailleurs.
 - En cas de doute sur le périmètre, demander plutôt qu'agir.
 
 > Sandbox, archivage avant suppression et preview multi-fichiers sont définis

@@ -27,7 +27,7 @@ Ne pas se fier à sa mémoire de la conversation : lire le diff.
 
 ### 2. Écrire ou compléter la note de projet
 
-`mémoire/<agent>/<projet>/AAAA-MM-JJ-titre.md`, structurée pour que le
+`mémoire/projets/<nom-projet>/AAAA-MM-JJ-titre.md`, structurée pour que le
 générateur de sommaires en tire quelque chose d'utile :
 
 ```markdown
@@ -58,9 +58,12 @@ que ça ne vaut que pour ce projet ?** Si non, ça remonte, selon le tableau du
 
 | Ce qu'on a appris | Destination |
 | --- | --- |
-| un fait stable sur l'utilisateur, son poste, son infrastructure | `profil-utilisateur.md` |
-| un goût, une règle qui vaudra ailleurs | `préférences/<sujet>.md` |
-| une leçon tirée d'un échec ou d'une réussite | `expériences/<sujet>.md` |
+| un fait stable sur l'utilisateur, son poste, son infrastructure | `mémoire/profil-utilisateur.md` |
+| un goût, une règle qui vaudra ailleurs | `mémoire/préférences/<sujet>.md` |
+| une leçon tirée d'un échec ou d'une réussite | `mémoire/<nom-agent>/expériences/<sujet>.md` |
+
+Les deux premières destinations sont **communes à tous les agents** : on y
+corrige sur place, sans patch. Seul `expériences/` appartient à l'agent.
 
 **Lire d'abord la note durable existante.** Un fait qui change se corrige sur
 place ; il ne s'écrit pas une seconde fois à côté. C'est la règle du §10.3.
@@ -124,5 +127,5 @@ python3 scripts/verifier_coffre.py
 ## Contraintes
 
 Les zones d'écriture directe et celles qui passent par patch sont définies au
-§2 de `../system/VAULT-CONTRACT.md`. La distillation écrit dans
-`mémoire/<agent>/` — zone directe ; le log de session, non.
+§2 de `../system/VAULT-CONTRACT.md`. La distillation écrit dans `mémoire/`
+— zone directe, sauf le dossier d'un autre agent ; le log de session, non.
