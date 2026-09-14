@@ -19,6 +19,12 @@ config.php
 inventaire-*.yml
 !inventaire-*.example.yml
 
+# Configurations MCP remplies : seul le gabarit est versionné. Une config
+# réelle porte le chemin du coffre et des références de jetons.
+mcp.json
+.mcp.json
+!mcp.example.json
+
 secrets/
 .backup-reconstruction/
 

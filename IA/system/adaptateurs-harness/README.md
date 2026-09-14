@@ -29,11 +29,42 @@ La **configuration réelle** (chemins, clés) vit **hors du dépôt**. Ces
 gabarits ne contiennent que des chemins fictifs, à remplacer localement — un
 gabarit rempli ne se re-versionne pas.
 
+## Passer du gabarit au branchement réel
+
+Ces fiches disent *où* la configuration vit pour chaque harness. Les traduire
+en serveurs qui répondent vraiment est la procédure du skill
+`configuration-mcp` (`../../skills/configuration-mcp.md`) : il ne configure que
+les MCP qu'un agent déclare, garde les secrets en variables d'environnement, et
+vérifie chaque serveur par un appel réel plutôt que par l'absence d'erreur au
+démarrage.
+
 ## Fiches
 
-- `claude-code.md` — Claude Code
-- `opencode.md` — OpenCode
-- `deepseek-harness.md` — DeepSeek Harness (DSH)
-- `openclaw.md` — OpenClaw 2.0
-- `aionui-obsiaui.md` — AionUi / ObsiaUi (interface)
-- `librechat.md` — LibreChat
+Toutes suivent la **forme commune en six sections** définie par `commun.md` :
+c'est elle que le skill `configuration-mcp` lit pour savoir où écrire.
+
+| Fiche | Harness | Clé du bloc MCP | Secrets en `${VAR}` | Statut |
+| --- | --- | --- | --- | --- |
+| `claude-code.md` | Claude Code | `mcpServers` | oui, avec valeur par défaut | vérifié 2026-09-14 |
+| `opencode.md` | OpenCode | `mcp` | oui | vérifié 2026-09-13 |
+| `librechat.md` | LibreChat | `mcpServers` (YAML) | oui | vérifié 2026-09-14 |
+| `openclaw.md` | OpenClaw | `mcp.servers` | **à confirmer** | vérifié 2026-09-14 |
+| `aionui-obsiaui.md` | AionUi / ObsiaUi | `mcpServers`, saisi dans l'interface | **non** — jeton en clair | vérifié 2026-09-14 |
+| `deepseek-harness.md` | DeepSeek Harness (DSH) | inconnue | inconnue | **non vérifié** |
+
+Trois choses que ce tableau rend visibles d'un coup d'œil, et qui décident du
+branchement :
+
+- **`mcpServers` n'est pas une norme.** Deux harness sur six attendent autre
+  chose. Recopier le bloc de `commun.md` sans lire la fiche échoue en silence.
+- **Deux fiches ne peuvent pas porter un jeton.** Sur AionUi la documentation
+  écrit le secret en clair, ce que le §4 interdit ; sur OpenClaw
+  l'interpolation n'est pas documentée. Les serveurs authentifiés s'y déclarent
+  autrement, ou pas du tout.
+- **Une fiche est vide, et le dit.** DSH n'a pas de configuration publiée :
+  l'agent s'arrête au lieu d'écrire au hasard.
+
+Un statut « vérifié » signifie **vérifié sur documentation**, avec sa date et
+sa source dans la fiche. Aucune n'a été éprouvée sur machine réelle ; c'est
+écrit en tête de chacune, et ça ne se déduit pas d'un branchement qui a l'air
+de marcher.

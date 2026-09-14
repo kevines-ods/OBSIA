@@ -22,10 +22,19 @@ la racine du coffre), `_maintenance/`, `PROJETS/`, `DOCUMENTS/`,
 `PERSONNELS/`, `SAVOIRS/` et `EN-VRAC/`. La règle complète est au §7 de
 `IA/system/VAULT-CONTRACT.md`, qui fait foi.
 
+> **Correction du 14 septembre 2026.** Les noms ci-dessus sont faux, et le
+> sont depuis cette entrée : les dossiers réels s'appellent `-PROJETS/`,
+> `-DOCUMENTS/`, `-PERSONNELS/`, `-SAVOIRS/` et `-EN-VRAC/`. Seul le préfixe
+> **numérique** est tombé lors de la réorganisation ; le tiret est resté.
+> L'entrée a été écrite d'après la description du changement, pas d'après le
+> dossier — et rien ne pouvait le détecter, le coffre parent étant hors du
+> dépôt. Le §7 du contrat porte désormais les noms réels.
+
 ### Ce qu'il ne faut pas reconstruire
 
 - **Ne pas réintroduire `0-PROJETS`, `1-CONCEPTS`, `2-RESSOURCES` ni
-  `0-EN VRAC`** ailleurs que dans l'historique : ce sont des noms périmés.
+  `0-EN VRAC`** ailleurs que dans l'historique : ce sont des noms périmés. Le
+  tiret seul, lui, est bien le nom réel — cf. la correction ci-dessus.
 - La zone de dépôt s'appelle désormais `EN-VRAC/`, et la traçabilité des
   écritures du coffre parent vit dans `_maintenance/` (previews et registre
   des notes traitées) — sans Git, la trace remplace le patch.

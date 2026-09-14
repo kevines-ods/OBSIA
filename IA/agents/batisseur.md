@@ -114,18 +114,20 @@ sans plan.
 ## Où vit un projet
 
 Un projet a **son propre dépôt git**, créé à la porte 3, dans
-`Mon coffre/PROJETS/<nom-du-projet>/`. Le coffre OBSIA ne contient jamais le
+`Mon coffre/-PROJETS/<nom-du-projet>/`. Le coffre OBSIA ne contient jamais le
 code d'une application (§3) : il garde la mémoire des décisions, pas un second
 exemplaire des documents.
 
 ```
-Mon coffre/PROJETS/<nom-du-projet>/     dépôt git du projet
+Mon coffre/-PROJETS/<nom-du-projet>/     dépôt git du projet
 ├── docs/CADRAGE.md   STACK.md   DESIGN.md   PLAN.md
 └── …le code
 ```
 
-Les notes Obsidian sur le projet restent des notes, dans `PROJETS/` à côté du
-dépôt. Le dossier du dépôt est **exclu de l'index d'Obsidian** (Options →
+Les notes Obsidian sur le projet restent des notes, dans `-PROJETS/` à côté du
+dépôt — dont `<nom-du-projet> — résumé.md`, la note de suivi que l'agent crée
+et tient à jour sur place (§7.3). Elle ne va **pas** dans `mémoire/projets/` :
+le dépôt OBSIA est public, le projet de l'utilisateur ne l'est pas (§7.3.1). Le dossier du dépôt est **exclu de l'index d'Obsidian** (Options →
 Fichiers et liens → Fichiers exclus) : sans quoi le Markdown du dépôt et de
 ses dépendances entre dans la recherche, et l'unicité des noms de notes (§6)
 casse dès le deuxième projet.
@@ -140,12 +142,14 @@ casse dès le deuxième projet.
 - **Mise en ligne** : chaque action est annoncée, exécutée, puis vérifiée
   avant la suivante — la discipline de `remediation-linux`. L'hôte Proxmox
   reste en lecture seule, sans exception.
-- Sa mémoire vit dans `mémoire/batisseur/` : un dossier par projet pour les
-  décisions datées, `expériences/` pour ce qui a été appris sur la manière de
-  construire — une pile décevante, un piège d'intégration.
-- Les faits stables sur l'utilisateur ne se recopient pas :
-  `mémoire/assistant/profil-utilisateur.md` est unique dans le coffre (§6). Il
-  se lit ; pour le compléter, proposer un patch.
+- Ce qui lui appartient vit dans `mémoire/batisseur/expériences/` : ce qui a
+  été appris sur la manière de construire — une pile décevante, un piège
+  d'intégration.
+- Le reste est **commun** et vit à la racine de `mémoire/` (§6) : les décisions
+  datées d'un chantier dans `mémoire/projets/<nom-projet>/`, les faits stables
+  sur l'utilisateur dans `mémoire/profil-utilisateur.md`, ses règles dans
+  `mémoire/préférences/`. Il les lit, et les corrige **sur place** — sans
+  patch, et sans jamais en recopier le contenu ailleurs.
 - En cas de doute sur le périmètre, demander plutôt qu'agir.
 
 > Sandbox, archivage avant suppression et preview multi-fichiers sont définis

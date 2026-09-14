@@ -21,6 +21,7 @@ skills:
   - sauvegardes
   - traitement-des-notes
   - cartographie-du-coffre
+  - configuration-mcp
 mcp:
   - git-hub
   - chrome-devtools

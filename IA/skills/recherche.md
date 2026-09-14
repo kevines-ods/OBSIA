@@ -40,7 +40,7 @@ nature de la question.
 
 | Type de question | Commencer par | Pourquoi |
 | --- | --- | --- |
-| « comment j'ai fait », « qu'avais-je décidé », un fait sur la machine ou l'utilisateur | le coffre — `SAVOIRS/`, `PERSONNELS/` | la réponse est personnelle ; aucun site ne la détient |
+| « comment j'ai fait », « qu'avais-je décidé », un fait sur la machine ou l'utilisateur | le coffre — `-SAVOIRS/`, `-PERSONNELS/` | la réponse est personnelle ; aucun site ne la détient |
 | syntaxe, option, version d'un logiciel, API | le site de confiance correspondant, **pas** le coffre | le coffre ne suit pas les versions ; la documentation officielle, si |
 | actualité, comparatif, « qu'est-ce qui se fait » | le web général | ni le coffre ni les sites de confiance ne sont à jour |
 | une question déjà traitée | le coffre, par la note de projet correspondante | ne pas refaire un travail déjà fait |
@@ -56,11 +56,11 @@ Un index par dossier du coffre parent, produits par
 
 | Index | Couvre |
 | --- | --- |
-| `index-savoirs.md` | les connaissances — `Mon coffre/SAVOIRS/` |
-| `index-personnels.md` | le contexte personnel — `Mon coffre/PERSONNELS/` |
-| `index-projets.md` | les projets — `Mon coffre/PROJETS/` |
-| `index-documents.md` | revues, articles, transcriptions — `Mon coffre/DOCUMENTS/` |
-| `index-en-vrac.md` | le tampon — `Mon coffre/EN-VRAC/`, vide en fin de session (§7.7) |
+| `index-savoirs.md` | les connaissances — `Mon coffre/-SAVOIRS/` |
+| `index-personnels.md` | le contexte personnel — `Mon coffre/-PERSONNELS/` |
+| `index-projets.md` | les projets — `Mon coffre/-PROJETS/` |
+| `index-documents.md` | revues, articles, transcriptions — `Mon coffre/-DOCUMENTS/` |
+| `index-en-vrac.md` | le tampon — `Mon coffre/-EN-VRAC/`, vide en fin de session (§7.7) |
 | `index-maintenance.md` | journaux, previews, registre — `Mon coffre/_maintenance/` |
 
 Chaque ligne porte le fichier, sa `description` — ou, à défaut, son premier

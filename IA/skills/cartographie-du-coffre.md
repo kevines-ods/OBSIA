@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: cartographie-du-coffre
-description: Dresser la carte des connaissances du coffre parent — concepts de SAVOIRS, notes orphelines, doublons, tags hors vocabulaire, liens manquants. À charger pour faire le point sur la santé du coffre ou avant une réorganisation. Lit et propose, n'écrit rien.
+description: Dresser la carte des connaissances du coffre parent — concepts de -SAVOIRS, notes orphelines, doublons, tags hors vocabulaire, liens manquants. À charger pour faire le point sur la santé du coffre ou avant une réorganisation. Lit et propose, n'écrit rien.
 type: outil
 read_only: true
 ---
@@ -19,7 +19,7 @@ La règle d'ensemble est au §7 de `../system/VAULT-CONTRACT.md`, qui fait foi.
 
 ## Périmètre
 
-- Concepts de `Mon coffre/SAVOIRS/` (un fichier = un concept) ;
+- Concepts de `Mon coffre/-SAVOIRS/` (un fichier = un concept) ;
 - croisement avec le vocabulaire contrôlé `../system/tags-du-coffre-parent.md` ;
 - rétroliens et liens Markdown portés par ces notes.
 
@@ -42,7 +42,7 @@ fixe la notation).
 1. **Inventorier.** Lister les notes et leurs titres :
 
    ```bash
-   ls ../SAVOIRS/
+   ls ../-SAVOIRS/
    ```
 
 2. **Lister les liens et les orphelins.** Une note est orpheline si aucun
@@ -50,15 +50,15 @@ fixe la notation).
    **quatre** dossiers — remplacer `cible` par le titre cherché :
 
    ```bash
-   rg --glob "*.md" "\[\[cible\]\]" ../SAVOIRS ../PROJETS ../DOCUMENTS ../PERSONNELS
+   rg --glob "*.md" "\[\[cible\]\]" ../-SAVOIRS ../-PROJETS ../-DOCUMENTS ../-PERSONNELS
    ```
 
    Deux choix de périmètre, qui décident de la justesse du verdict :
 
-   - `PERSONNELS/` **est** dans le balayage. Son contenu est personnel mais non
+   - `-PERSONNELS/` **est** dans le balayage. Son contenu est personnel mais non
      critique, et il a vocation à être relié au reste : l'omettre déclarerait
      orphelines des notes qui ne le sont pas.
-   - `EN-VRAC/` en est **exclu**. C'est un dossier tampon, vide à la fin de
+   - `-EN-VRAC/` en est **exclu**. C'est un dossier tampon, vide à la fin de
      chaque session de rangement (§7.7) : un lien qui n'en part que serait
      compté aujourd'hui et disparu demain.
 

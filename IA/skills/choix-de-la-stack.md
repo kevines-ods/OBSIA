@@ -30,7 +30,7 @@ déjà. Six critères, pondérés par l'utilisateur :
 | **Dépendances** | combien de paquets tiers, et lesquels sont maintenus par une seule personne ? |
 | **Sortie de secours** | si ce choix déçoit, que coûte le changement ? |
 
-Lire `mémoire/assistant/profil-utilisateur.md` avant de pondérer : poste,
+Lire `mémoire/profil-utilisateur.md` avant de pondérer : poste,
 infrastructure, valeurs et rapport au code y sont déjà écrits. Ne pas
 redemander ce qui s'y trouve.
 

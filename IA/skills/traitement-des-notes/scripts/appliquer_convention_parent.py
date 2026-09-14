@@ -7,8 +7,8 @@ Lit un dossier du coffre parent et ajoute le frontmatter minimal aux notes qui
 n'en ont pas, reprend les tags inline existants, et signale les tags qui
 sortent du vocabulaire contrôlé (IA/system/tags-du-coffre-parent.md).
 
-Par dossier, le `type` posé diffère : `SAVOIRS` → concept, `DOCUMENTS` → revue,
-`PROJETS` → projet, `PERSONNELS` → personnel. Pour `EN-VRAC`, aucun `type`
+Par dossier, le `type` posé diffère : `-SAVOIRS` → concept, `-DOCUMENTS` → revue,
+`-PROJETS` → projet, `-PERSONNELS` → personnel. Pour `-EN-VRAC`, aucun `type`
 n'est figé : il est décidé au classement, quand la note rejoint sa destination
 (skill `traitement-des-notes`).
 
@@ -17,10 +17,10 @@ Les fichiers qui ont déjà un frontmatter partiel ne sont pas réécrits, ils s
 signalés. Bibliothèque standard uniquement ; outil de la machine, pas de CI.
 
 Usage :
-    python3 appliquer_convention_parent.py                 # SAVOIRS, aperçu
+    python3 appliquer_convention_parent.py                 # -SAVOIRS, aperçu
     python3 appliquer_convention_parent.py --appliquer
-    python3 appliquer_convention_parent.py --dossier DOCUMENTS
-    python3 appliquer_convention_parent.py --dossier EN-VRAC
+    python3 appliquer_convention_parent.py --dossier=-DOCUMENTS
+    python3 appliquer_convention_parent.py --dossier=-EN-VRAC
     python3 appliquer_convention_parent.py --racine /chemin/du/coffre
 """
 
@@ -33,10 +33,10 @@ CONTRAT_REL = Path("IA") / "system" / "VAULT-CONTRACT.md"
 REGISTRE_REL = Path("IA") / "system" / "tags-du-coffre-parent.md"
 
 TAG = re.compile(r"^[a-zà-ÿ][\wà-ÿ-]*$", re.UNICODE)
-# Dossiers de connaissance : un type est posé. EN-VRAC en est absent : le type
+# Dossiers de connaissance : un type est posé. -EN-VRAC en est absent : le type
 # y est décidé au classement, pas figé d'avance.
-TYPES = {"SAVOIRS": "concept", "DOCUMENTS": "revue",
-         "PROJETS": "projet", "PERSONNELS": "personnel"}
+TYPES = {"-SAVOIRS": "concept", "-DOCUMENTS": "revue",
+         "-PROJETS": "projet", "-PERSONNELS": "personnel"}
 
 
 def trouver_racine_depot(script: Path) -> Path | None:
@@ -137,7 +137,7 @@ def tags_inline(texte: str) -> list[str]:
 
 
 def bloc_frontmatter(type_note: str | None, tags: list[str]) -> str:
-    """Bloc YAML minimal ; `type` absent si type_note est None (EN-VRAC)."""
+    """Bloc YAML minimal ; `type` absent si type_note est None (-EN-VRAC)."""
     lignes = ["---"]
     if type_note:
         lignes.append("type: %s" % type_note)
@@ -170,8 +170,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--appliquer", action="store_true",
                     help="écrit les notes sans frontmatter (défaut : aperçu)")
-    ap.add_argument("--dossier", default="SAVOIRS",
-                    help="dossier du coffre parent à traiter (défaut : SAVOIRS)")
+    ap.add_argument("--dossier", default="-SAVOIRS",
+                    help="dossier du coffre parent à traiter (défaut : -SAVOIRS)")
     ap.add_argument("--racine", type=Path, default=None,
                     help="racine du coffre parent (défaut : parent du dépôt OBSIA)")
     args = ap.parse_args()
@@ -194,7 +194,7 @@ def main() -> int:
         print("Aucune note Markdown dans %s" % dossier)
         return 0
 
-    type_note = TYPES.get(args.dossier.upper())   # None pour EN-VRAC : pas de type figé
+    type_note = TYPES.get(args.dossier.upper())   # None pour -EN-VRAC : pas de type figé
     a_ecrire: list[tuple[Path, str]] = []
     hors_globaux: dict[str, int] = {}
 

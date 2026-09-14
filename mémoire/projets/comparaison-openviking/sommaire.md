@@ -18,4 +18,4 @@
 | [Sous-types de mémoire](2026-09-03-sous-types-de-memoire.md) | 🟢 Appliqué — contrat §6 et §10.3 réécrits, cinq notes… | Application du point 3 de 2026-09-03-comparaison-openviking : ouvrir dans la mémoire un espace pour ce qui est durable… |
 | [Vérification automatique du coffre](2026-09-03-verification-du-coffre.md) | 🟢 Appliqué — deux scripts, un workflow CI, contrat §11… | Application du point 4 de 2026-09-03-comparaison-openviking : donner au contrat un moyen de se faire respecter. |
 
-> Chemin dans le coffre : `mémoire/assistant/comparaison-openviking/`
+> Chemin dans le coffre : `mémoire/projets/comparaison-openviking/`

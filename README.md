@@ -37,7 +37,8 @@ OBSIA/                       le coffre — la racine du dépôt EST le coffre
 │   └── system/              VAULT-CONTRACT.md (les règles), index,
 │                            prompt-fondateur.md (intention d'origine),
 │                            adaptateurs-harness/ (gabarits d'intégration)
-├── mémoire/                 par agent → profil, préférences, expériences, projets
+├── mémoire/                 commun → profil, préférences, projets ;
+│                            par agent → expériences
 ├── brouillon/               zone de travail libre
 ├── scripts/
 │   ├── generer_prompt.py    prompt système depuis les frontmatters
@@ -65,13 +66,13 @@ mouvements.
 
 OBSIA est le cœur ; le coffre qui l'entoure est votre base de connaissances.
 Il s'appelle `Mon coffre/`, et le dépôt se clone à sa racine, à côté de
-`_maintenance/`, `PROJETS/`, `DOCUMENTS/`, `PERSONNELS/`, `SAVOIRS/` et
-`EN-VRAC/`. Seul `OBSIA/` est versionné.
+`_maintenance/`, `-PROJETS/`, `-DOCUMENTS/`, `-PERSONNELS/`, `-SAVOIRS/` et
+`-EN-VRAC/`. Seul `OBSIA/` est versionné.
 
 La structure de premier niveau est fixe (seul vous la modifiez). Les agents
-lisent tout le coffre parent, remplissent les notes d'`EN-VRAC/` (corps, tags,
-rétroliens) puis les classent, complètent les notes déposées dans `SAVOIRS/`,
-et consignent previews et actions dans `_maintenance/`. `EN-VRAC/` est un
+lisent tout le coffre parent, remplissent les notes d'`-EN-VRAC/` (corps, tags,
+rétroliens) puis les classent, complètent les notes déposées dans `-SAVOIRS/`,
+et consignent previews et actions dans `_maintenance/`. `-EN-VRAC/` est un
 **tampon** : une session de rangement le vide entièrement. Les règles complètes
 sont au §7 de `IA/system/VAULT-CONTRACT.md`.
 
