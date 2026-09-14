@@ -19,12 +19,12 @@ l'arrange.
 
 ## 1. Le dépôt du projet — à créer ici s'il n'existe pas
 
-Le projet vit dans `Mon coffre/PROJETS/<nom-du-projet>/`, dépôt git à part
+Le projet vit dans `Mon coffre/-PROJETS/<nom-du-projet>/`, dépôt git à part
 entière. Le coffre OBSIA ne contient jamais le code d'une application (§3).
 
 ```bash
-mkdir -p "$HOME/Mon coffre/PROJETS/<nom-du-projet>/docs"
-git -C "$HOME/Mon coffre/PROJETS/<nom-du-projet>" init
+mkdir -p "$HOME/Mon coffre/-PROJETS/<nom-du-projet>/docs"
+git -C "$HOME/Mon coffre/-PROJETS/<nom-du-projet>" init
 ```
 
 Rien n'est poussé sur GitHub à ce stade : une idée abandonnée ne laisse pas
@@ -32,7 +32,7 @@ de dépôt vide derrière elle. La publication a lieu à la porte 8, par
 `livraison-git`.
 
 **Rappeler à l'utilisateur, une fois, à la création :** ajouter
-`PROJETS/<nom-du-projet>/` aux *Fichiers exclus* d'Obsidian (Options →
+`-PROJETS/<nom-du-projet>/` aux *Fichiers exclus* d'Obsidian (Options →
 Fichiers et liens). Sans ça, le Markdown du dépôt et de ses dépendances entre
 dans la recherche du coffre, et l'unicité des noms de notes (§6) casse dès le
 deuxième projet.

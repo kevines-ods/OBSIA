@@ -4,7 +4,7 @@
 Génère un index par dossier du coffre parent.
 
 Pour chacun des dossiers de premier niveau de `Mon coffre/` (_maintenance,
-PROJETS, DOCUMENTS, PERSONNELS, SAVOIRS, EN-VRAC), écrit
+-PROJETS, -DOCUMENTS, -PERSONNELS, -SAVOIRS, -EN-VRAC), écrit
 `Mon coffre/_maintenance/index-<dossier>.md` : une ligne par note, avec son
 fichier, sa description, son type et ses tags.
 
@@ -47,8 +47,8 @@ sys.dont_write_bytecode = True
 CONTRAT_REL = Path("IA") / "system" / "VAULT-CONTRACT.md"
 
 # Dossiers de premier niveau du coffre parent (§7.1), dans l'ordre d'affichage.
-DOSSIERS = ("SAVOIRS", "PERSONNELS", "PROJETS", "DOCUMENTS",
-            "EN-VRAC", "_maintenance")
+DOSSIERS = ("-SAVOIRS", "-PERSONNELS", "-PROJETS", "-DOCUMENTS",
+            "-EN-VRAC", "_maintenance")
 
 LONGUEUR_DESCRIPTION = 140
 

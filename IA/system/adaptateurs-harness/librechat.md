@@ -35,8 +35,8 @@ atteint depuis plusieurs appareils.
    tous exécutants confondus** — instancier la même tâche des deux côtés la
    déclencherait deux fois, sans qu'aucune erreur ne le signale.
 6. **Vérifier après branchement** — comme pour tout harness : lister la racine
-   du coffre, lire une note de `Mon coffre/SAVOIRS/`, retrouver le registre des
-   tags. Si `SAVOIRS/` n'apparaît pas, le serveur n'est pas monté sur la bonne
+   du coffre, lire une note de `Mon coffre/-SAVOIRS/`, retrouver le registre des
+   tags. Si `-SAVOIRS/` n'apparaît pas, le serveur n'est pas monté sur la bonne
    racine.
 
 > Licence **MIT**, vérifiée à la source — compatible avec l'AGPL-3.0-or-later du

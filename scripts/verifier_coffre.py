@@ -417,8 +417,8 @@ GABARIT = re.compile(r"[<>*…{]|AAAA|MM-JJ")          # chemins d'exemple, pas 
 
 # Dossiers du coffre parent (§7.1) : hors du dépôt, donc invisibles d'ici.
 # Un chemin qui les vise n'est pas cassé, il désigne autre chose.
-COFFRE_PARENT = ("SAVOIRS", "PROJETS", "DOCUMENTS", "PERSONNELS",
-                 "EN-VRAC", "_maintenance", "Mon coffre")
+COFFRE_PARENT = ("-SAVOIRS", "-PROJETS", "-DOCUMENTS", "-PERSONNELS",
+                 "-EN-VRAC", "_maintenance", "Mon coffre")
 
 
 def vise_le_coffre_parent(chemin: str) -> bool:

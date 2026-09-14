@@ -11,7 +11,7 @@ OBSIA et le coffre parent :
    dépôt) comme répertoire de travail, ou déclarer le bloc MCP `coffre-parent`
    de `commun.md`.
 3. Vérifier : demander la liste des dossiers de la racine du coffre (`..`). Si
-   `SAVOIRS/` n'apparaît pas, l'accès n'est pas donné.
+   `-SAVOIRS/` n'apparaît pas, l'accès n'est pas donné.
 
 Autre usage (hors Claude Code) : régénérer le prompt avec
 `python3 scripts/generer_prompt.py`.

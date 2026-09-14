@@ -60,6 +60,8 @@ descriptions et tranche.
 | « range les notes brutes que j'ai déposées » | traitement-des-notes | 3 | — |
 | « cette action doit se répéter tous les lundis matin » | cron | 3 | — |
 | « fais le point sur la santé du coffre, les notes orphelines » | cartographie-du-coffre | 3 | — |
+| « configure les serveurs MCP pour le harness que j'ai installé » | configuration-mcp | 2 | — |
+| « les MCP sont déclarés dans le coffre mais aucun ne répond » | configuration-mcp | 3 | — |
 | « on clôt la séance, écris ce qui a été décidé » | cloture-de-session | 3 | — |
 | « je veux écrire un nouveau skill pour le coffre » | createur-de-skill | 3 | — |
 | « relis ce diff et dis-moi ce qui cloche avant que je fusionne » | revue-de-code | 3 | — |

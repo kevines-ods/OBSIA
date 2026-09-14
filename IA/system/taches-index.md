@@ -2,7 +2,7 @@
 
 | Tâche | Quand | Fuseau | Mode | Exécutant | Agent | Active | Description |
 |---|---|---|---|---|---|---|---|
-| [revue-des-notes-du-coffre](../tâches/revue-des-notes-du-coffre.md) | `0 10 * * 1` | Europe/Paris | agent | local | assistant | oui | Traiter les notes brutes du coffre parent — remplir et classer celles d'EN-VRAC, compléter celles déposées dans SAVOIRS, et signaler les tags hors vocabulaire contrôlé. À charger via le skill traitement-des-notes. |
+| [revue-des-notes-du-coffre](../tâches/revue-des-notes-du-coffre.md) | `0 10 * * 1` | Europe/Paris | agent | local | assistant | oui | Traiter les notes brutes du coffre parent — remplir et classer celles d'-EN-VRAC, compléter celles déposées dans -SAVOIRS, et signaler les tags hors vocabulaire contrôlé. À charger via le skill traitement-des-notes. |
 | [revue-hebdomadaire-du-coffre](../tâches/revue-hebdomadaire-du-coffre.md) | `0 9 * * 1` | Europe/Paris | agent | local | assistant | oui | Régénérer index et sommaires, vérifier la cohérence du coffre, et réconcilier le registre des tâches avec ce qui tourne réellement. |
 | [revue-mensuelle-des-lecons](../tâches/revue-mensuelle-des-lecons.md) | `0 11 1 * *` | Europe/Paris | agent | local | assistant | non | Statuer sur les modifications de skill dont la date de revue est passée — confirmer ou annuler — puis compiler au plus une leçon accumulée. Une par mois, jamais deux. |
 

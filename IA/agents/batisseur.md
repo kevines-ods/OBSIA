@@ -114,18 +114,20 @@ sans plan.
 ## Où vit un projet
 
 Un projet a **son propre dépôt git**, créé à la porte 3, dans
-`Mon coffre/PROJETS/<nom-du-projet>/`. Le coffre OBSIA ne contient jamais le
+`Mon coffre/-PROJETS/<nom-du-projet>/`. Le coffre OBSIA ne contient jamais le
 code d'une application (§3) : il garde la mémoire des décisions, pas un second
 exemplaire des documents.
 
 ```
-Mon coffre/PROJETS/<nom-du-projet>/     dépôt git du projet
+Mon coffre/-PROJETS/<nom-du-projet>/     dépôt git du projet
 ├── docs/CADRAGE.md   STACK.md   DESIGN.md   PLAN.md
 └── …le code
 ```
 
-Les notes Obsidian sur le projet restent des notes, dans `PROJETS/` à côté du
-dépôt. Le dossier du dépôt est **exclu de l'index d'Obsidian** (Options →
+Les notes Obsidian sur le projet restent des notes, dans `-PROJETS/` à côté du
+dépôt — dont `<nom-du-projet> — résumé.md`, la note de suivi que l'agent crée
+et tient à jour sur place (§7.3). Elle ne va **pas** dans `mémoire/projets/` :
+le dépôt OBSIA est public, le projet de l'utilisateur ne l'est pas (§7.3.1). Le dossier du dépôt est **exclu de l'index d'Obsidian** (Options →
 Fichiers et liens → Fichiers exclus) : sans quoi le Markdown du dépôt et de
 ses dépendances entre dans la recherche, et l'unicité des noms de notes (§6)
 casse dès le deuxième projet.

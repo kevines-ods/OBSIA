@@ -162,7 +162,7 @@ une évidence.
 ## 8. Vérifier après branchement
 
 Comme pour tout harness (`commun.md`) : lister la racine du coffre, lire une
-note de `Mon coffre/SAVOIRS/`, retrouver le registre des tags. Si `SAVOIRS/`
+note de `Mon coffre/-SAVOIRS/`, retrouver le registre des tags. Si `-SAVOIRS/`
 n'apparaît pas, le harness n'a pas été lancé à la bonne racine.
 
 Deux vérifications de plus, propres à cette fiche :

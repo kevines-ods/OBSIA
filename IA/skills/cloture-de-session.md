@@ -27,6 +27,23 @@ Ne pas se fier à sa mémoire de la conversation : lire le diff.
 
 ### 2. Écrire ou compléter la note de projet
 
+**D'abord, où.** Deux destinations, et les confondre expose du privé dans un
+dépôt public (§7.3.1) :
+
+| La séance portait sur… | La note va dans… |
+| --- | --- |
+| le coffre lui-même — un skill, un agent, une règle | `mémoire/projets/<nom-projet>/AAAA-MM-JJ-titre.md` |
+| un projet de l'utilisateur | `Mon coffre/-PROJETS/<nom-du-projet> — résumé.md` |
+
+Le test : *est-ce que ça décrit le coffre ?* Si non, `-PROJETS/`. Dans le
+doute, `-PROJETS/` — un contenu privé poussé dans le dépôt reste dans
+l'historique Git même effacé.
+
+La note de suivi d'un projet est **vivante** : une seule note par projet, mise
+à jour sur place, pas une pile de notes datées. Elle dit où en est le projet,
+ce qui a été décidé et ce qui reste. Le gabarit daté ci-dessous vaut pour
+`mémoire/projets/`, qui raconte une chronologie.
+
 `mémoire/projets/<nom-projet>/AAAA-MM-JJ-titre.md`, structurée pour que le
 générateur de sommaires en tire quelque chose d'utile :
 

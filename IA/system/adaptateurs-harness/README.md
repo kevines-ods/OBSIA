@@ -29,6 +29,15 @@ La **configuration réelle** (chemins, clés) vit **hors du dépôt**. Ces
 gabarits ne contiennent que des chemins fictifs, à remplacer localement — un
 gabarit rempli ne se re-versionne pas.
 
+## Passer du gabarit au branchement réel
+
+Ces fiches disent *où* la configuration vit pour chaque harness. Les traduire
+en serveurs qui répondent vraiment est la procédure du skill
+`configuration-mcp` (`../../skills/configuration-mcp.md`) : il ne configure que
+les MCP qu'un agent déclare, garde les secrets en variables d'environnement, et
+vérifie chaque serveur par un appel réel plutôt que par l'absence d'erreur au
+démarrage.
+
 ## Fiches
 
 - `claude-code.md` — Claude Code
