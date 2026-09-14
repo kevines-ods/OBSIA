@@ -3,14 +3,14 @@
 > Généré par `scripts/regenerate_sommaire.py` depuis le contenu des notes.
 > Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §2).
 
-3 sous-dossiers, 33 notes, du 2026-08-15 au 2026-09-14.
+3 sous-dossiers, 34 notes, du 2026-08-15 au 2026-09-14.
 
 ## Sous-dossiers
 
 | Dossier | Notes | Entrée représentative |
 |---|---|---|
 | [assistant](assistant/) | 9 | Un vérificateur vert ne prouve que ce qu'il regarde |
-| [projets](projets/) | 19 | 2026-09-14 — La mémoire se partage par ce qu'elle décrit, pas par agent |
+| [projets](projets/) | 20 | 2026-09-14 — La mémoire se partage par ce qu'elle décrit, pas par agent |
 | [préférences](préférences/) | 3 | Licences et logiciel libre |
 
 ## Notes

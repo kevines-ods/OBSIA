@@ -1,6 +1,6 @@
 # impact-des-skills.md — Ce qu'une leçon a réellement changé
 
-Une leçon écrite dans `mémoire/<agent>/expériences/` ne change rien par
+Une leçon écrite dans `mémoire/<nom-agent>/expériences/` ne change rien par
 elle-même. Tant qu'elle n'est pas **compilée** dans le skill que l'agent lit
 pour agir, elle reste une note que personne ne rouvre au bon moment.
 
@@ -13,7 +13,7 @@ une modification de skill dont plus personne ne sait pourquoi elle est là.
 
 | Couche | Où | Ce qu'elle porte | Peut-on l'annuler ? |
 | --- | --- | --- | --- |
-| la leçon | `mémoire/<agent>/expériences/` | le récit : le symptôme, la cause, comment on l'a su | **non**, jamais |
+| la leçon | `mémoire/<nom-agent>/expériences/` | le récit : le symptôme, la cause, comment on l'a su | **non**, jamais |
 | le skill | `IA/skills/` | la règle compilée : quoi faire, sans le récit | **oui**, par `git revert` |
 
 L'asymétrie est le cœur du dispositif. Une leçon reste vraie même quand la

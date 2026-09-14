@@ -28,7 +28,7 @@ Trois choses doivent être vraies, sinon s'arrêter et le dire :
 | Prérequis | Où le vérifier | Si absent |
 | --- | --- | --- |
 | le harness est choisi | l'utilisateur l'a nommé | demander — ce skill n'en recommande aucun (§3) |
-| il a une fiche d'adaptation | `IA/system/adaptateurs-harness/<harness>.md` | l'écrire d'abord, par patch : elle dit *où* vit la configuration |
+| il a une fiche d'adaptation **complète** | `IA/system/adaptateurs-harness/<harness>.md` | s'arrêter et le dire — cf. « Quand la fiche ne suffit pas » |
 | l'agent tourne sur la machine du harness | l'environnement d'exécution | écrire est possible, **vérifier ne l'est pas** — voir l'étape 6 |
 
 ## Procédure
@@ -60,6 +60,28 @@ Ce dernier point est le cœur du sujet : un serveur de fichiers braqué sur la
 racine du coffre peut écrire partout, alors que le §7.3 n'ouvre que quelques
 zones. Aucune configuration ne porte cette limite. Elle vit dans la fiche, et
 c'est l'agent qui la respecte.
+
+### 2 bis. Quand la fiche ne suffit pas
+
+Une fiche d'adaptation porte **six sections** (`IA/system/adaptateurs-harness/commun.md`) :
+où vit la configuration · le bloc MCP · secrets et variables · restreindre un
+serveur à un agent · charger le cerveau · vérifier.
+
+Les quatre premières décident de ce qui s'écrit. **Si l'une manque, ne rien
+écrire.** Une configuration posée au mauvais endroit ou sous la mauvaise clé ne
+produit aucune erreur : elle ne fait rien, et laisse croire que le branchement
+a eu lieu.
+
+| Ce qui manque | Ce qu'on fait |
+| --- | --- |
+| le chemin du fichier | demander à l'utilisateur, ou la sortie d'aide du binaire |
+| la clé racine du bloc | la demander aussi — `mcpServers` n'est pas une norme, deux harness du dossier attendent autre chose |
+| la syntaxe des secrets | ne brancher que les serveurs **sans jeton**, et dire pourquoi |
+| la restriction par agent | brancher quand même, en signalant que le §10.2 reste une consigne et non une règle du moteur |
+
+Ce qui remonte alors de l'utilisateur **complète la fiche, par patch** (§2) :
+c'est ainsi qu'elle passe au statut vérifié, et que le prochain branchement
+n'a plus à demander.
 
 ### 3. Partir du gabarit versionné
 
@@ -144,6 +166,7 @@ serveur de la configuration pour obtenir un vert complet.
 | « je recopie le bloc de mémoire, c'est plus rapide » | il divergera de la fiche à la première correction, et rien ne le dira |
 | « j'écrase la config, elle était sûrement vide » | elle contenait peut-être ce que l'utilisateur avait branché à la main ; sans Git, rien ne le rend |
 | « searxng ne répond pas, je l'enlève de la liste » | l'agent qui le déclare perdra sa recherche sans comprendre pourquoi — dire la panne vaut mieux que la masquer |
+| « la fiche ne dit pas où, je mets le fichier à l'endroit habituel » | il n'y a pas d'endroit habituel : deux harness du dossier sur six n'utilisent ni le même chemin ni la même clé |
 
 ## Le retour dans le coffre
 

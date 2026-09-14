@@ -444,7 +444,7 @@ Deux endroits portent des notes de projet, et les confondre expose du privé :
 
 | Le projet porte sur… | La note va dans… | Visibilité |
 | --- | --- | --- |
-| le coffre lui-même — un skill, un agent, une règle | `mémoire/projets/<nom>/AAAA-MM-JJ-titre.md` | **publique** — le dépôt est public (§4) |
+| le coffre lui-même — un skill, un agent, une règle | `mémoire/projets/<nom-projet>/AAAA-MM-JJ-titre.md` | **publique** — le dépôt est public (§4) |
 | n'importe quoi d'autre — un projet de l'utilisateur | `-PROJETS/<nom-du-projet> — résumé.md` | privée — le coffre parent n'est pas versionné |
 
 `mémoire/` vit dans le dépôt, et le dépôt est public : **rien de privé n'y
@@ -534,7 +534,9 @@ ne l'est pas.
 
 Comme tout MCP, celui-là n'est utilisable que **déclaré par un agent** (§5) :
 un serveur de fichiers braqué sur la racine du coffre peut écrire partout,
-alors que le §7.3 n'ouvre que quatre zones. C'est la fiche, pas le serveur,
+alors que le §7.3 n'en ouvre qu'une poignée, listées là-bas et là-bas
+seulement — un nombre recopié ici vieillirait à la première zone ajoutée,
+comme un index tenu à la main (§11). C'est la fiche, pas le serveur,
 qui porte cette limite — d'où l'obligation de la lire avant d'appeler un de
 ses outils (§10.2).
 

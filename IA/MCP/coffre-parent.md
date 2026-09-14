@@ -22,7 +22,8 @@ Gabarit de config prêt à copier : `IA/MCP/mcp.example.json`, entrée
 ## Pourquoi cette fiche existe
 
 Le serveur voit **toute** la racine du coffre et peut y écrire partout. Le
-contrat, lui, n'ouvre que quatre zones en écriture (§7.3). Aucune de ces
+contrat, lui, n'en ouvre qu'une poignée en écriture — la liste fait foi au
+§7.3, et n'est pas recopiée ici. Aucune de ces
 limites n'est portée par le serveur : elles vivent ici, et c'est pourquoi le
 §10.2 impose de lire cette fiche avant d'appeler un de ses outils.
 

@@ -143,7 +143,7 @@ nécessaires sont toujours présents avant de redémarrer.
 3. Consigner : symptôme, cause, action, résultat. C'est ce qui rend la panne
    suivante plus rapide à résoudre. Deux destinations, selon la portée :
    le **log de session** (`VAULT-CONTRACT.md` §9) pour la trace de l'action ;
-   `mémoire/<agent>/expériences/` si la leçon resservira ailleurs (§6).
+   `mémoire/<nom-agent>/expériences/` si la leçon resservira ailleurs (§6).
    Ni l'un ni l'autre ne reçoit d'adresse IP, de nom d'hôte interne ou
    d'identifiant — le dépôt est public.
 

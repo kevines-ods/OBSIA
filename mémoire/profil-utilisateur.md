@@ -47,12 +47,12 @@ l'utilisateur seul) :
 - `OBSIA/` — le dépôt, seul versionné : agents, skills, tâches, mémoire ;
 - `_maintenance/` — journaux, astuces de débogage, previews consignés,
   registre des notes traitées (`notes_remplies`) ;
-- `PROJETS/` — projets en cours ou à venir ;
-- `DOCUMENTS/` — revues, articles web, transcriptions YouTube ;
-- `PERSONNELS/` — contexte personnel, configuration matérielle/logicielle,
+- `-PROJETS/` — projets en cours ou à venir ;
+- `-DOCUMENTS/` — revues, articles web, transcriptions YouTube ;
+- `-PERSONNELS/` — contexte personnel, configuration matérielle/logicielle,
   préférences, CV ;
-- `SAVOIRS/` — connaissances accumulées, un fichier = un concept ;
-- `EN-VRAC/` — zone de dépôt : notes brutes que l'agent remplit, tagge,
+- `-SAVOIRS/` — connaissances accumulées, un fichier = un concept ;
+- `-EN-VRAC/` — zone de dépôt : notes brutes que l'agent remplit, tagge,
   rétrolie, puis classe dans l'un des autres dossiers.
 
 Les règles complètes (lecture, zones d'écriture, preview consigné dans

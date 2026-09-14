@@ -1,8 +1,7 @@
 # OpenCode
 
-**Statut : gabarit v2 — enrichi le 2026-09-13 depuis la documentation en ligne
-du projet. Toujours pas éprouvé sur machine réelle : ce qui suit est vérifié
-sur documentation, pas à l'usage.**
+**Statut : vérifié sur documentation le 2026-09-13 (documentation en ligne du
+projet) — jamais éprouvé sur machine réelle.**
 
 Agent en ligne de commande configuré par un fichier `opencode.json`, doublé
 d'un **mode serveur** : les sessions vivent côté serveur et se reprennent
@@ -13,6 +12,12 @@ Cette fiche reste un **gabarit d'intégration**, pas une recommandation : le
 coffre ne choisit aucun harness (`../VAULT-CONTRACT.md` §3). La comparaison qui
 a mené à s'y intéresser, et ce qu'elle a écarté, vivent dans
 `mémoire/projets/choix-du-harness/2026-09-13-opencode-retenu-et-les-ecartes.md`.
+
+> Les six sections attendues par `commun.md` se lisent ici ainsi : **1. où vit
+> la configuration** → §2 ; **2. le bloc MCP** → §4 ; **3. secrets** → §4 ;
+> **4. restreindre à un agent** → §3 et §4 ; **5. charger le cerveau** → §1
+> et §2 ; **6. vérifier** → §8. Cette fiche est antérieure à la forme commune
+> et garde son plan, plus riche.
 
 ---
 
@@ -159,7 +164,7 @@ aujourd'hui — et le piège du double déclenchement ne peut pas se produire.
 À recontrôler si le projet en ajoute un : ce serait alors un arbitrage, pas
 une évidence.
 
-## 8. Vérifier après branchement
+## 8. Vérifier
 
 Comme pour tout harness (`commun.md`) : lister la racine du coffre, lire une
 note de `Mon coffre/-SAVOIRS/`, retrouver le registre des tags. Si `-SAVOIRS/`
