@@ -51,18 +51,22 @@ c'est elle que le skill `configuration-mcp` lit pour savoir où écrire.
 | `openclaw.md` | OpenClaw | `mcp.servers` | **à confirmer** | vérifié 2026-09-14 |
 | `aionui-obsiaui.md` | AionUi / ObsiaUi | `mcpServers`, saisi dans l'interface | **non** — jeton en clair | vérifié 2026-09-14 |
 | `deepseek-harness.md` | DeepSeek Harness (DSH) | inconnue | inconnue | **non vérifié** |
+| `pi.md` | Pi | **aucune** — pas de MCP intégré | sans objet — variables d'environnement | vérifié 2026-09-16 |
 
 Trois choses que ce tableau rend visibles d'un coup d'œil, et qui décident du
 branchement :
 
-- **`mcpServers` n'est pas une norme.** Deux harness sur six attendent autre
-  chose. Recopier le bloc de `commun.md` sans lire la fiche échoue en silence.
+- **`mcpServers` n'est pas une norme.** Deux harness sur sept attendent une
+  autre clé, et un n'en a aucune. Recopier le bloc de `commun.md` sans lire la
+  fiche échoue en silence.
 - **Deux fiches ne peuvent pas porter un jeton.** Sur AionUi la documentation
   écrit le secret en clair, ce que le §4 interdit ; sur OpenClaw
   l'interpolation n'est pas documentée. Les serveurs authentifiés s'y déclarent
   autrement, ou pas du tout.
 - **Une fiche est vide, et le dit.** DSH n'a pas de configuration publiée :
-  l'agent s'arrête au lieu d'écrire au hasard.
+  l'agent s'arrête au lieu d'écrire au hasard. Pi produit le même arrêt pour la
+  raison inverse — sa configuration est documentée, mais elle n'a pas de MCP à
+  remplir, et sa fiche le dit à la place de la clé.
 
 Un statut « vérifié » signifie **vérifié sur documentation**, avec sa date et
 sa source dans la fiche. Aucune n'a été éprouvée sur machine réelle ; c'est
