@@ -3,12 +3,13 @@
 > Généré par `scripts/regenerate_sommaire.py` depuis le contenu des notes.
 > Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §2).
 
-9 sous-dossiers, 22 notes, du 2026-08-15 au 2026-09-18.
+10 sous-dossiers, 23 notes, du 2026-08-15 au 2026-09-18.
 
 ## Sous-dossiers
 
 | Dossier | Notes | Entrée représentative |
 |---|---|---|
+| [allegement-du-contrat](allegement-du-contrat/) | 1 | 2026-09-18 — Règle ou procédure : le critère qui décide où une information vit |
 | [architecture-de-la-memoire](architecture-de-la-memoire/) | 1 | 2026-09-14 — La mémoire se partage par ce qu'elle décrit, pas par agent |
 | [architecture-du-coffre-parent](architecture-du-coffre-parent/) | 2 | 2026-09-14 — Les adaptateurs de harness, vérifiés aux sources |
 | [automatisation-bureautique](automatisation-bureautique/) | 1 | 2026-08-26 — Automatisation des tâches bureautiques |
