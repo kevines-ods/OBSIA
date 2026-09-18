@@ -6,7 +6,7 @@ tient en un critère, et il n'est pas celui qu'on croit.
 
 ## Statut
 
-🟢 Appliqué. Quatre blocs déplacés, les quatre contrôles du §11 passent.
+🟢 Appliqué. Cinq blocs déplacés, les quatre contrôles du §11 passent.
 
 ---
 
@@ -24,6 +24,10 @@ tient en un critère, et il n'est pas celui qu'on croit.
   étaient déjà, mot pour mot) ; §7.6 vers
   `IA/system/adaptateurs-harness/README.md` ; les tables « emplacement d'un
   skill » et « champs propres aux MCP » du §5 vers `createur-de-skill`.
+- **Le §11 suit le même sort** : la liste de ce que `verifier_coffre.py`
+  refuse, ce qu'il avertit et la portée exacte du contrôle des chemins passent
+  dans son propre docstring. Le contrat garde la table des fichiers générés,
+  les trois règles de conduite et la chaîne de commandes.
 - **La règle du non-doublon est désormais écrite dans le contrat**, au §5, et
   elle vaut pour le contrat lui-même : une information vit à un seul endroit.
 - **L'index hiérarchique est ajourné**, pas abandonné : à ouvrir vers 60 skills.
@@ -39,11 +43,20 @@ Mesuré sur le dépôt, le 2026-09-18.
 - Le bloc « Emplacement d'un agent ou d'un skill » du §5 était **intégralement**
   couvert par la section « Structure d'un skill » de `createur-de-skill` — y
   compris la phrase sur les 500 lignes et celle sur les références citées.
-- **Le gain de contexte est faible : −1 852 octets, soit −2,9 %** de la charge
-  permanente (63 997 → 62 145 o). J'en avais annoncé environ 10 500 avant de le
-  faire : l'estimation était trop optimiste, parce que remplacer un bloc par un
-  renvoi qui explique *pourquoi* le renvoi existe coûte presque autant que le
-  bloc. Le gain réel est la suppression du doublon, pas le poids.
+- Le docstring d'`evaluer_routage.py` portait **déjà** ce que le §11 en disait
+  — jusqu'à la phrase « un échec veut dire corriger la description ». Le §11
+  documentait un script qui se documentait lui-même.
+- **Le gain de contexte reste modeste : −3 593 octets, soit −5,6 %** de la
+  charge permanente (63 997 → 60 404 o) ; le contrat seul passe de 43 286 à
+  39 634 octets, −8,4 %. J'en avais annoncé environ 10 500 après les quatre
+  premiers blocs : l'estimation était trop optimiste, parce que remplacer un
+  bloc par un renvoi qui explique *pourquoi* le renvoi existe coûte presque
+  autant que le bloc. Le gain réel est la suppression du doublon, pas le poids.
+- **Le contrôle a attrapé une duplication que j'avais moi-même créée** : la
+  phrase « on falsifierait le récit pour faire taire le contrôle » s'est
+  retrouvée à la fois au §11 et dans le docstring. Retirée du docstring, qui
+  renvoie au contrat. Un `grep` de phrases-témoins suffit à le voir ; rien dans
+  l'outillage ne le verrait tout seul.
 - **Ce n'est pas le contrat qui monte en charge, c'est l'index des skills** :
   435 octets par skill, toujours en contexte. À 35 skills il pèse 15 Ko ; à 100,
   il dépasserait le contrat entier (43 Ko).

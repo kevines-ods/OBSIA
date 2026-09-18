@@ -617,66 +617,38 @@ que rien ne le signale.
 Corollaire : si un index et un frontmatter se contredisent, **le frontmatter a
 raison**. On corrige la source, puis on régénère — jamais l'inverse.
 
-`scripts/verifier_coffre.py` refuse un coffre incohérent : frontmatter
-invalide, `name` différent du nom de fichier, liste écrite en chaîne,
-description repliée sur plusieurs lignes physiques, agent déclarant un skill ou
-un MCP inexistant, tâche sans instruction ou au `quand` non quoté, chemin cité
-ou lien Markdown qui ne mène nulle part, nom de note en double, fichier généré
-périmé. Il n'écrit rien et sort en code 1.
+**Deux contrôles, qui ne voient pas la même chose :**
 
-Il **avertit** en plus, sans refuser, quand un skill dit de charger un skill
-que l'agent qui le déclare ne possède pas : la consigne est alors
-inapplicable pour cet agent, et la procédure s'arrête là sans que rien ne le
-dise. Un avertissement et non une erreur, pour deux raisons — la détection
-repose sur le verbe employé, donc sur une heuristique ; et l'absence peut être
-**voulue**, une frontière de périmètre plutôt qu'un oubli. C'est alors au
-skill qui renvoie de l'énoncer, et à l'exemption du vérificateur de porter la
-raison.
+- `scripts/verifier_coffre.py` contrôle la **forme** — frontmatter, noms,
+  chemins cités, index à jour — et refuse un coffre incohérent en sortant
+  en 1, sans rien écrire.
+- `scripts/evaluer_routage.py` contrôle le **déclenchement** — la
+  `description` d'un skill est le seul élément toujours présent en contexte,
+  donc la seule chose qui décide qu'il se charge, et rien d'autre ne vérifie
+  qu'elle porte les mots que l'utilisateur emploie.
 
-`scripts/evaluer_routage.py` contrôle autre chose, que le précédent ne voit
-pas : le **déclenchement**. La `description` d'un skill est le seul élément
-toujours présent en contexte, donc la seule chose qui décide qu'un skill se
-charge — et rien ne vérifiait qu'elle porte les mots que l'utilisateur
-emploie. Le script lit le registre `IA/system/routage-attendu.md`, classe les
-skills par proximité lexicale pour chaque demande, et sort en 1 si le skill
-attendu n'atteint pas le rang exigé ou si deux descriptions se ressemblent
-trop.
+Ce que chacun contrôle exactement, ce qu'il écarte et pourquoi, vit dans **son
+propre docstring** — `python3 scripts/verifier_coffre.py --help` ou la tête du
+fichier. Le recopier ici en ferait une seconde version à tenir à jour, ce que
+le §5 interdit.
 
-Deux choses à savoir, pour ne pas lui prêter plus qu'il ne fait :
+Trois règles, en revanche, appartiennent à ce contrat et pas au code :
 
-- la mesure est **lexicale**, pas sémantique. Elle attrape les deux pannes
-  réelles — un mot que l'utilisateur dit et qui manque à la description, une
-  description trop large qui passe devant la bonne — et rien d'autre ;
-- **un échec veut dire « corriger la description »**, pas « corriger le
-  registre ». Une attente ne se relâche que lorsqu'elle demande l'impossible
-  à une mesure lexicale, et cela s'écrit dans le registre avec sa raison.
+- **Un échec de routage veut dire « corriger la description »**, pas
+  « corriger le registre ». Une attente ne se relâche que lorsqu'elle demande
+  l'impossible à une mesure lexicale, et cela s'écrit dans
+  `IA/system/routage-attendu.md` avec sa raison.
+- **Les exemptions vivent dans le script, jamais dans le frontmatter d'un
+  skill** : un skill qui se déclare lui-même dispensé d'un contrôle annule le
+  contrôle.
+- **Un contrôle qu'on croit plus large qu'il n'est vaut moins que pas de
+  contrôle du tout.** Le contrôle des chemins couvre `IA/` et les documents de
+  la racine — là où un chemin faux *agit* ; `mémoire/` et
+  `IA/system/session-log/` en sont exemptés, parce qu'un récit cite
+  légitimement un état révolu, et le corriger après coup falsifierait le récit
+  pour faire taire le contrôle.
 
-Ses exemptions — les paires de skills qui se ressemblent légitimement — vivent
-**dans le script**, jamais dans le frontmatter d'un skill : un skill qui se
-déclare lui-même dispensé d'un contrôle annule le contrôle.
-
-Le contrôle des chemins s'arrête à `IA/` et aux documents de la racine : là, un
-chemin faux **agit** — une instruction de tâche part au déclenchement, un skill
-dit d'ouvrir un fichier. `mémoire/` en est exempté : c'est un récit, où une
-note ancienne cite légitimement un état révolu. `IA/system/session-log/` l'est
-aussi, pour la même raison et bien qu'il vive sous `IA/` : un log dit ce qui a
-été fait ce jour-là, aux chemins de ce jour-là. Le corriger après un
-déplacement lui ferait annoncer la création d'un fichier à un endroit qui
-n'existait pas encore — on falsifierait le récit pour faire taire le contrôle.
-
-Trois précisions sur ce contrôle, parce qu'un contrôle qu'on croit plus large
-qu'il n'est vaut moins que pas de contrôle du tout :
-
-- il couvre les chemins **depuis la racine du dépôt** (`IA/…`, `scripts/…`) et
-  les chemins **relatifs**, résolus depuis le fichier qui les cite — c'est
-  cette seconde forme qui casse quand un skill change de forme (§6) ;
-- il couvre les **scripts appelés dans un bloc de code** (`python3 …`) : c'est
-  là que vivent les commandes qu'une tâche exécutera vraiment. Le reste d'un
-  bloc de code n'est pas contrôlé — on y écrit des arborescences d'exemple ;
-- il **écarte les chemins du coffre parent** (§7) : ils désignent des dossiers
-  hors du dépôt, que le vérificateur ne peut pas voir.
-
-Il tourne en intégration continue à chaque poussée
+Le vérificateur tourne en intégration continue à chaque poussée
 (`.github/workflows/verifier-coffre.yml`), et localement en crochet de
 pré-commit — à activer une fois par clone :
 
@@ -702,6 +674,11 @@ Pour savoir quel skill répondrait à une demande, sans rien vérifier :
 ```bash
 python3 scripts/evaluer_routage.py --explique "ça plante quand je clique"
 ```
+
+Un cinquième script, `scripts/evaluer_modele.py`, éprouve un **modèle**
+candidat contre les règles de ce contrat. Il ne fait pas partie de la chaîne
+ci-dessus : il lui faut un serveur qui réponde, donc il ne tourne ni en crochet
+ni en CI.
 
 Ces scripts n'utilisent que la bibliothèque standard de Python, à dessein : le
 coffre ne doit dépendre d'aucune installation pour être vérifiable.
