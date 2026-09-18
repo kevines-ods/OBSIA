@@ -3,14 +3,14 @@
 > Généré par `scripts/regenerate_sommaire.py` depuis le contenu des notes.
 > Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §2).
 
-3 sous-dossiers, 35 notes, du 2026-08-15 au 2026-09-16.
+3 sous-dossiers, 36 notes, du 2026-08-15 au 2026-09-18.
 
 ## Sous-dossiers
 
 | Dossier | Notes | Entrée représentative |
 |---|---|---|
 | [assistant](assistant/) | 9 | Un vérificateur vert ne prouve que ce qu'il regarde |
-| [projets](projets/) | 21 | 2026-09-16 — Pi en second harness, et ce que coûte d'en avoir deux |
+| [projets](projets/) | 22 | 2026-09-18 — Modèle local : c'est le contexte qui décide, pas la quantification |
 | [préférences](préférences/) | 3 | Licences et logiciel libre |
 
 ## Notes
