@@ -10,8 +10,8 @@ plusieurs machines.
 
 Cette fiche reste un **gabarit d'intégration**, pas une recommandation : le
 coffre ne choisit aucun harness (`../VAULT-CONTRACT.md` §3). La comparaison qui
-a mené à s'y intéresser, et ce qu'elle a écarté, vivent dans
-`mémoire/projets/choix-du-harness/2026-09-13-opencode-retenu-et-les-ecartes.md`.
+a mené à s'y intéresser, et ce qu'elle a écarté, vivent dans la note de projet
+`choix-du-harness`, datée du 2026-09-13, dans la mémoire du dépôt privé.
 
 > Les six sections attendues par `commun.md` se lisent ici ainsi : **1. où vit
 > la configuration** → §2 ; **2. le bloc MCP** → §4 ; **3. secrets** → §4 ;

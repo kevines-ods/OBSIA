@@ -672,8 +672,8 @@ description repliée sur plusieurs lignes physiques, agent déclarant un skill o
 un MCP inexistant, tâche sans instruction ou au `quand` non quoté, chemin cité
 ou lien Markdown qui ne mène nulle part, nom de note en double, fichier généré
 périmé, déclaration sans `module` ou visant un module inexistant, sonde au
-préfixe inconnu, cycle de dépendances entre modules (§13). Il n'écrit rien et
-sort en code 1.
+préfixe inconnu, cycle de dépendances entre modules, chemin cité vers une zone
+que la publication vide (§13). Il n'écrit rien et sort en code 1.
 
 Il **avertit** en plus, sans refuser, quand un skill dit de charger un skill
 que l'agent qui le déclare ne possède pas : la consigne est alors
@@ -924,6 +924,18 @@ La contrepartie de ce sens unique s'assume : **une correction proposée sur le
 public se reporte à la main dans le privé.** L'inverse — publier depuis le
 public et y rapatrier le privé — aurait exposé la mémoire au premier oubli, et
 un contenu privé entré dans un historique public ne se rattrape pas (§7.3.1).
+
+**Un fichier publié ne cite pas un chemin qui ne sera pas publié.** Les zones
+vidées — `mémoire/`, `brouillon/`, `.archive/`, `IA/system/session-log/` — ne
+se désignent pas par leur chemin depuis `IA/` ni depuis la racine : le lien
+mènerait nulle part dans la distribution, et l'export échouerait loin de
+l'endroit où la faute a été écrite. Ce n'est pas une interdiction d'y
+**renvoyer** : nommer la note suffit, et c'est déjà ce que le §7.5 demande pour
+les rétroliens — un lien par nom survit aux déplacements, un lien par chemin
+casse. Deux exceptions, parce qu'elles survivent : les `README.md` de ces
+zones, et `mémoire/profil-utilisateur.md`, que l'installeur et le publieur
+réécrivent tous deux en gabarit vide. `scripts/verifier_coffre.py` contrôle la
+règle dans le dépôt privé, où la faute s'écrit.
 
 Le contrôle de fuite vise des **valeurs**, jamais les mots qui les nomment :
 le contrat parle de jetons et de mots de passe à longueur de page, et il doit

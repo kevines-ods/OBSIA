@@ -540,6 +540,56 @@ def verifier_chemins_cites():
                 signaler(rel, "lien Markdown cassé : `%s`" % cible)
 
 
+#: Ce que `publier.py` vide au passage vers le public (§13.5). Un fichier
+#: publié qui cite un chemin d'ici mènerait nulle part dans la distribution.
+ZONES_PRIVEES = ("mémoire", "brouillon", ".archive", "IA/system/session-log")
+
+#: Ce qui survit quand même : les README, qui disent à quoi la zone sert, et le
+#: gabarit de profil que l'installeur et le publieur réécrivent tous deux.
+SURVIT_A_LA_PUBLICATION = ("mémoire/profil-utilisateur.md",)
+
+
+def dans_zone_privee(chemin: str) -> bool:
+    return any(chemin == zone or chemin.startswith(zone + "/")
+               for zone in ZONES_PRIVEES)
+
+
+def verifier_citations_de_memoire():
+    """§13.5 : un fichier publié ne cite pas un chemin qui ne sera pas publié.
+
+    `publier.py` vide `mémoire/`, `brouillon/`, `.archive/` et
+    `IA/system/session-log/`. Un chemin qui les vise depuis `IA/` ou depuis la
+    racine mène donc nulle part dans la distribution — et l'export échoue, loin
+    de l'endroit où la faute a été écrite. Autant la voir ici.
+
+    Ce n'est pas une interdiction de *renvoyer* à une note privée : la nommer
+    suffit, et c'est déjà la règle du §7.5 pour les rétroliens — un lien par
+    nom survit aux déplacements, un lien par chemin casse.
+    """
+    for chemin in sorted(RACINE.rglob("*.md")):
+        rel = chemin.relative_to(RACINE)
+        if any(part.startswith(".") for part in rel.parts):
+            continue
+        if len(rel.parts) > 1 and rel.parts[0] != "IA":
+            continue                      # même portée que le contrôle des chemins
+        if rel.parts[:3] == ("IA", "system", "session-log"):
+            continue                      # un log dit les chemins de son jour (§11)
+        try:
+            texte = chemin.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        for cite in sorted({m.group(1) for m in CHEMIN_CITE.finditer(texte)}):
+            if GABARIT.search(cite):      # chemin d'exemple, pas une cible
+                continue
+            if not dans_zone_privee(cite):
+                continue
+            if cite.endswith("/README.md") or cite in SURVIT_A_LA_PUBLICATION:
+                continue
+            erreur(rel, "cite le chemin `%s`, qui ne sera pas publié : cette "
+                        "zone est vidée à la publication. Nommer la note "
+                        "suffit (§13.5)." % cite)
+
+
 def verifier_unicite_des_noms():
     """§6 : les noms de notes doivent être uniques dans tout le coffre parent.
 
@@ -760,6 +810,7 @@ def main() -> int:
     verifier_portee_des_renvois(agents, skills)
     verifier_agents_nommes(agents)
     verifier_chemins_cites()
+    verifier_citations_de_memoire()
     verifier_unicite_des_noms()
     verifier_derives()
 

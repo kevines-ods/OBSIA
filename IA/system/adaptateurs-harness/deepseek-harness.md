@@ -22,7 +22,7 @@ Elles ne sont pas remplies par déduction, et c'est délibéré. Un format inven
 s'écrit exactement comme un format vérifié, et rien ne les distingue une fois
 dans le fichier — c'est la panne que le coffre a déjà subie sur les noms du
 coffre parent
-(`mémoire/assistant/expériences/nommage-verifie-a-la-source.md`).
+(leçon `nommage-verifie-a-la-source`, dans la mémoire du dépôt privé).
 
 ## Conséquence pour `configuration-mcp`
 

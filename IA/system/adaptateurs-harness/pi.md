@@ -16,8 +16,8 @@ agents, et surtout où le remplacement s'arrête.
 
 Cette fiche reste un **gabarit d'intégration**, pas une recommandation : le
 coffre ne choisit aucun harness (`../VAULT-CONTRACT.md` §3). Ce qui a mené à
-s'y intéresser vit dans
-`mémoire/projets/choix-du-harness/2026-09-16-pi-en-second-harness.md`.
+s'y intéresser vit dans la note de projet `choix-du-harness`, datée du
+2026-09-16, dans la mémoire du dépôt privé.
 
 ---
 
