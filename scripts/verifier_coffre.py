@@ -9,6 +9,60 @@ skills qu'il ne déclarait pas. Ce script confronte les fichiers entre eux.
 
 Sort 0 si tout est cohérent, 1 sinon. Prévu pour la CI comme pour la main.
 
+CE QU'IL REFUSE
+---------------
+Chacun de ces cas sort en 1 :
+
+  · un frontmatter invalide, ou un `name` différent du nom de fichier ;
+  · une liste écrite en chaîne (`skills: a, b` au lieu de tirets YAML) ;
+  · une `description` repliée sur plusieurs lignes physiques ;
+  · un agent déclarant un skill ou un MCP qui n'existe pas ;
+  · une tâche sans section d'instruction, ou au `quand` non quoté ;
+  · un chemin cité ou un lien Markdown qui ne mène nulle part ;
+  · un nom de note en double dans le dépôt ;
+  · un fichier généré périmé (§11 du contrat).
+
+CE QU'IL SIGNALE SANS REFUSER
+-----------------------------
+Un skill qui dit de charger un skill que l'agent le déclarant ne possède pas :
+la consigne est alors inapplicable pour cet agent, et la procédure s'arrête là
+sans que rien ne le dise.
+
+C'est un **avertissement et non une erreur**, pour deux raisons. La détection
+repose sur le verbe employé, donc sur une heuristique, qui se trompe. Et
+l'absence peut être **voulue** — une frontière de périmètre plutôt qu'un
+oubli ; c'est alors au skill qui renvoie de l'énoncer, et à l'exemption
+inscrite ici de porter la raison.
+
+PORTÉE DU CONTRÔLE DES CHEMINS
+------------------------------
+Un contrôle qu'on croit plus large qu'il n'est vaut moins que pas de contrôle
+du tout. Celui-ci :
+
+  · couvre les chemins **depuis la racine du dépôt** (`IA/…`, `scripts/…`) et
+    les chemins **relatifs**, résolus depuis le fichier qui les cite — c'est
+    cette seconde forme qui casse quand un skill passe de la forme plate à la
+    forme dossier (§6) ;
+  · couvre les **scripts appelés dans un bloc de code** (`python3 …`) : c'est
+    là que vivent les commandes qu'une tâche exécutera vraiment. Le reste d'un
+    bloc de code n'est pas contrôlé — on y écrit des arborescences d'exemple ;
+  · **écarte les chemins du coffre parent** (§7 du contrat) : ils désignent des
+    dossiers hors du dépôt, que ce script ne peut pas voir.
+
+Il s'arrête à `IA/` et aux documents de la racine, parce que c'est là qu'un
+chemin faux **agit** : une instruction de tâche part au déclenchement, un skill
+dit d'ouvrir un fichier.
+
+Deux dossiers en sont exemptés, et pour la même raison :
+
+  · `mémoire/` est un récit, où une note ancienne cite légitimement un état
+    révolu ;
+  · `IA/system/session-log/` l'est aussi, bien qu'il vive sous `IA/` : un log
+    dit ce qui a été fait ce jour-là, aux chemins de ce jour-là.
+
+Le §11 du contrat porte la raison de ces deux exemptions ; elle n'est pas
+reprise ici.
+
 Usage :
     python3 scripts/verifier_coffre.py
     python3 scripts/verifier_coffre.py --silencieux   # n'affiche que les erreurs

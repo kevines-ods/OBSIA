@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: createur-de-skill
-description: Concevoir un nouveau skill OBSIA ou en réviser un — périmètre, dosage, découpage, frontmatter. À charger avant d'écrire ou de modifier un fichier de `IA/skills/`, y compris pour n'en changer que la description. Ne sert pas à exécuter un skill existant.
+description: Concevoir un nouveau skill OBSIA ou en réviser un — périmètre, dosage, découpage, frontmatter — et rédiger une fiche MCP de `IA/MCP/`. À charger avant d'écrire ou de modifier un fichier de `IA/skills/` ou de `IA/MCP/`, y compris pour n'en changer que la description. Ne sert pas à exécuter un skill existant.
 type: core
 read_only: false
 ---
@@ -118,6 +118,43 @@ Rappels qui découlent du contrat :
 - Le nom du fichier est identique au champ `name`.
 - Les noms doivent être uniques dans tout le coffre parent, pas seulement dans
   `OBSIA/` — les rétroliens Obsidian ignorent la frontière git.
+
+## Frontmatter d'une fiche MCP
+
+Une fiche de `IA/MCP/` décrit un **outil**, pas un interlocuteur : ni
+`read_only` (elle n'écrit rien par elle-même, c'est l'agent qui l'appelle), ni
+`skills`.
+
+```yaml
+---
+schema: 1
+kind: mcp
+name: nom-du-serveur     # identique au nom du fichier
+description: Une ligne qui dit quoi et quand.
+type: tool               # seule valeur à ce jour
+transport: stdio         # ou: http — comment le harness joint le serveur
+permission: normal       # ou: elevated
+---
+```
+
+Deux pièges, et ils se paient tous les deux plus tard :
+
+- **`type: tool` n'est pas le `type` d'un skill.** Même clé, vocabulaire
+  distinct : un skill porte `core` ou `outil`, une fiche MCP porte `tool`.
+  Recopier le frontmatter d'un skill produit un fichier que le vérificateur
+  refuse.
+- **`permission` gradue la prudence *avant* l'appel, jamais la trace après.**
+  Mettre `elevated` dès qu'un système externe est touché — réseau, dépôt
+  distant, navigateur. `normal` ne dispense pas de consigner l'usage : c'est la
+  règle du contrat, et elle vaut pour les deux valeurs.
+
+Le corps de la fiche porte ce que le frontmatter ne peut pas dire : les outils
+exposés, leurs permissions réelles, et les **limites propres à ce serveur**.
+C'est là que ça compte — un serveur de fichiers peut techniquement écrire
+partout, et c'est sa fiche, pas le serveur, qui dit où il a le droit d'écrire.
+
+Une fiche que **personne ne déclare** est du code mort : un MCP n'est utilisable
+que déclaré par un agent, et le vérificateur signale ceux qui ne le sont pas.
 
 ## La table des rationalisations
 
