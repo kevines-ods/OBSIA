@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: diagnostic-linux
 description: Constater l'état d'un système Linux — services en échec, journaux, charge, disque, mémoire, réseau. À charger en premier devant tout symptôme machine, avant d'envisager la moindre correction. N'exécute que des commandes de lecture : pour agir, charger `remediation-linux`.
+module: linux-poste
 type: core
 read_only: true
 ---

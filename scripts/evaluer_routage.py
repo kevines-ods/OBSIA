@@ -186,12 +186,23 @@ def lire_attendu(chemin: Path):
 
 # ----------------------------------------------------------------- rapports
 
-def evaluer(cas, sacs, idf):
-    echecs = []
+def evaluer(cas, sacs, idf, partiel=False):
+    """Confronte chaque demande du registre au classement lexical.
+
+    `partiel` dit que le coffre est une installation réduite (§13) : une
+    attente qui vise un skill écarté est alors **sans objet**, pas en échec.
+    Sans profil — dans le dépôt de distribution, et donc en CI — le skill
+    absent reste une erreur : c'est là qu'une faute de frappe dans le registre
+    doit se voir.
+    """
+    echecs, sans_objet = [], []
     for demande, attendu, rang_max, rival in cas:
         classement = classer(demande, sacs, idf)
         noms = [n for n, _ in classement]
         if attendu not in noms:
+            if partiel:
+                sans_objet.append((demande, attendu))
+                continue
             echecs.append((demande, "`%s` n'existe pas dans IA/skills/" % attendu, []))
             continue
         rang = noms.index(attendu) + 1
@@ -204,7 +215,7 @@ def evaluer(cas, sacs, idf):
                            % (attendu, rang, rang_max), tete))
         elif rival and rival in noms and noms.index(rival) < noms.index(attendu):
             echecs.append((demande, "`%s` devance `%s`" % (rival, attendu), tete))
-    return echecs
+    return echecs, sans_objet
 
 
 def collisions(sacs, idf, seuil):
@@ -250,7 +261,13 @@ def main() -> int:
         print("Registre vide — aucune demande à évaluer.", file=sys.stderr)
         return 2
 
-    echecs = evaluer(cas, sacs, idf)
+    import modules as _mod                       # tardif, comme dans generer_prompt
+    partiel = _mod.lire_profil(RACINE) is not None
+
+    echecs, sans_objet = evaluer(cas, sacs, idf, partiel)
+    for demande, attendu in sans_objet:
+        print("  · sans objet : `%s` n'est pas installé ici — « %s »"
+              % (attendu, demande))
     heurts = [(a, b, s) for a, b, s, raison in collisions(sacs, idf, opts.seuil_collision)
               if raison is None]
     admis = [(a, b, s, r) for a, b, s, r in collisions(sacs, idf, opts.seuil_collision)
@@ -260,9 +277,11 @@ def main() -> int:
         print("  · collision admise : %s ↔ %s (%.2f) — %s" % (a, b, s, r))
 
     if not echecs and not heurts:
-        print("Routage sain : %d demande(s) bien classée(s), %d skill(s), "
+        print("Routage sain : %d demande(s) bien classée(s)%s, %d skill(s), "
               "aucune collision au-delà de %.2f."
-              % (len(cas), len(sacs), opts.seuil_collision))
+              % (len(cas) - len(sans_objet),
+                 " (%d sans objet)" % len(sans_objet) if sans_objet else "",
+                 len(sacs), opts.seuil_collision))
         return 0
 
     if echecs:

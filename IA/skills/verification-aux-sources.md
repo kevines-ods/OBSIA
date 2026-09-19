@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: verification-aux-sources
 description: Vérifier dans la documentation officielle toute décision propre à un cadriciel ou une bibliothèque, version lue dans le fichier de dépendances, et citer la source dans la réponse. À charger avant d'écrire du code propre à une bibliothèque, et devant tout motif qu'on s'apprête à reproduire ailleurs. Dit ce qui fait autorité et ce qui n'en fait pas ; `recherche` dit où chercher.
+module: construction
 type: outil
 read_only: false
 ---

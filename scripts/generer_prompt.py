@@ -124,6 +124,41 @@ def collecter(dossier: Path, genre: str) -> list[dict]:
     return resultats
 
 
+def filtrer_par_profil(racine: Path, *collections: list[dict]) -> tuple:
+    """Ne garde que ce qui appartient à un module retenu par `obsia.local.yml`.
+
+    Sans profil, rien n'est filtré : c'est l'état du dépôt de distribution, et
+    celui sous lequel la CI vérifie le coffre (§13). L'import est tardif parce
+    que `modules` importe ce fichier — au chargement, il ne serait pas prêt.
+    """
+    import modules as _mod                       # tardif : cycle d'import assumé
+
+    actifs = _mod.modules_actifs(racine)
+    if actifs is None:
+        return collections
+
+    def garde(fm: dict) -> bool:
+        return fm.get("module", "") in actifs
+
+    return tuple([f for f in collection if garde(f)] for collection in collections)
+
+
+def reduire_aux_actifs(agents: list[dict], skills: list[dict],
+                       mcp_noms: set[str]) -> None:
+    """Retire des agents les skills et MCP qu'un profil a écartés.
+
+    Modifie les dictionnaires en mémoire, jamais les fichiers : en mode « en
+    place » le catalogue reste intact sur le disque, seul ce qu'on en présente
+    se réduit (§13).
+    """
+    presents = {s["name"] for s in skills}
+    for ag in agents:
+        if ag.get("skills"):
+            ag["skills"] = [s for s in ag["skills"] if s in presents]
+        if ag.get("mcp"):
+            ag["mcp"] = [m for m in ag["mcp"] if m in mcp_noms]
+
+
 # --------------------------------------------------------------------- rendu
 
 def construire_prompt(racine: Path, agents: list[dict], skills: list[dict],
@@ -223,6 +258,11 @@ def main() -> int:
     agents = collecter(racine / "IA" / "agents", "agent")
     skills = collecter(racine / "IA" / "skills", "skill")
     taches = collecter(racine / "IA" / "tâches", "tâche")
+    mcp = collecter(racine / "IA" / "MCP", "mcp")
+
+    agents, skills, taches, mcp = filtrer_par_profil(racine, agents, skills,
+                                                     taches, mcp)
+    reduire_aux_actifs(agents, skills, {m["name"] for m in mcp})
 
     if not agents and not skills:
         print("Aucun agent ni skill trouvé. Vérifie --racine.", file=sys.stderr)

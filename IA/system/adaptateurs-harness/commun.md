@@ -32,7 +32,7 @@ Statut : non vérifié — la documentation publique ne donne pas <ce qui manque
 
 Un statut n'est pas décoratif. Il dit à l'agent s'il peut écrire une
 configuration ou s'il doit demander — cf. la leçon
-`mémoire/assistant/expériences/nommage-verifie-a-la-source.md` : un format
+`nommage-verifie-a-la-source`, dans la mémoire du dépôt privé : un format
 déduit d'une description est une hypothèse, et rien ne l'en distingue une fois
 écrit.
 

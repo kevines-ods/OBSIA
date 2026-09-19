@@ -3,6 +3,7 @@ schema: 1
 kind: mcp
 name: chrome-devtools
 description: Navigation, capture et automatisation web via Chrome DevTools.
+module: navigateur
 type: tool
 transport: stdio
 permission: elevated

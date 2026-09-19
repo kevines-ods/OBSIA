@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: bureautique
 description: Créer, lire et modifier des documents Word, Excel, PowerPoint et OpenDocument, et convertir entre formats. À charger dès qu'un fichier .docx, .xlsx, .pptx, .odt, .ods ou .odp est en entrée ou en sortie. Pas pour les PDF — voir `pdf`.
+module: documents
 type: outil
 read_only: false
 ---
@@ -16,7 +17,8 @@ avec des outils libres.
 > propriétaire, sans sources publiées, installé par `curl … | bash` depuis
 > `d.officecli.ai`. Il n'a pas sa place dans un projet libre. Ce fichier couvre
 > les mêmes besoins avec `python-docx`, `openpyxl`, `python-pptx` et
-> LibreOffice, tous libres et déjà présents ou installables sur CachyOS.
+> LibreOffice, tous libres et empaquetés par toutes les distributions
+> courantes.
 >
 > Une conséquence à connaître : `officecli` proposait un mode « surveillance »
 > avec aperçu navigateur et sélection à la souris. Rien d'équivalent ici. Si ce

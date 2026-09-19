@@ -3,6 +3,7 @@ schema: 1
 kind: mcp
 name: searxng
 description: Recherche web via une instance SearXNG auto-hébergée — méta-moteur qui interroge plusieurs moteurs sans tracer l'appelant. À charger pour le dernier étage de la cascade du skill `recherche`, quand le coffre et les sites de confiance n'ont pas la réponse.
+module: recherche-web
 type: tool
 transport: stdio
 permission: elevated

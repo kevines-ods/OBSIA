@@ -37,6 +37,18 @@ jobs:
       - name: Le prompt système se génère
         run: python3 scripts/generer_prompt.py > /dev/null
 
-      # Sans --appliquer, il n'écrit rien : c'est un simple aperçu.
+      # Sans --appliquer, il n'écrit rien : c'est un simple aperçu. Le script
+      # appartient au module `planification` (§13) : une installation qui l'a
+      # écarté n'a rien à lire, et ce n'est pas un échec.
       - name: Le registre des tâches se lit
-        run: python3 IA/skills/cron/scripts/appliquer_taches.py > /dev/null
+        run: |
+          if [ -f IA/skills/cron/scripts/appliquer_taches.py ]; then
+            python3 IA/skills/cron/scripts/appliquer_taches.py > /dev/null
+          else
+            echo "Module planification écarté — rien à lire."
+          fi
+
+      # L'installeur doit rester capable de lire le catalogue et de sonder la
+      # machine. --sonder n'écrit rien et ne touche pas au réseau (§13.2).
+      - name: L'installeur lit le catalogue
+        run: python3 scripts/installer.py --sonder > /dev/null

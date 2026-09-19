@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: amorcage-du-projet
 description: Poser le squelette d'un dépôt neuf avant la première tranche — licence choisie explicitement, .gitignore qui couvre les secrets, .env.example versionné, README disant quoi et comment lancer, commande de vérification écrite dès le premier jour, CI minimale qui la lance. À charger une seule fois par projet, entre le plan validé et la première tranche. Ne génère jamais un squelette de cadriciel qu'on n'a pas lu.
+module: construction
 type: outil
 read_only: false
 ---

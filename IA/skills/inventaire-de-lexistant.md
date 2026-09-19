@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: inventaire-de-lexistant
 description: Inventorier ce qui existe déjà avant de construire — tentatives précédentes, dépôts, outils installés, notes du coffre — et en sortir trois listes : ce qu'on reprend, ce qu'on ne refait pas, ce qui est non négociable. À charger en toute première étape d'un projet de construction, avant même de poser une question sur le besoin. Lit et rapporte : n'écrit ni ne modifie rien.
+module: construction
 type: outil
 read_only: true
 ---

@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: mermaid
 description: Générer des diagrammes Mermaid en SVG — flux, séquences, états, classes, entités. À charger quand une structure, un enchaînement ou une machine à états se lit mieux en image qu'en texte. Inutile pour une simple liste ou un tableau, que le Markdown rend déjà.
+module: diagrammes
 type: outil
 read_only: false
 ---
@@ -15,7 +16,7 @@ arborescence du coffre, un flux de décision d'agent, ou une machine à états.
 > **Adaptation.** La version d'origine (AionUi) appelait un script maison
 > `scripts/render.ts` reposant sur la bibliothèque `beautiful-mermaid`. Ce
 > script n'est pas fourni de manière portable, donc cette version utilise
-> `@mermaid-js/mermaid-cli`, l'outil officiel, disponible sur Arch / CachyOS.
+> `@mermaid-js/mermaid-cli`, l'outil officiel, installable partout par npm.
 
 ## Prérequis
 
@@ -23,8 +24,8 @@ arborescence du coffre, un flux de décision d'agent, ou une machine à états.
 # via npm (recommandé, pas d'installation système)
 npx -y @mermaid-js/mermaid-cli -h
 
-# ou en paquet AUR sur CachyOS
-paru -S mermaid-cli
+# ou en paquet système, là où la distribution en fournit un
+#   (`mermaid-cli` existe sur l'AUR ; ailleurs, npm reste la voie sûre)
 ```
 
 `-h` répond même quand la génération échouera : il prouve l'installation, pas
@@ -48,9 +49,8 @@ npx -y @mermaid-js/mermaid-cli -p pptr.json -i diagramme.mmd -o diagramme.svg
 ```
 
 Ces options désactivent des protections du navigateur : elles se réservent à la
-machine sans bureau qui les exige. Sur un poste avec session graphique — CachyOS
-et KDE en l'occurrence — elles sont inutiles, et les traîner par habitude
-affaiblit le navigateur pour rien.
+machine sans bureau qui les exige. Sur un poste avec session graphique elles
+sont inutiles, et les traîner par habitude affaiblit le navigateur pour rien.
 
 ## Utilisation
 

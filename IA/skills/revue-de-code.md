@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: revue-de-code
 description: Relire un diff sur cinq axes — justesse, lisibilité, architecture, sécurité, performance — et rendre des constats classés par gravité, chacun accompagné du scénario d'échec concret qui le prouve. À charger avant de fusionner un changement, écrit par soi, par un agent ou par quelqu'un d'autre. Constate et rapporte sans rien modifier ; ne double pas ce que l'outillage du projet contrôle déjà.
+module: revue
 type: outil
 read_only: true
 ---

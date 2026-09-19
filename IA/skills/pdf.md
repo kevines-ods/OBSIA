@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: pdf
 description: Extraire texte et tableaux, fusionner, découper, pivoter, chiffrer, remplir des formulaires, appliquer l'OCR sur des PDF. À charger dès qu'un fichier .pdf est en entrée ou en sortie. Pas pour Word, Excel ou PowerPoint — voir `bureautique`.
+module: documents
 type: outil
 read_only: false
 ---
@@ -27,14 +28,22 @@ Traitement de PDF avec des bibliothèques libres.
 | `ocrmypdf` | MPL-2.0 | OCR sur PDF scannés |
 | `qpdf` | Apache-2.0 | déchiffrement, linéarisation |
 
-Installation sur CachyOS :
+Installation par paquets système — le gestionnaire dépend de la
+distribution, que `obsia.local.yml` a relevée à l'installation (§13.3) :
 
 ```bash
-sudo pacman -S poppler python-pypdf qpdf
-paru -S python-pdfplumber ocrmypdf
+sudo pacman -S poppler python-pypdf qpdf ocrmypdf     # Arch et dérivées
+sudo apt install poppler-utils python3-pypdf qpdf ocrmypdf   # Debian et dérivées
+sudo dnf install poppler-utils python3-pypdf qpdf ocrmypdf   # Fedora et dérivées
 ```
 
-Ou en environnement virtuel, pour ne rien installer en système :
+Les noms de paquets varient d'une distribution à l'autre : vérifier avec la
+recherche du gestionnaire (`pacman -Ss`, `apt search`, `dnf search`) plutôt que
+supposer. `pdfplumber` n'est empaqueté nulle part de façon fiable — il passe
+par l'environnement virtuel ci-dessous.
+
+Ou en environnement virtuel, pour ne rien installer en système — c'est la voie
+portable, celle qui marche partout :
 
 ```bash
 python -m venv .venv && source .venv/bin/activate

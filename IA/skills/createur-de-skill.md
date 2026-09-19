@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: createur-de-skill
 description: Concevoir un nouveau skill OBSIA ou en réviser un — périmètre, dosage, découpage, frontmatter — et rédiger une fiche MCP de `IA/MCP/`. À charger avant d'écrire ou de modifier un fichier de `IA/skills/` ou de `IA/MCP/`, y compris pour n'en changer que la description. Ne sert pas à exécuter un skill existant.
+module: noyau
 type: core
 read_only: false
 ---
@@ -131,6 +132,7 @@ schema: 1
 kind: mcp
 name: nom-du-serveur     # identique au nom du fichier
 description: Une ligne qui dit quoi et quand.
+module: nom-du-module    # le module du §13 auquel la fiche appartient
 type: tool               # seule valeur à ce jour
 transport: stdio         # ou: http — comment le harness joint le serveur
 permission: normal       # ou: elevated

@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: plancher-qualite
 description: Écrire le niveau de qualité d'un projet dans un `CONSTRAINTS.md` chiffré, puis le faire tenir par un garde qui lit le diff et refuse les cinq gestes qui passent au vert sans améliorer le code — faire taire un vérificateur, alléger un test, laisser un travail inachevé, desserrer un seuil, négocier la règle. À charger à l'amorçage d'un projet, ou dès qu'un agent contourne un contrôle. Ne détecte pas les secrets.
+module: construction
 type: outil
 read_only: false
 ---

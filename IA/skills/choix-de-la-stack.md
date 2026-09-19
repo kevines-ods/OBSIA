@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: choix-de-la-stack
 description: Choisir langage, cadriciel, base de données et hébergement en confrontant deux ou trois candidats à des critères écrits d'avance — licence libre, coût d'entretien, adéquation à l'infrastructure existante, capacité réelle à la reprendre en main — et consigner la décision dans `docs/STACK.md`. À charger après le cadrage et avant tout code ou design. Ne se rejoue pas à chaque tranche : la décision est prise une fois.
+module: construction
 type: outil
 read_only: false
 ---

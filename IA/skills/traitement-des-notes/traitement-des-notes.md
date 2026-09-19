@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: traitement-des-notes
 description: Traiter les notes brutes du coffre parent — remplir, tagger (vocabulaire contrôlé), rétrolier, prévisualiser dans _maintenance/, classer depuis -EN-VRAC et mettre à jour notes_remplies.md. À charger pour toute note brute ou toute note déposée dans -SAVOIRS à compléter.
+module: coffre-obsidian
 type: outil
 read_only: false
 ---

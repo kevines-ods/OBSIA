@@ -20,13 +20,39 @@ Chacun de ces cas sort en 1 :
   · une tâche sans section d'instruction, ou au `quand` non quoté ;
   · un chemin cité ou un lien Markdown qui ne mène nulle part ;
   · un nom de note en double dans le dépôt ;
-  · un fichier généré périmé (§11 du contrat).
+  · un fichier généré périmé (§11 du contrat) ;
+  · une déclaration sans `module`, ou visant un module inexistant (§13) ;
+  · un module au frontmatter invalide : `essentiel` non booléen, module non
+    essentiel sans `question`, sonde au préfixe inconnu (§13.2) ;
+  · un cycle de dépendances entre modules, qui boucle l'installeur ;
+  · un chemin cité vers une zone que la publication vide (§13.5).
+
+Ce dernier mérite son mot. `mémoire/`, `brouillon/`, `.archive/` et
+`IA/system/session-log/` ne franchissent pas la frontière du public : un
+fichier de `IA/` qui les cite par leur chemin casserait l'export, loin de
+l'endroit où la faute a été écrite. Nommer la note suffit. Survivent seuls
+leurs `README.md` et le gabarit `mémoire/profil-utilisateur.md`.
+
+CE QUE LE PROFIL D'INSTALLATION CHANGE
+--------------------------------------
+Sous `mode: copie` dans `obsia.local.yml` (§13.4), le coffre est amputé : la
+cible d'un chemin cité peut appartenir à un module écarté — le contrat cite
+`IA/skills/cron/cron.md`, que personne n'est obligé d'installer. Trois
+contrôles deviennent alors de simples avertissements : chemin cité, agent
+nommé, module qu'aucune déclaration ne rejoint.
+
+L'intégrité du catalogue se vérifie là où le catalogue est entier — dans le
+dépôt de distribution, sans profil, et c'est sous ce régime que tourne la CI.
+Le mode « en place » n'est pas amputé : rien n'y est retiré du disque, les
+contrôles y restent complets.
 
 CE QU'IL SIGNALE SANS REFUSER
 -----------------------------
 Un skill qui dit de charger un skill que l'agent le déclarant ne possède pas :
 la consigne est alors inapplicable pour cet agent, et la procédure s'arrête là
-sans que rien ne le dise.
+sans que rien ne le dise. Même chose entre modules (§13.1) : si le skill visé
+appartient à un module que celui du skill citant n'entraîne pas, la consigne
+tombe dans le vide chez qui n'a installé que le premier.
 
 C'est un **avertissement et non une erreur**, pour deux raisons. La détection
 repose sur le verbe employé, donc sur une heuristique, qui se trompe. Et
@@ -88,6 +114,38 @@ TYPES_SKILL = ("core", "outil")
 
 erreurs: list[str] = []
 avertissements: list[str] = []
+
+
+def installation_reduite() -> bool:
+    """Ce coffre est-il une installation par copie, donc amputée (§13.4) ?
+
+    Trois contrôles n'ont de sens que sur le catalogue complet : un chemin
+    cité, un agent nommé, un module qu'aucune déclaration ne rejoint. Dans une
+    installation par copie, la cible d'un chemin peut appartenir à un module
+    écarté — le contrat cite `IA/skills/cron/cron.md` que personne n'est obligé
+    d'installer. Les y traiter en erreurs ferait échouer toute installation
+    partielle, c'est-à-dire exactement ce que le §13 rend légitime.
+
+    L'intégrité du catalogue se vérifie là où le catalogue est entier : dans le
+    dépôt de distribution, et c'est ce que fait la CI, qui n'a pas de profil.
+    Le mode « en place » n'est pas réduit — rien n'y est retiré du disque — et
+    garde donc les contrôles complets.
+    """
+    import modules as _mod                       # tardif, comme dans generer_prompt
+    profil = _mod.lire_profil(RACINE)
+    return bool(profil) and profil.get("mode") == "copie"
+
+
+REDUITE = installation_reduite()
+
+
+def signaler(chemin, message):
+    """Erreur sur un coffre complet, simple avertissement sur une copie réduite."""
+    if REDUITE:
+        avertir(chemin, message + " — installation réduite, la cible appartient "
+                                  "peut-être à un module écarté (§13.4)")
+    else:
+        erreur(chemin, message)
 
 
 def erreur(chemin, message):
@@ -166,6 +224,9 @@ def verifier_fichier(chemin: Path, genre: str) -> dict | None:
     elif brute and brute.rstrip().endswith((":", ">", "|")):
         erreur(rel, "`description` semble se poursuivre sur la ligne suivante — "
                     "une seule ligne physique est acceptée")
+
+    if not fm.get("module"):
+        erreur(rel, "champ obligatoire manquant : `module` (§13)")
 
     if genre == "skill" and fm.get("type") not in TYPES_SKILL:
         erreur(rel, "`type: %s` — attendu `core` ou `outil` (§5)" % fm.get("type"))
@@ -311,6 +372,9 @@ def verifier_taches(dossier: Path, agents: list[dict]) -> list[dict]:
             erreur(rel, "corps sans section `%s` — la tâche ne déclenche rien (§5)"
                    % attendu)
 
+        if not fm.get("module"):
+            erreur(rel, "champ obligatoire manquant : `module` (§13)")
+
         fm["_chemin"] = rel
         resultats.append(fm)
     return resultats
@@ -449,8 +513,8 @@ def verifier_agents_nommes(agents):
             # contre-exemples de nommage de dossier : ne désignent personne
             if re.fullmatch(r"agents?\s*\d+", cite) or cite.startswith(("nom-", "<")):
                 continue
-            erreur(rel, "nomme l'agent `%s`, qui n'a pas de fichier dans "
-                        "IA/agents/ (§1 : seul un agent existant peut être nommé)" % cite)
+            signaler(rel, "nomme l'agent `%s`, qui n'a pas de fichier dans "
+                          "IA/agents/ (§1 : seul un agent existant peut être nommé)" % cite)
 
 
 # Un chemin cité entre accents graves, ou une cible de lien Markdown.
@@ -524,7 +588,7 @@ def verifier_chemins_cites():
         for cite in sorted({m.group(1) for m in CHEMIN_CITE.finditer(hors_code)}):
             if GABARIT.search(cite) or (RACINE / cite).exists():
                 continue
-            erreur(rel, "cite le chemin `%s`, qui n'existe pas" % cite)
+            signaler(rel, "cite le chemin `%s`, qui n'existe pas" % cite)
 
         # chemins relatifs : résolus depuis le fichier qui les cite
         for cite in sorted({m.group(1) for m in CHEMIN_RELATIF.finditer(hors_code)}):
@@ -532,7 +596,7 @@ def verifier_chemins_cites():
                 continue
             if (chemin.parent / cite).exists():
                 continue
-            erreur(rel, "cite le chemin relatif `%s`, qui ne mène nulle part "
+            signaler(rel, "cite le chemin relatif `%s`, qui ne mène nulle part "
                         "depuis ce fichier (§6)" % cite)
 
         # scripts appelés dans un bloc de code : eux s'exécutent
@@ -544,7 +608,7 @@ def verifier_chemins_cites():
                 depuis_fichier = (chemin.parent / script).exists()
                 if depuis_racine or depuis_fichier:
                     continue
-                erreur(rel, "appelle le script `%s` dans un bloc de code, "
+                signaler(rel, "appelle le script `%s` dans un bloc de code, "
                             "et ce fichier n'existe pas (§11)" % script)
 
         for m in LIEN_MD.finditer(hors_code):
@@ -553,7 +617,57 @@ def verifier_chemins_cites():
                     or GABARIT.search(cible)):
                 continue
             if not (chemin.parent / cible).exists():
-                erreur(rel, "lien Markdown cassé : `%s`" % cible)
+                signaler(rel, "lien Markdown cassé : `%s`" % cible)
+
+
+#: Ce que `publier.py` vide au passage vers le public (§13.5). Un fichier
+#: publié qui cite un chemin d'ici mènerait nulle part dans la distribution.
+ZONES_PRIVEES = ("mémoire", "brouillon", ".archive", "IA/system/session-log")
+
+#: Ce qui survit quand même : les README, qui disent à quoi la zone sert, et le
+#: gabarit de profil que l'installeur et le publieur réécrivent tous deux.
+SURVIT_A_LA_PUBLICATION = ("mémoire/profil-utilisateur.md",)
+
+
+def dans_zone_privee(chemin: str) -> bool:
+    return any(chemin == zone or chemin.startswith(zone + "/")
+               for zone in ZONES_PRIVEES)
+
+
+def verifier_citations_de_memoire():
+    """§13.5 : un fichier publié ne cite pas un chemin qui ne sera pas publié.
+
+    `publier.py` vide `mémoire/`, `brouillon/`, `.archive/` et
+    `IA/system/session-log/`. Un chemin qui les vise depuis `IA/` ou depuis la
+    racine mène donc nulle part dans la distribution — et l'export échoue, loin
+    de l'endroit où la faute a été écrite. Autant la voir ici.
+
+    Ce n'est pas une interdiction de *renvoyer* à une note privée : la nommer
+    suffit, et c'est déjà la règle du §7.5 pour les rétroliens — un lien par
+    nom survit aux déplacements, un lien par chemin casse.
+    """
+    for chemin in sorted(RACINE.rglob("*.md")):
+        rel = chemin.relative_to(RACINE)
+        if any(part.startswith(".") for part in rel.parts):
+            continue
+        if len(rel.parts) > 1 and rel.parts[0] != "IA":
+            continue                      # même portée que le contrôle des chemins
+        if rel.parts[:3] == ("IA", "system", "session-log"):
+            continue                      # un log dit les chemins de son jour (§11)
+        try:
+            texte = chemin.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        for cite in sorted({m.group(1) for m in CHEMIN_CITE.finditer(texte)}):
+            if GABARIT.search(cite):      # chemin d'exemple, pas une cible
+                continue
+            if not dans_zone_privee(cite):
+                continue
+            if cite.endswith("/README.md") or cite in SURVIT_A_LA_PUBLICATION:
+                continue
+            erreur(rel, "cite le chemin `%s`, qui ne sera pas publié : cette "
+                        "zone est vidée à la publication. Nommer la note "
+                        "suffit (§13.5)." % cite)
 
 
 def verifier_unicite_des_noms():
@@ -575,6 +689,164 @@ def verifier_unicite_des_noms():
         if len(chemins) > 1:
             erreur(nom, "nom de note en double, les rétroliens deviennent ambigus (§6) : %s"
                    % ", ".join(chemins))
+
+
+PREFIXES_SONDE = ("commande", "fichier", "distribution", "parent")
+
+
+def verifier_modules(dossier: Path) -> list[dict]:
+    """§13 : le catalogue de modules — frontmatter, sondes, dépendances.
+
+    Un module mal formé ne casse rien tant qu'on installe tout ; il casse
+    l'installation partielle, c'est-à-dire précisément le cas qu'on ne teste
+    jamais avant de le vivre.
+    """
+    modules: list[dict] = []
+    if not dossier.is_dir():
+        erreur("IA/system/modules/", "catalogue de modules absent (§13)")
+        return modules
+
+    for chemin in sorted(dossier.glob("*.md")):
+        fm = lire_frontmatter(chemin)
+        rel = chemin.relative_to(RACINE)
+        if fm is None:
+            erreur(rel, "frontmatter absent ou non fermé")
+            continue
+        if fm.get("kind") != "module":
+            erreur(rel, "`kind: %s` alors que le fichier est dans IA/system/modules/ (§13)"
+                   % fm.get("kind"))
+            continue
+
+        nom = fm.get("name")
+        if nom != chemin.stem:
+            erreur(rel, "`name: %s` ≠ nom du fichier `%s` (§5)" % (nom, chemin.stem))
+        if nom and not NOM_VALIDE.match(nom):
+            erreur(rel, "`name: %s` — attendu : minuscules et tirets, sans espace (§5)" % nom)
+        if not isinstance(fm.get("schema"), int):
+            erreur(rel, "`schema` doit être un entier (§5)")
+        if not fm.get("description"):
+            erreur(rel, "`description` vide ou absente (§5)")
+        if not isinstance(fm.get("essentiel"), bool):
+            erreur(rel, "`essentiel` doit valoir true ou false (§13)")
+
+        for champ in ("requiert", "sondes"):
+            if champ in fm and not isinstance(fm[champ], list):
+                erreur(rel, "`%s` doit être une liste à tirets, pas « %s » (§5)"
+                       % (champ, fm[champ]))
+
+        if not fm.get("essentiel") and not fm.get("question"):
+            erreur(rel, "module non essentiel sans `question` — l'installeur "
+                        "n'aurait rien à demander (§13)")
+
+        for sonde in fm.get("sondes", []) if isinstance(fm.get("sondes"), list) else []:
+            prefixe = sonde.split(":", 1)[0]
+            if prefixe not in PREFIXES_SONDE:
+                erreur(rel, "sonde `%s` — préfixe inconnu, attendu %s (§13)"
+                       % (sonde, " | ".join(PREFIXES_SONDE)))
+            elif ":" not in sonde or not sonde.split(":", 1)[1].strip():
+                erreur(rel, "sonde `%s` — valeur vide (§13)" % sonde)
+
+        fm["_chemin"] = rel
+        fm.setdefault("requiert", [])
+        fm.setdefault("sondes", [])
+        modules.append(fm)
+
+    noms = {m.get("name") for m in modules}
+    if "noyau" not in noms:
+        erreur("IA/system/modules/", "aucun module `noyau` — le socle doit exister (§13)")
+
+    for m in modules:
+        for besoin in m["requiert"] if isinstance(m["requiert"], list) else []:
+            if besoin not in noms:
+                erreur(m["_chemin"], "`requiert: %s` — module inexistant (§13)" % besoin)
+
+    # Un cycle de dépendances boucle la résolution de l'installeur.
+    par_nom = {m["name"]: m for m in modules if m.get("name")}
+    for depart in sorted(par_nom):
+        vus, pile = set(), [depart]
+        while pile:
+            courant = pile.pop()
+            for besoin in par_nom.get(courant, {}).get("requiert", []):
+                if besoin == depart:
+                    erreur(par_nom[depart]["_chemin"],
+                           "cycle de dépendances entre modules : %s → … → %s (§13)"
+                           % (depart, depart))
+                    pile = []
+                    break
+                if besoin not in vus:
+                    vus.add(besoin)
+                    pile.append(besoin)
+
+    return modules
+
+
+def cloture(modules: list[dict], nom: str) -> set[str]:
+    """Le module et tout ce qu'il entraîne, essentiels compris."""
+    par_nom = {m["name"]: m for m in modules if m.get("name")}
+    resolu = {nom} | {m["name"] for m in modules if m.get("essentiel")}
+    pile = list(resolu)
+    while pile:
+        for besoin in par_nom.get(pile.pop(), {}).get("requiert", []):
+            if besoin not in resolu:
+                resolu.add(besoin)
+                pile.append(besoin)
+    return resolu
+
+
+def verifier_appartenance(modules, agents, skills, mcp, taches):
+    """§13 : tout ce qui se déclare appartient à un module du catalogue."""
+    noms = {m.get("name") for m in modules}
+    peuples = set()
+
+    for fm in list(agents) + list(skills) + list(mcp) + list(taches):
+        chemin = fm.get("_chemin", fm.get("name", "?"))
+        module = fm.get("module")
+        if not module:
+            erreur(chemin, "ne déclare aucun `module` — inclassable à "
+                           "l'installation (§13)")
+        elif module not in noms:
+            erreur(chemin, "`module: %s` — module inexistant dans "
+                           "IA/system/modules/ (§13)" % module)
+        else:
+            peuples.add(module)
+
+    if REDUITE:
+        return              # ici, un module sans déclaration est un module écarté
+    for m in modules:
+        if m.get("name") not in peuples:
+            avertir(m["_chemin"], "module qu'aucun agent, skill, MCP ou tâche "
+                                  "ne rejoint — il n'installerait rien (§13)")
+
+
+def verifier_renvois_entre_modules(modules, skills):
+    """Un skill renvoie-t-il vers un skill qu'une installation partielle n'aura pas ?
+
+    Pendant du contrôle de portée par agent (§10.2), mais au niveau du
+    catalogue : si `A` dit « charger `B` » et que le module de `B` n'est pas
+    entraîné par celui de `A`, la consigne tombe dans le vide chez qui n'a
+    installé que le premier. Avertissement, pas erreur : la détection repose
+    sur le verbe, et la frontière peut être voulue.
+    """
+    if REDUITE:
+        return              # le contrôle porte sur le catalogue, pas sur une copie
+    par_nom = {s["name"]: s for s in skills if s.get("name")}
+    for nom, fm in par_nom.items():
+        mien = fm.get("module")
+        if not mien:
+            continue
+        entraines = cloture(modules, mien)
+        try:
+            texte = (RACINE / fm["_chemin"]).read_text(encoding="utf-8")
+        except OSError:
+            continue
+        vises = {m.group(1) for m in CONSIGNE_SKILL.finditer(texte)} & set(par_nom)
+        for vise in sorted(vises - {nom}):
+            sien = par_nom[vise].get("module")
+            if sien and sien not in entraines:
+                avertir(fm["_chemin"],
+                        "dit de charger `%s`, du module `%s` que `%s` n'entraîne "
+                        "pas — consigne absente d'une installation partielle (§13)"
+                        % (vise, sien, mien))
 
 
 def verifier_derives():
@@ -609,12 +881,16 @@ def main() -> int:
     if not skills:
         erreur("IA/skills/", "aucun skill valide trouvé")
 
-    verifier_mcp(RACINE / "IA" / "MCP")
+    mcp = verifier_mcp(RACINE / "IA" / "MCP")
     taches = verifier_taches(RACINE / "IA" / "tâches", agents)
+    modules = verifier_modules(RACINE / "IA" / "system" / "modules")
+    verifier_appartenance(modules, agents, skills, mcp, taches)
+    verifier_renvois_entre_modules(modules, skills)
     verifier_references(agents, skills)
     verifier_portee_des_renvois(agents, skills)
     verifier_agents_nommes(agents)
     verifier_chemins_cites()
+    verifier_citations_de_memoire()
     verifier_unicite_des_noms()
     verifier_derives()
 
@@ -631,8 +907,11 @@ def main() -> int:
         return 1
 
     if not silencieux:
-        print("Coffre cohérent : %d agent(s), %d skill(s), %d tâche(s), "
-              "index et sommaires à jour." % (len(agents), len(skills), len(taches)))
+        regime = " (installation réduite — contrôles du catalogue assouplis, §13.4)" \
+            if REDUITE else ""
+        print("Coffre cohérent : %d module(s), %d agent(s), %d skill(s), "
+              "%d tâche(s), index et sommaires à jour.%s"
+              % (len(modules), len(agents), len(skills), len(taches), regime))
     return 0
 
 

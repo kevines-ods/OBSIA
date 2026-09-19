@@ -3,7 +3,7 @@
 > Généré par `scripts/regenerate_sommaire.py` depuis le contenu des notes.
 > Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §2).
 
-10 sous-dossiers, 23 notes, du 2026-08-15 au 2026-09-18.
+11 sous-dossiers, 24 notes, du 2026-08-15 au 2026-09-19.
 
 ## Sous-dossiers
 
@@ -16,6 +16,7 @@
 | [choix-du-harness](choix-du-harness/) | 3 | 2026-09-18 — Modèle local : c'est le contexte qui décide, pas la quantification |
 | [comparaison-openviking](comparaison-openviking/) | 8 | 2026-09-03 — Comparaison OBSIA / OpenViking |
 | [construction-du-batisseur](construction-du-batisseur/) | 3 | 2026-09-12 — Quatre skills reprises d'addyosmani, dont un garde qui tourne |
+| [distribution-publique](distribution-publique/) | 1 | 2026-09-19 — Le coffre devient un catalogue, et le public un dérivé du privé |
 | [lancement-coffre](lancement-coffre/) | 1 | 2026-08-27 — Lancement du coffre OBSIA |
 | [recherche-contextuelle](recherche-contextuelle/) | 1 | 2026-08-15 — Recherche contextuelle sur l'écosystème agentic |
 | [tâches-planifiées](tâches-planifiées/) | 2 | 2026-09-05 — Outillage des tâches, et l'audit qui a suivi |
