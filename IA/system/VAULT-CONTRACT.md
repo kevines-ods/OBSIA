@@ -920,10 +920,28 @@ travail, parce que ce qui n'est pas suivi n'a pas été relu —, vide `mémoire
 `README.md`, passe un contrôle de fuite, régénère, vérifie, et n'écrit dans la
 cible qu'avec `--appliquer`. Il ne pousse jamais.
 
-La contrepartie de ce sens unique s'assume : **une correction proposée sur le
-public se reporte à la main dans le privé.** L'inverse — publier depuis le
-public et y rapatrier le privé — aurait exposé la mémoire au premier oubli, et
-un contenu privé entré dans un historique public ne se rattrape pas (§7.3.1).
+Le sens unique n'est pas qu'une précaution, c'est **ce qui crée la fenêtre de
+validation**. Le privé est l'atelier : une fonctionnalité y naît, s'y éprouve
+sur des séances réelles, et ne franchit la frontière que le jour où on lance
+`publier.py`. Rien ne part tout seul — pas de poussée automatique, pas de
+synchronisation de fond. Le public ne reçoit donc jamais qu'un état que
+quelqu'un a jugé bon, et la durée du test est celle qu'on veut bien lui
+laisser.
+
+Un flux bidirectionnel aurait supprimé cette fenêtre en même temps que la
+frontière : ce qui circule dans les deux sens finit par circuler tout seul.
+
+La contrepartie s'assume : **une correction proposée sur le public se reporte
+à la main dans le privé.** L'inverse — publier depuis le public et y rapatrier
+le privé — aurait exposé la mémoire au premier oubli, et un contenu privé entré
+dans un historique public ne se rattrape pas (§7.3.1).
+
+**Rendre un dépôt privé ne dépublie pas son passé.** Le basculement cache les
+poussées à venir, pas l'historique déjà servi : ce qui a été public le reste
+chez qui l'a cloné. C'est une raison de plus de n'avoir jamais rien mis de
+secret dans le coffre, et non un filet auquel se fier après coup. Le dépôt
+public, lui, part propre par construction : `publier.py` écrit l'arbre exporté
+dans un clone neuf, sans y verser l'historique du privé.
 
 **Un fichier publié ne cite pas un chemin qui ne sera pas publié.** Les zones
 vidées — `mémoire/`, `brouillon/`, `.archive/`, `IA/system/session-log/` — ne

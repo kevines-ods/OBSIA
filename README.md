@@ -310,7 +310,15 @@ Le dépôt de travail est **privé** : il porte la mémoire, les logs de session
 le profil de son propriétaire. Ce dépôt-ci, public, en est la **distribution** :
 le même coffre, moins ce qui décrit une personne ou une machine.
 
-Le privé fait foi, et `scripts/publier.py` en dérive le public :
+Le privé fait foi, et `scripts/publier.py` en dérive le public. Le sens unique
+n'est pas qu'une précaution : c'est ce qui crée la **fenêtre de validation**.
+Le privé est l'atelier — une fonctionnalité y naît, s'y éprouve sur des séances
+réelles, et ne franchit la frontière que le jour où on lance la commande. Rien
+ne part tout seul.
+
+À savoir avant de basculer un dépôt existant en privé : **cela ne dépublie pas
+son passé**, qui reste chez qui l'a cloné. Le dépôt public, lui, part propre —
+`publier.py` écrit dans un clone neuf, sans y verser l'historique du privé.
 
 ```bash
 python3 scripts/publier.py --cible ~/OBSIA-public              # aperçu
