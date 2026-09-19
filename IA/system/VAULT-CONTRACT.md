@@ -148,50 +148,40 @@ Tout fichier agent ou skill commence par un frontmatter YAML valide.
 
 **Emplacement d'un agent ou d'un skill**
 
-Deux formes, au choix :
+Un agent vit dans `IA/agents/<nom>.md`. Un skill prend deux formes — plate
+(`IA/skills/<nom>.md`) ou dossier (`IA/skills/<nom>/<nom>.md`, flanqué de
+`references/`, `scripts/` et `assets/`). Dans les deux cas, le point d'entrée
+porte **le nom du skill**, jamais `SKILL.md` : le `name` vaut le nom du
+fichier, et le §6 impose l'unicité des noms de notes dans le coffre parent —
+une douzaine de `SKILL.md` la violerait. Seul `references/` contient des
+notes ; `scripts/` et `assets/` sont écartés du balayage des noms.
 
-```
-IA/skills/pdf.md                 forme plate — par défaut
-IA/skills/pdf/pdf.md             forme dossier — quand le skill grossit
-IA/skills/pdf/references/        détails consultatifs, chargés au besoin
-IA/skills/pdf/scripts/           code exécuté, jamais chargé en contexte
-IA/skills/pdf/assets/            fichiers repris dans le résultat produit
-```
+Quand passer d'une forme à l'autre, ce que chaque sous-dossier accueille et
+comment citer une référence depuis le corps : `createur-de-skill`
+(`IA/skills/createur-de-skill.md`).
 
-Le point d'entrée porte **le nom du skill**, jamais `SKILL.md` : le `name` doit
-valoir le nom du fichier (ci-dessus), et le §6 impose l'unicité des noms de
-notes dans le coffre parent — une douzaine de `SKILL.md` la violerait.
-
-Passer à la forme dossier quand le corps approche des 500 lignes, ou quand une
-information est consultative plutôt que procédurale. Une information vit soit
-dans le corps, soit dans une référence — **jamais les deux**, sinon les deux
-divergent. Tout fichier de `references/` est **cité explicitement** depuis le
-corps, en disant quand le lire : un fichier qu'on ne sait pas exister n'est
-jamais consulté.
-
-Seuls `references/` contient des notes ; `scripts/` et `assets/` sont écartés
-du balayage des noms.
+**Une information vit à un seul endroit.** Écrite deux fois — dans ce contrat
+et dans un skill, dans un corps et dans sa référence — elle diverge, et rien ne
+le signale. C'est cette règle qui décide de ce qui entre ici : une **règle**
+qu'un agent peut violer sans avoir rien chargé, jamais une **procédure** qui ne
+s'applique qu'en faisant la chose.
 
 **Champs propres aux MCP**
 
 Un fichier de `IA/MCP/` décrit un outil, pas un interlocuteur : il n'a ni
-`read_only` (il ne écrit rien par lui-même, c'est l'agent qui l'appelle) ni
-`skills`. Son frontmatter porte :
+`read_only` (il n'écrit rien par lui-même, c'est l'agent qui l'appelle) ni
+`skills`. Le détail de son frontmatter — `type`, `transport`, et les valeurs
+admises — vit dans `createur-de-skill` (`IA/skills/createur-de-skill.md`), avec
+le reste de ce qu'on écrit en rédigeant une fiche. Deux règles restent ici :
 
-| Champ | Type | Obligatoire | Notes |
-| --- | --- | --- | --- |
-| `schema` | entier | oui | comme partout, actuellement `1` |
-| `kind` | `mcp` | oui | |
-| `name` | texte | oui | identique au nom du fichier |
-| `description` | texte | oui | une ligne |
-| `type` | `tool` | oui | seule valeur à ce jour. À ne pas confondre avec le `type` d'un skill (`core`/`outil`) : même clé, vocabulaire distinct. |
-| `transport` | `stdio` \| `http` | oui | comment le harness joint le serveur |
-| `module` | texte | oui | comme partout — le module du §13 |
-| `permission` | `normal` \| `elevated` | oui | `elevated` dès qu'un système externe est touché : réseau, dépôt distant, navigateur. `normal` gradue la prudence **avant** l'appel ; il ne dispense jamais de consigner l'usage après (§9). |
-
-Un MCP n'est utilisable que s'il est **déclaré par un agent** (§10.2). Un
-fichier de `IA/MCP/` que personne ne déclare est du code mort : le vérificateur
-le signale.
+- `permission: elevated` **dès qu'un système externe est touché** : réseau,
+  dépôt distant, navigateur. `normal` gradue la prudence *avant* l'appel ; il
+  ne dispense jamais de consigner l'usage *après* (§9).
+- **Un MCP n'est utilisable que déclaré par un agent** (§10.2). Un fichier de
+  `IA/MCP/` que personne ne déclare est du code mort : le vérificateur le
+  signale.
+- **Une fiche MCP porte son `module`** (§13), comme tout ce qui se déclare :
+  sans lui, l'installeur ne saurait ni la retenir ni l'écarter.
 
 **Champs propres aux tâches**
 
@@ -494,87 +484,60 @@ notes déjà remplies, surtout celles de `-SAVOIRS/` que l'utilisateur dépose
 brutes. Une note qui y figure n'est pas à revérifier ; le registre est mis à
 jour après chaque traitement.
 
-### 7.5 Rétroliens et tags — comment ça marche
+### 7.5 Rétroliens et tags — ce qui ne se viole pas
 
-Un rétrolien Obsidian est **du texte** : `[[Nom de la note]]`. L'agent écrit
-ce lien dans un fichier du coffre ; Obsidian l'affiche automatiquement dès
-qu'il relit le fichier. Aucune API ni aucun greffon n'est requis pour *créer*
-un rétrolien — il faut seulement que le lien soit écrit dans un fichier
-qu'Obsidian indexe. Trois conditions pour que ça marche :
+Un rétrolien Obsidian est **du texte** : `[[Nom de la note]]`, qu'Obsidian
+résout à la lecture. Aucune API ni aucun greffon n'est requis. Le **comment**
+— format du lien, frontmatter d'une note, procédure de traitement — vit dans le
+skill `traitement-des-notes`
+(`IA/skills/traitement-des-notes/traitement-des-notes.md`). Trois règles
+restent ici, parce qu'on peut les violer sans avoir chargé quoi que ce soit :
 
-- le coffre est ouvert dans Obsidian **à sa racine** (le dossier qui contient
-  `OBSIA/` et les autres) : les rétroliens se résolvent à l'échelle du coffre
-  entier, jamais de `OBSIA/` seul ;
-- les **noms de notes sont uniques** dans tout le coffre parent (§6) : avant
-  de créer une note ou un lien, vérifier qu'aucun nom identique n'existe
-  ailleurs — la recherche du skill `obsidian-manager`, qui couvre le coffre
-  parent, le dit ;
-- le lien cible **existe** : `[[Nom]]` vers une note absente n'affiche qu'une
-  « note non créée » et ne relie rien.
+- **Les tags suivent un vocabulaire contrôlé.** Le registre
+  `IA/system/tags-du-coffre-parent.md` fait foi ; on ne pose **jamais** un tag
+  hors liste, et un tag nouveau se propose par patch sur ce registre. Des tags
+  générés librement par une IA, sans cohérence, surchargent les recherches.
+- **Un lien ne relie que si sa cible existe.** `[[Nom]]` vers une note absente
+  n'affiche qu'une « note non créée » et ne relie rien.
+- **Les noms de notes sont uniques dans tout le coffre parent** (§6) : avant de
+  créer une note ou un lien, vérifier qu'aucun nom identique n'existe ailleurs.
 
-Écrire `[[Nom exact de la note]]`, sans chemin de dossier : un lien par nom
-survit aux déplacements, un lien par chemin casse. Écrire
-`[[Obsidian MOC]]`, pas `[[-SAVOIRS/Obsidian MOC]]`.
-
-Les **tags** du coffre parent suivent un vocabulaire contrôlé : le registre
-`IA/system/tags-du-coffre-parent.md` fait foi. On ne pose jamais un tag hors
-liste — un tag nouveau se propose par patch sur ce registre. Les tags générés
-librement par une IA, sans cohérence, surchargent les recherches : à éviter.
-Le frontmatter minimal d'une note de connaissance porte `type` (concept |
-revue | projet | personnel | note) et `tags` ; `source` s'ajoute pour une note
-venue de l'extérieur. La procédure de traitement vit dans le skill
-`traitement-des-notes` (`IA/skills/traitement-des-notes/traitement-des-notes.md`),
-le passage rétroactif sur les notes existantes dans son `scripts/`.
+Ces liens se résolvent à l'échelle du coffre parent, jamais de `OBSIA/` seul,
+ce qui suppose le coffre ouvert dans Obsidian **à sa racine** — c'est au
+harness d'y répondre (7.6).
 
 ### 7.6 Accès du harness
 
 Le coffre ne nomme aucun harness (§3) : la manière de donner accès au coffre
 parent appartient à la configuration de chaque harness, **hors dépôt**. Le
-besoin est unique : le harness doit pouvoir **lire et écrire dans la racine du
-coffre parent** (le dossier qui contient `OBSIA/`), pas seulement dans
-`OBSIA/`.
+besoin est unique, et c'est la seule part qui relève de ce contrat — le harness
+doit pouvoir **lire et écrire dans la racine du coffre parent** (le dossier qui
+contient `OBSIA/`), pas seulement dans `OBSIA/`.
 
-Trois voies, au choix du harness : ouvrir la racine du coffre comme dossier de
-travail ; y ajouter les dossiers de connaissance comme répertoires de travail
-supplémentaires ; ou monter le serveur MCP « fichiers » décrit par
-`IA/MCP/coffre-parent.md` — sa fiche donne ses permissions, le gabarit de
-configuration vit dans `IA/MCP/mcp.example.json`, entrée `coffre-parent`, à
-compléter du chemin réel. Ce gabarit est versionné ; la configuration réelle
-ne l'est pas.
-
-Comme tout MCP, celui-là n'est utilisable que **déclaré par un agent** (§5) :
-un serveur de fichiers braqué sur la racine du coffre peut écrire partout,
-alors que le §7.3 n'en ouvre qu'une poignée, listées là-bas et là-bas
-seulement — un nombre recopié ici vieillirait à la première zone ajoutée,
-comme un index tenu à la main (§11). C'est la fiche, pas le serveur,
-qui porte cette limite — d'où l'obligation de la lire avant d'appeler un de
-ses outils (§10.2).
-
-Des gabarits d'intégration par harness vivent dans
-`IA/system/adaptateurs-harness/README.md` : des exemples d'adaptation, jamais
-des règles — la configuration réelle reste hors dépôt.
+Les voies possibles, le serveur MCP « fichiers » et les gabarits par harness
+vivent dans `IA/system/adaptateurs-harness/README.md`. Une limite ne s'y dilue
+pas pour autant : un serveur de fichiers braqué sur la racine du coffre peut
+écrire **partout**, alors que le §7.3 n'en ouvre qu'une poignée. C'est la fiche
+`IA/MCP/coffre-parent.md` qui porte cette limite, pas le serveur — d'où
+l'obligation de la lire avant d'appeler un de ses outils (§10.2).
 
 ### 7.7 Cycle d'une note d'`-EN-VRAC/`
 
 `-EN-VRAC/` est un **dossier tampon**, pas une destination : il ne stocke rien
 durablement. Une session de rangement le traite **en entier**, et il est vide
-quand elle se termine. Conséquence pratique : rien ne s'appuie sur son contenu
-— une note d'`-EN-VRAC/` n'est jamais une cible de rétrolien stable, puisqu'elle
-aura changé de dossier avant qu'on la relise.
+quand elle se termine : c'est le critère d'achèvement, et ce qui y reste est ce
+qui n'a pas pu être tranché — le dire. Conséquence pratique : une note
+d'`-EN-VRAC/` n'est jamais une cible de rétrolien stable, puisqu'elle aura
+changé de dossier avant qu'on la relise.
 
-1. Lister `-EN-VRAC/` : notes brutes à traiter, parfois un simple titre.
-2. Pour chacune : lire et comprendre l'intention ; vérifier par la recherche
-   qu'une note équivalente n'existe pas déjà (7.5).
-3. Remplir dans `-EN-VRAC/` : corps, tags du vocabulaire contrôlé, rétroliens
-   (frontmatter minimal `type` + `tags`).
-4. Décider la destination selon la nature : projet → `-PROJETS/` ; revue,
-   article, transcription → `-DOCUMENTS/` ; fait personnel → `-PERSONNELS/` ;
-   concept → `-SAVOIRS/`.
-5. Afficher le preview et le consigner dans `_maintenance/` (7.4).
-6. Classer (déplacer), puis mettre à jour
-   `Mon coffre/_maintenance/notes_remplies.md`.
-7. En fin de session, vérifier qu'`-EN-VRAC/` est bien vide — c'est le critère
-   d'achèvement. Ce qui reste est ce qui n'a pas pu être tranché : le dire.
+La procédure — lire, vérifier qu'un doublon n'existe pas, remplir, tagger,
+prévisualiser, classer, consigner au registre — vit dans le skill
+`traitement-des-notes`
+(`IA/skills/traitement-des-notes/traitement-des-notes.md`). Elle n'est pas
+reprise ici : ce qui s'écrit à deux endroits diverge, et c'est la destination
+qui décide — une **règle** violable sans avoir rien chargé reste dans ce
+contrat, une **procédure** qui ne s'applique qu'en faisant la chose part dans
+le skill.
 
 ## 8. Sources et citations
 
@@ -666,68 +629,38 @@ que rien ne le signale.
 Corollaire : si un index et un frontmatter se contredisent, **le frontmatter a
 raison**. On corrige la source, puis on régénère — jamais l'inverse.
 
-`scripts/verifier_coffre.py` refuse un coffre incohérent : frontmatter
-invalide, `name` différent du nom de fichier, liste écrite en chaîne,
-description repliée sur plusieurs lignes physiques, agent déclarant un skill ou
-un MCP inexistant, tâche sans instruction ou au `quand` non quoté, chemin cité
-ou lien Markdown qui ne mène nulle part, nom de note en double, fichier généré
-périmé, déclaration sans `module` ou visant un module inexistant, sonde au
-préfixe inconnu, cycle de dépendances entre modules, chemin cité vers une zone
-que la publication vide (§13). Il n'écrit rien et sort en code 1.
+**Deux contrôles, qui ne voient pas la même chose :**
 
-Il **avertit** en plus, sans refuser, quand un skill dit de charger un skill
-que l'agent qui le déclare ne possède pas : la consigne est alors
-inapplicable pour cet agent, et la procédure s'arrête là sans que rien ne le
-dise. Un avertissement et non une erreur, pour deux raisons — la détection
-repose sur le verbe employé, donc sur une heuristique ; et l'absence peut être
-**voulue**, une frontière de périmètre plutôt qu'un oubli. C'est alors au
-skill qui renvoie de l'énoncer, et à l'exemption du vérificateur de porter la
-raison.
+- `scripts/verifier_coffre.py` contrôle la **forme** — frontmatter, noms,
+  chemins cités, index à jour — et refuse un coffre incohérent en sortant
+  en 1, sans rien écrire.
+- `scripts/evaluer_routage.py` contrôle le **déclenchement** — la
+  `description` d'un skill est le seul élément toujours présent en contexte,
+  donc la seule chose qui décide qu'il se charge, et rien d'autre ne vérifie
+  qu'elle porte les mots que l'utilisateur emploie.
 
-`scripts/evaluer_routage.py` contrôle autre chose, que le précédent ne voit
-pas : le **déclenchement**. La `description` d'un skill est le seul élément
-toujours présent en contexte, donc la seule chose qui décide qu'un skill se
-charge — et rien ne vérifiait qu'elle porte les mots que l'utilisateur
-emploie. Le script lit le registre `IA/system/routage-attendu.md`, classe les
-skills par proximité lexicale pour chaque demande, et sort en 1 si le skill
-attendu n'atteint pas le rang exigé ou si deux descriptions se ressemblent
-trop.
+Ce que chacun contrôle exactement, ce qu'il écarte et pourquoi, vit dans **son
+propre docstring** — `python3 scripts/verifier_coffre.py --help` ou la tête du
+fichier. Le recopier ici en ferait une seconde version à tenir à jour, ce que
+le §5 interdit.
 
-Deux choses à savoir, pour ne pas lui prêter plus qu'il ne fait :
+Trois règles, en revanche, appartiennent à ce contrat et pas au code :
 
-- la mesure est **lexicale**, pas sémantique. Elle attrape les deux pannes
-  réelles — un mot que l'utilisateur dit et qui manque à la description, une
-  description trop large qui passe devant la bonne — et rien d'autre ;
-- **un échec veut dire « corriger la description »**, pas « corriger le
-  registre ». Une attente ne se relâche que lorsqu'elle demande l'impossible
-  à une mesure lexicale, et cela s'écrit dans le registre avec sa raison.
+- **Un échec de routage veut dire « corriger la description »**, pas
+  « corriger le registre ». Une attente ne se relâche que lorsqu'elle demande
+  l'impossible à une mesure lexicale, et cela s'écrit dans
+  `IA/system/routage-attendu.md` avec sa raison.
+- **Les exemptions vivent dans le script, jamais dans le frontmatter d'un
+  skill** : un skill qui se déclare lui-même dispensé d'un contrôle annule le
+  contrôle.
+- **Un contrôle qu'on croit plus large qu'il n'est vaut moins que pas de
+  contrôle du tout.** Le contrôle des chemins couvre `IA/` et les documents de
+  la racine — là où un chemin faux *agit* ; `mémoire/` et
+  `IA/system/session-log/` en sont exemptés, parce qu'un récit cite
+  légitimement un état révolu, et le corriger après coup falsifierait le récit
+  pour faire taire le contrôle.
 
-Ses exemptions — les paires de skills qui se ressemblent légitimement — vivent
-**dans le script**, jamais dans le frontmatter d'un skill : un skill qui se
-déclare lui-même dispensé d'un contrôle annule le contrôle.
-
-Le contrôle des chemins s'arrête à `IA/` et aux documents de la racine : là, un
-chemin faux **agit** — une instruction de tâche part au déclenchement, un skill
-dit d'ouvrir un fichier. `mémoire/` en est exempté : c'est un récit, où une
-note ancienne cite légitimement un état révolu. `IA/system/session-log/` l'est
-aussi, pour la même raison et bien qu'il vive sous `IA/` : un log dit ce qui a
-été fait ce jour-là, aux chemins de ce jour-là. Le corriger après un
-déplacement lui ferait annoncer la création d'un fichier à un endroit qui
-n'existait pas encore — on falsifierait le récit pour faire taire le contrôle.
-
-Trois précisions sur ce contrôle, parce qu'un contrôle qu'on croit plus large
-qu'il n'est vaut moins que pas de contrôle du tout :
-
-- il couvre les chemins **depuis la racine du dépôt** (`IA/…`, `scripts/…`) et
-  les chemins **relatifs**, résolus depuis le fichier qui les cite — c'est
-  cette seconde forme qui casse quand un skill change de forme (§6) ;
-- il couvre les **scripts appelés dans un bloc de code** (`python3 …`) : c'est
-  là que vivent les commandes qu'une tâche exécutera vraiment. Le reste d'un
-  bloc de code n'est pas contrôlé — on y écrit des arborescences d'exemple ;
-- il **écarte les chemins du coffre parent** (§7) : ils désignent des dossiers
-  hors du dépôt, que le vérificateur ne peut pas voir.
-
-Il tourne en intégration continue à chaque poussée
+Le vérificateur tourne en intégration continue à chaque poussée
 (`.github/workflows/verifier-coffre.yml`), et localement en crochet de
 pré-commit — à activer une fois par clone :
 
@@ -757,6 +690,11 @@ Pour savoir quel skill répondrait à une demande, sans rien vérifier :
 ```bash
 python3 scripts/evaluer_routage.py --explique "ça plante quand je clique"
 ```
+
+Un cinquième script, `scripts/evaluer_modele.py`, éprouve un **modèle**
+candidat contre les règles de ce contrat. Il ne fait pas partie de la chaîne
+ci-dessus : il lui faut un serveur qui réponde, donc il ne tourne ni en crochet
+ni en CI.
 
 Ces scripts n'utilisent que la bibliothèque standard de Python, à dessein : le
 coffre ne doit dépendre d'aucune installation pour être vérifiable.

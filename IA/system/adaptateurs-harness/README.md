@@ -23,6 +23,29 @@ friction à quelques minutes, sans faire dépendre OBSIA d'aucun harness.
 3. **connaître les repères** — racine du coffre, `_maintenance/`, registre des
    tags.
 
+## Atteindre le coffre parent — les trois voies
+
+Le contrat (§7.6) pose le besoin et s'arrête là : le harness doit pouvoir
+**lire et écrire dans la racine du coffre parent** — le dossier qui contient
+`OBSIA/` —, pas seulement dans `OBSIA/`. Comment on le lui donne appartient à
+ce dossier-ci. Trois voies, au choix du harness :
+
+1. **ouvrir la racine du coffre comme dossier de travail** — la plus simple, et
+   celle qui rend le serveur MCP inutile : un composant de moins à surveiller ;
+2. **y ajouter les dossiers de connaissance** comme répertoires de travail
+   supplémentaires, quand le harness sait en prendre plusieurs ;
+3. **monter le serveur MCP « fichiers »** décrit par `../../MCP/coffre-parent.md`.
+   Sa fiche donne ses permissions ; le gabarit de configuration vit dans
+   `../../MCP/mcp.example.json`, entrée `coffre-parent`, à compléter du chemin
+   réel.
+
+La troisième voie porte un piège que les deux premières n'ont pas : **un
+serveur de fichiers braqué sur la racine peut écrire partout**, alors que le
+§7.3 du contrat n'ouvre qu'une poignée de zones. C'est la fiche du MCP qui
+porte cette limite, pas le serveur — d'où l'obligation de la lire avant
+d'appeler un de ses outils. Et comme tout MCP, celui-là n'est utilisable que
+**déclaré par un agent**.
+
 ## Règle d'or
 
 La **configuration réelle** (chemins, clés) vit **hors du dépôt**. Ces
