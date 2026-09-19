@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: tests-dabord
 description: Écrire le test avant le code — le voir échouer pour la bonne raison, écrire le minimum qui le fait passer, puis nettoyer sans toucher au test. À charger avant d'implémenter une logique, de corriger un bogue ou de changer un comportement, et pour choisir quoi tester quand tout tester est hors de portée. Un test écrit après le code teste ce que le code fait, pas ce qu'il devait faire.
+module: construction
 type: outil
 read_only: false
 ---

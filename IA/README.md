@@ -73,8 +73,11 @@ instances reconstructibles (§12). Procédure dans le skill `cron`.
 ## `IA/system/`
 
 - `VAULT-CONTRACT.md` — les règles. Fait foi.
-- `agents-index.md`, `skills-index.md`, `taches-index.md` — index
-  générés (§11).
+- `agents-index.md`, `skills-index.md`, `taches-index.md`,
+  `modules-index.md` — index générés (§11).
+- `modules/` — le catalogue de modules installables (§13). Un module
+  regroupe ce qui n'a de sens qu'ensemble ; `obsia.local.yml`, non
+  versionné, dit lesquels sont retenus sur cette machine.
 - `providers.md` — repère pour choisir un modèle. Aucune clé n'y vit.
 - `prompt-fondateur.md` — intention d'origine, non normative.
 - `session-log/` — une note par session de travail (§9).

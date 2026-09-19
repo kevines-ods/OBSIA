@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: cron
 description: Gérer les tâches planifiées — registre `IA/tâches/`, instanciation outillée chez l'exécutant, réconciliation après un changement de harness ou de machine. À charger dès qu'une action doit se répéter à heure fixe, et toujours avant d'en créer une. Ne couvre ni le cron système ni les tâches root.
+module: planification
 type: outil
 read_only: false
 ---

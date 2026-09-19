@@ -124,6 +124,7 @@ Tout fichier agent ou skill commence par un frontmatter YAML valide.
 | `name` | texte | oui | minuscules, tirets, **sans espaces**. Identique au nom du fichier. |
 | `description` | texte | oui | une ligne. Réutilisée par le générateur de sommaires. |
 | `read_only` | booléen | oui | cf. sémantique ci-dessous |
+| `module` | texte | oui | le module du §13 auquel ce fichier appartient. Un fichier sans module est inclassable à l'installation. |
 
 **Sémantique de `read_only`**
 
@@ -185,6 +186,7 @@ Un fichier de `IA/MCP/` décrit un outil, pas un interlocuteur : il n'a ni
 | `description` | texte | oui | une ligne |
 | `type` | `tool` | oui | seule valeur à ce jour. À ne pas confondre avec le `type` d'un skill (`core`/`outil`) : même clé, vocabulaire distinct. |
 | `transport` | `stdio` \| `http` | oui | comment le harness joint le serveur |
+| `module` | texte | oui | comme partout — le module du §13 |
 | `permission` | `normal` \| `elevated` | oui | `elevated` dès qu'un système externe est touché : réseau, dépôt distant, navigateur. `normal` gradue la prudence **avant** l'appel ; il ne dispense jamais de consigner l'usage après (§9). |
 
 Un MCP n'est utilisable que s'il est **déclaré par un agent** (§10.2). Un
@@ -203,6 +205,7 @@ commande qu'elle déclenche qui agit, sous ses propres règles.
 | `kind` | `tâche` | oui | |
 | `name` | texte | oui | identique au nom du fichier |
 | `description` | texte | oui | une ligne |
+| `module` | texte | oui | comme partout — le module du §13 |
 | `mode` | `agent` \| `commande` | oui | `agent` : une instruction part vers un agent, il faut donc un harness. `commande` : une commande shell, qui tourne sans modèle. |
 | `quand` | texte **entre guillemets** | oui | cron à 5 champs — `"0 9 * * 1"`. Les guillemets ne sont pas décoratifs : `*/15 * * * *` non quoté est une ancre YAML invalide, et tout lecteur YAML réel refuse le fichier. |
 | `fuseau` | texte | oui | `Europe/Paris`, `UTC`… Un cron sans fuseau est ambigu, et les planificateurs distants raisonnent en UTC. |
@@ -321,8 +324,13 @@ primordiale : il se lit, s'enrichit et s'administre — par l'utilisateur, et
 par les agents qui y accèdent selon ce paragraphe. Seul `OBSIA/` est
 versionné ; les autres dossiers ne le sont pas.
 
-**Le coffre parent s'appelle `Mon coffre/`.** C'est son nom, et c'est ainsi
-qu'on le désigne partout dans la documentation :
+**Le coffre parent s'écrit `Mon coffre/` partout dans ce dépôt.** C'est une
+**convention d'écriture**, pas une contrainte sur le disque : le nom réel du
+dossier se lit dans `obsia.local.yml` (clé `coffre_parent`, §13), que
+l'installeur remplit et qui n'est pas versionné. Le dépôt est public et ne peut
+pas connaître le nom que chacun donne à son coffre ; il lui en faut pourtant un
+pour en parler, sans quoi chaque skill inventerait le sien. Voici donc comment
+on le désigne :
 
 | Ce qu'on veut dire | Comment l'écrire |
 | --- | --- |
@@ -337,7 +345,9 @@ travail là — et c'est ainsi qu'un skill finit par pointer à côté.
 
 Une **commande** reste une exception assumée : lancée depuis la racine du
 dépôt, elle atteint le coffre parent par `..` (`rg "motif" ../-SAVOIRS`). C'est
-du shell, pas une désignation. Un chemin absolu, lui, contient une espace et
+du shell, pas une désignation — et c'est aussi la forme qui se moque du nom
+réel du dossier, ce qui la rend préférable au chemin absolu partout où elle
+suffit. Un chemin absolu, lui, contient une espace et
 se cite : `"$HOME/Mon coffre/-SAVOIRS"`.
 
 **Le tiret initial est un piège d'exécution, pas une coquetterie.** Les
@@ -650,6 +660,7 @@ que rien ne le signale.
 | `IA/system/agents-index.md` | `scripts/regenerate_index.py` | le frontmatter des agents |
 | `IA/system/skills-index.md` | `scripts/regenerate_index.py` | le frontmatter des skills |
 | `IA/system/taches-index.md` | `scripts/regenerate_index.py` | le frontmatter des tâches |
+| `IA/system/modules-index.md` | `scripts/regenerate_index.py` | le frontmatter des modules |
 | `IA/README.md` | `scripts/regenerate_index.py` | les frontmatters d'agents, skills, MCP et tâches |
 
 Corollaire : si un index et un frontmatter se contredisent, **le frontmatter a
@@ -660,7 +671,9 @@ invalide, `name` différent du nom de fichier, liste écrite en chaîne,
 description repliée sur plusieurs lignes physiques, agent déclarant un skill ou
 un MCP inexistant, tâche sans instruction ou au `quand` non quoté, chemin cité
 ou lien Markdown qui ne mène nulle part, nom de note en double, fichier généré
-périmé. Il n'écrit rien et sort en code 1.
+périmé, déclaration sans `module` ou visant un module inexistant, sonde au
+préfixe inconnu, cycle de dépendances entre modules (§13). Il n'écrit rien et
+sort en code 1.
 
 Il **avertit** en plus, sans refuser, quand un skill dit de charger un skill
 que l'agent qui le déclare ne possède pas : la consigne est alors
@@ -735,6 +748,10 @@ python3 scripts/verifier_coffre.py
 python3 scripts/evaluer_routage.py
 ```
 
+Les deux scripts du §13 — `scripts/installer.py` et `scripts/publier.py` — ne
+font pas partie de cette séquence : ils ne se lancent pas avant un commit mais
+à l'installation et à la publication, et ils n'écrivent qu'avec `--appliquer`.
+
 Pour savoir quel skill répondrait à une demande, sans rien vérifier :
 
 ```bash
@@ -792,3 +809,126 @@ ce qui permet de constater qu'une tâche déclarée ne tourne nulle part.
 La procédure — lister, créer, instancier, réconcilier — vit dans le skill
 `cron` (`IA/skills/cron/cron.md`). Ce contrat ne nomme aucun exécutant : il dit
 *quoi* planifier, le harness fournit *avec quoi*.
+
+---
+
+## 13. Modules, installation et publication
+
+Le coffre est un **catalogue**, pas une livraison. Tout y est déclaré ; rien
+n'oblige à tout retenir. Un coffre installé sur une machine sans Docker
+n'embarque pas les skills qui pilotent des conteneurs — non pour économiser des
+octets, mais parce qu'un skill qui ne peut pas s'exécuter coûte plus cher que
+son absence : il occupe le contexte, se propose au mauvais moment, et échoue
+là où il aurait fallu qu'il se taise.
+
+### 13.1 Un module
+
+Un **module** regroupe ce qui n'a de sens qu'ensemble. Il vit dans
+`IA/system/modules/<nom>.md` et porte le frontmatter suivant :
+
+| Champ | Type | Obligatoire | Notes |
+| --- | --- | --- | --- |
+| `schema` | entier | oui | comme partout, actuellement `1` |
+| `kind` | `module` | oui | |
+| `name` | texte | oui | identique au nom du fichier, et **unique dans tout le coffre parent** comme n'importe quelle note (§6) — un module `sauvegardes` à côté d'un skill `sauvegardes` casse les rétroliens |
+| `description` | texte | oui | une ligne |
+| `essentiel` | booléen | oui | `true` = toujours installé, aucune question posée |
+| `question` | texte | si non essentiel | ce que l'installeur demande. Un module non essentiel sans question ne pourrait jamais être choisi. |
+| `sondes` | liste | non | ce que la machine peut constater seule (13.2) |
+| `requiert` | liste | non | modules entraînés par celui-ci |
+
+Le corps dit ce que le module apporte et **pourquoi le découpage tombe là** :
+c'est la seule information qu'on ne retrouve pas en listant ses fichiers.
+
+Réciproquement, **tout agent, skill, MCP et tâche déclare son `module`** (§5).
+Un fichier sans module est inclassable : l'installeur ne saurait ni le retenir
+ni l'écarter. `scripts/verifier_coffre.py` le refuse.
+
+Un module reste **libre de ses dépendances mais pas de ses renvois** : si un
+skill de `A` dit de charger un skill de `B`, `A` doit entraîner `B`, faute de
+quoi la consigne tombe dans le vide chez qui n'a installé que `A`. Le
+vérificateur l'avertit ; c'est un avertissement et non une erreur, pour la même
+raison qu'au §11 — la détection repose sur le verbe employé.
+
+### 13.2 Les sondes — ce que la machine dit d'elle-même
+
+Une sonde est **déclarative**, et son vocabulaire tient en quatre formes :
+
+| Forme | Vrai quand |
+| --- | --- |
+| `commande:<nom>` | le binaire est dans le `PATH` |
+| `fichier:<chemin>` | le chemin existe (`~` développé) |
+| `distribution:<id>` | `ID` ou `ID_LIKE` de `/etc/os-release` correspond |
+| `parent:<nom>` | le dossier existe à côté du dépôt — donc dans le coffre parent |
+
+Il n'y en a pas de cinquième, et surtout aucune qui exécuterait une commande
+arbitraire : un catalogue dont les fichiers déclenchent du code devient un
+vecteur d'exécution, et on installe justement un catalogue qu'on n'a pas encore
+lu. Aucune sonde n'ouvre le réseau (§4).
+
+**Une sonde ne décide jamais seule.** Elle constate que `docker` est installé ;
+elle ne sait pas si l'utilisateur veut gérer des conteneurs. Elle propose une
+réponse par défaut, la question tranche. Un module sans sonde n'est pas un
+module mal fait : il est simplement indécidable depuis la machine, et c'est
+honnête de le dire plutôt que de deviner.
+
+### 13.3 Le profil — `obsia.local.yml`
+
+Le profil dit quels modules sont retenus **sur cette machine**. Il vit à la
+racine du dépôt, **n'est pas versionné**, et n'est pas une des trois zones
+d'écriture du §2 : ce n'est pas un agent qui l'écrit, c'est l'installeur.
+
+**Absence de profil = catalogue complet.** C'est l'état du dépôt de
+distribution, et l'état sous lequel la CI vérifie le coffre — sans quoi la CI
+ne contrôlerait qu'une installation particulière, et les modules écartés
+pourriraient sans que rien ne le signale.
+
+Le profil ne décrit qu'une **sélection**. Il ne contredit donc jamais un
+frontmatter, et la règle du §11 — le frontmatter a raison — tient sans
+exception : le frontmatter dit ce qui existe, le profil dit ce qu'on en retient.
+
+### 13.4 Deux modes d'installation
+
+`scripts/installer.py` sonde, montre, demande, puis écrit — et seulement avec
+`--appliquer` : l'aperçu du §2 n'est pas décoratif.
+
+| Mode | Ce qui se passe | Quand le choisir |
+| --- | --- | --- |
+| **en place** | rien n'est déplacé ni supprimé ; seuls les fichiers générés (les quatre index, `IA/README.md`, le prompt système) sont réduits au profil | on utilise le clone tel quel, et on veut pouvoir changer d'avis d'une commande |
+| **copie** | seuls les fichiers retenus atterrissent dans le coffre cible, et les déclarations d'agents y sont réduites pour rester cohérentes | on veut un coffre réellement minimal, versionné pour lui-même |
+
+La différence n'est pas cosmétique. **En place, les frontmatters ne sont jamais
+réécrits** : les fichiers écartés sont toujours là, un agent qui les déclare ne
+déclare rien d'absent, et `git checkout -- IA` remet tout. **En copie, ils le
+sont** : les fichiers écartés manquent réellement, un agent qui les déclarerait
+ferait échouer le vérificateur de la cible. Une tâche visant un agent absent est
+retirée pour la même raison.
+
+Revenir au catalogue complet : `python3 scripts/installer.py --tout --appliquer`.
+
+### 13.5 Public et privé
+
+Le dépôt de travail est **privé** : il porte la mémoire, les logs de session et
+le profil de son propriétaire. Le dépôt **public** est la distribution : le même
+coffre, moins ce qui décrit une personne ou une machine.
+
+**Le privé fait foi.** Il n'y a pas deux sources de vérité : `scripts/publier.py`
+dérive la seconde de la première, et refuse de publier ce qu'il ne sait pas
+relire. Il exporte l'arbre suivi par Git à `HEAD` — jamais le répertoire de
+travail, parce que ce qui n'est pas suivi n'a pas été relu —, vide `mémoire/`,
+`IA/system/session-log/`, `brouillon/` et `.archive/` de tout sauf leurs
+`README.md`, passe un contrôle de fuite, régénère, vérifie, et n'écrit dans la
+cible qu'avec `--appliquer`. Il ne pousse jamais.
+
+La contrepartie de ce sens unique s'assume : **une correction proposée sur le
+public se reporte à la main dans le privé.** L'inverse — publier depuis le
+public et y rapatrier le privé — aurait exposé la mémoire au premier oubli, et
+un contenu privé entré dans un historique public ne se rattrape pas (§7.3.1).
+
+Le contrôle de fuite vise des **valeurs**, jamais les mots qui les nomment :
+le contrat parle de jetons et de mots de passe à longueur de page, et il doit
+pouvoir continuer. Il bloque sur une adresse de courriel, une adresse IP
+privée, un bloc de clé privée, un préfixe de jeton connu, ou un secret affecté
+à une variable. `--forcer` passe outre ; s'en servir sans avoir lu la
+trouvaille, c'est se priver du seul filet qui reste une fois l'historique
+public.

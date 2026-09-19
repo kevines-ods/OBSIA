@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: pdf
 description: Extraire texte et tableaux, fusionner, découper, pivoter, chiffrer, remplir des formulaires, appliquer l'OCR sur des PDF. À charger dès qu'un fichier .pdf est en entrée ou en sortie. Pas pour Word, Excel ou PowerPoint — voir `bureautique`.
+module: documents
 type: outil
 read_only: false
 ---

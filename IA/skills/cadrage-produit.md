@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: cadrage-produit
 description: Figer le besoin dans un document versionné en huit sections (Problème, Utilisateur cible, Solution, User stories numérotées, Critères de succès, Hors périmètre, Décisions produit, Notes) et créer le dépôt du projet s'il n'existe pas encore. À charger une fois l'accord obtenu par interrogation-du-besoin, jamais avant. Produit `docs/CADRAGE.md` dans le dépôt du projet, validé section par section.
+module: construction
 type: outil
 read_only: false
 ---

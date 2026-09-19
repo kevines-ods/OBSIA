@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: configuration-mcp
 description: Rendre les MCP déclarés dans `IA/MCP/` réellement fonctionnels sur un harness — traduire chaque fiche en configuration écrite hors dépôt, secrets en variables d'environnement, puis vérifier serveur par serveur que les outils répondent vraiment. À charger en branchant OBSIA sur un harness neuf, ou quand un serveur MCP déclaré ne répond pas. Ne rédige pas de fiche MCP : `createur-de-skill` et le §5 s'en chargent.
+module: noyau
 type: outil
 read_only: false
 ---

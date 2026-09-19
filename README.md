@@ -35,14 +35,17 @@ OBSIA/                       le coffre — la racine du dépôt EST le coffre
 │   ├── MCP/                 outils structurés
 │   ├── tâches/              registre des tâches planifiées
 │   └── system/              VAULT-CONTRACT.md (les règles), index,
+│                            modules/ (le catalogue installable),
 │                            prompt-fondateur.md (intention d'origine),
 │                            adaptateurs-harness/ (gabarits d'intégration)
 ├── mémoire/                 commun → profil, préférences, projets ;
 │                            par agent → expériences
 ├── brouillon/               zone de travail libre
 ├── scripts/
+│   ├── installer.py         sonde la machine, retient les modules utiles
+│   ├── publier.py           dérive le miroir public de ce dépôt
 │   ├── generer_prompt.py    prompt système depuis les frontmatters
-│   ├── regenerate_index.py  les trois index et IA/README.md
+│   ├── regenerate_index.py  les quatre index et IA/README.md
 │   ├── regenerate_sommaire.py  les sommaire.md de mémoire/
 │   └── verifier_coffre.py   cohérence du coffre — utilisé en CI
 ├── HISTORIQUE.md            ce qui a été décidé puis écarté
@@ -150,6 +153,8 @@ crée pas pour autant sur la machine — l'instanciation reste un geste explicit
 ```bash
 git clone https://github.com/kevines-ods/OBSIA
 cd OBSIA
+python3 scripts/installer.py --sonder     # ce que la machine porte, n'écrit rien
+python3 scripts/installer.py --appliquer  # retient les modules utiles
 python3 scripts/generer_prompt.py -o prompt-systeme.md --mcp
 ```
 
@@ -158,6 +163,46 @@ harness. L'option `--mcp` liste en plus les serveurs MCP que les agents
 déclarent, avec un squelette de configuration à compléter.
 
 Régénérer le prompt après toute modification d'un agent ou d'un skill.
+
+## Installation modulaire
+
+Le coffre est un **catalogue**, pas une livraison. Tout y est déclaré ; rien
+n'oblige à tout retenir. Un poste sans Docker n'a que faire des skills qui
+pilotent des conteneurs : ils occuperaient le contexte, se proposeraient au
+mauvais moment, et échoueraient là où il aurait fallu qu'ils se taisent.
+
+Un **module** (`IA/system/modules/<nom>.md`) regroupe ce qui n'a de sens
+qu'ensemble, et chaque agent, skill, MCP et tâche déclare le sien. L'index
+généré `IA/system/modules-index.md` les liste tous — y compris ceux qu'on n'a
+pas retenus, parce qu'un catalogue dont on ignore les entrées absentes n'est
+plus un catalogue.
+
+```bash
+python3 scripts/installer.py --sonder              # détection, verdict des sondes
+python3 scripts/installer.py                       # aperçu, n'écrit rien
+python3 scripts/installer.py --appliquer           # écrit le profil, en place
+python3 scripts/installer.py --installer ~/coffre/OBSIA --appliquer
+python3 scripts/installer.py --tout --appliquer    # revient au catalogue complet
+```
+
+L'installeur **sonde puis demande** : il constate que `docker` est installé, il
+ne sait pas si vous voulez gérer des conteneurs. La sonde propose un défaut, la
+question tranche. Quatre formes de sonde seulement — `commande:`, `fichier:`,
+`distribution:`, `parent:` — et aucune qui exécute une commande arbitraire ou
+ouvre le réseau.
+
+Deux modes :
+
+- **en place** — rien n'est déplacé ni supprimé, seuls les fichiers générés
+  sont réduits au profil. `git checkout -- IA` remet tout ;
+- **copie** (`--installer CIBLE`) — seuls les fichiers retenus atterrissent
+  dans la cible, et les déclarations d'agents y sont réduites pour rester
+  cohérentes.
+
+Le profil vit dans `obsia.local.yml`, à la racine, **non versionné** : il
+décrit cette machine, pas le coffre. Sans profil, tout le catalogue est actif —
+c'est l'état du dépôt de distribution et celui sous lequel la CI vérifie. Règles
+complètes au §13 de `IA/system/VAULT-CONTRACT.md`.
 
 ## Vérifier le coffre
 
@@ -258,6 +303,31 @@ git diff --cached | grep -iE "password|token|api[_-]key|BEGIN.*PRIVATE KEY"
 
 Un secret poussé puis effacé reste dans l'historique Git. Si cela arrive :
 révoguer le secret d'abord, nettoyer l'historique ensuite.
+
+## Public et privé
+
+Le dépôt de travail est **privé** : il porte la mémoire, les logs de session et
+le profil de son propriétaire. Ce dépôt-ci, public, en est la **distribution** :
+le même coffre, moins ce qui décrit une personne ou une machine.
+
+Le privé fait foi, et `scripts/publier.py` en dérive le public :
+
+```bash
+python3 scripts/publier.py --cible ~/OBSIA-public              # aperçu
+python3 scripts/publier.py --cible ~/OBSIA-public --appliquer
+```
+
+Il exporte l'arbre suivi par Git à `HEAD` — jamais le répertoire de travail,
+parce que ce qui n'est pas suivi n'a pas été relu —, vide `mémoire/`,
+`IA/system/session-log/`, `brouillon/` et `.archive/` de tout sauf leurs
+`README.md`, passe un contrôle de fuite, régénère les index, vérifie le coffre
+obtenu, puis écrit dans la cible. Il ne pousse jamais.
+
+Le contrôle de fuite vise des **valeurs**, pas les mots qui les nomment : une
+adresse de courriel, une IP privée, un bloc de clé privée, un préfixe de jeton
+connu, un secret affecté à une variable. Il bloque la publication ; `--forcer`
+passe outre, et s'en servir sans avoir lu la trouvaille revient à se priver du
+dernier filet.
 
 ## Licence
 

@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: interrogation-du-besoin
 description: Interroger l'utilisateur jusqu'à une compréhension partagée — une seule question par message, en descendant l'arbre de décision, chaque question accompagnée d'une recommandation justifiée et de ce que coûte l'autre choix. À charger après l'inventaire et avant tout document de cadrage, dès qu'un projet est encore une intention. Ne produit aucun fichier : la sortie est un accord énoncé et confirmé.
+module: construction
 type: outil
 read_only: true
 ---

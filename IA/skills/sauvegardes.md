@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: sauvegardes
 description: Vérifier que les sauvegardes existent, sont récentes, respectent la règle 3-2-1, et se restaurent réellement. À charger avant toute action risquant de détruire des données, et lors d'un contrôle périodique. Ne restaure jamais par-dessus l'original et ne supprime aucune sauvegarde.
+module: controle-des-sauvegardes
 type: core
 read_only: true
 ---

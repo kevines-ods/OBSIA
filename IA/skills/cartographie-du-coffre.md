@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: cartographie-du-coffre
 description: Dresser la carte des connaissances du coffre parent — concepts de -SAVOIRS, notes orphelines, doublons, tags hors vocabulaire, liens manquants. À charger pour faire le point sur la santé du coffre ou avant une réorganisation. Lit et propose, n'écrit rien.
+module: coffre-obsidian
 type: outil
 read_only: true
 ---

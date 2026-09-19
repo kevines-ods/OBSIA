@@ -3,6 +3,7 @@ schema: 1
 kind: tâche
 name: revue-des-notes-du-coffre
 description: Traiter les notes brutes du coffre parent — remplir et classer celles d'-EN-VRAC, compléter celles déposées dans -SAVOIRS, et signaler les tags hors vocabulaire contrôlé. À charger via le skill traitement-des-notes.
+module: coffre-obsidian
 mode: agent
 quand: "0 10 * * 1"
 fuseau: Europe/Paris

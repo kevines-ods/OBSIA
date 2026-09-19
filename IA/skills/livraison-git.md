@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: livraison-git
 description: Livrer une tranche terminée — branche préfixée depuis la branche par défaut à jour, vérifications du projet passées, commit nommant le pourquoi, poussée et pull request soumise à revue humaine. À charger à la fin de chaque tranche verticale, jamais pour empiler plusieurs tranches. Refuse de committer sur la branche par défaut et refuse d'ajouter un fichier de secrets.
+module: construction
 type: outil
 read_only: false
 ---

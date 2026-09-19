@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: obsidian-manager
 description: Interroger le dépôt OBSIA et le coffre parent `Mon coffre/` — recherche plein texte, rétroliens, résumé d'une note, état des index. À charger dès qu'il faut retrouver quelque chose, ou vérifier ce qui existe déjà avant d'écrire une note nouvelle. Lit et rapporte seulement : n'écrit, ne déplace ni ne supprime rien.
+module: noyau
 type: core
 read_only: true
 ---

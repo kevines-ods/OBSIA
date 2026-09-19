@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: createur-de-skill
 description: Concevoir un nouveau skill OBSIA ou en réviser un — périmètre, dosage, découpage, frontmatter. À charger avant d'écrire ou de modifier un fichier de `IA/skills/`, y compris pour n'en changer que la description. Ne sert pas à exécuter un skill existant.
+module: noyau
 type: core
 read_only: false
 ---

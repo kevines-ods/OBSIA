@@ -3,6 +3,7 @@ schema: 1
 kind: mcp
 name: obsidian
 description: Lire, chercher et modifier les notes du coffre `Mon coffre/` via l'API REST locale du plugin Obsidian. À charger quand une écriture doit être indexée par Obsidian sur-le-champ — un rétrolien visible dans le graphe sans rouvrir l'application. Expose `delete_file`, que le contrat interdit d'appeler.
+module: coffre-obsidian
 type: tool
 transport: stdio
 permission: normal

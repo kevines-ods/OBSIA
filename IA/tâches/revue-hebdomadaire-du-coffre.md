@@ -3,6 +3,7 @@ schema: 1
 kind: tâche
 name: revue-hebdomadaire-du-coffre
 description: Régénérer index et sommaires, vérifier la cohérence du coffre, et réconcilier le registre des tâches avec ce qui tourne réellement.
+module: planification
 mode: agent
 quand: "0 9 * * 1"
 fuseau: Europe/Paris

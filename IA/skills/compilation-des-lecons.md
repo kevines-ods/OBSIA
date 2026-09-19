@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: compilation-des-lecons
 description: Faire redescendre les leçons accumulées dans `mémoire/*/expériences/` vers les skills que l'agent lit pour agir — une seule leçon à la fois, rejouée pour preuve, consignée au registre `IA/system/impact-des-skills.md`. À charger périodiquement, ou dès qu'une erreur se répète alors qu'une note la documente déjà. Ne rédige pas le skill : `createur-de-skill` le fait.
+module: noyau
 type: outil
 read_only: false
 ---

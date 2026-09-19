@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: plan-de-livraison
 description: Découper le cadrage en phases indépendamment livrables par tranches verticales — chacune traversant toutes les couches de bout en bout, démontrable seule, avec ses critères d'acceptation et ses dépendances — puis écrire `docs/PLAN.md`. À charger en dernière porte avant de construire, jamais sur un cadrage non validé. Aucun nom de fichier ni de fonction n'entre dans le plan.
+module: construction
 type: outil
 read_only: false
 ---

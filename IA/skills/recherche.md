@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: recherche
 description: Choisir où chercher avant de chercher — le coffre d'abord (ses index puis ses notes), ensuite les sites de confiance listés ici, en dernier recours le web général. À charger dès qu'une question demande une information, avant toute recherche. Ne cherche pas lui-même — il dit où chercher, `obsidian-manager` exécute.
+module: noyau
 type: core
 read_only: true
 ---

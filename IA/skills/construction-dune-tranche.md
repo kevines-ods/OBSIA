@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: construction-dune-tranche
 description: Construire une tranche verticale du plan et une seule — relire les documents, écrire de quoi vérifier ses critères d'acceptation avant de coder, traverser toutes les couches, refuser d'élargir le périmètre en cours de route, montrer que ça marche, puis livrer. À charger à chaque tranche de `docs/PLAN.md`, jamais pour en mener deux de front. S'arrête après trois tentatives infructueuses au lieu de s'acharner.
+module: construction
 type: outil
 read_only: false
 ---

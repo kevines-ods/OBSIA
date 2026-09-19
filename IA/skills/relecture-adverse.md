@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: relecture-adverse
 description: Soumettre une décision non triviale à une relecture qui cherche à la faire tomber, avant qu'elle tienne — énoncer la thèse, isoler l'objet sans son raisonnement, la réfuter, trier les objections, s'arrêter. À charger avant une décision d'architecture, une opération irréversible, ou du travail dans du code mal connu. Sans contexte neuf, la relecture est dégradée et doit être annoncée comme telle.
+module: revue
 type: outil
 read_only: true
 ---

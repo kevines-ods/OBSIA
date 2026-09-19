@@ -19,7 +19,8 @@ sys.dont_write_bytecode = True                    # pas de __pycache__ dans le c
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from generer_prompt import (RACINE_DEFAUT, collecter,   # même lecteur que le prompt
-                            lire_frontmatter)
+                            filtrer_par_profil, lire_frontmatter,
+                            reduire_aux_actifs)
 
 RACINE = RACINE_DEFAUT
 
@@ -142,8 +143,11 @@ def rendre_ia_readme(agents: list[dict], skills: list[dict], mcp: list[dict],
     L += ["",
           "## `IA/system/`", "",
           "- `VAULT-CONTRACT.md` — les règles. Fait foi.",
-          "- `agents-index.md`, `skills-index.md`, `taches-index.md` — index",
-          "  générés (§11).",
+          "- `agents-index.md`, `skills-index.md`, `taches-index.md`,",
+          "  `modules-index.md` — index générés (§11).",
+          "- `modules/` — le catalogue de modules installables (§13). Un module",
+          "  regroupe ce qui n'a de sens qu'ensemble ; `obsia.local.yml`, non",
+          "  versionné, dit lesquels sont retenus sur cette machine.",
           "- `providers.md` — repère pour choisir un modèle. Aucune clé n'y vit.",
           "- `prompt-fondateur.md` — intention d'origine, non normative.",
           "- `session-log/` — une note par session de travail (§9).",
@@ -155,6 +159,56 @@ def rendre_ia_readme(agents: list[dict], skills: list[dict], mcp: list[dict],
           "> frontmatters, qui font foi. Ne pas éditer à la main (§11).",
           ""]
     return "\n".join(L)
+
+
+def rendre_modules(modules: list[dict], actifs, contenu: dict[str, int]) -> str:
+    """Index du catalogue de modules — ce qui existe, et ce qui est retenu ici.
+
+    Toujours présent en contexte : c'est par lui qu'on sait qu'un module
+    écarté *existe*, et donc qu'on peut le retenir plus tard. Un catalogue
+    dont on ignore les entrées absentes n'est pas un catalogue, c'est une
+    liste (§13).
+    """
+    L = ["# modules-index.md — Index des modules installables", "",
+         "| Module | Essentiel | Retenu ici | Déclarations | Sondes | Requiert | Description |",
+         "|---|---|---|---|---|---|---|"]
+    for m in modules:
+        nom = m["name"]
+        L.append("| [%s](modules/%s) | %s | %s | %d | %s | %s | %s |" % (
+            nom, m["_fichier"],
+            "oui" if m.get("essentiel") else "non",
+            "oui" if (actifs is None or nom in actifs) else "non",
+            contenu.get(nom, 0),
+            ", ".join("`%s`" % s for s in m.get("sondes", [])) or "—",
+            ", ".join(m.get("requiert", [])) or "—",
+            m.get("description", "")))
+    L += ["",
+          "> `Retenu ici` se lit dans `obsia.local.yml`, non versionné. Sans profil,",
+          "> tout est retenu — c'est l'état du dépôt de distribution, et celui sous",
+          "> lequel la CI vérifie le coffre (cf. `VAULT-CONTRACT.md` §13).",
+          "",
+          "> Retenir un module écarté, ou en écarter un autre :",
+          "> `python3 scripts/installer.py --appliquer`. L'installeur sonde la",
+          "> machine, propose, et n'écrit qu'avec `--appliquer`.",
+          "",
+          "> Fichier **généré** par `scripts/regenerate_index.py` depuis les",
+          "> frontmatters, qui font foi. Ne pas éditer à la main (§11).",
+          ""]
+    return "\n".join(L)
+
+
+def lire_modules_locaux(racine) -> list[dict]:
+    """Frontmatters de IA/system/modules/, noyau d'abord puis par nom (§13)."""
+    resultats = []
+    dossier = racine / "IA" / "system" / "modules"
+    for chemin in sorted(dossier.glob("*.md")) if dossier.is_dir() else []:
+        fm = lire_frontmatter(chemin)
+        if fm and fm.get("kind") == "module":
+            fm["_fichier"] = chemin.name
+            fm.setdefault("requiert", [])
+            fm.setdefault("sondes", [])
+            resultats.append(fm)
+    return sorted(resultats, key=lambda m: (not m.get("essentiel"), m["name"]))
 
 
 def lire_taches(dossier) -> list[dict]:
@@ -184,17 +238,33 @@ def main() -> int:
 
     agents = collecter(RACINE / "IA" / "agents", "agent")
     skills = collecter(RACINE / "IA" / "skills", "skill")
+    mcp = lire_mcp(RACINE / "IA" / "MCP")
+    taches = lire_taches(RACINE / "IA" / "tâches")
+    modules = lire_modules_locaux(RACINE)
+
+    # Le catalogue complet sert à compter ce que chaque module apporte ; les
+    # index, eux, ne montrent que ce que le profil retient (§13).
+    contenu: dict[str, int] = {}
+    for fm in agents + skills + mcp + taches:
+        if fm.get("module"):
+            contenu[fm["module"]] = contenu.get(fm["module"], 0) + 1
+
+    import modules as _mod                       # tardif, comme dans generer_prompt
+    actifs = _mod.modules_actifs(RACINE)
+
+    agents, skills, mcp, taches = filtrer_par_profil(RACINE, agents, skills,
+                                                     mcp, taches)
+    reduire_aux_actifs(agents, skills, {m["name"] for m in mcp})
+
     if not agents or not skills:
         print("Aucun agent ou aucun skill collecté — index non régénéré.", file=sys.stderr)
         return 1
-
-    mcp = lire_mcp(RACINE / "IA" / "MCP")
-    taches = lire_taches(RACINE / "IA" / "tâches")
 
     attendus = {
         RACINE / "IA" / "system" / "agents-index.md": rendre_agents(agents),
         RACINE / "IA" / "system" / "skills-index.md": rendre_skills(agents, skills),
         RACINE / "IA" / "system" / "taches-index.md": rendre_taches(taches),
+        RACINE / "IA" / "system" / "modules-index.md": rendre_modules(modules, actifs, contenu),
         RACINE / "IA" / "README.md": rendre_ia_readme(agents, skills, mcp, taches),
     }
 

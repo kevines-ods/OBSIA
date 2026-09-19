@@ -3,6 +3,7 @@ schema: 1
 kind: mcp
 name: coffre-parent
 description: Lire et écrire dans les fichiers du coffre parent `Mon coffre/` via un serveur MCP « fichiers » monté sur sa racine. À charger quand le harness n'ouvre pas déjà la racine du coffre comme dossier de travail. Le serveur peut écrire partout ; les zones autorisées restent celles du §7.3.
+module: coffre-obsidian
 type: tool
 transport: stdio
 permission: elevated

@@ -15,6 +15,16 @@ id_rsa*
 acme.json
 config.php
 
+# Profil d'installation (VAULT-CONTRACT §13) : il dit quels modules sont
+# retenus SUR CETTE MACHINE, et recopie ce que la sonde y a trouvé. Versionné,
+# il imposerait la configuration de son auteur à tout clone — et l'absence de
+# profil vaut « catalogue complet », qui est justement l'état que la CI vérifie.
+obsia.local.yml
+
+# Prompt système généré : dérivé des frontmatters, et daté du jour où on l'a
+# produit. Le régénérer coûte une seconde ; le versionner le fait diverger.
+prompt-systeme.md
+
 # Inventaires : gabarits versionnés, valeurs réelles hors dépôt
 inventaire-*.yml
 !inventaire-*.example.yml

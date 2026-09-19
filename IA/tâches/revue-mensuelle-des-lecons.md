@@ -3,6 +3,7 @@ schema: 1
 kind: tâche
 name: revue-mensuelle-des-lecons
 description: Statuer sur les modifications de skill dont la date de revue est passée — confirmer ou annuler — puis compiler au plus une leçon accumulée. Une par mois, jamais deux.
+module: planification
 mode: agent
 quand: "0 11 1 * *"
 fuseau: Europe/Paris

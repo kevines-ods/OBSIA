@@ -3,6 +3,7 @@ schema: 1
 kind: skill
 name: systeme-de-design
 description: Proposer un système visuel cohérent et assumé — direction, typographie, palette, densité, mouvement — avec ce qui est conventionnel et ce qui est pris comme risque, puis produire `docs/DESIGN.md` et un aperçu HTML que l'utilisateur ouvre et regarde. À charger après le choix de la stack, pour tout projet ayant une interface visible. Inutile pour un outil sans interface.
+module: construction
 type: outil
 read_only: false
 ---
