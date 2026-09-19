@@ -98,10 +98,40 @@ et c'est la première installation réduite qui l'a montré — pas la relecture
   Mais seulement en installation réduite : sans profil, un skill absent du
   registre reste une erreur, sinon une faute de frappe passerait inaperçue.
 
+## Ce que la première publication d'essai a montré
+
+Publier pour de faux a trouvé deux défauts que la relecture n'avait pas vus.
+
+- **Quatre fiches d'adaptateur citaient une note de `mémoire/` par son chemin.**
+  L'export échouait, loin de l'endroit où la faute avait été écrite. Elles
+  nomment désormais la note, ce que le §7.5 demandait déjà pour les rétroliens.
+  `verifier_coffre.py` fait respecter la règle dans le privé, sur les quatre
+  zones vidées à la publication, en laissant passer leurs `README.md` et le
+  gabarit `mémoire/profil-utilisateur.md`.
+
+- **Cinq fichiers supposaient Arch.** `pdf`, `bureautique`, `mermaid`,
+  `remediation-linux` et la fiche MCP `obsidian` donnaient `pacman` et `paru`
+  comme si c'était la seule voie. C'était exactement la spécificité que la
+  demande visait, et aucun contrôle ne la voyait — parce qu'une commande juste
+  sur une machine n'est pas une erreur, seulement une hypothèse tue. Ils
+  donnent maintenant les trois familles et renvoient à `obsia.local.yml` pour
+  savoir laquelle s'applique.
+
+- **Le README annonçait l'adresse du dépôt privé.** Recopiée telle quelle, elle
+  aurait donné un 404 à un lecteur du public, sans lui dire pourquoi. D'où
+  `publier.py --depot-public OWNER/NOM`.
+
+Le contrôle de fuite a par ailleurs été éprouvé pour de bon — courriel, IP
+privée et jeton injectés dans un fichier publié : trois trouvailles, rien
+publié. Le motif « secret affecté » a dû perdre sa limite de mot initiale, un
+préfixe collant presque toujours au nom réel (`OPENAI_API_KEY=…`).
+
 ## Ce qui reste ouvert
 
-- `publier.py` n'a tourné que contre un clone factice. Le premier vrai passage
-  dira si le contrôle de fuite crie trop ou pas assez.
+- `publier.py` n'a tourné que contre un clone factice, jamais contre le vrai
+  dépôt public — qui n'existe pas encore. Le contrôle de fuite n'a pas crié sur
+  l'arbre réel ; reste à voir s'il criera trop une fois la mémoire remplie
+  autrement.
 - Le sens unique privé → public se paie : une correction proposée sur le public
   se reporte à la main. C'est un coût accepté, pas un oubli.
 - Le découpage en quatorze modules n'a jamais été confronté à quelqu'un d'autre

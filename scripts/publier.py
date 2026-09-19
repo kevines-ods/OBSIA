@@ -62,8 +62,11 @@ BLOQUANTS = (
     ("jeton d'API",
      re.compile(r"\b(?:ghp|gho|ghs|ghu|github_pat|sk-ant|sk-proj|sk-live|AKIA)"
                 r"[-_A-Za-z0-9]{10,}")),
+    # Pas de `\b` en tête : un préfixe colle presque toujours au nom réel
+    # (`OPENAI_API_KEY=…`), et `_` étant un caractère de mot, la limite ne
+    # tombait jamais là où il fallait.
     ("secret affecté",
-     re.compile(r"(?i)\b(?:password|passwd|api[_-]?key|secret|token)\b\s*[=:]\s*"
+     re.compile(r"(?i)(?:password|passwd|api[_-]?key|secret|token)\b\s*[=:]\s*"
                 r"[\"']?[A-Za-z0-9_\-./+]{12,}")),
 )
 
@@ -110,6 +113,28 @@ def git(racine: Path, *args: str) -> str:
     if res.returncode != 0:
         raise RuntimeError((res.stderr or res.stdout).strip())
     return res.stdout
+
+
+URL_CLONE = re.compile(r"(git clone https://github\.com/)[\w.-]+/[\w.-]+")
+
+
+def reecrire_url_de_clone(vers: Path, depot: str) -> list[str]:
+    """Fait pointer les commandes `git clone` de la doc vers le dépôt public.
+
+    Le README du dépôt privé annonce l'adresse du dépôt privé : recopiée telle
+    quelle, elle donnerait à un lecteur du public une commande qui échoue en
+    404, sans lui dire pourquoi.
+    """
+    touches = []
+    for chemin in sorted(vers.rglob("*.md")):
+        if ".git" in chemin.parts:
+            continue
+        texte = chemin.read_text(encoding="utf-8")
+        neuf = URL_CLONE.sub(r"\g<1>" + depot, texte)
+        if neuf != texte:
+            chemin.write_text(neuf, encoding="utf-8")
+            touches.append(str(chemin.relative_to(vers)))
+    return touches
 
 
 def exporter(source: Path, vers: Path) -> None:
@@ -188,6 +213,9 @@ def main() -> int:
                     help="écrit dans la cible ; sans lui, aperçu seulement")
     ap.add_argument("--commit", action="store_true",
                     help="committe dans la cible après écriture. Ne pousse jamais.")
+    ap.add_argument("--depot-public", metavar="OWNER/NOM",
+                    help="réécrit les `git clone https://github.com/…` de la "
+                         "documentation vers ce dépôt")
     ap.add_argument("--forcer", action="store_true",
                     help="publie malgré les trouvailles du contrôle de fuite")
     ap.add_argument("--autoriser-modifications", action="store_true",
@@ -218,6 +246,11 @@ def main() -> int:
         export = Path(tmp) / "export"
         print("Export de HEAD (%s)…" % git(source, "rev-parse", "--short", "HEAD").strip())
         exporter(source, export)
+
+        if args.depot_public:
+            touches = reecrire_url_de_clone(export, args.depot_public)
+            print("  URL de clone → %s  (%d fichier(s))"
+                  % (args.depot_public, len(touches)))
 
         print("\nContrôle de fuite")
         print("─────────────────")
@@ -260,7 +293,7 @@ def main() -> int:
 
     print("\nÉcrit dans %s" % cible)
     diff = git(cible, "status", "--porcelain").strip()
-    print("  %d fichier(s) changé(s)" % len(diff.splitlines()) if diff
+    print("  %d entrée(s) au statut Git" % len(diff.splitlines()) if diff
           else "  Aucun changement — le public était déjà à jour.")
 
     if args.commit and diff:

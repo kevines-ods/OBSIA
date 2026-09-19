@@ -315,7 +315,13 @@ Le privé fait foi, et `scripts/publier.py` en dérive le public :
 ```bash
 python3 scripts/publier.py --cible ~/OBSIA-public              # aperçu
 python3 scripts/publier.py --cible ~/OBSIA-public --appliquer
+python3 scripts/publier.py --cible ~/OBSIA-public --appliquer \
+        --depot-public mon-compte/OBSIA --commit
 ```
+
+`--depot-public` réécrit les `git clone https://github.com/…` de la
+documentation : le README du privé annonce l'adresse du privé, qui donnerait un
+404 à un lecteur du public sans lui dire pourquoi.
 
 Il exporte l'arbre suivi par Git à `HEAD` — jamais le répertoire de travail,
 parce que ce qui n'est pas suivi n'a pas été relu —, vide `mémoire/`,

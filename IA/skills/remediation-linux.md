@@ -80,9 +80,15 @@ sudo journalctl --vacuum-time=30d
 Cache du gestionnaire de paquets :
 
 ```bash
-sudo pacman -Sc                          # Arch / CachyOS
-sudo apt clean                           # Debian
+sudo pacman -Sc                          # Arch et dérivées
+sudo apt clean                           # Debian et dérivées
+sudo dnf clean all                       # Fedora et dérivées
 ```
+
+Quelle famille s'applique se lit dans `obsia.local.yml`
+(`gestionnaire_paquets`), que l'installeur a rempli depuis `/etc/os-release`
+(§13.3) — ne pas la deviner : proposer `apt` sur une machine Arch fait perdre
+un aller-retour et entame la confiance.
 
 Fichiers supprimés mais toujours ouverts (cas du disque plein invisible) :
 
@@ -104,8 +110,8 @@ sudo cp /etc/fichier.conf /etc/fichier.conf.bak-$(date +%F)
 sudo systemctl reload <service> || sudo cp /etc/fichier.conf.bak-$(date +%F) /etc/fichier.conf
 ```
 
-Sur Arch et CachyOS, les fichiers `.pacnew` signalent une configuration mise à
-jour par un paquet et non fusionnée :
+Sur Arch et ses dérivées, les fichiers `.pacnew` signalent une configuration
+mise à jour par un paquet et non fusionnée :
 
 ```bash
 sudo find /etc -name "*.pacnew" -o -name "*.pacsave"
@@ -127,8 +133,9 @@ données incohérentes. Toujours essayer `SIGTERM` et attendre.
 ## Paquets
 
 ```bash
-sudo pacman -Syu                         # CachyOS : mise à jour complète, jamais partielle
-sudo apt update && sudo apt upgrade      # Debian
+sudo pacman -Syu                         # Arch : complète, jamais partielle
+sudo apt update && sudo apt upgrade      # Debian et dérivées
+sudo dnf upgrade --refresh               # Fedora et dérivées
 ```
 
 > Sur Arch, une mise à jour partielle (`pacman -Sy paquet`) casse le système.

@@ -38,7 +38,9 @@ serveur REST. Vérifié et corrigé le 2026-09-09.
 - une **clé API** générée par le plugin, fournie au harness par variable
   d'environnement — jamais écrite dans le dépôt ;
 - **`uv`** installé, qui fournit `uvx` (le serveur est en Python, pas en
-  Node). Sur CachyOS : `pacman -S uv`.
+  Node). Empaqueté sous le nom `uv` par les distributions courantes
+  (`pacman -S uv`, `apt install uv`, `dnf install uv`) ; à défaut,
+  l'installeur officiel du projet.
 
 Trois variables, telles que le serveur les attend :
 
