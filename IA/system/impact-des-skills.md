@@ -33,6 +33,7 @@ l'annule : une modification que rien n'a confirmée depuis n'est pas acquise.
 | Date | Leçon | Skill touché | Ce qui a changé | Vérifié par | Statut | Revue |
 |---|---|---|---|---|---|---|
 | 2026-09-13 | `rendu-mermaid-en-conteneur` | `mermaid` | le prérequis n'est plus « la commande est installée » (`-h`) mais « elle arrive au bout » : rendu jetable à lancer, et configuration Puppeteer `-p` si la machine n'a pas de session graphique | rendu rejoué en conteneur : échec sans les options (`zygote_host_impl_linux.cc`, « Running as root without --no-sandbox »), SVG produit avec | confirmé | — |
+| 2026-09-26 | `delegation-sur-note-courte` | `delegation-locale` | quatrième critère au test « déléguer ou non » : vérifier doit coûter nettement moins que faire soi-même ; « résumer une note courte déjà lue » passe côté « non », et l'exemple de consigne devient une extraction JSON vérifiable mécaniquement | cas réel du jour : résumé délégué d'une note de `-SAVOIRS/`, 21 s d'appel, deux puces sur trois réécrites, relecture intégrale de la source nécessaire | proposé | 2026-10-26 |
 
 ## Statuts
 

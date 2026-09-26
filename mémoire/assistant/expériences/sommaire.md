@@ -3,7 +3,7 @@
 > Généré par `scripts/regenerate_sommaire.py` depuis le contenu des notes.
 > Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §2).
 
-9 notes.
+10 notes.
 
 ## Notes
 
@@ -11,6 +11,7 @@
 |---|---|---|
 | [Un vérificateur vert ne prouve que ce qu'il regarde](angles-morts-dun-verificateur.md) | 🟢 Vérifiée le 2026-09-09 — trois erreurs réelles trouvées… | Leçon réutilisable sur les contrôles automatiques. Vaut pour tout script de validation, dans ce coffre comme ailleurs. |
 | [Coder avant le cadrage fait grossir l'outil, jamais converger](coder-avant-le-cadrage-fait-grossir-loutil.md) | 🟢 Vérifiée — le 2026-09-11, en comparant des harnais pour… | Leçon tirée du daemon AIo (dépôt `ia-orchestrator`), construit comme harness candidat pour piloter OBSIA depuis le PC… |
+| [Déléguer une note courte déjà lue ne rapporte rien](delegation-sur-note-courte.md) | 🟢 Vérifiée le 2026-09-26 — un cas réel, constaté par… | Leçon réutilisable sur la délégation à un modèle local. Vaut pour toute tâche qu'on confie à un modèle dont il faut… |
 | [Frontmatter du coffre — pièges vérifiés](frontmatter-du-coffre-obsia.md) | 🟢 Vérifiée le 2026-09-03 sur un coffre jetable. | Leçon réutilisable sur le lecteur de frontmatter d'OBSIA. À relire avant de toucher au frontmatter d'un agent ou d'un… |
 | [Un index maintenu à la main finit par mentir](index-maintenus-a-la-main.md) | 🟢 Vérifiée — trois erreurs réelles trouvées en une session. | Leçon générale, tirée d'un cas concret. Vaut pour tout fichier qui décrit d'autres fichiers. |
 | [Un nom enregistré d'après une description n'est pas un nom vérifié](nommage-verifie-a-la-source.md) | 🟢 Vérifiée — six jours de documentation fausse, sur des… | Leçon générale, tirée du coffre parent. Vaut pour tout identifiant qu'on recopie sans pouvoir le confronter à la chose… |
