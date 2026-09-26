@@ -20,15 +20,24 @@ L'outil est l'appel `deleguer` du MCP `modele-local` : lire sa fiche
 
 ## Déléguer ou non — le test
 
-Déléguer seulement si **les trois** sont vrais :
+Déléguer seulement si **les quatre** sont vrais :
 
 1. la tâche s'énonce en une consigne fermée, vérifiable d'un coup d'œil ;
 2. elle ne demande aucun savoir hors de ce qu'on transmet ;
-3. une erreur se voit à la relecture et ne coûte qu'un nouvel essai.
+3. une erreur se voit à la relecture et ne coûte qu'un nouvel essai ;
+4. vérifier le résultat coûte nettement moins que faire soi-même.
+
+Le quatrième critère élimine le cas le plus tentant : une note courte déjà
+lue. Pour contrôler son résumé contre la source, il faut la relire en
+entier ; l'écrire soi-même ne coûte alors presque rien de plus, et l'appel
+n'ajoute que son attente. La délégation paie sur un **lot** vérifiable par
+échantillon ou par contrôle mécanique (JSON valide, valeur présente dans la
+source), pas sur une pièce unique.
 
 | Oui | Non |
 | --- | --- |
-| résumer une note en N puces | décider où classer une note (§7) |
+| résumer un lot de notes, contrôlé par échantillon | résumer une note courte déjà lue |
+| — | décider où classer une note (§7) |
 | proposer des tags **dans une liste fournie** | inventer des tags hors du registre |
 | reformuler, corriger l'orthographe, traduire | juger si une affirmation est vraie |
 | extraire dates, liens, noms en JSON | raisonner sur plusieurs étapes |
@@ -54,8 +63,8 @@ Le modèle ne connaît rien du coffre ; la consigne dit tout.
   avant la moindre réponse.
 
 ```text
-consigne : Résume la note en exactement 3 puces courtes : à quoi sert l'outil,
-           comment il se déploie, un point d'attention. Pas de titre.
+consigne : Extrais les URL citées dans la note. Réponds en JSON :
+           {"urls": ["..."]}. Aucune URL absente du texte.
 contenu  : <corps de la note, sans le frontmatter>
 ```
 

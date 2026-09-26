@@ -3,13 +3,13 @@
 > Généré par `scripts/regenerate_sommaire.py` depuis le contenu des notes.
 > Ne pas éditer à la main (cf. `VAULT-CONTRACT.md` §2).
 
-3 sous-dossiers, 38 notes, du 2026-08-15 au 2026-09-19.
+3 sous-dossiers, 39 notes, du 2026-08-15 au 2026-09-19.
 
 ## Sous-dossiers
 
 | Dossier | Notes | Entrée représentative |
 |---|---|---|
-| [assistant](assistant/) | 9 | Un vérificateur vert ne prouve que ce qu'il regarde |
+| [assistant](assistant/) | 10 | Un vérificateur vert ne prouve que ce qu'il regarde |
 | [projets](projets/) | 24 | 2026-09-19 — Le coffre devient un catalogue, et le public un dérivé du privé |
 | [préférences](préférences/) | 3 | Licences et logiciel libre |
 
