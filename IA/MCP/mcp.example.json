@@ -1,0 +1,64 @@
+{
+  "mcpServers": {
+    "coffre-parent": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/chemin/absolu/vers/Mon coffre"
+      ]
+    },
+    "git-hub": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_TOKEN}"
+      }
+    },
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--headless=true",
+        "--isolated=true"
+      ]
+    },
+    "obsidian": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "mcp-obsidian"
+      ],
+      "env": {
+        "OBSIDIAN_API_KEY": "${OBSIDIAN_API_KEY}",
+        "OBSIDIAN_HOST": "127.0.0.1",
+        "OBSIDIAN_PORT": "27124"
+      }
+    },
+    "searxng": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-searxng"
+      ],
+      "env": {
+        "SEARXNG_URL": "https://searxng.example.tld"
+      }
+    },
+    "modele-local": {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "/chemin/absolu/vers/Mon coffre/OBSIA/IA/skills/delegation-locale/scripts/mcp_modele_local.py"
+      ],
+      "env": {
+        "OBSIA_LOCAL_URL": "http://127.0.0.1:8080/v1",
+        "OBSIA_LOCAL_MODEL": "nom-du-modele"
+      }
+    }
+  }
+}

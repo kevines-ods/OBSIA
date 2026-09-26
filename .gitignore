@@ -1,0 +1,56 @@
+# Artefacts de compilation (à n'importe quelle profondeur)
+target/
+node_modules/
+dist/
+*.log
+*.tmp
+
+# Secrets — le dépôt est public. NE JAMAIS COMMITTER DE CLÉ NI DE JETON.
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+id_rsa*
+acme.json
+config.php
+
+# Profil d'installation (VAULT-CONTRACT §13) : il dit quels modules sont
+# retenus SUR CETTE MACHINE, et recopie ce que la sonde y a trouvé. Versionné,
+# il imposerait la configuration de son auteur à tout clone — et l'absence de
+# profil vaut « catalogue complet », qui est justement l'état que la CI vérifie.
+obsia.local.yml
+
+# Prompt système généré : dérivé des frontmatters, et daté du jour où on l'a
+# produit. Le régénérer coûte une seconde ; le versionner le fait diverger.
+prompt-systeme.md
+
+# Inventaires : gabarits versionnés, valeurs réelles hors dépôt
+inventaire-*.yml
+!inventaire-*.example.yml
+
+# Configurations MCP remplies : seul le gabarit est versionné. Une config
+# réelle porte le chemin du coffre et des références de jetons.
+mcp.json
+.mcp.json
+!mcp.example.json
+
+secrets/
+.backup-reconstruction/
+
+# Coffre synchronisé par Syncthing (hors du dépôt) : fichiers de conflit et
+# dossiers internes qu'il dépose dans les répertoires partagés. Un fichier de
+# conflit casse la règle d'unicité des noms de notes (VAULT-CONTRACT §6) et
+# n'a rien à faire dans un commit. Ça ne dispense pas de faire ignorer
+# `.git/` par Syncthing lui-même (.stignore, hors dépôt) : sans ça, le
+# dépôt se corrompt — ce filtre-ci n'attrape que les fichiers de conflit.
+*.sync-conflict-*
+.stfolder/
+.stversions/
+
+# .archive/ n'est PAS ignoré : le §2 du contrat impose un archivage avant toute
+# suppression. Ignoré, cet archivage ne survivait pas à un clone neuf.
+
+# Caches Python — créés par les scripts du coffre
+__pycache__/
+*.pyc

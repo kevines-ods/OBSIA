@@ -1,0 +1,13 @@
+version: 2
+updates:
+  # Ce dépôt ne contient que du Markdown et deux scripts Python sans
+  # dépendance : les écosystèmes cargo et npm ont disparu avec l'interface.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    labels:
+      - "dependencies"
+      - "github-actions"

@@ -1,0 +1,20 @@
+# taches-index.md — Index des tâches planifiées
+
+| Tâche | Quand | Fuseau | Mode | Exécutant | Agent | Active | Description |
+|---|---|---|---|---|---|---|---|
+| [revue-des-notes-du-coffre](../tâches/revue-des-notes-du-coffre.md) | `0 10 * * 1` | Europe/Paris | agent | local | assistant | oui | Traiter les notes brutes du coffre parent — remplir et classer celles d'-EN-VRAC, compléter celles déposées dans -SAVOIRS, et signaler les tags hors vocabulaire contrôlé. À charger via le skill traitement-des-notes. |
+| [revue-hebdomadaire-du-coffre](../tâches/revue-hebdomadaire-du-coffre.md) | `0 9 * * 1` | Europe/Paris | agent | local | assistant | oui | Régénérer index et sommaires, vérifier la cohérence du coffre, et réconcilier le registre des tâches avec ce qui tourne réellement. |
+| [revue-mensuelle-des-lecons](../tâches/revue-mensuelle-des-lecons.md) | `0 11 1 * *` | Europe/Paris | agent | local | assistant | non | Statuer sur les modifications de skill dont la date de revue est passée — confirmer ou annuler — puis compiler au plus une leçon accumulée. Une par mois, jamais deux. |
+
+> Le registre `IA/tâches/` **déclare** ; rien ne s'instancie tout seul.
+> Une tâche listée ici n'est pas forcément planifiée sur la machine
+> courante : charger le skill `cron` pour instancier ou réconcilier
+> (cf. `VAULT-CONTRACT.md` §12).
+
+> `Exécutant` dit qui a le droit de déclencher — et donc qui pas :
+> une tâche = **au plus une instance vivante**, tous exécutants
+> confondus. Planifier la même chose côté harness *et* côté machine
+> la déclenche deux fois.
+
+> Fichier **généré** par `scripts/regenerate_index.py` depuis les
+> frontmatters, qui font foi. Ne pas éditer à la main (§11).
