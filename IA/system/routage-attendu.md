@@ -69,6 +69,8 @@ descriptions et tranche.
 | « combien de ressources restent sur l'hôte de virtualisation ? » | proxmox | 3 | — |
 | « on refait la même erreur alors qu'une note la documente déjà » | compilation-des-lecons | 3 | — |
 | « fais redescendre les leçons de la mémoire dans les skills » | compilation-des-lecons | 3 | createur-de-skill |
+| « file ce résumé au petit modèle local, pas besoin de lui donner tout le contexte » | delegation-locale | 3 | — |
+| « délègue le tri de ces notes au modèle qui tourne sur la VM » | delegation-locale | 3 | traitement-des-notes |
 
 ## Une attente qui a été corrigée, et pourquoi
 

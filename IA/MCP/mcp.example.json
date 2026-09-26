@@ -48,6 +48,17 @@
       "env": {
         "SEARXNG_URL": "https://searxng.example.tld"
       }
+    },
+    "modele-local": {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "/chemin/absolu/vers/Mon coffre/OBSIA/IA/skills/delegation-locale/scripts/mcp_modele_local.py"
+      ],
+      "env": {
+        "OBSIA_LOCAL_URL": "http://127.0.0.1:8080/v1",
+        "OBSIA_LOCAL_MODEL": "nom-du-modele"
+      }
     }
   }
 }

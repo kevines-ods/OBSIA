@@ -23,12 +23,14 @@ skills:
   - traitement-des-notes
   - cartographie-du-coffre
   - configuration-mcp
+  - delegation-locale
 mcp:
   - git-hub
   - chrome-devtools
   - obsidian
   - coffre-parent
   - searxng
+  - modele-local
 read_only: false
 ---
 

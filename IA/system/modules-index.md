@@ -11,6 +11,7 @@
 | [diagrammes](modules/diagrammes.md) | non | oui | 1 | `commande:docker`, `commande:podman`, `commande:npx`, `commande:mmdc` | noyau | Rendu de diagrammes Mermaid en SVG — flux, séquences, états, classes, entités. |
 | [documents](modules/documents.md) | non | oui | 2 | — | noyau | Documents bureautiques et PDF — lire, produire, convertir, extraire, remplir des formulaires, appliquer l'OCR. |
 | [linux-poste](modules/linux-poste.md) | non | oui | 2 | `commande:systemctl`, `commande:journalctl` | noyau | Diagnostiquer et corriger un système Linux — services, journaux, charge, disque, mémoire, réseau. |
+| [modeles-locaux](modules/modeles-locaux.md) | non | oui | 2 | `commande:llama-server`, `commande:llama-swap`, `commande:ollama` | noyau | Délégation de tâches simples à un modèle local servi par une API compatible OpenAI, sans lui transmettre le contexte du coffre. |
 | [navigateur](modules/navigateur.md) | non | oui | 2 | `commande:chromium`, `commande:google-chrome`, `commande:google-chrome-stable` | noyau, construction | Vérifier une interface dans un vrai navigateur — DOM rendu, erreurs de console, requêtes réseau, capture d'écran, arbre d'accessibilité. |
 | [planification](modules/planification.md) | non | oui | 3 | `commande:systemctl` | noyau | Tâches planifiées — registre `IA/tâches/`, instanciation en timers, réconciliation après un changement de machine ou de harness. |
 | [recherche-web](modules/recherche-web.md) | non | oui | 1 | — | noyau | Recherche web par un méta-moteur auto-hébergé — SearXNG, sans compte ni traçage. |
