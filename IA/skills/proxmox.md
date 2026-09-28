@@ -17,6 +17,9 @@ répartition des ressources.
 > ici n'affecte pas un service, elle affecte toutes les VM à la fois. Ce skill
 > est en lecture seule, et cette contrainte n'est pas négociable pour du
 > diagnostic courant.
+>
+> Pour **agir** — créer une machine, régler le démarrage, poser un hookscript —
+> charger `administration-proxmox`, après ce constat.
 
 ## Règles
 

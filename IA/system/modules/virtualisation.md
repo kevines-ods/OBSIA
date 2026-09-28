@@ -2,7 +2,7 @@
 schema: 1
 kind: module
 name: virtualisation
-description: Inspecter un hôte Proxmox — VM, conteneurs LXC, stockage, cluster, répartition des ressources. Lecture seule non négociable.
+description: Inspecter un hôte Proxmox en lecture seule — VM, conteneurs LXC, stockage, ressources — puis y agir sous annonce — créer des machines, régler le démarrage, poser des hookscripts.
 essentiel: false
 question: Administres-tu un hôte Proxmox ?
 sondes:
@@ -15,7 +15,10 @@ requiert:
 
 ## Ce que ce module apporte
 
-Le skill `proxmox`, en lecture seule absolue.
+Deux skills qui forment une paire ordonnée, comme `diagnostic-linux` et
+`remediation-linux` : `proxmox` constate, en lecture seule absolue ;
+`administration-proxmox` agit, et ne se charge qu'après ce constat. Les séparer
+garde le constat sûr pour un agent qui n'a pas le droit d'agir.
 
 ## La sonde se trompera souvent
 

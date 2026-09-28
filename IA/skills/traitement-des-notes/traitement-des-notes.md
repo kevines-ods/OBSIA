@@ -122,4 +122,5 @@ parent réel et ne tourne pas en CI.
 - `Mon coffre/-PERSONNELS/` porte du personnel **non critique** : il se lit et
   se relie comme le reste (§7.3), mais on n'y **écrit** que pour y classer une
   note manifestement personnelle, et rien de son contenu ne part dans `OBSIA/`,
-  qui est public.
+  qui est public. Une note qui porte `auteur: <nom-agent>` est une note de
+  référence tenue par cet agent (§7.3) : ce skill ne la retraite pas.

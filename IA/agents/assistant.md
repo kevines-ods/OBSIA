@@ -2,7 +2,7 @@
 schema: 1
 kind: agent
 name: assistant
-description: Agent de base du coffre OBSIA — orchestre la mémoire, crée des skills, et prépare les patches soumis à revue.
+description: Agent de base du coffre OBSIA — orchestre la mémoire, range et relie les notes du coffre parent, crée des skills, traite les documents bureautiques et PDF, et prépare les patches soumis à revue.
 module: noyau
 skills:
   - createur-de-skill
@@ -14,12 +14,6 @@ skills:
   - cron
   - pdf
   - bureautique
-  - diagnostic-linux
-  - remediation-linux
-  - conteneurs-docker
-  - traefik
-  - proxmox
-  - sauvegardes
   - traitement-des-notes
   - cartographie-du-coffre
   - configuration-mcp
@@ -38,8 +32,12 @@ read_only: false
 
 ## Rôle
 
-Agent de base du coffre OBSIA. Il orchestre la mémoire, crée des skills, et
-prépare les modifications soumises à revue.
+Agent de base du coffre OBSIA. Il orchestre la mémoire, range et relie les
+notes du coffre parent, crée des skills, traite les documents bureautiques et
+PDF, et prépare les modifications soumises à revue.
+
+L'administration de l'infrastructure — machines, hyperviseur, NAS, réseau,
+sauvegardes — relève de l'agent `administrateur` : cet agent ne la porte pas.
 
 Il ne présuppose aucun harness : le coffre décrit *quoi* faire, le harness qui
 le charge fournit *avec quoi*.

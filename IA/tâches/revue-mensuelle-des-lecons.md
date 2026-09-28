@@ -9,7 +9,7 @@ quand: "0 11 1 * *"
 fuseau: Europe/Paris
 exécutant: local
 agent: assistant
-actif: false
+actif: true
 ---
 
 # Tâche — Revue mensuelle des leçons
@@ -32,9 +32,10 @@ vide ; plus rare, les revues échues s'empileraient.
 `exécutant: local` : elle lit `mémoire/` et écrit des patchs dans un clone du
 coffre. Un planificateur distant n'aurait rien sous la main.
 
-`actif: false` tant que le skill n'a pas tourné une fois en entier, de bout en
-bout, sur une vraie leçon. Déclencher une procédure jamais éprouvée, c'est
-découvrir ses défauts un 1er du mois, sans personne devant l'écran.
+Activée le 2026-09-26 sur décision de l'utilisateur, **avant** que le skill
+ait tourné une fois en entier sur une vraie leçon. Le premier déclenchement
+sert donc d'épreuve : son rapport est à relire avec soin, parce qu'une
+procédure jamais éprouvée découvre ses défauts sans personne devant l'écran.
 
 ## Instruction
 

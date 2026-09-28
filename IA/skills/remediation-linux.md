@@ -144,6 +144,55 @@ sudo dnf upgrade --refresh               # Fedora et dérivées
 Sur les VM Debian du NAS, vérifier après mise à jour du noyau que les modules
 nécessaires sont toujours présents avant de redémarrer.
 
+## Commandes longues
+
+Pendant qu'une commande tourne, l'utilisateur ne peut pas écrire : sans
+annonce, il croit à un blocage et interrompt — ce qui **annule** la commande.
+
+- Annoncer la durée **avant** de lancer (« environ N minutes »).
+- Découper en étapes courtes ; jamais de `sleep` empilés dans un même appel.
+- Au-delà de quelques minutes, détacher
+  (`setsid nohup <cmd> > /var/log/<tâche>.log 2>&1 &`) et interroger le
+  journal ensuite.
+
+## Écrire un script d'administration
+
+Un script qui tourne sans surveillance doit échouer bruyamment, jamais se
+tromper en silence.
+
+- **`export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin`**
+  en tête de tout script lancé par cron ou un timer, et tester `-n "$var"` avant
+  de comparer : une variable vide rend un test vrai à tort.
+- `grep` d'un motif qui peut commencer par `-` : `grep -aF -- "$motif"` (`--`
+  ferme les options, `-a` tolère les octets non UTF-8 d'un journal).
+- Arithmétique de dates : passer par l'epoch
+  (`date -d "@$(( $(date -d "$d" +%s) + 6*86400 ))"`). GNU `date` lit
+  `"… + 6 days"` comme un **fuseau horaire** et renvoie J+1.
+- `pkill -f mon-script.py` tue aussi la session SSH qui l'a lancé : écrire
+  `pkill -f "mon-scrip[t].py"`.
+- `find <dir> -type f` renvoie des chemins complets : préfixer soi-même mène à
+  un chemin doublé. Utiliser `-printf '%f\n'`.
+- **Jamais `rm … 2>/dev/null`** : l'échec devient invisible et le compte rendu
+  ment.
+- Motifs de découpage de journal **sans accents** : plus robustes à travers SSH
+  et les shells non-POSIX.
+- Modes `dry` (affiche sans agir) et `test` pour tout script qui notifie ou
+  supprime ; valider sur un **journal réel copié**, avec un faux binaire en tête
+  de `PATH` pour les appels externes.
+- Poste sous **`fish`** : pas de heredoc ni de `$?`. Écrire le script dans
+  `/tmp`, l'exécuter avec `bash` ; à distance, `ssh <hôte> bash -s < /tmp/script.sh`.
+
+Pièges de configuration système :
+
+- **udev** : `SYSTEMD_WANTS` est une propriété unique — une ancienne règle avec
+  `=` écrase la nouvelle. `grep -rn SYSTEMD_WANTS /etc/udev/rules.d/` avant
+  d'ajouter, et écrire `+=`. Tester :
+  `udevadm control --reload-rules && udevadm trigger --action=add --sysname-match=<part>`.
+- **`/etc/fstab`** : deux lignes pour un même UUID, dont une en
+  `x-systemd.automount`, peuvent démonter un disque en pleine sauvegarde.
+- **logrotate** d'un journal qu'un programme garde ouvert : `copytruncate` ; si
+  un autre script relit l'avant-dernier journal, `delaycompress`.
+
 ## Après chaque correction
 
 1. Vérifier que le problème a disparu — avec la même commande qui l'avait montré.
@@ -157,7 +206,8 @@ nécessaires sont toujours présents avant de redémarrer.
 
 ## Ce qui n'est pas dans le périmètre
 
-- La couche Proxmox (démarrage/arrêt de VM, stockage) → skill `proxmox`
+- La couche Proxmox (création, démarrage, hookscripts, stockage) → constat par
+  `proxmox`, action par `administration-proxmox`
 - Les conteneurs → skill `conteneurs-docker`
 - La restauration de sauvegarde → skill `sauvegardes`
 
