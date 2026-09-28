@@ -29,6 +29,30 @@ Gabarit de config prêt à copier : `IA/MCP/mcp.example.json`.
 
 Liste complète et à jour : `docs/tool-reference.md` du dépôt officiel.
 
+## Lancement
+
+```bash
+npx -y chrome-devtools-mcp@latest --headless --isolated \
+  --no-usage-statistics --no-performance-crux
+```
+
+- **Chrome ou Chromium.** Le serveur cherche par défaut Google Chrome, canal
+  stable. Sur une distribution qui ne fournit que Chromium, lui donner le
+  binaire : `--executablePath=/usr/bin/chromium-browser` (nom Fedora ; lire
+  `command -v chromium chromium-browser` ailleurs). Sans cette option, le
+  serveur démarre mais échoue à la première navigation.
+- **Prérequis** : Node.js et `npx` sur la machine qui lance le serveur — le
+  premier lancement télécharge le paquet depuis le registre npm.
+- **Confidentialité** : `--no-usage-statistics` coupe les statistiques
+  d'usage envoyées à Google ; `--no-performance-crux` empêche d'envoyer les
+  URL des traces de performance à l'API CrUX. Les deux sont actives par défaut.
+- Avec l'option de routage par page (active par défaut), les outils liés à une
+  page exigent son `pageId` : `list_pages` le donne.
+
+Vérifié le 2026-09-28 (version 1.10.1, Chromium 154) : 30 outils exposés,
+navigation vers une page locale, instantané du DOM et messages de console
+relus.
+
 ## Permissions
 
 - **Élevées** : accès à la navigation web et au réseau, exécution dans un

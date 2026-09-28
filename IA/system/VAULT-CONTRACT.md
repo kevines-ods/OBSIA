@@ -420,23 +420,31 @@ directes, limitées et tracées (7.4) :
   vérifications du projet passées avant de proposer, aucun secret dans le
   dépôt. Ce dossier est **exclu de l'index d'Obsidian** — sans quoi le
   Markdown du dépôt et de ses dépendances entre dans la recherche du coffre et
-  fait tomber l'unicité des noms de notes (§6) dès le deuxième projet.
+  fait tomber l'unicité des noms de notes (§6) dès le deuxième projet ;
+- `-PERSONNELS/` — **une note de référence dont l'agent est l'auteur**, créée
+  et tenue par lui, **mise à jour sur place**, et marquée `auteur: <nom-agent>`
+  dans son frontmatter : l'inventaire d'une infrastructure, par exemple, qui
+  décrit l'utilisateur et doit rester vivant — une machine ajoutée, une adresse
+  changée. Seul l'agent nommé dans ce champ y écrit, et chaque mise à jour
+  passe par le preview du 7.4.
 
 Une **note** de `-PROJETS/` n'est pas un dépôt de projet : elle reste protégée
-comme le reste. Hors des dépôts de projet et de la note de suivi ci-dessus,
-une écriture dans `-PROJETS/`, `-DOCUMENTS/` ou `-PERSONNELS/` se limite au
+comme le reste. Hors des dépôts de projet, de la note de suivi et des notes de
+référence ci-dessus, une écriture dans `-PROJETS/`, `-DOCUMENTS/` ou `-PERSONNELS/` se limite au
 **dépôt d'une note classée venue d'`-EN-VRAC/`**, et à rien d'autre. On n'y
 modifie **jamais** une note existante, même à la demande de l'utilisateur :
 une note à enrichir repasse d'abord par `-EN-VRAC/`, puis est classée. On n'y
 déplace ni n'y supprime rien.
 
-La note de suivi est l'unique exception, et elle tient à une raison précise :
-**c'est la seule note de `-PROJETS/` dont l'agent est l'auteur.** Il l'a
-créée, il la met à jour, personne d'autre n'écrit dedans. La règle générale
-protège les notes de l'utilisateur d'une réécriture silencieuse sans Git pour
-la rattraper ; elle ne protège de rien quand l'agent corrige son propre texte.
-Le suffixe ` — résumé` est ce qui rend la distinction visible sans l'ouvrir :
-une note qui ne le porte pas n'est pas à l'agent.
+La note de suivi et la note de référence sont les deux seules exceptions, et
+elles tiennent à la même raison : **ce sont les seules notes de ces dossiers
+dont l'agent est l'auteur.** Il les a créées, il les met à jour, personne
+d'autre n'écrit dedans. La règle générale protège les notes de l'utilisateur
+d'une réécriture silencieuse sans Git pour la rattraper ; elle ne protège de
+rien quand l'agent corrige son propre texte. Ce qui rend la distinction
+visible sans ouvrir la note, c'est le suffixe ` — résumé` pour la première et
+le champ `auteur:` pour la seconde : une note qui ne porte ni l'un ni l'autre
+n'est pas à l'agent.
 
 ### 7.3.1 Où va la note d'un projet — le dépôt est public
 
@@ -463,7 +471,8 @@ servent à rien. Un agent le lit donc librement pour établir des rétroliens et
 pour répondre.
 
 Deux limites tiennent quand même : on n'y **écrit** que pour y classer une note
-dont la nature est manifestement personnelle (§7.3 ci-dessus), et son contenu
+dont la nature est manifestement personnelle, ou pour tenir une note de
+référence dont on est l'auteur (§7.3 ci-dessus), et son contenu
 ne migre jamais dans `OBSIA/`, qui est public (§7.2). Un secret — mot de passe,
 jeton, clé — n'a sa place ni ici ni ailleurs (§4).
 

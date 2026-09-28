@@ -68,6 +68,29 @@ Vérification d'intégrité (à lancer périodiquement, c'est long) :
 proxmox-backup-manager verify-job list
 ```
 
+**Aucune tâche de vérification = rien ne relit jamais le datastore** : un
+`verification.cfg` absent se signale comme une alerte, pas comme un détail.
+L'historique des tâches exige `--all`, sinon la liste est vide :
+`proxmox-backup-manager task list --all` (pas d'option `--type` : filtrer
+`worker_type` à la main).
+
+Pièges propres à PBS :
+
+- **Datastore amovible démonté = `inactive`** dans `pvesm status` : c'est
+  normal quand le disque est ailleurs. Ses tâches planifiées de vérification,
+  d'élagage et de nettoyage sont **sautées** tant qu'il n'est pas monté — d'où
+  `verify-new true` sur un tel datastore. La règle udev livrée par PBS ne gère
+  que le branchement : le démontage reste à la charge du script de sauvegarde.
+- La sauvegarde vzdump d'un conteneur **n'inclut pas ses points de montage**
+  (NFS, bind) : un conteneur de 7 Go peut servir des centaines de Go qui ne sont
+  sauvegardés nulle part par ce job.
+- Un job **terminé en code 0 peut être cohérent mais partiel** s'il a tourné
+  pendant un gros transfert : comparer le volume avec la sauvegarde suivante.
+- Un jeton d'API PBS a **ses propres ACL** : accorder le rôle à l'utilisateur
+  **et** au jeton (`user@realm` et `user@realm!jeton`). Dans un shell bash
+  interactif, le `!` d'un identifiant de jeton est développé même entre
+  guillemets doubles : `set +H`, ou guillemets simples.
+
 ## Restic
 
 ```bash
@@ -82,6 +105,63 @@ Test de restauration vers un emplacement neuf :
 ```bash
 restic restore latest --target /tmp/test-restauration
 ```
+
+- **`restic diff` ne mesure pas un volume** : il compte les blobs neufs après
+  déduplication (« 58 Mio ajoutés » pour 27 Gio réels). Pour la taille, comparer
+  les `restic ls -l` des deux snapshots, ou `restic stats --mode restore-size`.
+- Dépôt monté **en lecture seule** → `--no-lock`, sinon restic échoue en voulant
+  poser un verrou. Monter un disque btrfs en lecture seule : `mount -o ro` —
+  l'option `noload` n'existe que pour ext4 et xfs.
+- L'espace libéré à la source ne se retrouve qu'après `forget --prune` des
+  snapshots qui référencent encore les fichiers.
+- Sur des données importées, les dates de modification sont celles d'origine :
+  ce qui est **arrivé** récemment se trouve avec `find -newerct`.
+
+## Disque hors site rotatif
+
+Un disque externe qui tourne entre plusieurs machines ne peut être branché
+**qu'à un seul endroit à la fois**. Si chaque machine déclenche sa sauvegarde
+au branchement (udev + service avec `ConditionPathExists=` sur l'UUID), celle
+qui n'a pas le disque **saute en silence** : aucune erreur, aucun journal,
+aucune notification.
+
+- **Avant de conclure « la sauvegarde a échoué », vérifier où est le disque**
+  (`ls -l /dev/disk/by-uuid/<uuid>` sur chaque machine).
+- Lire la **dernière ligne du journal** avant de le débrancher : c'est le
+  script qui démonte, pas l'utilisateur.
+- Ce silence voulu se compense par un compte rendu à chaque exécution réelle
+  (`surveillance-et-alertes`).
+
+## SnapRAID
+
+**SnapRAID n'est pas une sauvegarde** : il protège d'une panne de disque, pas
+d'une suppression. Un fichier effacé reste restaurable depuis la parité
+(`snapraid fix -d <fichier>`) **seulement jusqu'au `sync` suivant** — souvent
+la nuit même. À savoir **avant** de lancer un `sync` « pour nettoyer ».
+
+- **Trouver la vraie configuration** : le greffon d'OpenMediaVault écrit
+  `/etc/snapraid/array<n>.conf`, pas `/etc/snapraid.conf`. Toutes les commandes
+  prennent `-c <conf>`. Un job qui ne trouve aucun fichier `.content` s'arrête
+  en `WARN: No Content files found!` **sans rien synchroniser** — y compris
+  quand le tableau n'a jamais été initialisé.
+- Sous OpenMediaVault, les seuils (`delthreshold`, `updthreshold`) se lisent
+  dans la **base OMV**, pas dans `/etc/snapraid-diff.conf` : ils se règlent
+  dans l'interface.
+- **`scrub` sans option ne fait rien sur des blocs récents** (`Nothing to do`) :
+  le filtre par défaut ignore ce qui a moins de 10 jours. Toujours
+  `snapraid -c <conf> scrub -p 10 -o 0` ; une passe vaut environ 10 %.
+- **`Missing file` + `Unexpected file errors` pendant un `scrub` = index
+  périmé**, pas un disque défaillant : des fichiers supprimés depuis le dernier
+  `sync`. Remède : `sync`, qui ne supprime rien — mais referme la fenêtre de
+  récupération ci-dessus.
+- `You have N files with a zero sub-second timestamp` : une part de l'array
+  reste impossible à certifier. Remède `snapraid touch` puis `sync`, qui
+  re-hache tout — **plusieurs heures**, à programmer.
+- Le `scrub` n'écrit sa progression que sur un terminal : suivre
+  `/proc/<pid>/io` ou le journal de fin de passe, et détacher les longues
+  séries (`setsid nohup`).
+- Le rapport par courriel du greffon part **dans le vide** sans SMTP configuré
+  (`statusreport sent to ''`) : surveiller la fraîcheur du journal à la place.
 
 ## Nextcloud
 
@@ -138,9 +218,12 @@ La cinquième case est celle qu'on ne coche jamais. C'est celle qui compte.
 | Job « réussi » sans fichier produit | Vérifier le chemin de destination |
 | Toutes les sauvegardes sur le même pool | La règle 3-2-1 n'est pas respectée |
 | Dépôt accessible en écriture depuis la production | Un rançongiciel les chiffrera aussi |
+| Datastore amovible `inactive` | Normal si le disque est ailleurs — vérifier où avant d'alerter |
+| Job SnapRAID « terminé » sans `sync` dans le journal | Mauvaise configuration ou tableau non initialisé |
 
 ## Contraintes
 
 `read_only: true`. Ce skill constate et alerte. Créer, modifier ou supprimer une
-sauvegarde relève d'une action explicite hors de son périmètre. Voir
-`../system/VAULT-CONTRACT.md`.
+sauvegarde relève d'une action explicite hors de son périmètre ; un remède cité
+ici (`snapraid sync`, `touch`) s'énonce et s'exécute par `remediation-linux`.
+Voir `../system/VAULT-CONTRACT.md`.

@@ -1,8 +1,9 @@
 # AionUi / ObsiaUi (interface)
 
-**Statut : vérifié sur documentation le 2026-09-14
-(`https://github.com/iOfficeAI/AionUi/wiki/MCP-Configuration-Guide`) — jamais
-éprouvé sur machine réelle.**
+**Statut : MCP vérifiés sur documentation le 2026-09-14
+(`https://github.com/iOfficeAI/AionUi/wiki/MCP-Configuration-Guide`) ; le
+branchement des agents (§5) est éprouvé sur machine réelle depuis le
+2026-09-28.**
 
 Interface de bureau qui **pilote d'autres agents en ligne de commande**. Elle
 n'est donc pas un harness de plus à côté des autres : elle se place au-dessus.
@@ -81,12 +82,62 @@ demander un nettoyage à part.
 
 ## 5. Charger le cerveau
 
-L'interface ne charge pas de cerveau : chaque agent qu'elle pilote suit **sa
+L'interface ne charge pas de cerveau : chaque moteur qu'elle pilote suit **sa
 propre fiche** (`claude-code.md`, `opencode.md`, `openclaw.md`…). Le coffre ne
 change pas.
 
 Un agent en ligne de commande conforme ACP s'ajoute par
 `Réglages → Agent Management → Custom Agents`.
+
+### Un assistant par agent du coffre
+
+Ce que l'interface appelle un **assistant** — un moteur, une règle, des
+réglages par défaut — correspond à **un agent** du coffre. Une conversation
+s'ouvre sur un assistant ; elle ne change pas d'agent en cours de route.
+
+| Élément de l'assistant | Ce qu'on y met |
+| --- | --- |
+| dossier de travail | la **racine du coffre parent**, choisie à l'ouverture de la conversation (§7.6 du contrat) |
+| règle | courte : **quel agent tu es**, quoi lire avant la première action, et le rappel du dossier de travail. Elle charge le coffre, elle ne le recopie pas |
+| moteur | au choix de l'utilisateur, agent par agent |
+| permission par défaut | **fixée** pour un agent `read_only: true` (voir plus bas) |
+| MCP par défaut | **fixés** à ceux que la fiche de l'agent déclare — laissés en automatique, l'interface pousse tous les serveurs activés |
+
+La règle **désigne l'agent** : sans elle, le moteur applique le §10 du contrat
+et choisit lui-même dans l'index. C'est juste pour une demande isolée, faux pour
+un assistant dont l'utilisateur a déjà choisi le rôle en l'ouvrant.
+
+### Ce que chaque moteur lit seul
+
+| Moteur | Instructions de projet lues automatiquement | Conséquence pour la règle |
+| --- | --- | --- |
+| Claude Code (ACP) | `CLAUDE.md`, depuis le dossier de travail et ses parents | le contrat est déjà chargé : la règle désigne l'agent, rien de plus |
+| Aion CLI (moteur interne) | `AGENTS.md` — **pas** `CLAUDE.md` | la règle doit faire **lire** le contrat et la fiche de l'agent avant la première action |
+
+Vérifié le 2026-09-28 dans le binaire de l'interface, pas sur documentation :
+Aion CLI cite `AGENTS.md` comme fichier d'instructions de projet, et range ses
+skills natifs sous `.aionrs/skills`.
+
+### Un agent en lecture seule
+
+La lecture seule d'un agent `read_only: true` doit tenir **au niveau du
+moteur** quand il le permet, pas seulement dans la règle :
+
+| Moteur | Mode à fixer | Effet |
+| --- | --- | --- |
+| Claude Code | `plan` | aucune exécution d'outil qui modifie |
+| Aion CLI | `default` | toute écriture ou commande passe par une validation de l'utilisateur ; `auto_edit` et `yolo` la laisseraient passer |
+
+Sous Aion CLI, la lecture seule reste donc **une consigne** que l'utilisateur
+fait respecter à l'invite : la règle le dit, et interdit d'exécuter une
+commande qui modifie même si l'utilisateur l'accepte.
+
+### Un piège de l'outil de configuration
+
+Mettre à jour la description ou les skills d'un assistant en ligne de commande
+a **remis son modèle par défaut en automatique** (constaté le 2026-09-28).
+Relire **tous** les réglages par défaut après chaque mise à jour, et comparer à
+une copie prise avant.
 
 ## 6. Vérifier
 

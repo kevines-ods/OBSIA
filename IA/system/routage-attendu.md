@@ -67,6 +67,11 @@ descriptions et tranche.
 | « relis ce diff et dis-moi ce qui cloche avant que je fusionne » | revue-de-code | 3 | — |
 | « cette décision d'architecture me paraît risquée, cherche ce qui la ferait tomber » | relecture-adverse | 3 | — |
 | « combien de ressources restent sur l'hôte de virtualisation ? » | proxmox | 3 | — |
+| « crée-moi un nouveau conteneur LXC et fais-le démarrer tout seul avec l'hôte » | administration-proxmox | 3 | — |
+| « je n'ai reçu aucune alerte Telegram alors que la sauvegarde n'a pas tourné » | surveillance-et-alertes | 3 | — |
+| « optimise les performances de mon CachyOS pour le jeu » | optimisation-cachyos | 2 | — |
+| « les photos du téléphone arrivent en double dans Nextcloud » | nextcloud-aio | 3 | — |
+| « Home Assistant ne répond plus, et je n'arrive pas à m'y connecter en SSH » | home-assistant-os | 3 | — |
 | « on refait la même erreur alors qu'une note la documente déjà » | compilation-des-lecons | 3 | — |
 | « fais redescendre les leçons de la mémoire dans les skills » | compilation-des-lecons | 3 | createur-de-skill |
 | « file ce résumé au petit modèle local, pas besoin de lui donner tout le contexte » | delegation-locale | 3 | — |

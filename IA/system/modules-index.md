@@ -3,6 +3,7 @@
 | Module | Essentiel | Retenu ici | Déclarations | Sondes | Requiert | Description |
 |---|---|---|---|---|---|---|
 | [noyau](modules/noyau.md) | oui | oui | 7 | — | — | Le socle — contrat, méthode, mémoire, recherche, création de skills, clôture de session. Toujours installé. |
+| [administration-homelab](modules/administration-homelab.md) | non | oui | 4 | — | noyau, linux-poste, virtualisation, conteneurs, controle-des-sauvegardes | Administrer une infrastructure auto-hébergée — l'agent administrateur, la surveillance et les alertes, Nextcloud AIO et Home Assistant OS. |
 | [coffre-obsidian](modules/coffre-obsidian.md) | non | oui | 5 | `parent:.obsidian`, `parent:-SAVOIRS`, `parent:-EN-VRAC` | noyau | Travailler dans un coffre Obsidian parent — remplir et classer les notes brutes, cartographier les connaissances, tenir le registre des tags. |
 | [construction](modules/construction.md) | non | oui | 15 | `commande:git` | noyau | Construire des applications, sites et outils — l'agent batisseur et ses portes, de l'inventaire de l'existant à la mise en ligne. |
 | [conteneurs](modules/conteneurs.md) | non | oui | 2 | `commande:docker`, `commande:podman` | noyau, linux-poste | Conteneurs et reverse proxy — état, journaux, volumes, réseaux, compose, labels de routage, certificats TLS. |
@@ -14,9 +15,10 @@
 | [modeles-locaux](modules/modeles-locaux.md) | non | oui | 2 | `commande:llama-server`, `commande:llama-swap`, `commande:ollama` | noyau | Délégation de tâches simples à un modèle local servi par une API compatible OpenAI, sans lui transmettre le contexte du coffre. |
 | [navigateur](modules/navigateur.md) | non | oui | 2 | `commande:chromium`, `commande:google-chrome`, `commande:google-chrome-stable` | noyau, construction | Vérifier une interface dans un vrai navigateur — DOM rendu, erreurs de console, requêtes réseau, capture d'écran, arbre d'accessibilité. |
 | [planification](modules/planification.md) | non | oui | 3 | `commande:systemctl` | noyau | Tâches planifiées — registre `IA/tâches/`, instanciation en timers, réconciliation après un changement de machine ou de harness. |
+| [poste-cachyos](modules/poste-cachyos.md) | non | oui | 1 | `distribution:cachyos` | noyau, linux-poste | Optimiser un poste CachyOS — noyau et ordonnanceur, mémoire, btrfs et snapper, réseau, jeu, nettoyage. |
 | [recherche-web](modules/recherche-web.md) | non | oui | 1 | — | noyau | Recherche web par un méta-moteur auto-hébergé — SearXNG, sans compte ni traçage. |
 | [revue](modules/revue.md) | non | oui | 3 | — | noyau | Relecture adverse en lecture seule absolue — chercher ce qui cloche dans un diff, et cross-examiner une décision avant qu'elle tienne. |
-| [virtualisation](modules/virtualisation.md) | non | oui | 1 | `commande:pvesh`, `fichier:/etc/pve` | noyau, linux-poste | Inspecter un hôte Proxmox — VM, conteneurs LXC, stockage, cluster, répartition des ressources. Lecture seule non négociable. |
+| [virtualisation](modules/virtualisation.md) | non | oui | 2 | `commande:pvesh`, `fichier:/etc/pve` | noyau, linux-poste | Inspecter un hôte Proxmox en lecture seule — VM, conteneurs LXC, stockage, ressources — puis y agir sous annonce — créer des machines, régler le démarrage, poser des hookscripts. |
 
 > `Retenu ici` se lit dans `obsia.local.yml`, non versionné. Sans profil,
 > tout est retenu — c'est l'état du dépôt de distribution, et celui sous

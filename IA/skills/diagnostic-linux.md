@@ -127,6 +127,29 @@ iostat -x 1 3                   # paquet sysstat
 | Espace libre mais écriture impossible | Inodes épuisés → `df -i` |
 | Lenteur générale inexpliquée | Vérifier le thermal throttling et les journaux du noyau |
 
+## Faux diagnostics déjà payés
+
+Des constats qui ressemblent à une panne et n'en sont pas — ou l'inverse.
+Les vérifier avant de conclure.
+
+| Ce qu'on voit | Ce que c'est souvent |
+| --- | --- |
+| `systemctl status <svc>` dit `inactive`, mais le port écoute | un **service utilisateur** : `systemctl --user status <svc>`, ou un processus lancé hors systemd |
+| un service « ne s'est jamais lancé », sans erreur ni journal | sauté par `ConditionPathExists=` (ressource absente) ou `ExecCondition=` : **silence voulu**, rien ne s'exécute, pas même `OnFailure=` |
+| `systemctl show <svc> -p ConditionPathExists` renvoie vide | limite de certaines versions : lire `systemctl show <svc> \| grep -E 'ConditionResult\|ConditionTimestamp'` |
+| une surcharge `systemctl edit` sans effet | un `.#override.conf…` laissé par une édition interrompue dans le dossier `.d/` : systemd l'ignore |
+| une alerte tous les matins avec des valeurs vides | un script **cron** qui ne trouve pas un binaire de `/usr/sbin` : cron n'a que `PATH=/usr/bin:/bin` |
+| `df` ne bouge pas après une grosse suppression (btrfs) | un instantané snapper référence encore les fichiers |
+| `du -x` sous-estime l'occupation (btrfs) | il ne traverse pas les subvolumes : mesurer chacun |
+| un disque « non monté » sur un hyperviseur | un disque passé en brut à une VM ; et `sdX` diffère entre hôte et invité — identifier par UUID ou `dumpe2fs` |
+| un comptage faux (`… \| wc -l`) | une commande qui affiche plusieurs lignes par objet, ou un fichier sans saut de ligne final : compter sur une sortie structurée (`-o json`, `ssh-keygen -lf`) |
+| un outil qui « ne voit pas » un disque ou un service | l'outil n'est pas installé là où on le croit (hôte ou conteneur) : vérifier où il tourne |
+| une lecture refusée même en root, sur Fedora | SELinux : `ausearch -m avc -ts recent` |
+
+Quand un comptage ou une conclusion structurante est en jeu (nombre de
+machines, de fichiers, « aucune sauvegarde depuis… »), la confirmer par **deux
+méthodes indépendantes** avant de l'écrire.
+
 ## Secrets
 
 Ce skill s'exécute souvent sur des machines distantes. **Rien de ce qui suit ne
@@ -137,8 +160,9 @@ internes, chemins de clés SSH, mots de passe, jetons, contenu de fichiers
 Si une sortie de commande contient ce genre d'information, la remplacer par un
 marqueur dans le compte rendu — le coffre est versionné sur GitHub.
 
-L'inventaire des machines vit dans un fichier **hors dépôt**, listé au
-`.gitignore`. Ce skill le lit, ne le recopie jamais.
+L'inventaire des machines vit **hors dépôt**, dans le coffre parent
+(`Mon coffre/-PERSONNELS/`). Ce skill le lit, ne le recopie jamais dans
+`OBSIA/`.
 
 ## Format du compte rendu
 
