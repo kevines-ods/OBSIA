@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: traitement-des-notes
-description: Traiter les notes brutes du coffre parent — remplir, tagger (vocabulaire contrôlé), rétrolier, prévisualiser dans _maintenance/, classer depuis -EN-VRAC et mettre à jour notes_remplies.md. À charger pour toute note brute ou toute note déposée dans -SAVOIRS à compléter.
+description: Traiter les notes brutes du coffre parent — remplir, tagger (vocabulaire contrôlé), rétrolier, prévisualiser dans _MAINTENANCE/, classer depuis -EN-VRAC et mettre à jour notes_remplies.md. À charger pour toute note brute ou toute note déposée dans -SAVOIRS à compléter.
 module: coffre-obsidian
 type: outil
 read_only: false
@@ -34,7 +34,7 @@ trancher, et se dit comme tel.
   nouveau se propose par patch sur ce registre, il ne s'invente pas dans une
   note.
 - Le **frontmatter minimal** d'une note de connaissance : `type` (parmi
-  `concept`, `revue`, `projet`, `personnel`, `note`) et `tags`. `source`
+  `concept`, `revue`, `projet`, `personnel`, `maintenance`, `note`) et `tags`. `source`
   (URL) s'ajoute pour une note venue de l'extérieur (`-DOCUMENTS/`).
 - La **`description`** — un champ d'une seule ligne — n'est pas obligatoire,
   mais c'est elle que les index du coffre parent reprennent pour décider
@@ -58,17 +58,17 @@ trancher, et se dit comme tel.
    transcription → `Mon coffre/-DOCUMENTS/` ; fait personnel → `Mon coffre/-PERSONNELS/` ;
    concept → `Mon coffre/-SAVOIRS/`.
 6. Afficher le preview (contenu final + destination), en conserver une copie
-   datée dans `Mon coffre/_maintenance/` (§7.4).
-7. Classer (déplacer), puis mettre à jour `Mon coffre/_maintenance/notes_remplies.md`.
+   datée dans `Mon coffre/_MAINTENANCE/` (§7.4).
+7. Classer (déplacer), puis mettre à jour `Mon coffre/_MAINTENANCE/notes_remplies.md`.
 
 ## Procédure — note déposée dans `-SAVOIRS/`
 
-1. Vérifier dans `Mon coffre/_maintenance/notes_remplies.md` que la note n'a pas déjà été
+1. Vérifier dans `Mon coffre/_MAINTENANCE/notes_remplies.md` que la note n'a pas déjà été
    traitée ; si elle y figure, ne rien refaire.
 2. Compléter : frontmatter minimal si absent, tags du vocabulaire, rétroliens,
    `description`, corps manquant — sans changer le sens ni déplacer le fichier.
 3. Prévisualiser si plusieurs fichiers sont touchés (copie datée dans
-   `Mon coffre/_maintenance/`), puis consigner la note dans `notes_remplies.md`.
+   `Mon coffre/_MAINTENANCE/`), puis consigner la note dans `notes_remplies.md`.
 
 ## Passage rétroactif (notes existantes)
 
@@ -94,7 +94,7 @@ pas en CI.
 
 ## Index du coffre parent
 
-Les index — `Mon coffre/_maintenance/index-<dossier>.md`, un par dossier du
+Les index — `Mon coffre/_MAINTENANCE/index-<dossier>.md`, un par dossier du
 coffre parent — sont produits depuis les notes elles-mêmes, par
 `IA/skills/traitement-des-notes/scripts/indexer_coffre_parent.py`. Le skill
 `recherche` les lit avant les notes : ils servent à décider d'ouvrir une note
@@ -114,7 +114,7 @@ parent réel et ne tourne pas en CI.
 ## Garde-fous
 
 - `read_only: false` : les écritures se limitent aux zones du §7.3 du contrat
-  (`-EN-VRAC/`, complétion `-SAVOIRS/`, `_maintenance/`, classement). Rien
+  (`-EN-VRAC/`, complétion `-SAVOIRS/`, `_MAINTENANCE/`, classement). Rien
   d'autre n'est modifié, déplacé ni supprimé sans demande explicite.
 - Un tag hors liste n'est jamais posé : proposer son ajout au registre par
   patch.

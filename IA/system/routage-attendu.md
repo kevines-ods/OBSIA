@@ -38,6 +38,14 @@ descriptions et tranche.
 | « quel langage et quelle base de données pour ce projet ? » | choix-de-la-stack | 3 | — |
 | « il faut choisir les couleurs et la typographie de l'interface » | systeme-de-design | 3 | — |
 | « découpe le projet en étapes livrables une par une » | plan-de-livraison | 3 | — |
+| « je reprends une application que je n'ai pas écrite, aide-moi à comprendre comment elle marche » | reprise-dun-projet | 3 | inventaire-de-lexistant |
+| « avant de toucher à ce vieux code sans tests, fige ce qu'il fait aujourd'hui » | tests-de-caracterisation | 3 | tests-dabord |
+| « ce module est devenu illisible, restructure-le sans rien casser » | refactoring-sur | 3 | — |
+| « mets à jour les dépendances et passe à la nouvelle version du framework » | montee-de-version | 3 | — |
+| « liste ce qui a vieilli dans le code et ce qu'il faudrait nettoyer en priorité » | dette-technique | 3 | — |
+| « il faut ajouter une colonne à la base sans perdre les données » | migration-de-donnees | 3 | — |
+| « le README est faux, plus personne n'arrive à installer le projet » | documentation-du-projet | 3 | — |
+| « vérifie s'il y a des failles de sécurité ou des mots de passe dans tout le projet » | audit-de-securite | 3 | revue-de-code |
 | « prépare le dépôt : licence, gitignore, readme » | amorcage-du-projet | 3 | — |
 | « je veux un niveau de qualité écrit, que l'agent ne puisse pas contourner » | plancher-qualite | 3 | — |
 | « attaque la première tranche du plan » | construction-dune-tranche | 3 | — |

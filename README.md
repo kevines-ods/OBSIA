@@ -17,7 +17,7 @@ commandes, des pièges à éviter.
 Une **tâche** est un fichier qui décrit une action planifiée : quand la
 déclencher, pour quel agent, avec quelle instruction.
 
-Un **harness** — Claude Code, OpenCode, Aider, Goose, ou l'interface de ton
+Un **harness** — Claude Code, OpenCode, Codex, Goose, ou l'interface de ton
 choix — lit ces fichiers et exécute. Le coffre décrit *quoi* faire ; le harness
 fournit *avec quoi*.
 
@@ -69,13 +69,13 @@ mouvements.
 
 OBSIA est le cœur ; le coffre qui l'entoure est votre base de connaissances.
 Il s'appelle `Mon coffre/`, et le dépôt se clone à sa racine, à côté de
-`_maintenance/`, `-PROJETS/`, `-DOCUMENTS/`, `-PERSONNELS/`, `-SAVOIRS/` et
+`_MAINTENANCE/`, `-PROJETS/`, `-DOCUMENTS/`, `-PERSONNELS/`, `-SAVOIRS/` et
 `-EN-VRAC/`. Seul `OBSIA/` est versionné.
 
 La structure de premier niveau est fixe (seul vous la modifiez). Les agents
 lisent tout le coffre parent, remplissent les notes d'`-EN-VRAC/` (corps, tags,
 rétroliens) puis les classent, complètent les notes déposées dans `-SAVOIRS/`,
-et consignent previews et actions dans `_maintenance/`. `-EN-VRAC/` est un
+et consignent previews et actions dans `_MAINTENANCE/`. `-EN-VRAC/` est un
 **tampon** : une session de rangement le vide entièrement. Les règles complètes
 sont au §7 de `IA/system/VAULT-CONTRACT.md`.
 
@@ -150,19 +150,22 @@ crée pas pour autant sur la machine — l'instanciation reste un geste explicit
 
 ## Démarrage
 
+Le guide pas à pas est dans `DEMARRAGE.md` : cloner dans son coffre,
+installer, lancer un harness, vérifier que le cerveau est chargé. En bref :
+
 ```bash
+cd "/chemin/de/votre coffre"
 git clone https://github.com/kevines-ods/OBSIA
 cd OBSIA
 python3 scripts/installer.py --sonder     # ce que la machine porte, n'écrit rien
-python3 scripts/installer.py --appliquer  # retient les modules utiles
-python3 scripts/generer_prompt.py -o prompt-systeme.md --mcp
+python3 scripts/installer.py --appliquer  # retient les modules, écrit ../AGENTS.md
 ```
 
-Le fichier `prompt-systeme.md` produit est à donner comme prompt système au
-harness. L'option `--mcp` liste en plus les serveurs MCP que les agents
-déclarent, avec un squelette de configuration à compléter.
-
-Régénérer le prompt après toute modification d'un agent ou d'un skill.
+Puis lancer le harness **depuis la racine du coffre**, où l'installeur a posé
+`AGENTS.md`. Pour un harness qui ne lit pas ce fichier, le même texte
+s'obtient, depuis `OBSIA/`, par `python3 scripts/generer_prompt.py -o prompt-systeme.md --mcp`,
+à donner comme prompt système ; `--mcp` y ajoute un squelette de configuration
+des serveurs MCP.
 
 ## Installation modulaire
 

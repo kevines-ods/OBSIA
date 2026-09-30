@@ -41,7 +41,8 @@ SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS))
 
 import modules as MOD
-from generer_prompt import RACINE_DEFAUT, fichiers_declaratifs, lire_frontmatter
+from generer_prompt import (RACINE_DEFAUT, fichiers_declaratifs, lire_frontmatter,
+                            prompt_du_coffre)
 
 #: Ce qu'une installation par copie emporte quoi qu'il arrive : les règles, les
 #: scripts, la licence. Un coffre sans son contrat n'est pas un coffre réduit,
@@ -178,6 +179,14 @@ def apercu(modules: list[dict], actifs: set[str], racine: Path,
         print("    IA/system/modules-index.md, IA/README.md")
         print("  `git checkout -- IA` les remet au catalogue complet.")
 
+    coffre = cible if mode == "copie" else racine
+    etat = etat_agents(coffre)
+    print("\n  AGENTS.md : %s — %s" % (etat, chemin_agents(coffre)))
+    if etat == "sauté":
+        print("    (%s.)" % raison_du_saut(coffre))
+    elif etat == "régénéré":
+        print("    (porte le marqueur OBSIA : sera réécrit au profil courant)")
+
     return emportes
 
 
@@ -301,6 +310,124 @@ def regenerer(racine: Path) -> int:
     return res.returncode
 
 
+# ------------------------------------------------------------------ AGENTS.md
+
+#: Les débuts de marqueur qu'on reconnaît comme nôtres. Le premier est le libellé
+#: courant ; un fichier posé par une version antérieure porte le même début suivi
+#: d'une autre fin, et reste donc à nous. Changer de marqueur un jour, c'est
+#: ajouter ici le nouveau libellé, puis l'écrire ci-dessous : les installations
+#: déjà faites ne se retrouvent pas orphelines pour autant.
+MARQUEURS_AGENTS = (
+    "<!-- généré par OBSIA/scripts/installer.py",
+)
+
+#: La ligne réellement écrite en tête du fichier. Sans elle, le fichier est celui
+#: de quelqu'un d'autre : on n'y touche pas, même sous --appliquer.
+MARQUEUR_AGENTS = ("%s — ne pas éditer, relancer installer.py --appliquer -->"
+                   % MARQUEURS_AGENTS[0])
+
+
+def chemin_agents(coffre: Path) -> Path:
+    """AGENTS.md se pose **à côté** du coffre, jamais dedans.
+
+    Les harness lisent le fichier de consignes du dépôt dans lequel ils
+    s'ouvrent — une fiche par harness dans `IA/system/adaptateurs-harness/` — et
+    ce dépôt n'est pas le coffre : OBSIA est un catalogue qu'on lit, pas un
+    projet qu'on construit. Le poser dehors a un second effet, voulu :
+    `publier.py` n'exporte que les fichiers suivis du dépôt (`git archive HEAD`)
+    — un fichier hors dépôt ne peut pas s'y glisser, et n'est de toute façon pas
+    versionné.
+    """
+    return coffre.parent / "AGENTS.md"
+
+
+def tete_agents(chemin: Path) -> str:
+    """Le début du fichier, sans BOM ni blancs : de quoi juger le marqueur."""
+    return chemin.read_text(encoding="utf-8").lstrip("\ufeff").lstrip()
+
+
+def porte_le_marqueur(chemin: Path) -> bool:
+    """Ce fichier commence-t-il par un libellé OBSIA connu ?"""
+    return tete_agents(chemin).startswith(MARQUEURS_AGENTS)
+
+
+def etat_agents(coffre: Path) -> str:
+    """« créé », « régénéré » ou « sauté » — décidé avant d'écrire quoi que ce soit.
+
+    « sauté » couvre tout ce qui n'est pas à nous : un lien symbolique, qui
+    appartient à qui l'a posé ; autre chose qu'un fichier ; un fichier étranger,
+    ou illisible. Dans le doute on s'abstient — jamais on n'écrase.
+    """
+    chemin = chemin_agents(coffre)
+    if chemin.is_symlink():
+        return "sauté"              # un lien ne se réécrit pas, même marqué
+    if not chemin.exists():
+        return "créé"
+    if not chemin.is_file():
+        return "sauté"              # dossier, socket… : pas notre affaire
+    try:
+        marque = porte_le_marqueur(chemin)
+    except OSError:
+        return "sauté"              # illisible : à nous de ne pas insister
+    return "régénéré" if marque else "sauté"
+
+
+def raison_du_saut(coffre: Path) -> str:
+    """Pourquoi ce fichier n'est pas touché, dit de façon actionnable.
+
+    La phrase commence après le chemin, et dit quoi faire : sans cela,
+    l'avertissement laisserait devant un fichier inchangé sans issue.
+    """
+    chemin = chemin_agents(coffre)
+    if chemin.is_symlink():
+        return ("est un lien symbolique ; supprimez-le pour qu'un fichier à nous "
+                "puisse être régénéré")
+    if not chemin.is_file():
+        return ("n'est pas un fichier ; déplacez-le ou supprimez-le pour "
+                "qu'installer.py puisse écrire à sa place")
+    try:
+        tete_agents(chemin)
+    except OSError as souci:
+        return "est illisible (%s) ; laissé intact" % (souci.strerror or souci)
+    return ("ne porte pas le marqueur OBSIA ; supprimez-le ou ajoutez le marqueur "
+            "en tête pour qu'il soit régénéré")
+
+
+def ecrire_agents(coffre: Path) -> str:
+    """Écrit AGENTS.md pour ce coffre et son profil, ou explique pourquoi non.
+
+    Le contenu est exactement celui du prompt système : même fabrication, donc
+    même index, même méthode. Ce qui change, c'est où il atterrit et ce qu'il
+    porte en tête — le marqueur qui autorise la réécriture suivante.
+
+    Rien ici ne doit faire tomber l'installation : un fichier étranger, un
+    dossier à sa place, un lien, un parent en lecture seule, on le dit, on
+    passe, et le code de retour ne bouge pas.
+    """
+    chemin = chemin_agents(coffre)
+    etat = etat_agents(coffre)
+    if etat == "sauté":
+        print("  ! %s %s." % (chemin, raison_du_saut(coffre)), file=sys.stderr)
+        return etat
+
+    prompt = prompt_du_coffre(coffre)
+    if prompt is None:
+        print("  ! %s : rien à écrire, ce profil ne retient aucun agent." % chemin,
+              file=sys.stderr)
+        return etat
+
+    try:
+        chemin.parent.mkdir(parents=True, exist_ok=True)
+        chemin.write_text("%s\n\n%s\n" % (MARQUEUR_AGENTS, prompt),
+                          encoding="utf-8")
+    except OSError as souci:
+        print("  ! %s : écriture impossible (%s) ; laissé de côté."
+              % (chemin, souci.strerror or souci), file=sys.stderr)
+        return "sauté"
+    print("  ~ AGENTS.md %s : %s" % (etat, chemin))
+    return etat
+
+
 # ---------------------------------------------------------------------- main
 
 def main() -> int:
@@ -359,6 +486,10 @@ def main() -> int:
             print("Aucun profil à rejouer (%s absent)." % MOD.NOM_PROFIL, file=sys.stderr)
             return 1
         actifs = MOD.resoudre_dependances(modules, profil.get("modules", []))
+        # Le profil est modifiable à la main : un nom qui ne correspond à rien
+        # doit se voir, sinon le coffre installé est plus maigre que prévu
+        # sans que rien ne le dise. Sans effet sur la sélection, et non fatal.
+        MOD.signaler_modules_inconnus(modules, profil.get("modules", []))
         print("\n  --rejouer : %d module(s) repris du profil." % len(actifs))
     else:
         actifs = choisir(modules, racine, interactif=sys.stdin.isatty())
@@ -392,6 +523,10 @@ def main() -> int:
 
     coffre = cible if mode == "copie" else racine
     code = regenerer(coffre)
+
+    # Après `regenerer` : le prompt embarque l'index, il doit lire l'index à jour.
+    # Sur le coffre effectif, donc en place comme en copie.
+    ecrire_agents(coffre)
 
     print("\n%s" % ("Installation terminée." if code == 0
                     else "Installation terminée, mais le coffre est incohérent "

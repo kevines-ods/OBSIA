@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | 1 | charger le cerveau | `CLAUDE.md` (racine du dépôt) ou prompt généré par `scripts/generer_prompt.py` |
 | 2 | atteindre le coffre parent | racine du coffre = parent du dépôt (`../`) — §7 du contrat |
-| 3 | connaître les repères | `IA/system/tags-du-coffre-parent.md`, `_maintenance/` du coffre parent |
+| 3 | connaître les repères | `IA/system/tags-du-coffre-parent.md`, `_MAINTENANCE/` du coffre parent |
 
 ## La forme d'une fiche — six sections, dans cet ordre
 

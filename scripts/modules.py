@@ -256,12 +256,39 @@ def lire_profil(racine: Path = RACINE_DEFAUT) -> dict | None:
     return profil
 
 
+def modules_inconnus(modules: list[dict], retenus) -> set[str]:
+    """Les noms cités qui ne sont pas au catalogue."""
+    return set(retenus) - {m["name"] for m in modules if m.get("name")}
+
+
+def signaler_modules_inconnus(modules: list[dict], retenus,
+                              source: str = NOM_PROFIL) -> set[str]:
+    """Signale sur stderr les noms cités absents du catalogue (§13).
+
+    Un nom inconnu ne désigne rien : la sélection reste ce qu'elle est, et ce
+    n'est pas une erreur — un profil peut citer un module qu'une version
+    ultérieure apportera. Mais faute de ce signal, un profil fautif reste
+    muet, et rien ne dit pourquoi le coffre installé est plus maigre que
+    prévu. Le catalogue connu est rappelé pour qu'on puisse corriger sans
+    relire l'index.
+    """
+    inconnus = modules_inconnus(modules, retenus)
+    if inconnus:
+        connus = sorted(m["name"] for m in modules if m.get("name"))
+        print("Modules inconnus dans %s : %s — sans effet (catalogue : %s)"
+              % (source, ", ".join(sorted(inconnus)), ", ".join(connus)),
+              file=sys.stderr)
+    return inconnus
+
+
 def modules_actifs(racine: Path = RACINE_DEFAUT) -> set[str] | None:
     """Les modules retenus, ou None quand tout l'est (absence de profil)."""
     profil = lire_profil(racine)
     if profil is None:
         return None
-    return resoudre_dependances(lire_modules(racine), profil.get("modules", []))
+    modules = lire_modules(racine)
+    signaler_modules_inconnus(modules, profil.get("modules", []))
+    return resoudre_dependances(modules, profil.get("modules", []))
 
 
 def ecrire_profil(racine: Path, actifs, systeme: dict, mode: str,

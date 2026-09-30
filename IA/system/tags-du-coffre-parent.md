@@ -1,8 +1,8 @@
 # Tags du coffre parent — vocabulaire contrôlé
 
 > **Statut : fait foi** pour les tags des notes du coffre parent (`-SAVOIRS/`,
-> `-EN-VRAC/` et les notes classées vers `-PROJETS/`, `-DOCUMENTS/`,
-> `-PERSONNELS/`). Règle d'ensemble : `IA/system/VAULT-CONTRACT.md` §7.5.
+> `-EN-VRAC/`, `_MAINTENANCE/` et les notes classées vers `-PROJETS/`,
+> `-DOCUMENTS/`, `-PERSONNELS/`). Règle d'ensemble : `IA/system/VAULT-CONTRACT.md` §7.5.
 
 ## Principe
 
@@ -29,6 +29,7 @@ fois.
 | `revue` | revue d'article, de blog, transcription — `-DOCUMENTS/` |
 | `projet` | note d'un projet — `-PROJETS/` |
 | `personnel` | contexte personnel — `-PERSONNELS/` |
+| `maintenance` | trace de maintenance — previews et journaux §7.4, `_MAINTENANCE/` |
 | `note` | toute autre note classée |
 
 ## Vocabulaire — tags existants

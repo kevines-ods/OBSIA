@@ -43,7 +43,7 @@ Ce qui reste autorisé, malgré la portée du serveur :
 | --- | --- | --- |
 | `Mon coffre/-EN-VRAC/` | oui | oui — remplir, tagger, rétrolier |
 | `Mon coffre/-SAVOIRS/` | oui | compléter seulement, sans déplacer |
-| `Mon coffre/_maintenance/` | oui | oui — previews, actions, registre |
+| `Mon coffre/_MAINTENANCE/` | oui | oui — previews, actions, registre |
 | `Mon coffre/-PROJETS/` | oui | la **note de suivi** `<projet> — résumé.md`, dont l'agent est l'auteur ; sinon classement seul |
 | `Mon coffre/-DOCUMENTS/`, `-PERSONNELS/` | oui | **classement seul** : y déposer une note venue d'`-EN-VRAC/` |
 | `Mon coffre/OBSIA/` | oui | non par ce serveur — le dépôt passe par Git (§2) |
@@ -54,7 +54,7 @@ Le détail fait foi au §7.3 du contrat, qui n'est pas reformulé ici.
 
 - **Preview avant écriture** : toute action touchant plusieurs fichiers,
   déplaçant une note ou écrivant hors d'`-EN-VRAC/` s'affiche d'abord et se
-  consigne, datée, dans `Mon coffre/_maintenance/` (§7.4). Sans Git, le
+  consigne, datée, dans `Mon coffre/_MAINTENANCE/` (§7.4). Sans Git, le
   preview *est* la trace.
 - **Consigner l'usage** : tout appel de ce serveur laisse une ligne dans le log
   de session (§9) — quoi, où, résultat.

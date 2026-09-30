@@ -82,14 +82,27 @@ agents qu'on fait tourner ici, puisque rien ne les cloisonnera ensuite.
 
 ## 5. Charger le cerveau
 
-Lancer la session depuis le dépôt (`cd .../OBSIA && claude`) : `CLAUDE.md` est
-lu automatiquement, et importe le contrat et les index par `@IA/system/…`.
+Lancer la session depuis la **racine du coffre** (`cd .../<coffre> && claude`),
+comme les autres harness : le répertoire de travail donne alors accès au coffre
+parent (§7.6), et l'agent y trouve ses fichiers d'instructions.
 
-Contrepartie : le répertoire de travail est alors le dépôt, pas la racine du
-coffre. Pour atteindre le coffre parent, ajouter sa racine comme répertoire
-supplémentaire, ou déclarer `coffre-parent` (§7.6). Lancer depuis la racine du
-coffre marche aussi, mais `CLAUDE.md` n'est plus chargé seul : il faut alors le
-citer explicitement.
+Claude Code lit **l'un ou l'autre**, jamais les deux (vérifié sur documentation
+le 2026-09-30, `https://code.claude.com/docs/en/memory`, version 2.1.277 et
+suivantes) :
+
+- s'il trouve un `CLAUDE.md` dans le dossier de travail **ou au-dessus**, il ne
+  lit que lui ;
+- sinon, il lit l'`AGENTS.md` posé par `scripts/installer.py --appliquer`
+  (index et méthode, qui ordonne de lire le contrat).
+
+Pour que le contrat soit chargé entier dès l'ouverture, créer à la racine du
+coffre un `CLAUDE.md` d'une ligne, `@OBSIA/CLAUDE.md` : les imports `@` y sont
+résolus, et `OBSIA/CLAUDE.md` importe le contrat et les index. `AGENTS.md` est
+alors ignoré par Claude Code, et reste lu par les autres harness.
+
+Lancer depuis `OBSIA/` marche encore — `OBSIA/CLAUDE.md` est lu — mais le
+coffre parent n'est plus le répertoire de travail : il faut l'ajouter comme
+répertoire supplémentaire, ou déclarer `coffre-parent`.
 
 ## 6. Vérifier
 

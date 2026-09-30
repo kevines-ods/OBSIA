@@ -1,7 +1,11 @@
 # OpenCode
 
-**Statut : vérifié sur documentation le 2026-09-13 (documentation en ligne du
-projet) — jamais éprouvé sur machine réelle.**
+**Statut : vérifié sur documentation — les règles
+(<https://opencode.ai/docs/rules/>) le 2026-09-30 ; le serveur
+(<https://opencode.ai/docs/server/>), les agents
+(<https://opencode.ai/docs/agents/>) et les serveurs MCP
+(<https://opencode.ai/docs/mcp-servers/>) le 2026-09-13. Jamais éprouvé sur
+machine réelle.**
 
 Agent en ligne de commande configuré par un fichier `opencode.json`, doublé
 d'un **mode serveur** : les sessions vivent côté serveur et se reprennent
@@ -28,8 +32,11 @@ Lancer depuis la **racine du coffre parent** (le dossier qui contient
 §7.6, et elle rend le serveur MCP `coffre-parent` inutile : un composant de
 moins à surveiller.
 
-Conséquence : `CLAUDE.md` n'est plus à la racine du répertoire de travail, donc
-il n'est plus chargé tout seul. Le §2 ci-dessous le rattrape explicitement.
+C'est aussi de là que le cerveau arrive, tout seul. OpenCode **remonte** depuis
+le dossier de travail et retient le **premier `AGENTS.md` rencontré** ; lancé de
+la racine du coffre, il tombe sur celui que `python3 scripts/installer.py
+--appliquer` y a posé. `CLAUDE.md` n'est lu qu'**en repli**, faute d'`AGENTS.md`
+— c'est le fichier historique, pas le principal.
 
 ## 2. Charger le cerveau — `opencode.json`
 
@@ -39,33 +46,41 @@ comme l'exige la règle d'or de `README.md` et le §7.6 du contrat.
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
-  "instructions": [
-    "OBSIA/CLAUDE.md",
-    "OBSIA/IA/system/VAULT-CONTRACT.md",
-    "OBSIA/IA/system/agents-index.md",
-    "OBSIA/IA/system/skills-index.md",
-    "OBSIA/IA/system/taches-index.md"
-  ]
+  "instructions": ["OBSIA/IA/system/VAULT-CONTRACT.md"]
 }
 ```
 
-Les quatre fichiers de `IA/system/` sont listés à la main **exprès**.
-`CLAUDE.md` les importe avec la syntaxe `@IA/system/…`, qui appartient à un
-autre harness ; rien ne dit qu'elle soit résolue ici. Les énumérer coûte cinq
-lignes et supprime le doute. Si la syntaxe d'import s'avère prise en charge,
-ces lignes deviennent redondantes sans rien casser.
+**Une seule entrée, et c'est le contrat.** Les entrées de `instructions`
+*s'ajoutent* à `AGENTS.md` — la documentation le dit en toutes lettres : « All
+instruction files are combined with your `AGENTS.md` files ». Or l'`AGENTS.md`
+du §1 porte déjà l'index des agents, celui des skills, celui des tâches et la
+méthode : les quatre fichiers `IA/system/` qu'on listait ici y sont donc en
+double. Le contrat, lui, n'y est pas : la méthode se contente d'ordonner « Lis
+`IA/system/VAULT-CONTRACT.md` en entier avant toute action ». Le nommer ici le
+met dans le contexte **d'emblée**, au lieu de laisser l'agent aller le
+chercher — et c'est la seule pièce du cerveau qui manquait à `AGENTS.md`.
+
+Le contrat est nommé **lui-même**, et non par la syntaxe `@IA/system/…` de
+`CLAUDE.md` : OpenCode **ne résout pas** les références de fichier d'un
+`AGENTS.md` — la documentation le dit, et propose de charger explicitement ce
+qu'on veut voir arriver. Nommer le fichier garantit qu'il est inséré **entier**.
 
 Deux points de la documentation, à connaître :
 
 - le fichier de règles attendu par défaut s'appelle `AGENTS.md` ; `CLAUDE.md`
-  n'est lu qu'**en repli**, s'il n'y a pas d'`AGENTS.md`. Ne pas créer
-  d'`AGENTS.md` à la racine du coffre sans y reprendre ce qui précède, sinon
-  le repli ne joue plus ;
+  n'est lu qu'**en repli**, s'il n'y a pas d'`AGENTS.md`. Cet `AGENTS.md`, on
+  ne le rédige pas à la main : `python3 scripts/installer.py --appliquer` le
+  pose à côté de `OBSIA/`, et il contient le prompt système complet — index,
+  méthode, profil retenu — précédé d'un marqueur « généré — ne pas éditer ». Un
+  `AGENTS.md` sans ce marqueur n'est jamais écrasé. Complété, il vaut mieux
+  qu'incomplet : c'est ce que le coffre produit, et rien n'oblige à en écrire
+  un second ;
 - les entrées de `instructions` acceptent les motifs (`*.md`) et les URL.
 
-Autre voie, si l'on préfère un seul bloc : `python3 scripts/generer_prompt.py`
-depuis la racine du dépôt, et donner le fichier produit comme instruction de
-démarrage.
+Sans `AGENTS.md` — avant la première installation — la ligne n'est pas perdue :
+le contrat reste lu, et c'est l'essentiel. Pour obtenir le prompt complet sans
+installer : `python3 scripts/generer_prompt.py` depuis la racine du dépôt, et
+donner le fichier produit comme instruction de démarrage.
 
 ## 3. Les agents — la carte, et ce qui ne se recopie pas
 

@@ -37,16 +37,16 @@ procédure, depuis la racine du dépôt OBSIA :
    (`IA/system/tags-du-coffre-parent.md`), crée les rétroliens, puis classe la
    note selon sa nature vers `Mon coffre/-PROJETS/`,
    `Mon coffre/-DOCUMENTS/`, `Mon coffre/-PERSONNELS/` ou `Mon coffre/-SAVOIRS/`.
-2. Vérifie `Mon coffre/_maintenance/notes_remplies.md`, puis complète les notes de
+2. Vérifie `Mon coffre/_MAINTENANCE/notes_remplies.md`, puis complète les notes de
    `Mon coffre/-SAVOIRS/` déposées brutes qui n'y figurent pas encore.
 3. Consigne chaque preview (copie datée) et chaque action dans
-   `Mon coffre/_maintenance/` (§7.4) et tiens le registre `notes_remplies.md` à jour.
+   `Mon coffre/_MAINTENANCE/` (§7.4) et tiens le registre `notes_remplies.md` à jour.
 
 Tout tag rencontré hors du vocabulaire contrôlé est **signalé**, jamais posé :
 propose son ajout au registre par patch, ou son retrait. Ne modifie rien hors
 des zones du §7.3.
 
 Rapporte en clair : notes traitées et classées, notes complétées, tags hors
-vocabulaire signalés, fichiers de `Mon coffre/_maintenance/` écrits. Termine en
+vocabulaire signalés, fichiers de `Mon coffre/_MAINTENANCE/` écrits. Termine en
 disant si `-EN-VRAC/` est vide : c'est le critère d'achèvement (§7.7), et ce qui
 y reste est ce que tu n'as pas su trancher.

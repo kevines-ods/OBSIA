@@ -24,7 +24,11 @@ jobs:
           python-version: "3.11"
 
       # Aucune dépendance : les scripts du coffre n'utilisent que la
-      # bibliothèque standard, à dessein.
+      # bibliothèque standard, à dessein — y compris leurs tests (unittest,
+      # jamais pytest, qui n'est pas installé).
+      - name: Tests des scripts
+        run: python3 -m unittest discover -s tests
+
       - name: Cohérence du coffre
         run: python3 scripts/verifier_coffre.py
 

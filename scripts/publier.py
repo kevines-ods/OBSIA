@@ -301,7 +301,11 @@ def main() -> int:
         git(cible, "commit", "-m",
             "Synchronisation depuis le dépôt privé (%s)"
             % git(source, "rev-parse", "--short", "HEAD").strip())
-        print("  Committé. La poussée reste à faire à la main : git push")
+        print("  Committé. La poussée reste à faire à la main — par une branche :")
+        print("  la règle de main exige la vérification CI avant qu'un commit y arrive,")
+        print("  une poussée directe est refusée.")
+        print("    git -C %s push origin HEAD:refs/heads/publication/AAAA-MM-JJ" % cible)
+        print("    puis pull request, vérification verte, fusion.")
     elif diff:
         print("  À relire puis committer : git -C %s diff --cached" % cible)
 

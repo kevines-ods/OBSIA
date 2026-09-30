@@ -23,6 +23,21 @@ celui que vous retenez, et l'entrée du gabarit est à ajuster en conséquence.
 Gabarit de config prêt à copier : `IA/MCP/mcp.example.json`, entrée `searxng`,
 où l'URL fictive est à remplacer par celle de votre instance.
 
+## Ce que l'instance doit permettre
+
+- **Le format JSON doit être activé** dans `settings.yml` de l'instance
+  (`search.formats: [html, json]`). Il ne l'est pas par défaut : sans lui,
+  l'API refuse les requêtes du serveur MCP.
+- Pour une instance privée, le limiteur peut être coupé (`server.limiter:
+  false`) : il n'exige alors ni valkey ni `limiter.toml`.
+- Au démarrage, les moteurs du réseau Tor (`ahmia`, `torch`) échouent à se
+  charger sans proxy Tor : c'est attendu, pas une panne.
+
+Vérifié le 2026-09-28 avec `mcp-searxng` : quatre outils exposés —
+`searxng_web_search`, `searxng_search_suggestions`, `searxng_instance_info` et
+`web_url_read`, qui lit une page trouvée. Ce dernier sort lui aussi de la
+machine : même prudence, même trace.
+
 ## Ce que cet outil sert à faire
 
 Il porte le **dernier étage** de la cascade décrite par le skill `recherche` :

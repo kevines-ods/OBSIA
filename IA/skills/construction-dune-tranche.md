@@ -81,7 +81,10 @@ interface vue.
 ## 6. Cocher, puis livrer
 
 Cocher les critères d'acceptation dans `docs/PLAN.md`, committer ce
-changement avec la tranche, puis charger `livraison-git`.
+changement avec la tranche. Si la tranche change l'installation, la
+configuration ou une décision, charger `documentation-du-projet` : le README
+ou l'ADR se met à jour **dans la même PR**, pas à la séance suivante. Puis
+charger `livraison-git`.
 
 Avant de livrer, le garde de `plancher-qualite` doit sortir en 0 : il refuse
 les cinq gestes par lesquels une tranche passe au vert sans être meilleure. Ne pas commencer la

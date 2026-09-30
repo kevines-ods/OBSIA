@@ -17,10 +17,10 @@ friction à quelques minutes, sans faire dépendre OBSIA d'aucun harness.
 
 ## Les trois besoins communs (détail : `commun.md`)
 
-1. **charger le cerveau** — prompt système / `CLAUDE.md` / index ;
+1. **charger le cerveau** — `AGENTS.md` / prompt système / `CLAUDE.md` / index ;
 2. **atteindre le coffre parent** — la racine du coffre (parent du dépôt),
    pas seulement `OBSIA/` ;
-3. **connaître les repères** — racine du coffre, `_maintenance/`, registre des
+3. **connaître les repères** — racine du coffre, `_MAINTENANCE/`, registre des
    tags.
 
 ## Atteindre le coffre parent — les trois voies
@@ -64,32 +64,40 @@ démarrage.
 ## Fiches
 
 Toutes suivent la **forme commune en six sections** définie par `commun.md` :
-c'est elle que le skill `configuration-mcp` lit pour savoir où écrire.
+c'est elle que le skill `configuration-mcp` lit pour savoir où écrire — sauf
+`opencode.md`, antérieure à cette forme, dont l'en-tête donne la correspondance
+section par section.
 
 | Fiche | Harness | Clé du bloc MCP | Secrets en `${VAR}` | Statut |
 | --- | --- | --- | --- | --- |
 | `claude-code.md` | Claude Code | `mcpServers` | oui, avec valeur par défaut | vérifié 2026-09-14 |
-| `opencode.md` | OpenCode | `mcp` | oui | vérifié 2026-09-13 |
+| `opencode.md` | OpenCode | `mcp` | oui | vérifié 2026-09-30 |
+| `codex.md` | Codex | `mcp_servers` (TOML) | non — des **noms** (`env_vars`, `bearer_token_env_var`) | vérifié 2026-09-30 |
+| `goose.md` | Goose | `extensions:` (YAML) | partielle — `client_id` ; préférer `env_keys` | vérifié 2026-09-30 |
 | `librechat.md` | LibreChat | `mcpServers` (YAML) | oui | vérifié 2026-09-14 |
 | `openclaw.md` | OpenClaw | `mcp.servers` | **à confirmer** | vérifié 2026-09-14 |
 | `aionui-obsiaui.md` | AionUi / ObsiaUi | `mcpServers`, saisi dans l'interface | **non** — jeton en clair | vérifié 2026-09-14 |
-| `deepseek-harness.md` | DeepSeek Harness (DSH) | inconnue | inconnue | **non vérifié** |
+| `deepseek-harness.md` | DeepSeek Harness (DSH) | **aucune** — une ligne de greffon par serveur | oui — `!!js process.env.X` | vérifié 2026-09-30, **sauf le §4** |
 | `pi.md` | Pi | **aucune** — pas de MCP intégré | sans objet — variables d'environnement | vérifié 2026-09-16 |
 
 Trois choses que ce tableau rend visibles d'un coup d'œil, et qui décident du
 branchement :
 
-- **`mcpServers` n'est pas une norme.** Deux harness sur sept attendent une
-  autre clé, et un n'en a aucune. Recopier le bloc de `commun.md` sans lire la
-  fiche échoue en silence.
+- **`mcpServers` n'est pas une norme.** Trois harness sur neuf l'utilisent ;
+  quatre attendent une autre clé, un n'en a aucune, et DSH n'empile pas de clé
+  du tout — une ligne de greffon par serveur. Recopier le bloc de `commun.md`
+  sans lire la fiche échoue en silence.
 - **Deux fiches ne peuvent pas porter un jeton.** Sur AionUi la documentation
   écrit le secret en clair, ce que le §4 interdit ; sur OpenClaw
   l'interpolation n'est pas documentée. Les serveurs authentifiés s'y déclarent
-  autrement, ou pas du tout.
-- **Une fiche est vide, et le dit.** DSH n'a pas de configuration publiée :
-  l'agent s'arrête au lieu d'écrire au hasard. Pi produit le même arrêt pour la
-  raison inverse — sa configuration est documentée, mais elle n'a pas de MCP à
-  remplir, et sa fiche le dit à la place de la clé.
+  autrement, ou pas du tout. Codex, Goose et DSH, eux, ont mieux qu'une
+  interpolation : des champs ou une expression qui **nomment** la variable sans
+  porter sa valeur (`env_vars`, `bearer_token_env_var`, `env_keys`,
+  `!!js process.env.X`).
+- **Une fiche reste sans MCP, et le dit.** Pi n'a pas de MCP intégré : sa fiche
+  le dit à la place de la clé, et l'agent s'arrête au lieu d'écrire au hasard.
+  DSH n'était qu'un trou de documentation le 2026-09-14 — sa fiche est remplie
+  depuis le 2026-09-30, le §4 excepté.
 
 Un statut « vérifié » signifie **vérifié sur documentation**, avec sa date et
 sa source dans la fiche. Aucune n'a été éprouvée sur machine réelle ; c'est

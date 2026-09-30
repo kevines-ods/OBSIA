@@ -3,9 +3,9 @@
 """
 Génère un index par dossier du coffre parent.
 
-Pour chacun des dossiers de premier niveau de `Mon coffre/` (_maintenance,
+Pour chacun des dossiers de premier niveau de `Mon coffre/` (_MAINTENANCE,
 -PROJETS, -DOCUMENTS, -PERSONNELS, -SAVOIRS, -EN-VRAC), écrit
-`Mon coffre/_maintenance/index-<dossier>.md` : une ligne par note, avec son
+`Mon coffre/_MAINTENANCE/index-<dossier>.md` : une ligne par note, avec son
 fichier, sa description, son type et ses tags.
 
 Un index est fait pour décider d'ouvrir une note **sans l'ouvrir** — c'est ce
@@ -48,7 +48,7 @@ CONTRAT_REL = Path("IA") / "system" / "VAULT-CONTRACT.md"
 
 # Dossiers de premier niveau du coffre parent (§7.1), dans l'ordre d'affichage.
 DOSSIERS = ("-SAVOIRS", "-PERSONNELS", "-PROJETS", "-DOCUMENTS",
-            "-EN-VRAC", "_maintenance")
+            "-EN-VRAC", "_MAINTENANCE")
 
 LONGUEUR_DESCRIPTION = 140
 
@@ -206,7 +206,7 @@ def main() -> int:
         print("Dépôt OBSIA introuvable depuis %s" % script.parent, file=sys.stderr)
         return 1
     coffre = (args.racine or racine_depot.parent).resolve()
-    sortie = coffre / "_maintenance"
+    sortie = coffre / "_MAINTENANCE"
 
     perimes: list[str] = []
     absents: list[str] = []

@@ -28,21 +28,30 @@ Ne pas se fier à sa mémoire de la conversation : lire le diff.
 
 ### 2. Écrire ou compléter la note de projet
 
-**D'abord, où.** Deux destinations, et les confondre expose du privé dans un
-dépôt public (§7.3.1) :
+**D'abord, où.** Confondre les destinations expose du privé dans un dépôt
+public (§7.3.1), ou encombre `-PROJETS/` de travaux finis :
 
 | La séance portait sur… | La note va dans… |
 | --- | --- |
 | le coffre lui-même — un skill, un agent, une règle | `mémoire/projets/<nom-projet>/AAAA-MM-JJ-titre.md` |
-| un projet de l'utilisateur | `Mon coffre/-PROJETS/<nom-du-projet> — résumé.md` |
+| un projet de l'utilisateur **encore en cours ou à venir** | `Mon coffre/-PROJETS/<nom-du-projet> — résumé.md` |
+| une tâche terminée qui laisse un état à tenir à jour (une configuration, une organisation) | `Mon coffre/-PERSONNELS/<sujet>.md`, avec `auteur: <nom-agent>` |
+| une tâche terminée qui ne laisse qu'une trace de ce qui a été fait | `Mon coffre/_MAINTENANCE/AAAA-MM-JJ-<sujet>.md` |
 
-Le test : *est-ce que ça décrit le coffre ?* Si non, `-PROJETS/`. Dans le
-doute, `-PROJETS/` — un contenu privé poussé dans le dépôt reste dans
-l'historique Git même effacé.
+Deux tests, dans l'ordre. *Est-ce que ça décrit le coffre ?* Si oui,
+`mémoire/projets/` ; si non, rien n'entre dans le dépôt — un contenu privé
+poussé reste dans l'historique Git même effacé. *Le travail continue-t-il ?*
+Si oui, `-PROJETS/`. Sinon ce n'est plus un projet : `-PERSONNELS/` pour
+l'état, `_MAINTENANCE/` pour l'historique — les deux à la fois quand la séance
+laisse l'un et l'autre, chaque note renvoyant à l'autre. Dans le doute,
+demander à l'utilisateur plutôt que de créer une note dans `-PROJETS/` par
+défaut.
 
 La note de suivi d'un projet est **vivante** : une seule note par projet, mise
 à jour sur place, pas une pile de notes datées. Elle dit où en est le projet,
-ce qui a été décidé et ce qui reste. Le gabarit daté ci-dessous vaut pour
+ce qui a été décidé et ce qui reste. Quand le projet se termine, sa note quitte
+`-PROJETS/` selon le même tableau — contenu repris en entier, déplacement
+prévisualisé et consigné dans `_MAINTENANCE/` (§7.4). Le gabarit daté ci-dessous vaut pour
 `mémoire/projets/`, qui raconte une chronologie.
 
 `mémoire/projets/<nom-projet>/AAAA-MM-JJ-titre.md`, structurée pour que le
@@ -127,8 +136,9 @@ find mémoire -name '*.md' ! -name sommaire.md -exec wc -m {} \; | sort -rn | he
 
 ### 6. Proposer le log de session
 
-`IA/system/session-log/AAAA-MM-JJ.md` — décisions, fichiers modifiés, questions
-ouvertes. Ce dossier vit sous `IA/system/` : **patch soumis à revue**, jamais
+`IA/system/session-log/AAAA-MM-JJ-<nom-agent>.md` — décisions, fichiers
+modifiés, questions ouvertes. Si le fichier du jour existe déjà pour cet agent,
+le compléter au lieu d'en créer un second. Ce dossier vit sous `IA/system/` : **patch soumis à revue**, jamais
 d'écriture directe (§9).
 
 Le log raconte la séance ; la note de projet documente le sujet. Les deux ne
