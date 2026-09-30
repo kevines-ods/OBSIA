@@ -212,10 +212,15 @@ complètes au §13 de `IA/system/VAULT-CONTRACT.md`.
 Avant de committer :
 
 ```bash
+python3 -m unittest discover -s tests
 python3 scripts/regenerate_sommaire.py
 python3 scripts/regenerate_index.py
 python3 scripts/verifier_coffre.py
 ```
+
+La première commande lance la suite de `tests/` — les scripts, l'installeur, la
+publication, la ligne de commande. Elle ne demande aucune dépendance non plus :
+c'est `unittest` de la bibliothèque standard, jamais `pytest`.
 
 `verifier_coffre.py` refuse un frontmatter invalide, un `name` qui ne
 correspond pas au nom du fichier, une liste écrite en chaîne, une description

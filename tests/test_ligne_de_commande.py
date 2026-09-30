@@ -239,5 +239,23 @@ class TestProfilFautif(BaseLigneDeCommande):
         self.assertIn("Modules inconnus", resultat.stderr)
 
 
+class TestAideDeLInstallateur(BaseLigneDeCommande):
+    """L'aide de `--installer` doit dire où part l'`AGENTS.md`."""
+
+    def test_l_aide_dit_que_l_agents_md_va_dans_cible_parent(self):
+        """`CIBLE` ne suffit pas à le placer : il n'est pas dans la cible.
+
+        `installer.py` écrit l'`AGENTS.md` un cran au-dessus de la cible
+        (`cible.parent/AGENTS.md`), parce que c'est là que Codex le lit. Sans
+        cette précision, on le cherche dans la cible — et il n'y est pas.
+        """
+        resultat = self.lancer_depuis(INSTALLATEUR, "--help")
+
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        # L'aide est repliée à 80 colonnes : on compare sur une seule ligne.
+        aide = " ".join(resultat.stdout.split())
+        self.assertRegex(aide, r"--installer CIBLE .*CIBLE/\.\.")
+
+
 if __name__ == "__main__":
     unittest.main()
