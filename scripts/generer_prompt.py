@@ -238,6 +238,38 @@ def construire_config_mcp(agents: list[dict]) -> tuple[str, list[str]]:
     return json.dumps(config, indent=2, ensure_ascii=False), serveurs
 
 
+# ------------------------------------------------------- fabrique du prompt
+
+def declarations_reduites(racine: Path = RACINE_DEFAUT) -> tuple:
+    """Les déclarations du coffre, réduites à son profil.
+
+    Le point de passage unique : l'index d'un agent ne doit pas dépendre de
+    qui l'a demandé. `main()` s'en sert pour la sortie standard, `installer.py`
+    pour AGENTS.md.
+    """
+    agents = collecter(racine / "IA" / "agents", "agent")
+    skills = collecter(racine / "IA" / "skills", "skill")
+    taches = collecter(racine / "IA" / "tâches", "tâche")
+    mcp = collecter(racine / "IA" / "MCP", "mcp")
+
+    agents, skills, taches, mcp = filtrer_par_profil(racine, agents, skills,
+                                                     taches, mcp)
+    reduire_aux_actifs(agents, skills, {m["name"] for m in mcp})
+    return agents, skills, taches, mcp
+
+
+def prompt_du_coffre(racine: Path = RACINE_DEFAUT) -> str | None:
+    """Le prompt système du coffre, ou None si le coffre ne déclare rien.
+
+    None n'est pas une erreur du coffre : c'est un profil qui ne retient rien
+    d'utile, et l'appelant décide quoi en dire.
+    """
+    agents, skills, taches, _ = declarations_reduites(racine)
+    if not agents and not skills:
+        return None
+    return construire_prompt(racine, agents, skills, taches)
+
+
 # ---------------------------------------------------------------------- main
 
 def main() -> int:
@@ -255,21 +287,12 @@ def main() -> int:
         print(f"Racine introuvable : {racine}", file=sys.stderr)
         return 1
 
-    agents = collecter(racine / "IA" / "agents", "agent")
-    skills = collecter(racine / "IA" / "skills", "skill")
-    taches = collecter(racine / "IA" / "tâches", "tâche")
-    mcp = collecter(racine / "IA" / "MCP", "mcp")
-
-    agents, skills, taches, mcp = filtrer_par_profil(racine, agents, skills,
-                                                     taches, mcp)
-    reduire_aux_actifs(agents, skills, {m["name"] for m in mcp})
-
+    agents, skills, taches, _ = declarations_reduites(racine)
     if not agents and not skills:
         print("Aucun agent ni skill trouvé. Vérifie --racine.", file=sys.stderr)
         return 1
 
     prompt = construire_prompt(racine, agents, skills, taches)
-
     if args.sortie:
         args.sortie.write_text(prompt + "\n", encoding="utf-8")
         print(f"Écrit : {args.sortie}", file=sys.stderr)

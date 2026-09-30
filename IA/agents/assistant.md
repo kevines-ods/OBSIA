@@ -25,6 +25,7 @@ mcp:
   - coffre-parent
   - searxng
   - modele-local
+  - gmail
 read_only: false
 ---
 

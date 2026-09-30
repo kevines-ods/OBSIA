@@ -53,7 +53,7 @@ l'ordre.
 
 Un index par dossier du coffre parent, produits par
 `IA/skills/traitement-des-notes/scripts/indexer_coffre_parent.py` et écrits dans
-`Mon coffre/_maintenance/` :
+`Mon coffre/_MAINTENANCE/` :
 
 | Index | Couvre |
 | --- | --- |
@@ -62,7 +62,7 @@ Un index par dossier du coffre parent, produits par
 | `index-projets.md` | les projets — `Mon coffre/-PROJETS/` |
 | `index-documents.md` | revues, articles, transcriptions — `Mon coffre/-DOCUMENTS/` |
 | `index-en-vrac.md` | le tampon — `Mon coffre/-EN-VRAC/`, vide en fin de session (§7.7) |
-| `index-maintenance.md` | journaux, previews, registre — `Mon coffre/_maintenance/` |
+| `index-maintenance.md` | journaux, previews, registre — `Mon coffre/_MAINTENANCE/` |
 
 Chaque ligne porte le fichier, sa `description` — ou, à défaut, son premier
 titre — son type et ses tags. Un index se lit **avant** les notes ; il suffit à

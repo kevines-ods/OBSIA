@@ -37,7 +37,7 @@ le lire d'abord, ouvrir ensuite, et seulement ce qui est nécessaire.
 
 Depuis le 2026-09-08, le **coffre parent** — `Mon coffre/` — est votre base de
 connaissances et il est lisible (§7) : la recherche couvre
-`Mon coffre/_maintenance/`, `-PROJETS/`, `-DOCUMENTS/`, `-PERSONNELS/`,
+`Mon coffre/_MAINTENANCE/`, `-PROJETS/`, `-DOCUMENTS/`, `-PERSONNELS/`,
 `-SAVOIRS/` et `-EN-VRAC/`, dès que le harness donne accès à la racine du coffre
 (§7.6).
 

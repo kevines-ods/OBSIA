@@ -407,7 +407,10 @@ def verifier_references(agents, skills):
 
 
 # « charger X », « relève de X » : une consigne, pas une simple mention.
-CONSIGNE_SKILL = re.compile(r"(?:charger|c'est|relève de)\s+`([^\W_][\w-]{2,39})`")
+# Insensible à la casse : une consigne s'écrit aussi bien en tête de phrase
+# (« Charger `x`. ») qu'en cours de ligne, et le verbe y garde son sens.
+CONSIGNE_SKILL = re.compile(r"(?:charger|c'est|relève de)\s+`([^\W_][\w-]{2,39})`",
+                            re.IGNORECASE)
 
 # Frontières assumées : le skill visé est volontairement hors de portée de cet
 # agent, et le skill qui renvoie vers lui l'énonce. Les exemptions vivent ici,
@@ -536,7 +539,7 @@ GABARIT = re.compile(r"[<>*…{]|AAAA|MM-JJ")          # chemins d'exemple, pas 
 # Dossiers du coffre parent (§7.1) : hors du dépôt, donc invisibles d'ici.
 # Un chemin qui les vise n'est pas cassé, il désigne autre chose.
 COFFRE_PARENT = ("-SAVOIRS", "-PROJETS", "-DOCUMENTS", "-PERSONNELS",
-                 "-EN-VRAC", "_maintenance", "Mon coffre")
+                 "-EN-VRAC", "_MAINTENANCE", "Mon coffre")
 
 
 def vise_le_coffre_parent(chemin: str) -> bool:
@@ -780,6 +783,26 @@ def verifier_modules(dossier: Path) -> list[dict]:
     return modules
 
 
+def verifier_profil(modules: list[dict]) -> None:
+    """§13 : le profil ne doit citer que des modules du catalogue.
+
+    Avertissement et non erreur. Sans profil — le cas de la CI — il n'y a rien
+    à dire. Avec un profil fautif, le coffre n'est pas incohérent : il est plus
+    maigre que voulu, et c'est justement ce qu'on ne comprend pas quand on le
+    découvre après l'installation.
+    """
+    import modules as _mod                       # tardif, comme dans generer_prompt
+
+    profil = _mod.lire_profil(RACINE)
+    if profil is None:
+        return
+
+    for nom in sorted(_mod.modules_inconnus(modules, profil.get("modules", []))):
+        avertir(_mod.NOM_PROFIL,
+                "`%s` ne correspond à aucun module du catalogue — sans effet, "
+                "le coffre sera plus maigre que prévu (§13)" % nom)
+
+
 def cloture(modules: list[dict], nom: str) -> set[str]:
     """Le module et tout ce qu'il entraîne, essentiels compris."""
     par_nom = {m["name"]: m for m in modules if m.get("name")}
@@ -884,6 +907,7 @@ def main() -> int:
     mcp = verifier_mcp(RACINE / "IA" / "MCP")
     taches = verifier_taches(RACINE / "IA" / "tâches", agents)
     modules = verifier_modules(RACINE / "IA" / "system" / "modules")
+    verifier_profil(modules)
     verifier_appartenance(modules, agents, skills, mcp, taches)
     verifier_renvois_entre_modules(modules, skills)
     verifier_references(agents, skills)

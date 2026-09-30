@@ -119,7 +119,7 @@ en échec, disque presque plein, sauvegarde manquée, tâche silencieuse.
 Une information ne vit qu'à un seul endroit : la corriger là où elle est, ne
 jamais la recopier « pour être sûr ». Avant de recommander un fichier ou une
 commande tirés de ces notes, vérifier qu'il existe encore. Chaque écriture dans
-le coffre parent laisse son preview dans `Mon coffre/_maintenance/` (§7.4).
+le coffre parent laisse son preview dans `Mon coffre/_MAINTENANCE/` (§7.4).
 
 ## Style
 

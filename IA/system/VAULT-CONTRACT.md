@@ -84,7 +84,7 @@ dossier**, et elles ne désignent personne.
   qui donne la liste complète et la commande.
 - Ces trois zones sont les seules **du dépôt**. Hors du dépôt, les écritures
   dans le coffre parent suivent le §7 : zones d'écriture (7.3), preview et
-  registre consignés dans `_maintenance/` (7.4).
+  registre consignés dans `_MAINTENANCE/` (7.4).
 
 ## 3. Périmètre hors du coffre
 
@@ -362,11 +362,15 @@ ou supprime un dossier de premier niveau. Les agents ne modifient jamais cette
 structure : ils travaillent dans les dossiers existants, sans y créer de
 sous-structure de premier niveau.
 
+Les dossiers de premier niveau s'écrivent **en majuscules**, tels qu'ils sont
+sur le disque : `_MAINTENANCE/`, `-PROJETS/`… Linux distingue la casse, et un
+agent qui cherche `_maintenance/` conclut à tort que le dossier manque.
+
 | Dossier | Rôle |
 | --- | --- |
 | `Mon coffre/` | la racine — le coffre Obsidian lui-même, ouvert à ce niveau |
 | `OBSIA/` | le dépôt, versionné — agents, skills, tâches, mémoire d'OBSIA |
-| `_maintenance/` | journaux, astuces de débogage, previews consignés, registre des notes traitées |
+| `_MAINTENANCE/` | journaux, astuces de débogage, previews consignés, registre des notes traitées |
 | `-PROJETS/` | les projets en cours ou à venir — notes, et le dépôt git du projet quand il en a un (7.3) |
 | `-DOCUMENTS/` | revues, articles web, transcriptions YouTube |
 | `-PERSONNELS/` | contexte personnel : configuration matérielle/logicielle, préférences, CV… |
@@ -380,7 +384,7 @@ décision de l'utilisateur, pas des agents.
 
 Les agents `read_only: false` peuvent **lire tout le coffre parent** dès que
 le harness donne accès à sa racine (7.6) : la recherche couvre
-`_maintenance/`, `-PROJETS/`, `-DOCUMENTS/`, `-PERSONNELS/`, `-SAVOIRS/` et
+`_MAINTENANCE/`, `-PROJETS/`, `-DOCUMENTS/`, `-PERSONNELS/`, `-SAVOIRS/` et
 `-EN-VRAC/`. Ces dossiers se désignent par leur nom complet depuis la racine
 (`Mon coffre/-SAVOIRS/`) ; dans une commande lancée depuis la racine du dépôt,
 ils s'atteignent par `..`.
@@ -402,7 +406,7 @@ directes, limitées et tracées (7.4) :
   classement ;
 - `-SAVOIRS/` — compléter une note que l'utilisateur y a déposée (tags,
   rétroliens, corps manquant), sans en changer le sens ni la déplacer ;
-- `_maintenance/` — consigner previews, actions et registre des notes
+- `_MAINTENANCE/` — consigner previews, actions et registre des notes
   traitées ;
 - le **classement** : déplacer une note d'`-EN-VRAC/` vers sa destination
   (`-PROJETS/`, `-DOCUMENTS/`, `-PERSONNELS/`, `-SAVOIRS/`) une fois traitée ;
@@ -476,18 +480,18 @@ référence dont on est l'auteur (§7.3 ci-dessus), et son contenu
 ne migre jamais dans `OBSIA/`, qui est public (§7.2). Un secret — mot de passe,
 jeton, clé — n'a sa place ni ici ni ailleurs (§4).
 
-### 7.4 Preview et traçabilité — `_maintenance/`
+### 7.4 Preview et traçabilité — `_MAINTENANCE/`
 
 Sans Git, **le preview tient lieu de trace**. Avant toute action qui touche
 plusieurs fichiers, déplace une note ou écrit hors d'`-EN-VRAC/`, l'agent :
 
 1. affiche le preview — fichiers concernés, contenu final, destination ;
-2. en **conserve une copie datée dans `_maintenance/`** ;
-3. exécute, puis consigne l'action (quoi, où, résultat) dans `_maintenance/`,
+2. en **conserve une copie datée dans `_MAINTENANCE/`** ;
+3. exécute, puis consigne l'action (quoi, où, résultat) dans `_MAINTENANCE/`,
    comme au §9.
 
 Le registre des notes traitées est le fichier
-**`Mon coffre/_maintenance/notes_remplies.md`** — une note Markdown, pour
+**`Mon coffre/_MAINTENANCE/notes_remplies.md`** — une note Markdown, pour
 qu'Obsidian l'indexe et la rende consultable comme le reste. Il liste les
 notes déjà remplies, surtout celles de `-SAVOIRS/` que l'utilisateur dépose
 brutes. Une note qui y figure n'est pas à revérifier ; le registre est mis à
@@ -557,10 +561,19 @@ par un agent**. Les URLs sont regroupées en fin de fichier.
 ## 9. Log des sessions
 
 À la fin de chaque session de travail, une note est **proposée en patch** dans
-`IA/system/session-log/AAAA-MM-JJ.md` : décisions prises, fichiers modifiés,
-questions restées ouvertes. Ce dossier vit sous `IA/system/`, donc son
-écriture suit la règle générale du §2 (patch Git revu) — ce n'est pas une des
-trois zones en écriture directe.
+`IA/system/session-log/AAAA-MM-JJ-<nom-agent>.md` : décisions prises,
+fichiers modifiés, questions restées ouvertes. Ce dossier vit sous
+`IA/system/`, donc son écriture suit la règle générale du §2 (patch Git revu)
+— ce n'est pas une des trois zones en écriture directe.
+
+Le nom de l'agent dans le nom du fichier n'est pas décoratif : deux agents
+menés le même jour, dans deux conversations parallèles, écriraient sinon le
+même fichier, et le second patch écraserait le premier. Il permet aussi à un
+agent de retrouver ses propres séances d'un seul motif
+(`session-log/*-<nom-agent>.md`) quand l'utilisateur le lui demande. Deux
+séances du même agent le même jour partagent un seul log, complété. Les logs
+antérieurs à cette règle gardent leur nom daté : les renommer demanderait de
+deviner l'agent, et un récit ne se réécrit pas (§11).
 
 **Les actions à effet externe y figurent aussi** : **tout appel de MCP, quel
 que soit son `permission`**, et toute correction appliquée à un système. Une
@@ -792,8 +805,11 @@ Un fichier sans module est inclassable : l'installeur ne saurait ni le retenir
 ni l'écarter. `scripts/verifier_coffre.py` le refuse.
 
 Un module reste **libre de ses dépendances mais pas de ses renvois** : si un
-skill de `A` dit de charger un skill de `B`, `A` doit entraîner `B`, faute de
-quoi la consigne tombe dans le vide chez qui n'a installé que `A`. Le
+skill de `A` dit de charger un skill de `B`, `A` doit entraîner `B` **ou**
+écrire, à l'endroit du renvoi, quoi faire quand `B` n'est pas installé — en
+nommant le module. Sinon la consigne tombe dans le vide chez qui n'a installé
+que `A`. Le repli écrit convient quand entraîner `B` imposerait un module
+disproportionné : on ne force pas la relecture sur quiconque construit. Le
 vérificateur l'avertit ; c'est un avertissement et non une erreur, pour la même
 raison qu'au §11 — la détection repose sur le verbe employé.
 
@@ -850,6 +866,18 @@ déclare rien d'absent, et `git checkout -- IA` remet tout. **En copie, ils le
 sont** : les fichiers écartés manquent réellement, un agent qui les déclarerait
 ferait échouer le vérificateur de la cible. Une tâche visant un agent absent est
 retirée pour la même raison.
+
+**`AGENTS.md`** — l'installation écrit également, à côté de leur coffre effectif,
+le fichier que les harness lisent d'eux-mêmes : `<dossier parent>/AGENTS.md`.
+Autrement dit, la cible d'installation désigne le dossier `OBSIA/` : `AGENTS.md`
+atterrit un cran au-dessus, à la racine du coffre que l'agent ouvre. Les deux
+modes l'écrivent, chacun pour le coffre effectif — celui des deux qui reçoit
+l'installation. Son contenu est celui de `scripts/generer_prompt.py` : index,
+méthode, profil retenu. Il est précédé d'un marqueur « généré — ne pas éditer »,
+et un `AGENTS.md` qui ne porte pas ce marqueur n'est **jamais** écrasé :
+avertissement, fichier intact, code de retour inchangé. Ce fichier vit **hors du
+dépôt** : il n'est ni versionné, ni concerné par `publier.py`, qui n'exporte que
+l'arbre suivi.
 
 Revenir au catalogue complet : `python3 scripts/installer.py --tout --appliquer`.
 

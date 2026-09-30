@@ -85,7 +85,7 @@ Classés par gravité, la plus forte d'abord :
 
 | Gravité | Ce que ça veut dire |
 | --- | --- |
-| **bloquant** | ça produit un résultat faux, une faille, ou une perte de données |
+| **bloquant** | ça produit un résultat faux, une faille atteignable, ou une perte de données |
 | **à corriger** | ça marche, mais ça coûtera cher plus tard, et le coût est nommé |
 | **à discuter** | un choix défendable des deux côtés — poser la question, pas le verdict |
 
