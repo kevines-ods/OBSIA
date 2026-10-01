@@ -38,6 +38,11 @@ jobs:
       - name: Routage des skills
         run: python3 scripts/evaluer_routage.py
 
+      # Les sommaires de mémoire/ ne sont pas versionnés (§11) : on vérifie
+      # seulement qu'ils se génèrent.
+      - name: Les sommaires se génèrent
+        run: python3 scripts/regenerate_sommaire.py > /dev/null
+
       - name: Le prompt système se génère
         run: python3 scripts/generer_prompt.py > /dev/null
 

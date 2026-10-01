@@ -1,0 +1,42 @@
+#!/bin/sh
+# Garde du travail en parallèle — VAULT-CONTRACT.md §2.1.
+#
+# Partout : jamais de commit sur la branche par défaut.
+# Avec `git config obsia.arbresSepares true` : jamais de commit dans l'arbre
+# principal, et une branche nommée `<nom-agent>/<sujet>`.
+# Procédure : IA/system/travail-en-parallele.md
+
+branche=$(git symbolic-ref --short -q HEAD) || exit 0   # HEAD détaché : rien à garder
+
+if [ "$branche" = "main" ] || [ "$branche" = "master" ]; then
+    cat >&2 <<MSG
+Commit refusé : on ne committe pas sur « $branche » (§2.1). Créer une branche
+<nom-agent>/<sujet> dans un worktree — IA/system/travail-en-parallele.md.
+MSG
+    exit 1
+fi
+
+[ "$(git config --bool obsia.arbresSepares)" = "true" ] || exit 0
+
+if [ "$(git rev-parse --absolute-git-dir)" = "$(cd "$(git rev-parse --git-common-dir)" && pwd)" ]; then
+    cat >&2 <<'MSG'
+Commit refusé : ceci est l'arbre de travail principal, partagé par toutes les
+séances (§2.1). Travailler dans un worktree :
+
+    git worktree add /tmp/obsia-<nom-agent>-<sujet> -b <nom-agent>/<sujet> origin/main
+MSG
+    exit 1
+fi
+
+racine=$(git rev-parse --show-toplevel)
+for fiche in "$racine"/IA/agents/*.md; do
+    agent=$(basename "$fiche" .md)
+    case "$branche" in "$agent"/?*) exit 0 ;; esac
+done
+
+cat >&2 <<MSG
+Commit refusé : la branche « $branche » ne porte pas le nom d'un agent
+(§2.1). Attendu : <nom-agent>/<sujet>, où <nom-agent> a sa fiche dans IA/agents/.
+Renommer : git branch -m <nom-agent>/<sujet>
+MSG
+exit 1

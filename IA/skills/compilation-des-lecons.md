@@ -64,6 +64,13 @@ Trois issues, toutes légitimes :
 | aucun skill n'était en cause | on s'arrête, et on inscrit la leçon au registre en `sans objet` |
 | un skill existant | on le modifie, étapes 4 à 7 |
 | le geste n'a aucun skill | on le note comme skill à créer, **et on s'arrête là** |
+| la règle violée est floue dans le contrat | on s'arrête : la leçon relève d'un patch sur `IA/system/VAULT-CONTRACT.md`, à proposer à part |
+
+Avant de modifier un skill, situer la cause dans **une seule couche** :
+le **contenu** (une note ou une mémoire manquait), le **skill** (sa procédure
+ou sa description a failli), ou le **contrat** (la règle elle-même est
+ambiguë). Corriger un skill pour une panne de contenu le fait enfler sans rien
+réparer.
 
 Créer un skill est une autre décision, avec son propre cadrage. La glisser
 dans une compilation de leçon, c'est la prendre sans l'avoir posée.
@@ -94,6 +101,13 @@ Charger `createur-de-skill` : c'est lui qui dit comment on écrit dans
 Reproduire l'échec que la leçon décrit, appliquer la règle, montrer que ça
 passe. C'est la seule preuve qui vaille, et c'est ce qui distingue une
 compilation d'une réécriture de confort.
+
+La preuve est une **comparaison à conditions égales** : la même demande, mot
+pour mot, jouée sur l'ancienne version du skill puis sur la nouvelle, avec le
+même agent et le même contexte. La modification n'est retenue que si la
+nouvelle version fait **mieux** — à égalité, on garde l'ancienne, qui a pour
+elle d'avoir déjà servi. Noter au registre ce que chaque version a produit, pas
+seulement le verdict.
 
 Quand l'échec n'est pas reproductible — matériel absent, service distant,
 incident non rejouable — l'écrire tel quel au registre : **`non rejoué` est une

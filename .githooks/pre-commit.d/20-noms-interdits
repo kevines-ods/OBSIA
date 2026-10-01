@@ -1,0 +1,34 @@
+#!/bin/sh
+# Garde des noms interdits — VAULT-CONTRACT.md §9 et §13.5.
+#
+# Refuse un commit dont les lignes ajoutées citent un nom de la liste locale
+# (`~/.config/obsia/noms-interdits`, ou `$OBSIA_NOMS_INTERDITS`) : noms d'hôtes,
+# nom du dépôt privé — ce qui désigne l'infrastructure sans forme
+# reconnaissable. La liste vit hors du dépôt ; sans elle, rien n'est contrôlé.
+# Même liste, même règle que le contrôle de fuite de `scripts/publier.py`, mais
+# au moment où la faute s'écrit plutôt qu'au moment de publier.
+
+liste=${OBSIA_NOMS_INTERDITS:-$HOME/.config/obsia/noms-interdits}
+[ -r "$liste" ] || exit 0
+
+motifs=$(mktemp) || exit 0
+trap 'rm -f "$motifs"' EXIT
+# Commentaires et blancs retirés ; moins de 4 caractères ignorés (`ia`
+# signalerait `IA/` partout) — même seuil que publier.py.
+sed -e 's/#.*//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' "$liste" \
+    | awk 'length($0) >= 4' > "$motifs"
+[ -s "$motifs" ] || exit 0
+
+trouve=$(git diff --cached -U0 --no-color --no-ext-diff \
+         | grep -E '^\+' | grep -vE '^\+\+\+ ' \
+         | grep -inwF -f "$motifs")
+[ -z "$trouve" ] && exit 0
+printf "%s\n" "$trouve" >&2
+
+cat >&2 <<'MSG'
+Commit refusé : une ligne ajoutée cite un nom de la liste des noms interdits
+(§9 — jamais de nom d'hôte interne ni d'identifiant dans le dépôt). Le
+remplacer par un rôle (« poste secondaire », « serveur principal ») ou le
+déplacer dans une configuration hors dépôt, sous ~/.config/obsia/.
+MSG
+exit 1

@@ -86,6 +86,27 @@ dossier**, et elles ne désignent personne.
   dans le coffre parent suivent le §7 : zones d'écriture (7.3), preview et
   registre consignés dans `_MAINTENANCE/` (7.4).
 
+### 2.1 Plusieurs agents, un seul dépôt
+
+Plusieurs agents travaillent **en même temps** sur ce dépôt, chacun dans sa
+conversation. L'arbre de travail principal est donc une ressource commune :
+une séance qui y change de branche déplace celle d'une autre entre deux de ses
+commandes, et un commit atterrit sur la mauvaise branche sans que rien ne le
+signale. Trois règles en découlent :
+
+- **Jamais de commit dans l'arbre principal.** Il reste sur la branche par
+  défaut et ne fait que se mettre à jour ; tout travail se fait dans un
+  *worktree* lié, propre à la séance.
+- **Une branche porte le nom de son agent** : `<nom-agent>/<sujet>`. La branche
+  et le worktree d'un autre agent ne se touchent pas — on le signale à
+  l'utilisateur.
+- **On se resynchronise avant de pousser** : branche reprise sur la branche
+  par défaut distante, fichiers générés régénérés, vérifications passées.
+
+Le crochet de pré-commit fait respecter les deux premières sur une machine qui
+l'active. Les commandes, la publication et le ménage :
+`IA/system/travail-en-parallele.md`.
+
 ## 3. Périmètre hors du coffre
 
 Ce coffre ne dépend d'aucun harness et n'en connaît aucun : il décrit *quoi*
@@ -641,12 +662,18 @@ que rien ne le signale.
 
 | Fichier | Produit par | Source de vérité |
 | --- | --- | --- |
-| `mémoire/**/sommaire.md` | `scripts/regenerate_sommaire.py` | le contenu des notes |
+| `mémoire/**/sommaire.md` | `scripts/regenerate_sommaire.py` — **non versionné** | le contenu des notes |
 | `IA/system/agents-index.md` | `scripts/regenerate_index.py` | le frontmatter des agents |
 | `IA/system/skills-index.md` | `scripts/regenerate_index.py` | le frontmatter des skills |
 | `IA/system/taches-index.md` | `scripts/regenerate_index.py` | le frontmatter des tâches |
 | `IA/system/modules-index.md` | `scripts/regenerate_index.py` | le frontmatter des modules |
 | `IA/README.md` | `scripts/regenerate_index.py` | les frontmatters d'agents, skills, MCP et tâches |
+
+Les sommaires de `mémoire/` ne sont **pas versionnés** : générés, ils étaient
+réécrits par presque chaque pull request touchant la mémoire, et mettaient en
+conflit deux travaux sans rapport menés en parallèle (§2.1). Ils se régénèrent
+localement — crochets `post-merge` et `post-checkout`, installeur, revue
+hebdomadaire — et le vérificateur ne les exige plus.
 
 Corollaire : si un index et un frontmatter se contredisent, **le frontmatter a
 raison**. On corrige la source, puis on régénère — jamais l'inverse.
@@ -867,58 +894,18 @@ sont** : les fichiers écartés manquent réellement, un agent qui les déclarer
 ferait échouer le vérificateur de la cible. Une tâche visant un agent absent est
 retirée pour la même raison.
 
-**`--installer` ne touche jamais à la source.** Le coffre d'où l'on copie est lu,
-rien de plus : c'est ce qui sépare une copie d'une installation en place. Le
-profil — celui qu'on écrit comme celui qu'on supprime, sous `--tout` par
-exemple — est toujours celui du coffre **effectif**, donc de la cible. Sans
-cette règle, `--tout --installer CIBLE` effaçait le profil de la source : elle
-perdait son mode, un `--rejouer` y échouait ensuite, et rien ne l'avait annoncé.
+Trois règles protègent le travail de qui installe, et tiennent dans les deux
+modes : l'installation **ne vide jamais** `mémoire/`, `brouillon/` ni
+`IA/system/session-log/` de la cible ; elle **n'écrase jamais** un
+`AGENTS.md` qui ne porte pas son marqueur « généré » ; elle **ne suit aucun
+lien symbolique** de la cible. `--installer` ne touche jamais à la source, et
+`--tout` veut dire catalogue complet dans les deux modes.
 
-**`AGENTS.md`** — l'installation écrit également, à côté de leur coffre effectif,
-le fichier que les harness lisent d'eux-mêmes : `<dossier parent>/AGENTS.md`.
-Autrement dit, la cible d'installation désigne le dossier `OBSIA/` : `AGENTS.md`
-atterrit un cran au-dessus, à la racine du coffre que l'agent ouvre. Les deux
-modes l'écrivent, chacun pour le coffre effectif — celui des deux qui reçoit
-l'installation. Son contenu est celui de `scripts/generer_prompt.py` : index,
-méthode, profil retenu. Il est précédé d'un marqueur « généré — ne pas éditer »,
-et un `AGENTS.md` qui ne porte pas ce marqueur n'est **jamais** écrasé :
-avertissement, fichier intact, code de retour inchangé. Ce fichier vit **hors du
-dépôt** : il n'est ni versionné, ni concerné par `publier.py`, qui n'exporte que
-l'arbre suivi.
-
-**Les trois dossiers de l'instance** — `mémoire/`, `brouillon/` et
-`IA/system/session-log/` — sont **créés s'ils manquent** dans la cible, avec le
-README de la source, mais **jamais vidés** : c'est là que vit le travail de qui
-installe, et réinstaller ne doit rien lui emporter. Si l'un d'eux porte déjà un
-contenu, il est laissé tel quel, et l'aperçu le dit (« conservé »). Leur contenu
-n'est pas copié depuis la source non plus : la mémoire et les journaux de
-l'auteur ne partent pas chez le copié.
-
-**Aucun lien symbolique de la cible n'est suivi**, ni en lecture ni en écriture.
-Un `IA` déplacé ailleurs, une `mémoire/` partagée : l'installation écrirait
-hors du coffre qu'elle croit remplir. La zone concernée est sautée avec un
-avertissement, et le reste de l'installation se poursuit — jusqu'à la réduction
-des déclarations, qui n'a pas lieu au travers d'un lien.
-
-La régénération s'arrête là aussi, et la vérification avec elle. Les deux
-générateurs écrivent sous `IA/` et `mémoire/` — les quatre index, les
-`sommaire.md` — et le vérificateur lit à travers le même lien. Un lien, **où
-qu'il soit** sous l'un de ces deux dossiers, suffit à tout arrêter : un
-`IA/system` déplacé ailleurs, un `sommaire.md` de la mémoire partagé, pas
-seulement un `IA` ou une `mémoire/` entier. `installer.py` avertit alors, ne
-régénère pas, ne vérifie pas, et l'annonce à la fin : il ne peut pas laisser la
-dernière ligne dire que les index et les sommaires sont à jour après avoir
-refusé d'y toucher.
+Le détail — `AGENTS.md`, dossiers de l'instance, liens, `--tout` — vit dans
+`IA/system/installation-et-publication.md`, **à lire avant de lancer
+`installer.py` avec `--appliquer`**.
 
 Revenir au catalogue complet : `python3 scripts/installer.py --tout --appliquer`.
-
-**`--tout` veut dire catalogue complet, dans les deux modes.** En place, le
-profil disparaît : c'est lui qui décrit un coffre réduit, et rien ne l'est plus.
-En copie, il disparaît aussi, **et la copie a lieu** — la cible reçoit les
-fichiers de tous les modules, y compris ceux que le profil écartait. Un
-`--tout --installer` qui annonçait le catalogue entier et laissait la cible
-vide ne le disait nulle part ; l'aperçu écrit donc « aucun — catalogue
-complet » plutôt que de promettre un profil qui ne sera pas posé.
 
 ### 13.5 Public et privé
 
@@ -934,38 +921,11 @@ travail, parce que ce qui n'est pas suivi n'a pas été relu —, vide `mémoire
 `README.md`, régénère, vérifie, passe un contrôle de fuite sur l'export final, et
 n'écrit dans la cible qu'avec `--appliquer`. Il ne pousse jamais.
 
-**`synchroniser` refuse cinq cibles**, avant d'exporter quoi que ce soit, code
-1 et motif en clair : la cible est la source, la contient, ou lui est inférieure ;
-elle porte la marque d'un coffre vivant (`.obsidian`, `-SAVOIRS`, `-PROJETS`) ;
-sa `mémoire/` porte autre chose que ce que la distribution y laisse ; son
-`origin` est celui de la source — c'est alors un clone du privé, pas du public ;
-elle n'est ni un miroir d'OBSIA, ni un dépôt vierge. L'aperçu liste, une par
-une, les entrées de la cible qui seront effacées. Et un lien symbolique de la
-cible est **défait par `unlink()`**, jamais traversé : `rmtree` s'arrête sur un
-lien, et laisserait la cible à moitié vidée.
-
-Les cinq refus, dans l'ordre où ils tombent. La comparaison des `origin` porte
-sur ce qui désigne le dépôt — hôte et chemin — et non sur l'URL écrite :
-`git@hôte:propriétaire/dépôt.git` et `https://hôte/propriétaire/dépôt` sont le
-même dépôt, et comparer les chaînes brutes laisserait cloner le privé en ssh
-pour publier dessus. Ce que la distribution laisse dans `mémoire/` est exactement
-trois fichiers : son `README.md`, le `profil-utilisateur.md` que l'installeur y
-pose, et `sommaire.md`. Le sommaire y est parce que `publier.py` le régénère et
-le dépose dans l'export : une cible déjà publiée le porte, et le refuser
-interdirait de republier sur sa propre publication. Tout le reste — une note, un
-sous-dossier — n'est pas le nôtre, et « publier » l'effacerait sans retour.
-
-Le cinquième refus est le seul qui n'énumère pas ce qu'il faut éviter mais ce
-qu'il faut avoir : la cible doit être vierge ou porter
-`IA/system/VAULT-CONTRACT.md`. **Vierge veut dire un dépôt qui n'a rien que son
-`.git/`** — pas un dossier vide, qui n'est pas un dépôt : `publier.py` refuse
-d'écrire dans une cible dont il ne peut pas dire ce qu'elle contenait. Un
-`.gitignore` de reste, et ce n'est déjà plus un dépôt vierge. Le contrat, lui,
-est la marque d'un miroir d'OBSIA, et la seule qui dise à la fois « c'est bien
-notre publication » et « ce n'est pas le coffre vivant » ; un `README.md` ne dit
-ni l'un ni l'autre, n'importe quel dépôt en a un. Sans ce refus, un dépôt à
-personne — sans marque de coffre, sans `origin` comparable — était vidé sans que
-rien ne l'ait vu venir.
+**`synchroniser` refuse cinq cibles** avant d'exporter quoi que ce soit —
+jamais la source ni ce qui la contient, jamais un coffre vivant, jamais un
+clone du privé, jamais une cible qui n'est ni vierge ni un miroir d'OBSIA. Le
+détail des refus vit dans `IA/system/installation-et-publication.md`, **à lire
+avant de lancer `publier.py` avec `--appliquer`**.
 
 Le sens unique n'est pas qu'une précaution, c'est **ce qui crée la fenêtre de
 validation**. Le privé est l'atelier : une fonctionnalité y naît, s'y éprouve
@@ -1003,48 +963,13 @@ réécrivent tous deux en gabarit vide. `scripts/verifier_coffre.py` contrôle l
 règle dans le dépôt privé, où la faute s'écrit.
 
 Le contrôle de fuite vise des **valeurs**, jamais les mots qui les nomment :
-le contrat parle de jetons et de mots de passe à longueur de page, et il doit
-pouvoir continuer. Il bloque sur une adresse de courriel, une adresse IP privée,
-un bloc de clé privée, un préfixe de jeton connu, ou un secret affecté à une
-variable — `password` comme `mdp`, `mot de passe`, `jeton` ou `clé`, la valeur
-pouvant porter des symboles, et des espaces dès qu'elle est entre guillemets.
-Le mot-clé se reconnaît aussi dans un identifiant composé, d'un seul tenant :
-`db_password`, `password_hash`, `mdp_hash` — une empreinte bcrypt ne se casse pas
-moins qu'un mot de passe, elle se casse hors ligne. Un seul morceau après le
-mot-clé, en revanche : `bearer_token_env_var` porte le **nom** d'une variable
-d'environnement, et reste dehors. S'y ajoutent une clé secrète AWS nue, qui n'a
-pas de préfixe reconnaissable puisque c'est justement pourquoi elle se recopie
-telle quelle, et un nom d'hôte interne — `.lan`, `.local`, `.internal`,
-`.home.arpa`, `.ts.net`.
-
-La phrase de passe **sans guillemets** est attrapée sous condition de position :
-mot-clé fort (`password`, `secret`, `mdp`, `mot de passe`) en tête de ligne,
-éventuellement après une puce, et une affectation qui court jusqu'au bout de la
-ligne. C'est la seule forme qui distingue `secret: correct horse battery staple`
-de la prose — « … pas un secret : une note du coffre parent la porte » a le même
-mot-clé au milieu de la ligne. La limite est donc assumée : une valeur à espaces
-qui ne commence pas la ligne passe sous le contrôle, et c'est le prix à payer
-pour que la prose reste publiable.
-
-Ce qui **ne doit pas** se signaler fait partie du contrôle autant que ce qu'il
-attrape : `obsia.local.yml`, `AGENTS.local.md` et `CLAUDE.local.md` sont des
-fichiers, pas des machines, et les quarante caractères hexadécimaux d'une
-empreinte de commit citée dans une note ne sont pas une clé. Chaque motif a son
-témoin négatif dans les tests, faute de quoi il finirait par crier sur la prose
-qu'il est censé laisser passer.
-
-Le contrôle dit aussi ce qu'il **n'a pas pu relire** — un binaire, un fichier
-qui n'est pas de l'UTF-8 —, en les comptant et en les nommant : « aucune
-trouvaille » sur un fichier qu'on n'a pas ouvert ne dit rien de ce fichier. Un
-`.svg` est du texte, et se relit comme tel. Et il passe **après la
-régénération**, sur l'export final : les générateurs réécrivent les index et les
-sommaires, et c'est cet arbre-là qui partira — contrôler avant reviendrait à
-relire un état qui n'existe plus.
-
-`--forcer` passe outre les trouvailles, sauf deux : une clé privée, qui ne se
-révoque pas mais se remplace, et un jeton connu, qui se révoque — encore
-faut-il le faire avant qu'il ait servi. Pour les autres catégories, il publie,
-et **écrit la dérogation et ses catégories dans le message de commit** : une
-publication forcée qui ne laisse aucune trace est indiscernable d'une
-publication propre. S'en servir sans avoir lu la trouvaille, c'est se priver du
-seul filet qui reste une fois l'historique public.
+une adresse de courriel, une adresse IP privée, un bloc de clé privée, un
+préfixe de jeton connu, un secret affecté à une variable, un nom d'hôte
+interne — et tout nom de la **liste locale des noms interdits**, tenue hors du
+dépôt, seul moyen d'attraper un nom de machine qui n'a pas de forme de
+domaine. Il passe sur l'export final, après régénération, et dit ce qu'il n'a
+pas pu relire. `--forcer` ne passe **jamais** outre une clé privée, un jeton
+connu ni un nom interdit ; pour le reste, il publie et écrit la dérogation dans le message de
+commit. S'en servir sans avoir lu la trouvaille, c'est se priver du seul
+filet qui reste une fois l'historique public. Les motifs exacts et leurs
+limites : `IA/system/installation-et-publication.md`.

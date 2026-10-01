@@ -873,9 +873,13 @@ def verifier_renvois_entre_modules(modules, skills):
 
 
 def verifier_derives():
-    """Index et sommaires doivent être à jour vis-à-vis de leurs sources."""
-    for script, quoi in (("regenerate_index.py", "index"),
-                         ("regenerate_sommaire.py", "sommaires")):
+    """Les index doivent être à jour vis-à-vis de leurs sources.
+
+    Les sommaires de `mémoire/` n'en font plus partie : ils ne sont pas
+    versionnés (§11), donc un clone neuf — celui de la CI — n'en a pas, et
+    les exiger reviendrait à refuser tout clone propre.
+    """
+    for script, quoi in (("regenerate_index.py", "index"),):
         res = subprocess.run([sys.executable, str(SCRIPTS / script), "--verifier"],
                              capture_output=True, text=True, cwd=str(RACINE))
         if res.returncode != 0:
@@ -934,7 +938,7 @@ def main() -> int:
         regime = " (installation réduite — contrôles du catalogue assouplis, §13.4)" \
             if REDUITE else ""
         print("Coffre cohérent : %d module(s), %d agent(s), %d skill(s), "
-              "%d tâche(s), index et sommaires à jour.%s"
+              "%d tâche(s), index à jour.%s"
               % (len(modules), len(agents), len(skills), len(taches), regime))
     return 0
 

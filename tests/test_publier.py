@@ -469,6 +469,43 @@ class TestCeQuiFuitEncore(BaseControle):
         self.assertEqual(self.etiquettes(self.controler()), [])
 
 
+class TestNomsInterdits(BaseControle):
+    """La liste locale des noms interdits — ce qu'aucun motif ne reconnaît.
+
+    Un nom d'hôte nu n'a pas de forme : seul l'utilisateur sait qu'il en est
+    un. Ce qui doit être prouvé : la liste se lit, un nom s'attrape entier et
+    sans casse, un nom trop court est écarté, et un nom interdit ne se force pas.
+    """
+
+    def liste(self, contenu: str) -> Path:
+        chemin = self.parent / "noms-interdits"
+        chemin.write_text(contenu, encoding="utf-8")
+        return chemin
+
+    def test_la_liste_se_lit_commentaires_et_noms_courts_ecartes(self):
+        noms, courts = PUB.charger_noms_interdits(
+            self.liste("# machines\nposte-atelier  # le portable\n\nia\n"))
+        self.assertEqual(noms, ["poste-atelier"])
+        self.assertEqual(courts, ["ia"])
+
+    def test_sans_liste_rien_n_est_retenu(self):
+        self.assertEqual(PUB.charger_noms_interdits(self.parent / "absente"), ([], []))
+
+    def test_un_nom_s_attrape_entier_et_sans_casse(self):
+        self.ecrire("a.md", "À instancier sur Poste-Atelier seulement.\n")
+        self.ecrire("b.md", "poste-atelier-2 et poste-ateliers ne sont pas lui.\n")
+        controle = PUB.controler_fuites(self.racine, ["poste-atelier"])
+        self.assertEqual([(t[0], t[2]) for t in controle.trouvailles],
+                         [("a.md", "nom interdit")])
+
+    def test_sans_noms_le_controle_ne_change_pas(self):
+        self.ecrire("a.md", "poste-atelier\n")
+        self.assertEqual(self.controler().trouvailles, [])
+
+    def test_un_nom_interdit_ne_se_force_pas(self):
+        self.assertIn("nom interdit", PUB.SANS_FORCAGE)
+
+
 class BasePublicationReelle(unittest.TestCase):
     """Une source committée et une cible vierge : `publier.py` pour de vrai.
 

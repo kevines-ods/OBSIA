@@ -1,215 +1,222 @@
 # OBSIA
 
-Système d'orchestration d'agents IA reposant sur un coffre Obsidian.
+**English** | [Français](README.fr.md)
 
-Les agents, leurs compétences et leur mémoire sont des fichiers Markdown. Pas de
-base de données, pas de format propriétaire : le coffre se lit et s'édite à la
-main, dans Obsidian ou dans n'importe quel éditeur de texte.
+An AI agent orchestration system built on an Obsidian vault.
 
-## Principe
+Agents, their skills and their memory are Markdown files. No database, no
+proprietary format: the vault can be read and edited by hand, in Obsidian or in
+any text editor.
 
-Un **agent** est un fichier qui décrit un interlocuteur : son rôle, les skills
-qu'il mobilise, les serveurs MCP dont il dépend.
+> **Language note.** The vault itself — contract, agents, skills, scripts — is
+> written in French, and agents answer in French by default. This page and
+> [`GETTING-STARTED.md`](GETTING-STARTED.md) are the English entry points.
+> Folder names, frontmatter keys and file names stay in French: the scripts
+> read them literally.
 
-Un **skill** est un fichier qui décrit une manière de faire : une procédure, des
-commandes, des pièges à éviter.
+## Principle
 
-Une **tâche** est un fichier qui décrit une action planifiée : quand la
-déclencher, pour quel agent, avec quelle instruction.
+An **agent** is a file describing a conversational partner: its role, the
+skills it uses, the MCP servers it depends on.
 
-Un **harness** — Claude Code, OpenCode, Codex, Goose, ou l'interface de ton
-choix — lit ces fichiers et exécute. Le coffre décrit *quoi* faire ; le harness
-fournit *avec quoi*.
+A **skill** is a file describing a way of doing something: a procedure,
+commands, pitfalls to avoid.
 
-Le chargement est paresseux : le prompt système ne contient que l'index des
-agents, des skills et des tâches planifiées. Le contenu d'un skill n'est lu que
-lorsqu'il devient nécessaire.
+A **task** (`tâche`) is a file describing a scheduled action: when to trigger
+it, for which agent, with which instruction.
 
-## Structure
+A **harness** — Claude Code, OpenCode, Codex, Goose, or the interface of your
+choice — reads these files and executes. The vault describes *what* to do; the
+harness provides *what with*.
+
+Loading is lazy: the system prompt only contains the index of agents, skills
+and scheduled tasks. A skill's content is read only when it becomes necessary.
+
+## Layout
 
 ```
-OBSIA/                       le coffre — la racine du dépôt EST le coffre
+OBSIA/                       the vault — the repository root IS the vault
 ├── IA/
-│   ├── agents/              définition des agents
-│   ├── skills/              compétences réutilisables
-│   ├── MCP/                 outils structurés
-│   ├── tâches/              registre des tâches planifiées
-│   └── system/              VAULT-CONTRACT.md (les règles), index,
-│                            modules/ (le catalogue installable),
-│                            prompt-fondateur.md (intention d'origine),
-│                            adaptateurs-harness/ (gabarits d'intégration)
-├── mémoire/                 commun → profil, préférences, projets ;
-│                            par agent → expériences
-├── brouillon/               zone de travail libre
+│   ├── agents/              agent definitions
+│   ├── skills/              reusable skills
+│   ├── MCP/                 structured tools
+│   ├── tâches/              scheduled task registry
+│   └── system/              VAULT-CONTRACT.md (the rules), indexes,
+│                            modules/ (the installable catalogue),
+│                            prompt-fondateur.md (original intent),
+│                            adaptateurs-harness/ (integration templates)
+├── mémoire/                 shared → profile, preferences, projects;
+│                            per agent → lessons learned
+├── brouillon/               free scratch area
 ├── scripts/
-│   ├── installer.py         sonde la machine, retient les modules utiles
-│   ├── publier.py           dérive le miroir public de ce dépôt
-│   ├── generer_prompt.py    prompt système depuis les frontmatters
-│   ├── regenerate_index.py  les quatre index et IA/README.md
-│   ├── regenerate_sommaire.py  les sommaire.md de mémoire/
-│   └── verifier_coffre.py   cohérence du coffre — utilisé en CI
-├── HISTORIQUE.md            ce qui a été décidé puis écarté
+│   ├── installer.py         probes the machine, keeps the useful modules
+│   ├── publier.py           derives the public mirror from this repository
+│   ├── generer_prompt.py    system prompt from the frontmatters
+│   ├── regenerate_index.py  the four indexes and IA/README.md
+│   ├── regenerate_sommaire.py  the sommaire.md files of mémoire/
+│   └── verifier_coffre.py   vault consistency checks — run in CI
+├── HISTORIQUE.md            what was decided, then dropped
 ├── LICENSE                  AGPL-3.0-or-later
 ├── README.md
 └── .gitignore
 ```
 
-Il n'y a pas de sous-dossier « coffre » : le dépôt lui-même en tient lieu. Pour
-l'utiliser, cloner `OBSIA/` **à la racine** de votre coffre Obsidian, côte à
-côte avec vos dossiers de connaissance, et ouvrir Obsidian sur ce coffre entier
-(et non sur `OBSIA/` seul) : c'est la condition pour que les rétroliens se
-résolvent à l'échelle du coffre (§7).
+There is no "vault" subfolder: the repository itself is the vault. To use it,
+clone `OBSIA/` **at the root** of your Obsidian vault, next to your knowledge
+folders, and open Obsidian on the whole vault (not on `OBSIA/` alone): that is
+what makes backlinks resolve across the vault (§7 of the contract).
 
-Le coffre ne connaît aucune interface et n'en nomme aucune. Il décrit *quoi*
-faire ; le harness de ton choix fournit *avec quoi*. Rien ici ne dépend d'un
-programme particulier — c'est la condition pour qu'OBSIA reste libre de ses
-mouvements.
+The vault knows no interface and names none. It describes *what* to do; the
+harness of your choice provides *what with*. Nothing here depends on a
+particular program — that is what keeps OBSIA free to move.
 
-## Le coffre parent — votre base de connaissances
+## The parent vault — your knowledge base
 
-OBSIA est le cœur ; le coffre qui l'entoure est votre base de connaissances.
-Il s'appelle `Mon coffre/`, et le dépôt se clone à sa racine, à côté de
-`_MAINTENANCE/`, `-PROJETS/`, `-DOCUMENTS/`, `-PERSONNELS/`, `-SAVOIRS/` et
-`-EN-VRAC/`. Seul `OBSIA/` est versionné.
+OBSIA is the core; the vault around it is your knowledge base. It is written
+`Mon coffre/` throughout the repository, and the repository is cloned at its
+root, next to `_MAINTENANCE/`, `-PROJETS/` (projects), `-DOCUMENTS/`,
+`-PERSONNELS/` (personal), `-SAVOIRS/` (knowledge) and `-EN-VRAC/` (inbox).
+Only `OBSIA/` is versioned.
 
-La structure de premier niveau est fixe (seul vous la modifiez). Les agents
-lisent tout le coffre parent, remplissent les notes d'`-EN-VRAC/` (corps, tags,
-rétroliens) puis les classent, complètent les notes déposées dans `-SAVOIRS/`,
-et consignent previews et actions dans `_MAINTENANCE/`. `-EN-VRAC/` est un
-**tampon** : une session de rangement le vide entièrement. Les règles complètes
-sont au §7 de `IA/system/VAULT-CONTRACT.md`.
+The top-level structure is fixed (only you change it). Agents read the whole
+parent vault, fill in the notes of `-EN-VRAC/` (body, tags, backlinks) and then
+file them, complete the notes dropped into `-SAVOIRS/`, and log previews and
+actions in `_MAINTENANCE/`. `-EN-VRAC/` is a **buffer**: a tidying session
+empties it entirely. The full rules are in §7 of
+`IA/system/VAULT-CONTRACT.md`.
 
-Pour que les agents atteignent le coffre parent, le harness doit avoir accès à
-sa racine — pas seulement à `OBSIA/` : dossier de travail ouvert sur le coffre,
-ou serveur MCP « fichiers » (fiche `IA/MCP/coffre-parent.md`, gabarit
-`IA/MCP/mcp.example.json`). La configuration réelle vit hors dépôt.
+For agents to reach the parent vault, the harness needs access to its root —
+not just to `OBSIA/`: a working directory opened on the vault, or a "files" MCP
+server (card `IA/MCP/coffre-parent.md`, template `IA/MCP/mcp.example.json`).
+The actual configuration lives outside the repository.
 
-Les **gabarits d'intégration par harness** — Claude Code, OpenCode, OpenClaw,
-DeepSeek Harness, AionUi/ObsiaUi, LibreChat — vivent dans
+**Per-harness integration templates** — Claude Code, OpenCode, OpenClaw,
+DeepSeek Harness, AionUi/ObsiaUi, LibreChat — live in
 `IA/system/adaptateurs-harness/`.
 
-## Tâches planifiées
+## Scheduled tasks
 
-Une tâche récurrente est déclarée dans `IA/tâches/<nom>.md` : quand, pour quel
-agent, et l'instruction exacte à lui envoyer. Ce fichier fait foi.
+A recurring task is declared in `IA/tâches/<name>.md`: when, for which agent,
+and the exact instruction to send it. That file is the source of truth.
 
-Le timer systemd, le planificateur du harness ou le cron de la machine ne sont
-que des **instances** de cette déclaration : nommées `obsia-<nom>`, jetables,
-recréables depuis le registre. Changer de harness ou de machine ne perd donc
-plus rien — on relit le registre et on ré-instancie.
+The systemd timer, the harness scheduler or the machine's cron are only
+**instances** of that declaration: named `obsia-<name>`, disposable, rebuilt
+from the registry. Changing harness or machine therefore loses nothing — read
+the registry again and re-instantiate.
 
 ```yaml
 ---
 schema: 1
 kind: tâche
 name: revue-hebdomadaire-du-coffre
-description: Une ligne — quoi, et à quel rythme.
+description: One line — what, and how often.
 mode: agent              # agent | commande
-quand: "0 9 * * 1"       # cron à 5 champs, entre guillemets
-fuseau: Europe/Paris
-exécutant: local         # local | harness — qui a le droit de déclencher
+quand: "0 9 * * 1"       # 5-field cron, quoted
+fuseau: Europe/Paris     # time zone
+exécutant: local         # local | harness — who is allowed to trigger it
 agent: assistant
 actif: true
 ---
 ```
 
-Le corps porte l'instruction — auto-suffisante, puisqu'au déclenchement il n'y
-a plus de conversation. Règles au §12 de `VAULT-CONTRACT.md`, procédure dans le
-skill `cron`.
+The body carries the instruction — self-contained, since there is no
+conversation left at trigger time. Rules in §12 of `VAULT-CONTRACT.md`,
+procedure in the `cron` skill.
 
-Une tâche = **au plus une instance vivante**, tous exécutants confondus. C'est
-à ça que sert `exécutant` : planifier la même chose côté harness *et* côté
-machine la déclencherait deux fois, sans qu'aucune erreur ne le signale.
+One task = **at most one live instance**, across all executors. That is what
+`exécutant` is for: scheduling the same thing on the harness side *and* on the
+machine would trigger it twice, with no error to tell you.
 
-Le passage du registre aux timers systemd est outillé. La séquence complète,
-une fois par machine :
+Turning the registry into systemd timers is tooled. The full sequence, once
+per machine:
 
 ```bash
 mkdir -p ~/.config/obsia
 python3 IA/skills/cron/scripts/appliquer_taches.py --config > ~/.config/obsia/appliquer.conf
-$EDITOR ~/.config/obsia/appliquer.conf                          # renseigner commande_agent
-python3 IA/skills/cron/scripts/appliquer_taches.py              # aperçu, n'écrit rien
-python3 IA/skills/cron/scripts/appliquer_taches.py --appliquer  # exécute
+$EDITOR ~/.config/obsia/appliquer.conf                          # fill in commande_agent
+python3 IA/skills/cron/scripts/appliquer_taches.py              # preview, writes nothing
+python3 IA/skills/cron/scripts/appliquer_taches.py --appliquer  # apply
 ```
 
-`--config` **n'écrit rien** : il affiche un gabarit, à rediriger soi-même. Ce
-fichier n'est pas versionné, et c'est délibéré — il nomme le harness qui lance
-un agent, ce que le coffre ne fait jamais (§3 de `VAULT-CONTRACT.md`). Tant que
-`commande_agent` est vide, une tâche `mode: agent` est **refusée** plutôt
-qu'instanciée inerte. Une tâche `mode: commande` n'a besoin d'aucune de ces
-deux premières lignes.
+`--config` **writes nothing**: it prints a template that you redirect
+yourself. That file is not versioned, on purpose — it names the harness that
+launches an agent, which the vault never does (§3 of `VAULT-CONTRACT.md`). As
+long as `commande_agent` is empty, a `mode: agent` task is **refused** rather
+than instantiated inert. A `mode: commande` task needs neither of the first
+two lines.
 
-Le script compare ensuite le registre aux unités `obsia-*` présentes, affiche
-le tableau des écarts, et n'écrit qu'avec `--appliquer`. C'est le seul script
-du dépôt qui dépende d'un exécutant — il vit donc dans le skill qui s'en sert,
-pas dans `scripts/`, qui reste utilisable sans rien installer.
+The script then compares the registry with the `obsia-*` units present, shows
+the table of differences, and only writes with `--appliquer`. It is the only
+script in the repository that depends on an executor — so it lives in the
+skill that uses it, not in `scripts/`, which stays usable with nothing
+installed.
 
-`IA/system/taches-index.md`, généré comme les autres index, met le registre en
-contexte permanent : un harness neuf sait que ces tâches existent. Il ne les
-crée pas pour autant sur la machine — l'instanciation reste un geste explicite.
+`IA/system/taches-index.md`, generated like the other indexes, keeps the
+registry permanently in context: a fresh harness knows these tasks exist. It
+does not create them on the machine — instantiation remains an explicit step.
 
-## Démarrage
+## Getting started
 
-Le guide pas à pas est dans `DEMARRAGE.md` : cloner dans son coffre,
-installer, lancer un harness, vérifier que le cerveau est chargé. En bref :
+The step-by-step guide is in [`GETTING-STARTED.md`](GETTING-STARTED.md): clone
+into your vault, install, launch a harness, check that the brain is loaded. In
+short:
 
 ```bash
-cd "/chemin/de/votre coffre"
+cd "/path/to/your vault"
 git clone https://github.com/kevines-ods/OBSIA
 cd OBSIA
-python3 scripts/installer.py --sonder     # ce que la machine porte, n'écrit rien
-python3 scripts/installer.py --appliquer  # retient les modules, écrit ../AGENTS.md
+python3 scripts/installer.py --sonder     # what the machine has, writes nothing
+python3 scripts/installer.py --appliquer  # keeps the modules, writes ../AGENTS.md
 ```
 
-Puis lancer le harness **depuis la racine du coffre**, où l'installeur a posé
-`AGENTS.md`. Pour un harness qui ne lit pas ce fichier, le même texte
-s'obtient, depuis `OBSIA/`, par `python3 scripts/generer_prompt.py -o prompt-systeme.md --mcp`,
-à donner comme prompt système ; `--mcp` y ajoute un squelette de configuration
-des serveurs MCP.
+Then launch the harness **from the vault root**, where the installer put
+`AGENTS.md`. For a harness that does not read that file, the same text is
+produced, from `OBSIA/`, by
+`python3 scripts/generer_prompt.py -o prompt-systeme.md --mcp`, to be given as
+the system prompt; `--mcp` adds a skeleton MCP server configuration.
 
-## Installation modulaire
+## Modular installation
 
-Le coffre est un **catalogue**, pas une livraison. Tout y est déclaré ; rien
-n'oblige à tout retenir. Un poste sans Docker n'a que faire des skills qui
-pilotent des conteneurs : ils occuperaient le contexte, se proposeraient au
-mauvais moment, et échoueraient là où il aurait fallu qu'ils se taisent.
+The vault is a **catalogue**, not a delivery. Everything is declared; nothing
+forces you to keep it all. A machine without Docker has no use for the skills
+that drive containers: they would take up context, offer themselves at the
+wrong moment, and fail where they should have stayed silent.
 
-Un **module** (`IA/system/modules/<nom>.md`) regroupe ce qui n'a de sens
-qu'ensemble, et chaque agent, skill, MCP et tâche déclare le sien. L'index
-généré `IA/system/modules-index.md` les liste tous — y compris ceux qu'on n'a
-pas retenus, parce qu'un catalogue dont on ignore les entrées absentes n'est
-plus un catalogue.
+A **module** (`IA/system/modules/<name>.md`) groups what only makes sense
+together, and every agent, skill, MCP and task declares its own. The generated
+index `IA/system/modules-index.md` lists them all — including the ones you did
+not keep, because a catalogue that hides its missing entries is no longer a
+catalogue.
 
 ```bash
-python3 scripts/installer.py --sonder              # détection, verdict des sondes
-python3 scripts/installer.py                       # aperçu, n'écrit rien
-python3 scripts/installer.py --appliquer           # écrit le profil, en place
-python3 scripts/installer.py --installer ~/coffre/OBSIA --appliquer
-python3 scripts/installer.py --tout --appliquer    # revient au catalogue complet
+python3 scripts/installer.py --sonder              # detection, probe verdicts
+python3 scripts/installer.py                       # preview, writes nothing
+python3 scripts/installer.py --appliquer           # writes the profile, in place
+python3 scripts/installer.py --installer ~/vault/OBSIA --appliquer
+python3 scripts/installer.py --tout --appliquer    # back to the full catalogue
 ```
 
-L'installeur **sonde puis demande** : il constate que `docker` est installé, il
-ne sait pas si vous voulez gérer des conteneurs. La sonde propose un défaut, la
-question tranche. Quatre formes de sonde seulement — `commande:`, `fichier:`,
-`distribution:`, `parent:` — et aucune qui exécute une commande arbitraire ou
-ouvre le réseau.
+The installer **probes, then asks**: it sees that `docker` is installed, it
+does not know whether you want to manage containers. The probe suggests a
+default, the question decides. Only four probe forms — `commande:`,
+`fichier:`, `distribution:`, `parent:` — and none that runs an arbitrary
+command or opens the network.
 
-Deux modes :
+Two modes:
 
-- **en place** — rien n'est déplacé ni supprimé, seuls les fichiers générés
-  sont réduits au profil. `git checkout -- IA` remet tout ;
-- **copie** (`--installer CIBLE`) — seuls les fichiers retenus atterrissent
-  dans la cible, et les déclarations d'agents y sont réduites pour rester
-  cohérentes.
+- **in place** — nothing is moved or deleted, only generated files are reduced
+  to the profile. `git checkout -- IA` restores everything;
+- **copy** (`--installer TARGET`) — only the kept files land in the target, and
+  agent declarations are trimmed there to stay consistent.
 
-Le profil vit dans `obsia.local.yml`, à la racine, **non versionné** : il
-décrit cette machine, pas le coffre. Sans profil, tout le catalogue est actif —
-c'est l'état du dépôt de distribution et celui sous lequel la CI vérifie. Règles
-complètes au §13 de `IA/system/VAULT-CONTRACT.md`.
+The profile lives in `obsia.local.yml`, at the root, **not versioned**: it
+describes this machine, not the vault. Without a profile, the whole catalogue
+is active — that is the state of the distribution repository and the one CI
+checks against. Full rules in §13 of `IA/system/VAULT-CONTRACT.md`.
 
-## Vérifier le coffre
+## Checking the vault
 
-Avant de committer :
+Before committing:
 
 ```bash
 python3 -m unittest discover -s tests
@@ -218,20 +225,20 @@ python3 scripts/regenerate_index.py
 python3 scripts/verifier_coffre.py
 ```
 
-La première commande lance la suite de `tests/` — les scripts, l'installeur, la
-publication, la ligne de commande. Elle ne demande aucune dépendance non plus :
-c'est `unittest` de la bibliothèque standard, jamais `pytest`.
+The first command runs the `tests/` suite — scripts, installer, publishing,
+command line. It needs no dependency either: `unittest` from the standard
+library, never `pytest`.
 
-`verifier_coffre.py` refuse un frontmatter invalide, un `name` qui ne
-correspond pas au nom du fichier, une liste écrite en chaîne, une description
-repliée sur plusieurs lignes, un agent déclarant un skill ou un MCP
-inexistant, une tâche sans instruction ou au `quand` non quoté, un nom de note
-en double, ou un fichier généré périmé. Il n'écrit rien et sort en code 1.
+`verifier_coffre.py` rejects an invalid frontmatter, a `name` that does not
+match the file name, a list written as a string, a description folded over
+several lines, an agent declaring a missing skill or MCP, a task without an
+instruction or with an unquoted `quand`, a duplicate note name, or a stale
+generated file. It writes nothing and exits with code 1.
 
-Les mêmes contrôles tournent en intégration continue à chaque poussée. Aucune
-dépendance : bibliothèque standard de Python uniquement.
+The same checks run in continuous integration on every push. No dependency:
+Python standard library only.
 
-Pour les lancer automatiquement avant chaque commit, une fois par clone :
+To run them automatically before each commit, once per clone:
 
 ```bash
 git config core.hooksPath .githooks
@@ -239,125 +246,124 @@ git config core.hooksPath .githooks
 
 ## Format
 
-Un skill est un fichier `IA/skills/<nom>.md`. Quand il grossit — au-delà de
-500 lignes environ — il devient un dossier `IA/skills/<nom>/` dont le point
-d'entrée s'appelle `<nom>.md`, et non `SKILL.md`, aux côtés de `references/`,
-`scripts/` et `assets/`. Détail dans `VAULT-CONTRACT.md` §5.
+A skill is a file `IA/skills/<name>.md`. When it grows — beyond roughly 500
+lines — it becomes a folder `IA/skills/<name>/` whose entry point is called
+`<name>.md`, not `SKILL.md`, alongside `references/`, `scripts/` and
+`assets/`. Details in `VAULT-CONTRACT.md` §5.
 
-Tout fichier agent ou skill commence par un frontmatter YAML strict.
+Every agent or skill file starts with a strict YAML frontmatter.
 
 ```yaml
 ---
 schema: 1
 kind: skill              # agent | skill | mcp | tâche | contract
-name: nom-du-skill       # minuscules, tirets, identique au nom du fichier
-description: Une ligne — quoi et quand.
-type: core               # skills uniquement : core | outil
+name: skill-name         # lowercase, hyphens, same as the file name
+description: One line — what and when.
+type: core               # skills only: core | outil
 read_only: true
 ---
 ```
 
-Pour un agent :
+For an agent:
 
 ```yaml
 ---
 schema: 1
 kind: agent
-name: nom-de-lagent
-description: Une ligne.
+name: agent-name
+description: One line.
 skills:
-  - premier-skill
+  - first-skill
   - second-skill
 mcp:
-  - nom-du-serveur
+  - server-name
 read_only: false
 ---
 ```
 
-Les listes s'écrivent avec des tirets, une entrée par ligne. `skills: a, b`
-vaut une chaîne de caractères, pas une liste.
+Lists are written with hyphens, one entry per line. `skills: a, b` is a
+string, not a list.
 
-Ce frontmatter est la frontière entre le coffre et tout programme qui le lit.
-`schema` permet de le faire évoluer sans casser les consommateurs existants.
+This frontmatter is the boundary between the vault and any program reading it.
+`schema` lets it evolve without breaking existing consumers.
 
-## Règles
+## Rules
 
-Elles vivent dans `IA/system/VAULT-CONTRACT.md`, qui fait foi. En
-résumé :
+They live in `IA/system/VAULT-CONTRACT.md`, which is authoritative. In short:
 
-- Le coffre est en lecture seule pour les agents. Les modifications passent par
-  des patches Git soumis à revue.
-- Aucune suppression sans archivage préalable.
-- Aperçu obligatoire avant toute action touchant plusieurs fichiers.
-- Les fichiers générés — `sommaire.md`, `agents-index.md`, `skills-index.md`,
-  `taches-index.md`, `IA/README.md` — sont régénérés par script, jamais édités à la main. Si un
-  index contredit un frontmatter, le frontmatter a raison.
-- Un agent et un skill sont deux choses distinctes. Un agent décide ; un skill
-  décrit une manière de faire.
+- The vault is read-only for agents. Changes go through Git patches submitted
+  for review.
+- No deletion without prior archiving.
+- A preview is mandatory before any action touching several files.
+- Generated files — `sommaire.md`, `agents-index.md`, `skills-index.md`,
+  `taches-index.md`, `IA/README.md` — are regenerated by script, never edited
+  by hand. If an index contradicts a frontmatter, the frontmatter wins.
+- An agent and a skill are two distinct things. An agent decides; a skill
+  describes a way of doing.
 
 ## Secrets
 
-Le dépôt est public. Ne doivent jamais y entrer : clés, jetons, mots de passe,
-adresses IP privées, noms d'hôtes internes.
+The repository is public. Never let in: keys, tokens, passwords, private IP
+addresses, internal host names.
 
-Les inventaires réels (machines, instances LLM) vivent hors du dépôt. Seuls des
-gabarits `*.example.yml` sont versionnés.
+Real inventories (machines, LLM instances) live outside the repository. Only
+`*.example.yml` templates are versioned.
 
-Vérifier avant de pousser :
+Check before pushing:
 
 ```bash
 git diff --cached | grep -iE "password|token|api[_-]key|BEGIN.*PRIVATE KEY"
 ```
 
-Un secret poussé puis effacé reste dans l'historique Git. Si cela arrive :
-révoguer le secret d'abord, nettoyer l'historique ensuite.
+A secret pushed and then deleted stays in the Git history. If it happens:
+revoke the secret first, clean the history second.
 
-## Public et privé
+## Public and private
 
-Le dépôt de travail est **privé** : il porte la mémoire, les logs de session et
-le profil de son propriétaire. Ce dépôt-ci, public, en est la **distribution** :
-le même coffre, moins ce qui décrit une personne ou une machine.
+The working repository is **private**: it carries its owner's memory, session
+logs and profile. This public repository is its **distribution**: the same
+vault, minus whatever describes a person or a machine.
 
-Le privé fait foi, et `scripts/publier.py` en dérive le public. Le sens unique
-n'est pas qu'une précaution : c'est ce qui crée la **fenêtre de validation**.
-Le privé est l'atelier — une fonctionnalité y naît, s'y éprouve sur des séances
-réelles, et ne franchit la frontière que le jour où on lance la commande. Rien
-ne part tout seul.
+The private one is authoritative, and `scripts/publier.py` derives the public
+one from it. One-way flow is not just a precaution: it is what creates the
+**validation window**. The private repository is the workshop — a feature is
+born there, is tested on real sessions, and only crosses the border on the day
+the command is run. Nothing leaves on its own.
 
-À savoir avant de basculer un dépôt existant en privé : **cela ne dépublie pas
-son passé**, qui reste chez qui l'a cloné. Le dépôt public, lui, part propre —
-`publier.py` écrit dans un clone neuf, sans y verser l'historique du privé.
+Worth knowing before switching an existing repository to private: **it does
+not unpublish its past**, which stays with whoever cloned it. The public
+repository, on the other hand, starts clean — `publier.py` writes into a fresh
+clone, without pouring in the private history.
 
 ```bash
-python3 scripts/publier.py --cible ~/OBSIA-public              # aperçu
+python3 scripts/publier.py --cible ~/OBSIA-public              # preview
 python3 scripts/publier.py --cible ~/OBSIA-public --appliquer
 python3 scripts/publier.py --cible ~/OBSIA-public --appliquer \
-        --depot-public mon-compte/OBSIA --commit
+        --depot-public my-account/OBSIA --commit
 ```
 
-`--depot-public` réécrit les `git clone https://github.com/…` de la
-documentation : le README du privé annonce l'adresse du privé, qui donnerait un
-404 à un lecteur du public sans lui dire pourquoi.
+`--depot-public` rewrites the `git clone https://github.com/…` commands in the
+documentation: the private README announces the private address, which would
+give a public reader a 404 without telling them why.
 
-Il exporte l'arbre suivi par Git à `HEAD` — jamais le répertoire de travail,
-parce que ce qui n'est pas suivi n'a pas été relu —, vide `mémoire/`,
-`IA/system/session-log/`, `brouillon/` et `.archive/` de tout sauf leurs
-`README.md`, passe un contrôle de fuite, régénère les index, vérifie le coffre
-obtenu, puis écrit dans la cible. Il ne pousse jamais.
+It exports the tree tracked by Git at `HEAD` — never the working directory,
+because what is not tracked has not been reviewed —, empties `mémoire/`,
+`IA/system/session-log/`, `brouillon/` and `.archive/` of everything but their
+`README.md`, runs a leak check, regenerates the indexes, checks the resulting
+vault, then writes into the target. It never pushes.
 
-Le contrôle de fuite vise des **valeurs**, pas les mots qui les nomment : une
-adresse de courriel, une IP privée, un bloc de clé privée, un préfixe de jeton
-connu, un secret affecté à une variable. Il bloque la publication ; `--forcer`
-passe outre, et s'en servir sans avoir lu la trouvaille revient à se priver du
-dernier filet.
+The leak check looks for **values**, not the words that name them: an email
+address, a private IP, a private key block, a known token prefix, a secret
+assigned to a variable. It blocks publication; `--forcer` overrides it, and
+using it without reading the finding means giving up the last safety net.
 
-## Licence
+## License
 
-**GNU AGPL-3.0-or-later** — texte complet dans [`LICENSE`](LICENSE).
+**GNU AGPL-3.0-or-later** — full text in [`LICENSE`](LICENSE).
 
-Le copyleft est délibéré : un dérivé d'OBSIA reste libre, y compris s'il n'est
-jamais distribué mais seulement exposé à travers un réseau (§13 de la licence).
+The copyleft is deliberate: a derivative of OBSIA stays free, even if it is
+never distributed but only exposed over a network (§13 of the license).
 
-Outils libres exclusivement. Vérifier la licence de tout skill importé d'une
-autre source avant de l'intégrer : certains catalogues publient sous licence
-restrictive, et une licence incompatible avec l'AGPL ne peut pas entrer ici.
+Free software only. Check the license of any skill imported from another
+source before integrating it: some catalogues publish under restrictive
+licenses, and a license incompatible with the AGPL cannot come in here.

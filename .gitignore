@@ -54,3 +54,10 @@ secrets/
 # Caches Python — créés par les scripts du coffre
 __pycache__/
 *.pyc
+
+# Sommaires de la mémoire (VAULT-CONTRACT §11) : générés, et réécrits par
+# presque chaque pull request qui touche mémoire/. Versionnés, ils mettaient en
+# conflit deux pull requests sans rapport dès que plusieurs agents travaillaient
+# en parallèle. Ils se régénèrent localement — crochets post-merge et
+# post-checkout, installeur, revue hebdomadaire.
+mémoire/**/sommaire.md

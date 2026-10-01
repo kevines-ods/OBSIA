@@ -1,5 +1,7 @@
 # Démarrage rapide
 
+[English](GETTING-STARTED.md) | **Français**
+
 De zéro à un premier échange avec un agent d'OBSIA, en cinq étapes. Le détail
 de chaque règle vit dans `IA/system/VAULT-CONTRACT.md` ; ce guide ne dit que
 l'ordre des gestes.

@@ -47,7 +47,8 @@ from generer_prompt import (RACINE_DEFAUT, fichiers_declaratifs, lire_frontmatte
 #: Ce qu'une installation par copie emporte quoi qu'il arrive : les règles, les
 #: scripts, la licence. Un coffre sans son contrat n'est pas un coffre réduit,
 #: c'est un tas de fichiers.
-SOCLE = ("CLAUDE.md", "README.md", "HISTORIQUE.md", "LICENSE", ".gitignore",
+SOCLE = ("CLAUDE.md", "README.md", "README.fr.md", "DEMARRAGE.md",
+         "GETTING-STARTED.md", "HISTORIQUE.md", "LICENSE", ".gitignore",
          "scripts", ".githooks", ".github",
          "IA/system", "IA/MCP/mcp.example.json")
 
