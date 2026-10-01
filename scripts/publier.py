@@ -135,7 +135,20 @@ DOMAINES_ADMIS = ("example.com", "exemple.fr")
 #: révoque pas — elle se remplace. Un jeton connu se révoque, mais seulement
 #: avant d'avoir servi : publié, il est déjà trop tard. Les autres catégories
 #: — une adresse, un nom d'hôte, un mot de passe à changer — se rattrapent.
-SANS_FORCAGE = ("clé privée", "jeton d'API")
+SANS_FORCAGE = ("clé privée", "jeton d'API", "nom interdit")
+
+#: La liste locale des noms interdits — noms d'hôtes, nom du dépôt privé, tout
+#: ce qui désigne l'infrastructure sans avoir de forme reconnaissable. Elle vit
+#: hors du dépôt, à dessein : la versionner publierait précisément ce qu'elle
+#: protège. Un nom par ligne, `#` pour commenter. `OBSIA_NOMS_INTERDITS` en
+#: désigne une autre. Un nom interdit ne se force pas : c'est l'utilisateur qui
+#: l'a déclaré tel, pas une heuristique qui a pu se tromper.
+NOMS_INTERDITS = Path(os.environ.get(
+    "OBSIA_NOMS_INTERDITS", os.path.expanduser("~/.config/obsia/noms-interdits")))
+
+#: En dessous, un nom attrape des mots ordinaires : `ia` signalerait `IA/` dans
+#: chaque fichier. Un tel nom est ignoré, et le rapport le dit.
+LONGUEUR_MINIMALE_NOM = 4
 
 #: Ce qui n'est pas relu, par extension : un fichier binaire. `.svg` n'y est
 #: plus — c'est du texte, et le sauter laissait passer ce qu'il contient.
@@ -149,6 +162,31 @@ def courriel_admis(adresse: str) -> bool:
     if boite.lower() in BOITES_ADMISES:
         return True
     return domaine.lower() in DOMAINES_ADMIS
+
+
+def charger_noms_interdits(chemin: Path = None) -> tuple[list, list]:
+    """Rend (noms retenus, noms écartés car trop courts). Sans fichier : rien."""
+    chemin = chemin or NOMS_INTERDITS
+    try:
+        lignes = chemin.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError):
+        return [], []
+    retenus, courts = [], []
+    for ligne in lignes:
+        nom = ligne.split("#", 1)[0].strip()
+        if not nom:
+            continue
+        (retenus if len(nom) >= LONGUEUR_MINIMALE_NOM else courts).append(nom)
+    return retenus, courts
+
+
+def motif_des_noms(noms) -> "re.Pattern | None":
+    """Un nom entier, sans tenir compte de la casse : `poste-1` ne se trouve pas
+    dans `poste-12`, ni `atelier` dans `ateliers`."""
+    if not noms:
+        return None
+    alternance = "|".join(re.escape(nom) for nom in sorted(noms, key=len, reverse=True))
+    return re.compile(r"(?i)(?<![\w-])(?:%s)(?![\w-])" % alternance)
 
 
 class Controle(NamedTuple):
@@ -167,9 +205,17 @@ class Controle(NamedTuple):
     relus: int
 
 
-def controler_fuites(racine: Path) -> Controle:
-    """Relit tout l'arbre exporté, et dit aussi ce qu'il n'a pas pu relire."""
+def controler_fuites(racine: Path, noms_interdits=()) -> Controle:
+    """Relit tout l'arbre exporté, et dit aussi ce qu'il n'a pas pu relire.
+
+    `noms_interdits` vient de la liste locale (`charger_noms_interdits`) ; par
+    défaut vide, pour que le contrôle ne dépende pas de la machine qui le lance.
+    """
     trouvailles, non_relus, relus = [], [], 0
+    motifs = list(BLOQUANTS)
+    motif_noms = motif_des_noms(noms_interdits)
+    if motif_noms:
+        motifs.append(("nom interdit", motif_noms))
     for chemin in sorted(racine.rglob("*")):
         if not chemin.is_file() or chemin.is_symlink():
             continue
@@ -189,7 +235,7 @@ def controler_fuites(racine: Path) -> Controle:
             continue
         relus += 1
         for numero, ligne in enumerate(texte.splitlines(), 1):
-            for etiquette, motif in BLOQUANTS:
+            for etiquette, motif in motifs:
                 trouve = motif.search(ligne)
                 if not trouve:
                     continue
@@ -268,7 +314,9 @@ def exporter(source: Path, vers: Path) -> None:
 
 
 def regenerer_et_verifier(racine: Path) -> int:
-    for script in ("regenerate_sommaire.py", "regenerate_index.py"):
+    # Les index seulement : les sommaires de `mémoire/` ne sont pas versionnés
+    # (§11), et la mémoire publiée est vide — il n'y a rien à résumer.
+    for script in ("regenerate_index.py",):
         res = subprocess.run([sys.executable, str(racine / "scripts" / script)],
                              cwd=str(racine), capture_output=True, text=True)
         if res.returncode != 0:
@@ -474,7 +522,14 @@ def main() -> int:
         # reviendrait à relire un état qui n'existe plus.
         print("\nContrôle de fuite")
         print("─────────────────")
-        controle = controler_fuites(export)
+        noms, courts = charger_noms_interdits()
+        if courts:
+            print("  Noms interdits ignorés, trop courts (< %d caractères) : %d."
+                  % (LONGUEUR_MINIMALE_NOM, len(courts)))
+        print("  Liste locale des noms interdits : %s"
+              % ("%d nom(s)" % len(noms) if noms else "absente ou vide — "
+                 "noms d'hôtes nus non contrôlés (%s)" % NOMS_INTERDITS))
+        controle = controler_fuites(export, noms)
         if controle.trouvailles:
             for rel, numero, etiquette, ligne in controle.trouvailles:
                 print("  ✗ %s:%d  [%s]" % (rel, numero, etiquette))

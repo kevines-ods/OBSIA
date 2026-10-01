@@ -128,6 +128,13 @@ est une ancre YAML invalide.
 Puis le corps : `## Intention`, et `## Instruction` (mode agent) ou
 `## Commande` (mode commande).
 
+**Le corps et le frontmatter nomment des rôles, jamais des machines.** Un nom
+d'hôte, une adresse IP privée, un VMID nommé, un domaine interne ou un nom de
+dépôt privé vient de l'inventaire (`-PERSONNELS/Homelab/`) et n'a rien à faire
+ici : `IA/tâches/` est publié (§9). Écrire « poste secondaire », « serveur
+principal », « dépôt privé ». Ce qui doit désigner une machine précise se lit à
+l'exécution dans une configuration hors dépôt — voir les garde-fous.
+
 `IA/tâches/` n'est pas une zone d'écriture directe : patch soumis à revue.
 
 ### 3. Instancier — **à l'endroit déclaré, et nulle part ailleurs**
@@ -280,6 +287,18 @@ correctement.
 
 - Aucun secret dans une unité systemd ni dans un fichier de tâche : les deux
   se lisent en clair, et `IA/tâches/` est versionné dans un dépôt public.
+- **Aucun nom de l'infrastructure non plus, dans une tâche comme dans son
+  script.** Nom d'hôte, adresse IP privée, VMID nommé, domaine interne, nom de
+  dépôt privé : ces noms vivent dans l'inventaire (`-PERSONNELS/Homelab/`),
+  jamais dans le dépôt, qui est public (§9). Le fichier parle de **rôles** —
+  « poste secondaire », « serveur principal », « dépôt privé ». Ce qui doit
+  désigner une machine précise est lu à l'exécution dans une configuration hors
+  dépôt sous `~/.config/obsia/`, sur le modèle de la clé `commande_agent` (voir
+  `IA/skills/cron/scripts/appliquer_taches.py`) : sans elle, le script sort sans
+  rien faire, exactement comme sur un poste inattendu. Ne pas compter sur le
+  contrôle de fuite de `scripts/publier.py` pour rattraper l'écart — il ne
+  reconnaît que les noms d'hôtes en **forme de domaine** (suffixes `.lan`,
+  `.local`, `.internal`), pas un nom d'hôte nu.
 - Une tâche déclenchée n'échappe à aucune règle du contrat : ce que l'agent
   n'a pas le droit de faire en conversation, il ne l'a pas davantage à 9 h le
   lundi.
@@ -289,3 +308,11 @@ correctement.
 - Ne pas redemander confirmation quand la demande a déjà été formulée.
 - Confirmer en langage normal : nom de la tâche et horaire lisible, pas
   d'identifiant interne.
+
+## Rationalisations
+
+| L'excuse | Ce qu'elle coûte réellement |
+| --- | --- |
+| « Le nom de la machine est plus clair que "poste secondaire". » | Le dépôt est public : c'est une machine de l'infrastructure donnée à lire. Le rôle dit la même chose et reste vérifiable dans l'inventaire. |
+| « Écrire le nom en dur est plus simple que lire une configuration. » | La constante en dur oblige à modifier le script pour changer de poste, et elle fuit. `~/.config/obsia/` est le geste que `commande_agent` fait déjà. |
+| « Le contrôle de publication est vert, donc c'est bon. » | Ce contrôle ne cherche que les noms d'hôtes en forme de domaine. Un vert prouve ce qu'il cherche, pas ce qu'on craint. |

@@ -11,13 +11,20 @@
 # Contournement ponctuel, si tu sais ce que tu fais :
 #     git commit --no-verify
 
+racine=$(git rev-parse --show-toplevel) || exit 0
+cd "$racine" || exit 0
+
+# Gardes indépendantes, une par fichier, dans l'ordre de leur nom. Chacune peut
+# refuser le commit ; la première qui refuse l'emporte.
+for garde in .githooks/pre-commit.d/*; do
+    [ -x "$garde" ] || continue
+    "$garde" || exit 1
+done
+
 if ! command -v python3 >/dev/null 2>&1; then
     echo "pre-commit : python3 introuvable, vérification ignorée." >&2
     exit 0
 fi
-
-racine=$(git rev-parse --show-toplevel) || exit 0
-cd "$racine" || exit 0
 
 if python3 scripts/verifier_coffre.py --silencieux; then
     if python3 scripts/evaluer_routage.py >/dev/null; then
