@@ -6,7 +6,9 @@ pas ce dépôt, le fichier se pose chez le parent — hors dépôt, donc hors
 publication, et porteur d'un marqueur qui dit à qui il appartient.
 
 Le coffre de test n'a pas de `scripts/` : `regenerer()` s'arrête alors
-proprement, et ces tests ne jugent que l'AGENTS.md.
+proprement, et ces tests ne jugent que l'AGENTS.md. Le seul endroit où une
+cible en reçoit un est `TestRegenerationSansLien` — parce que la régénération
+est justement ce qu'on y juge.
 """
 
 import os
@@ -289,6 +291,97 @@ class TestModeCopie(BaseInstalleur):
         self.assertFalse(self.agents_md(self.cible()).exists())
 
 
+class TestToutEnModeCopie(BaseInstalleur):
+    """`--tout` veut dire « catalogue complet », dans les deux modes.
+
+    En copie, le `--tout` sautait la copie : on demandait le catalogue entier et
+    la cible restait vide, pendant que le profil annonçait un état qu'elle
+    n'avait pas. Un catalogue complet ne pose pas de profil — c'est le profil
+    qui dit « ce coffre est réduit » — mais il se copie entièrement.
+    """
+
+    def cible(self) -> Path:
+        return self.parent / "chez-moi" / "OBSIA"
+
+    def module_en_plus(self) -> None:
+        """Un troisième module, hors du profil : c'est lui qui prouve `--tout`."""
+        self.ecrire("IA/system/modules/ailleurs.md",
+                    "---\nschema: 1\nkind: module\nname: ailleurs\n"
+                    "description: Ailleurs.\nessentiel: false\n"
+                    "requiert:\n  - noyau\n---\n\nCorps.\n")
+        self.ecrire("IA/agents/agent-ailleurs.md",
+                    "---\nschema: 1\nkind: agent\nname: agent-ailleurs\n"
+                    "description: Un autre agent.\nread_only: true\n"
+                    "module: ailleurs\n---\n\nCorps.\n")
+
+    def test_la_cible_recoit_les_fichiers_de_tous_les_modules(self):
+        self.profil(modules="construction", mode="copie")
+        self.module_en_plus()
+
+        resultat = self.lancer("--tout", "--appliquer",
+                               "--installer", str(self.cible()))
+
+        self.assertEqual(resultat.returncode, 0, resultat.stdout + resultat.stderr)
+        for relatif in ("IA/agents/agent-verif.md",
+                        "IA/skills/a-verifie.md",
+                        "IA/agents/agent-ailleurs.md"):
+            self.assertTrue((self.cible() / relatif).is_file(), relatif)
+
+    def test_la_copie_n_emporte_pas_de_profil(self):
+        """Catalogue complet : il n'y a rien à rejouer, donc rien à décrire."""
+        self.profil(modules="construction", mode="copie")
+
+        self.lancer("--tout", "--appliquer", "--installer", str(self.cible()))
+
+        self.assertFalse((self.cible() / "obsia.local.yml").exists())
+
+    def test_l_apercu_ne_promet_pas_de_profil(self):
+        self.profil(modules="construction", mode="copie")
+
+        resultat = self.lancer("--tout", "--installer", str(self.cible()))
+
+        self.assertIn("aucun — catalogue complet", resultat.stdout)
+        self.assertFalse(self.cible().exists())
+
+    def test_en_place_le_profil_disparait(self):
+        """En place, `--tout` reste ce qu'il était : plus rien à réduire."""
+        self.profil(modules="construction")
+
+        resultat = self.lancer("--tout", "--appliquer")
+
+        self.assertEqual(resultat.returncode, 0, resultat.stdout + resultat.stderr)
+        self.assertFalse((self.racine / "obsia.local.yml").exists())
+
+    def test_la_source_garde_son_profil(self):
+        """`--installer` copie : il n'a aucune raison de modifier la source."""
+        self.profil(modules="construction", mode="copie")
+        avant = (self.racine / "obsia.local.yml").read_text(encoding="utf-8")
+
+        resultat = self.lancer("--tout", "--appliquer",
+                               "--installer", str(self.cible()))
+
+        self.assertEqual(resultat.returncode, 0, resultat.stdout + resultat.stderr)
+        self.assertTrue((self.racine / "obsia.local.yml").is_file(),
+                        "la source ne se modifie pas, on ne fait que la lire")
+        self.assertEqual((self.racine / "obsia.local.yml").read_text("utf-8"),
+                         avant)
+
+    def test_le_profil_de_la_cible_disparait(self):
+        """Le profil à supprimer, en copie, c'est celui de la cible."""
+        self.profil(modules="construction", mode="copie")
+        self.cible().mkdir(parents=True)
+        (self.cible() / "obsia.local.yml").write_text(
+            "schema: 1\nmode: copie\nmodules:\n  - noyau\n", encoding="utf-8")
+
+        resultat = self.lancer("--tout", "--appliquer",
+                               "--installer", str(self.cible()))
+
+        self.assertEqual(resultat.returncode, 0, resultat.stdout + resultat.stderr)
+        self.assertFalse((self.cible() / "obsia.local.yml").exists(),
+                         "catalogue complet : la cible n'a rien à rejouer")
+        self.assertTrue((self.racine / "obsia.local.yml").is_file())
+
+
 class TestEcritureImpossible(BaseInstalleur):
     """Écrire AGENTS.md ne doit jamais faire tomber l'installation.
 
@@ -401,6 +494,281 @@ class TestMarqueur(BaseInstalleur):
 
         self.assertIn("marqueur", resultat.stderr)
         self.assertIn("supprimez", resultat.stderr.lower())
+
+
+class TestLaCopieNeTouchePasALInstance(BaseInstalleur):
+    """En mode copie, ce qui appartient au copié lui reste.
+
+    `mémoire/`, `brouillon/` et les journaux de session sont les trois dossiers
+    où le travail du copié vit. L'installeur les crée s'ils manquent, avec leur
+    README, mais ne les vide jamais : réinstaller ne doit pas effacer.
+    """
+
+    def cible(self) -> Path:
+        return self.parent / "chez-moi" / "OBSIA"
+
+    def test_la_memoire_du_copie_est_conservee(self):
+        self.profil(mode="copie")
+        note = self.cible() / "mémoire" / "mes-notes.md"
+        note.parent.mkdir(parents=True)
+        note.write_text("mon travail\n", encoding="utf-8")
+
+        resultat = self.lancer("--appliquer", "--installer", str(self.cible()))
+
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        self.assertTrue(note.is_file(), "la note du copié a été effacée")
+        self.assertEqual(note.read_text(encoding="utf-8"), "mon travail\n")
+
+    def test_le_profil_du_copie_est_conserve(self):
+        self.profil(mode="copie")
+        profil = self.cible() / "mémoire" / "profil-utilisateur.md"
+        profil.parent.mkdir(parents=True)
+        profil.write_text("je suis le copié\n", encoding="utf-8")
+
+        self.lancer("--appliquer", "--installer", str(self.cible()))
+
+        self.assertEqual(profil.read_text(encoding="utf-8"), "je suis le copié\n")
+
+    def test_le_journal_de_la_source_ne_part_pas_chez_le_copie(self):
+        self.profil(mode="copie")
+        self.ecrire("IA/system/session-log/2026-01-01-ailleurs.md", "mes notes\n")
+
+        self.lancer("--appliquer", "--installer", str(self.cible()))
+
+        self.assertFalse((self.cible() / "IA" / "system" / "session-log"
+                          / "2026-01-01-ailleurs.md").exists())
+
+    def test_le_journal_du_copie_est_conserve(self):
+        self.profil(mode="copie")
+        journal = self.cible() / "IA" / "system" / "session-log" / "2026-01-01-moi.md"
+        journal.parent.mkdir(parents=True)
+        journal.write_text("ma session\n", encoding="utf-8")
+
+        self.lancer("--appliquer", "--installer", str(self.cible()))
+
+        self.assertTrue(journal.is_file(), "le journal du copié a été effacé")
+
+    def test_brouillon_est_cree_avec_son_readme(self):
+        self.profil(mode="copie")
+        self.ecrire("brouillon/README.md", "# Brouillon\n")
+
+        self.lancer("--appliquer", "--installer", str(self.cible()))
+
+        lireme = self.cible() / "brouillon" / "README.md"
+        self.assertTrue(lireme.is_file(), "brouillon/ est créé sans son README")
+        self.assertEqual(lireme.read_text(encoding="utf-8"), "# Brouillon\n")
+
+    def test_l_apercu_dit_conserve(self):
+        self.profil(mode="copie")
+        note = self.cible() / "mémoire" / "mes-notes.md"
+        note.parent.mkdir(parents=True)
+        note.write_text("mon travail\n", encoding="utf-8")
+
+        resultat = self.lancer("--installer", str(self.cible()))
+
+        self.assertIn("conservé", resultat.stdout)
+
+
+class TestAucunLienSuivi(BaseInstalleur):
+    """Un lien symbolique de la cible ne se suit ni en lecture ni en écriture.
+
+    Un `IA` déplacé ailleurs, une `mémoire/` partagée : l'installeur écrirait
+    hors du coffre qu'il croit installer. Il le dit, et passe.
+    """
+
+    def cible(self) -> Path:
+        return self.parent / "chez-moi" / "OBSIA"
+
+    def ailleurs(self) -> Path:
+        chemin = self.parent / "ailleurs"
+        chemin.mkdir(exist_ok=True)
+        return chemin
+
+    def test_la_copie_n_ecrit_pas_a_travers_un_lien(self):
+        self.profil(mode="copie")
+        cible = self.cible()
+        cible.mkdir(parents=True)
+        (cible / "IA").symlink_to(self.ailleurs(), target_is_directory=True)
+
+        resultat = self.lancer("--appliquer", "--installer", str(cible))
+
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        self.assertEqual(sorted(p.name for p in self.ailleurs().iterdir()), [])
+        self.assertIn("lien", resultat.stderr.lower())
+
+    def test_la_memoire_liee_n_est_pas_remplie(self):
+        self.profil(mode="copie")
+        cible = self.cible()
+        cible.mkdir(parents=True)
+        (cible / "mémoire").symlink_to(self.ailleurs(), target_is_directory=True)
+
+        resultat = self.lancer("--appliquer", "--installer", str(cible))
+
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        self.assertEqual(sorted(p.name for p in self.ailleurs().iterdir()), [])
+        self.assertTrue((cible / "mémoire").is_symlink())
+
+    def test_le_journal_lie_n_est_pas_rempli(self):
+        self.profil(mode="copie")
+        cible = self.cible()
+        (cible / "IA" / "system").mkdir(parents=True)
+        (cible / "IA" / "system" / "session-log").symlink_to(
+            self.ailleurs(), target_is_directory=True)
+
+        self.lancer("--appliquer", "--installer", str(cible))
+
+        self.assertEqual(sorted(p.name for p in self.ailleurs().iterdir()), [])
+
+    def test_les_agents_lies_ne_sont_pas_reduits(self):
+        self.profil(mode="copie")
+        cible = self.cible()
+        ailleurs = self.ailleurs()
+        (cible / "IA").mkdir(parents=True)
+        (cible / "IA" / "agents").symlink_to(ailleurs, target_is_directory=True)
+        agent = ailleurs / "agent-verif.md"
+        agent.write_text("---\nname: agent-verif\nskills:\n  - absent\n"
+                         "---\n\nCorps.\n", encoding="utf-8")
+
+        self.lancer("--appliquer", "--installer", str(cible))
+
+        self.assertIn("absent", agent.read_text(encoding="utf-8"))
+
+
+class TestRegenerationSansLien(BaseInstalleur):
+    """La régénération n'écrit pas à travers un lien de la cible.
+
+    `regenerate_sommaire.py` pose les `sommaire.md` dans `mémoire/`,
+    `regenerate_index.py` les index dans `IA/system/`. Si l'une de ces deux
+    racines est un lien, ces scripts écrivent hors du coffre visé ; le
+    vérificateur, lui, lit des fichiers qui ne sont pas au coffre.
+
+    Les coffres des autres tests n'ont pas de `scripts/`, donc rien n'y est
+    régénéré. Ici on en pose un, avec trois béquilles qui écrivent exactement
+    là où écrivent les vrais générateurs et qui disent la phrase du
+    vérificateur — « index et sommaires à jour ».
+    """
+
+    def cible(self) -> Path:
+        return self.parent / "chez-moi" / "OBSIA"
+
+    def ailleurs(self) -> Path:
+        chemin = self.parent / "ailleurs"
+        chemin.mkdir(exist_ok=True)
+        return chemin
+
+    def poser_les_generateurs(self) -> None:
+        """Trois béquilles : elles écrivent et parlent comme les vrais scripts."""
+        scripts = self.cible() / "scripts"
+        scripts.mkdir(parents=True, exist_ok=True)
+        (scripts / "regenerate_sommaire.py").write_text(
+            "from pathlib import Path\n"
+            "racine = Path(__file__).resolve().parent.parent\n"
+            "(racine / 'mémoire' / 'sommaire.md').write_text('sommaire\\n',\n"
+            "    encoding='utf-8')\n", encoding="utf-8")
+        (scripts / "regenerate_index.py").write_text(
+            "from pathlib import Path\n"
+            "racine = Path(__file__).resolve().parent.parent\n"
+            "index = racine / 'IA' / 'system' / 'agents-index.md'\n"
+            "index.parent.mkdir(parents=True, exist_ok=True)\n"
+            "index.write_text('index\\n', encoding='utf-8')\n", encoding="utf-8")
+        (scripts / "verifier_coffre.py").write_text(
+            "print('1 fichier, 1 tâche, index et sommaires à jour.')\n",
+            encoding="utf-8")
+
+    def test_les_bequilles_servent_quand_rien_n_est_lie(self):
+        """Sans lien, la régénération va bien jusqu'au bout : la preuve est là.
+
+        Sans ce test, les autres passeraient même si les béquilles n'étaient
+        jamais lancées.
+        """
+        self.profil(mode="copie")
+        cible = self.cible()
+        cible.mkdir(parents=True)
+        self.poser_les_generateurs()
+
+        resultat = self.lancer("--appliquer", "--installer", str(cible))
+
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        self.assertTrue((cible / "mémoire" / "sommaire.md").is_file())
+        self.assertTrue((cible / "IA" / "system" / "agents-index.md").is_file())
+        self.assertIn("index et sommaires à jour", resultat.stdout)
+
+    def test_la_memoire_liee_n_est_pas_regeneree(self):
+        self.profil(mode="copie")
+        cible = self.cible()
+        cible.mkdir(parents=True)
+        (cible / "mémoire").symlink_to(self.ailleurs(), target_is_directory=True)
+        self.poser_les_generateurs()
+
+        resultat = self.lancer("--appliquer", "--installer", str(cible))
+
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        self.assertEqual(sorted(p.name for p in self.ailleurs().iterdir()), [],
+                         "la régénération a écrit à travers le lien")
+        self.assertIn("lien", resultat.stderr.lower())
+        self.assertNotIn("index et sommaires à jour",
+                         resultat.stdout + resultat.stderr)
+        self.assertIn("sans régénération", resultat.stdout)
+
+    def test_l_ia_lie_n_est_pas_regenere(self):
+        self.profil(mode="copie")
+        cible = self.cible()
+        cible.mkdir(parents=True)
+        (cible / "IA").symlink_to(self.ailleurs(), target_is_directory=True)
+        self.poser_les_generateurs()
+
+        resultat = self.lancer("--appliquer", "--installer", str(cible))
+
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        self.assertEqual(sorted(p.name for p in self.ailleurs().iterdir()), [],
+                         "la régénération a écrit à travers le lien")
+        self.assertIn("lien", resultat.stderr.lower())
+        self.assertNotIn("index et sommaires à jour",
+                         resultat.stdout + resultat.stderr)
+        self.assertIn("sans régénération", resultat.stdout)
+
+    def test_un_lien_imbrique_dans_l_ia_n_est_pas_regenere(self):
+        """Un lien plus profond suffit : `IA/system` posé ailleurs.
+
+        `regenerate_index.py` écrit sous `IA/system/`. Ne regarder que `IA`
+        laissait donc ce lien-là passer, et les index partir hors de la cible
+        sans un mot — il faut parcourir l'arbre, pas ses deux racines.
+        """
+        self.profil(mode="copie")
+        cible = self.cible()
+        (cible / "IA").mkdir(parents=True)
+        (cible / "IA" / "system").symlink_to(self.ailleurs(),
+                                            target_is_directory=True)
+        self.poser_les_generateurs()
+
+        resultat = self.lancer("--appliquer", "--installer", str(cible))
+
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        self.assertEqual(sorted(p.name for p in self.ailleurs().iterdir()), [],
+                         "la régénération a écrit à travers le lien")
+        self.assertIn("lien", resultat.stderr.lower())
+        self.assertNotIn("index et sommaires à jour",
+                         resultat.stdout + resultat.stderr)
+        self.assertIn("sans régénération", resultat.stdout)
+
+    def test_un_fichier_lie_dans_la_memoire_n_est_pas_regenere(self):
+        """Même un fichier lié compte : `mémoire/sommaire.md` pointé ailleurs."""
+        self.profil(mode="copie")
+        cible = self.cible()
+        (cible / "mémoire").mkdir(parents=True)
+        (cible / "mémoire" / "sommaire.md").symlink_to(
+            self.ailleurs() / "sommaire.md")
+        self.poser_les_generateurs()
+
+        resultat = self.lancer("--appliquer", "--installer", str(cible))
+
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        self.assertEqual(sorted(p.name for p in self.ailleurs().iterdir()), [],
+                         "la régénération a écrit à travers le lien")
+        self.assertIn("lien", resultat.stderr.lower())
+        self.assertNotIn("index et sommaires à jour",
+                         resultat.stdout + resultat.stderr)
+        self.assertIn("sans régénération", resultat.stdout)
 
 
 if __name__ == "__main__":

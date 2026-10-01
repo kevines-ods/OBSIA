@@ -148,7 +148,7 @@ def choisir(modules: list[dict], racine: Path, interactif: bool) -> set[str]:
 # -------------------------------------------------------------------- aperçu
 
 def apercu(modules: list[dict], actifs: set[str], racine: Path,
-           mode: str, cible: Path | None) -> list[Path]:
+           mode: str, cible: Path | None, tout: bool = False) -> list[Path]:
     """Affiche ce qui serait retenu et ce qui serait écarté. N'écrit rien (§2)."""
     titre("Aperçu — rien n'est écrit sans --appliquer")
 
@@ -166,12 +166,17 @@ def apercu(modules: list[dict], actifs: set[str], racine: Path,
     ecartes = [m["name"] for m in modules if m["name"] not in actifs]
     print("\n  Retenus  : %s" % ", ".join(sorted(actifs)))
     print("  Écartés  : %s" % (", ".join(ecartes) or "aucun"))
-    print("  Profil   : %s" % MOD.chemin_profil(cible or racine))
+    profil = ("aucun — catalogue complet" if tout
+              else str(MOD.chemin_profil(cible or racine)))
+    print("  Profil   : %s" % profil)
 
     if mode == "copie":
         print("  Cible    : %s" % cible)
         print("\n  Seront aussi copiés : %s" % ", ".join(SOCLE))
-        print("  Seront créés vides  : %s" % ", ".join(PROPRES_A_LINSTANCE))
+        print("  À l'instance — créés s'ils manquent, jamais vidés :")
+        for rel in PROPRES_A_LINSTANCE:
+            deja = contenu_dinstance(cible / rel)
+            print("      %-9s: %s" % ("conservé" if deja else "créé", rel))
     else:
         print("\n  Aucun fichier n'est déplacé ni supprimé. Seuls les fichiers")
         print("  générés seront réduits au profil :")
@@ -233,41 +238,42 @@ def reduire_declarations_agent(chemin: Path, skills_presents: set[str],
     return modifie
 
 
-def copier(racine: Path, cible: Path, emportes: list[Path]) -> None:
-    cible.mkdir(parents=True, exist_ok=True)
+def contenu_dinstance(dossier: Path) -> bool:
+    """Vrai si le dossier porte du travail de l'instance, pas que son README."""
+    return dossier.is_dir() and any(e.name != "README.md"
+                                    for e in dossier.iterdir())
 
-    for rel in SOCLE:
-        src = racine / rel
-        if not src.exists():
-            continue
-        dst = cible / rel
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        if src.is_dir():
-            shutil.copytree(src, dst, dirs_exist_ok=True)
-        else:
-            shutil.copy2(src, dst)
 
-    for rel in emportes:
-        src, dst = racine / rel, cible / rel
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        if src.is_dir():
-            shutil.copytree(src, dst, dirs_exist_ok=True)
-        else:
-            shutil.copy2(src, dst)
+def copier_arbre(src: Path, dst: Path, cible: Path, refus: list[str]) -> None:
+    """Copie `src` vers `dst`, sans jamais toucher aux zones de l'instance.
 
-    # Le contenu de l'instance ne se copie jamais : il appartient à qui installe.
-    for rel in PROPRES_A_LINSTANCE:
-        dossier = cible / rel
-        if dossier.is_dir():
-            for enfant in dossier.iterdir():
-                if enfant.name == "README.md":
-                    continue
-                shutil.rmtree(enfant) if enfant.is_dir() else enfant.unlink()
-        dossier.mkdir(parents=True, exist_ok=True)
+    Ce qui est à l'instance se crée (voir `copier`) : le copier, ce serait
+    emporter le travail d'ailleurs, et l'écraser, l'effacer. Un lien
+    symbolique non plus ne se traverse pas : `refus` garde la trace de ce qui
+    n'a pas été copié pour cette raison.
+    """
+    relatif = dst.relative_to(cible)
+    for zone in PROPRES_A_LINSTANCE:
+        if relatif == Path(zone) or Path(zone) in relatif.parents:
+            return
+    lien = MOD.sous_un_lien(cible, dst)
+    if lien is not None:
+        refus.append("%s (à travers le lien %s)"
+                     % (relatif, lien.relative_to(cible)))
+        return
+    if src.is_dir():
+        dst.mkdir(parents=True, exist_ok=True)
+        for enfant in sorted(src.iterdir()):
+            copier_arbre(enfant, dst / enfant.name, cible, refus)
+        return
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, dst)
 
-    MOD.ecrire_gabarits_dinstance(cible)
 
-    skills_presents = {p.stem for p in fichiers_declaratifs(cible / "IA" / "skills")}
+def reduire_a_la_cible(cible: Path) -> None:
+    """Retire de la cible les déclarations qu'elle ne peut pas honorer."""
+    skills_presents = {p.stem
+                       for p in fichiers_declaratifs(cible / "IA" / "skills")}
     mcp_presents = {p.stem for p in (cible / "IA" / "MCP").glob("*.md")}
     for chemin in fichiers_declaratifs(cible / "IA" / "agents"):
         if reduire_declarations_agent(chemin, skills_presents, mcp_presents):
@@ -275,7 +281,8 @@ def copier(racine: Path, cible: Path, emportes: list[Path]) -> None:
                   % chemin.relative_to(cible))
 
     # Une tâche qui vise un agent absent ne déclencherait rien.
-    agents_presents = {p.stem for p in fichiers_declaratifs(cible / "IA" / "agents")}
+    agents_presents = {p.stem
+                       for p in fichiers_declaratifs(cible / "IA" / "agents")}
     for chemin in sorted((cible / "IA" / "tâches").glob("*.md")):
         fm = lire_frontmatter(chemin) or {}
         if fm.get("mode") == "agent" and fm.get("agent") not in agents_presents:
@@ -284,10 +291,107 @@ def copier(racine: Path, cible: Path, emportes: list[Path]) -> None:
                   % chemin.relative_to(cible))
 
 
+def avertir_du_lien(rel: Path) -> None:
+    """Le dire, quand un lien de la cible empêche un geste dans `rel`."""
+    print("  ! %s : un lien symbolique de la cible aurait été traversé ; "
+          "laissé de côté." % rel, file=sys.stderr)
+
+
+def copier(racine: Path, cible: Path, emportes: list[Path]) -> None:
+    cible.mkdir(parents=True, exist_ok=True)
+
+    refus: list[str] = []
+    for rel in SOCLE:
+        if (racine / rel).exists():
+            copier_arbre(racine / rel, cible / rel, cible, refus)
+
+    for rel in emportes:
+        if (racine / rel).exists():
+            copier_arbre(racine / rel, cible / rel, cible, refus)
+
+    if refus:
+        print("  ! %d entrée(s) non copiée(s) : un lien symbolique de la cible "
+              "aurait été traversé." % len(refus), file=sys.stderr)
+        for ligne in sorted(refus):
+            print("      %s" % ligne, file=sys.stderr)
+
+    # Ce qui appartient à l'instance ne se copie pas et ne se vide pas : on le
+    # crée s'il manque, avec son README, et on laisse son contenu en paix.
+    for rel in PROPRES_A_LINSTANCE:
+        dossier = cible / rel
+        if MOD.sous_un_lien(cible, dossier) is not None:
+            avertir_du_lien(Path(rel))
+            continue
+        if contenu_dinstance(dossier):
+            print("  ~ %s conservé : il a déjà un contenu, il est à l'instance."
+                  % rel)
+            continue
+        dossier.mkdir(parents=True, exist_ok=True)
+        lireme = racine / rel / "README.md"
+        if lireme.is_file():
+            shutil.copy2(lireme, dossier / "README.md")
+
+    MOD.ecrire_gabarits_dinstance(cible)
+
+    # Lire un dossier lié, c'est lire ailleurs ; y réécrire, c'est écrire
+    # ailleurs. Les deux se refusent ensemble.
+    sous_ia = [sous for sous in ("IA", "IA/agents", "IA/skills", "IA/MCP",
+                                 "IA/tâches")
+               if MOD.sous_un_lien(cible, cible / sous) is not None]
+    if sous_ia:
+        avertir_du_lien(Path(sous_ia[0]))
+    else:
+        reduire_a_la_cible(cible)
+
+
 # ---------------------------------------------------------------- régénération
 
+#: Les deux dossiers que la régénération écrit : `regenerate_sommaire.py` pose
+#: les `sommaire.md` dans `mémoire/`, `regenerate_index.py` les index dans
+#: `IA/system/`. Un lien n'importe où sous l'une de ces deux racines ferait
+#: écrire — et lire — hors du coffre visé.
+DOSSIERS_REGENERES = ("IA", "mémoire")
+
+
+def premier_lien(racine: Path) -> Path | None:
+    """Le premier lien symbolique sous `IA/` ou `mémoire/`, ou None.
+
+    Tout l'arbre est parcouru, pas seulement les deux racines : un
+    `IA/system` déplacé ailleurs, un `mémoire/sommaire.md` partagé font écrire
+    les générateurs hors du coffre visé aussi sûrement qu'un `IA/` entier.
+    `os.walk` ne descend pas dans les liens qu'il croise (`followlinks` est
+    faux) : c'est à chaque niveau qu'on teste les noms, dossiers et fichiers.
+    """
+    for relatif in DOSSIERS_REGENERES:
+        depart = racine / relatif
+        if depart.is_symlink():
+            return depart
+        if not depart.is_dir():
+            continue
+        for chemin, dossiers, fichiers in os.walk(depart):
+            for nom in dossiers + fichiers:
+                candidat = Path(chemin) / nom
+                if candidat.is_symlink():
+                    return candidat
+    return None
+
+
 def regenerer(racine: Path) -> int:
-    """Relance les générateurs puis le vérificateur, dans le coffre visé."""
+    """Relance les générateurs puis le vérificateur, dans le coffre visé.
+
+    Un lien symbolique, où qu'il soit sous `IA/` ou `mémoire/`, arrête tout
+    net : les générateurs écriraient hors du coffre visé — les `sommaire.md`
+    dans la `mémoire/` liée, les index dans l'`IA/` lié — et le vérificateur
+    lirait des fichiers qui ne sont pas au coffre. On le dit, on saute, et le
+    code de retour reste bon : rien n'est cassé, seulement rien de régénéré.
+    """
+    lien = premier_lien(racine)
+    if lien is not None:
+        print("  ! %s : un lien symbolique de la cible serait traversé par la "
+              "régénération ; index et sommaires laissés en l'état."
+              % lien.relative_to(racine), file=sys.stderr)
+        return 0
+
     for script in ("regenerate_sommaire.py", "regenerate_index.py"):
         chemin = racine / "scripts" / script
         if not chemin.is_file():
@@ -438,7 +542,9 @@ def main() -> int:
     ap.add_argument("--sonder", action="store_true",
                     help="affiche la détection et le verdict des sondes, n'écrit rien")
     ap.add_argument("--installer", type=Path, metavar="CIBLE",
-                    help="mode copie : n'écrit dans CIBLE que les modules retenus")
+                    help="mode copie : n'écrit dans CIBLE que les modules "
+                         "retenus ; l'AGENTS.md, lui, va dans CIBLE/.. — un cran "
+                         "au-dessus de la cible, là où Codex le lit")
     ap.add_argument("--modules", metavar="a,b,c",
                     help="sélection explicite, sans question")
     ap.add_argument("--rejouer", action="store_true",
@@ -470,9 +576,15 @@ def main() -> int:
         return 0
 
     # ------------------------------------------------------------- sélection
+    mode = "copie" if args.installer else "en-place"
+    cible = args.installer.resolve() if args.installer else None
+
     if args.tout:
         actifs = {m["name"] for m in modules}
-        print("\n  --tout : catalogue complet, le profil sera supprimé.")
+        # En copie, le profil dont on parle est celui de la cible : la source,
+        # elle, n'est que lue.
+        ou = " de la cible" if mode == "copie" else ""
+        print("\n  --tout : catalogue complet, le profil%s sera supprimé." % ou)
     elif args.modules:
         demandes = {n.strip() for n in args.modules.split(",") if n.strip()}
         inconnus = demandes - {m["name"] for m in modules}
@@ -496,7 +608,7 @@ def main() -> int:
 
     mode = "copie" if args.installer else "en-place"
     cible = args.installer.resolve() if args.installer else None
-    emportes = apercu(modules, actifs, racine, mode, cible)
+    emportes = apercu(modules, actifs, racine, mode, cible, args.tout)
 
     if not args.appliquer:
         print("\nAperçu seulement. Relancer avec --appliquer pour exécuter.")
@@ -505,32 +617,48 @@ def main() -> int:
     # -------------------------------------------------------------- exécution
     titre("Exécution")
 
-    if args.tout:
-        chemin = MOD.chemin_profil(racine)
-        if chemin.is_file():
-            chemin.unlink()
-            print("  − %s supprimé — catalogue complet" % MOD.NOM_PROFIL)
-    elif mode == "en-place":
-        print("  ~ %s" % MOD.ecrire_profil(racine, actifs, systeme, mode,
-                                           systeme.get("coffre_parent") or None))
-    else:
+    if mode == "copie":
         if cible.resolve() == racine:
             print("La cible ne peut pas être la source.", file=sys.stderr)
             return 1
         copier(racine, cible, emportes)
-        print("  ~ %s" % MOD.ecrire_profil(cible, actifs, systeme, mode,
+
+    # `--tout` vaut « catalogue complet » dans les deux modes : le profil
+    # disparaît, puisque c'est lui qui dit « ce coffre est réduit ». La copie,
+    # elle, ne se saute pas pour autant — sans quoi `--tout --installer CIBLE`
+    # annonçait le catalogue entier et laissait la cible vide.
+    #
+    # Et le profil qu'on écrit ou qu'on supprime est toujours celui du coffre
+    # effectif : en copie, c'est celui de la cible. `--installer` lit la source,
+    # il ne la modifie pas — sinon ce n'est plus une copie, et le coffre source
+    # perdrait son mode sans que rien ne l'ait annoncé.
+    coffre = cible if mode == "copie" else racine
+    if args.tout:
+        chemin = MOD.chemin_profil(coffre)
+        if chemin.is_file():
+            chemin.unlink()
+            print("  − %s supprimé — catalogue complet" % MOD.NOM_PROFIL)
+    else:
+        print("  ~ %s" % MOD.ecrire_profil(coffre, actifs, systeme, mode,
                                            systeme.get("coffre_parent") or None))
 
-    coffre = cible if mode == "copie" else racine
     code = regenerer(coffre)
 
     # Après `regenerer` : le prompt embarque l'index, il doit lire l'index à jour.
     # Sur le coffre effectif, donc en place comme en copie.
     ecrire_agents(coffre)
 
-    print("\n%s" % ("Installation terminée." if code == 0
-                    else "Installation terminée, mais le coffre est incohérent "
-                         "— voir ci-dessus."))
+    if code != 0:
+        print("\nInstallation terminée, mais le coffre est incohérent "
+              "— voir ci-dessus.")
+    elif premier_lien(coffre) is not None:
+        # Rien n'est cassé : la régénération a seulement été sautée. Le dire
+        # ici, sinon la seule trace serait l'avertissement plus haut, et la
+        # dernière ligne ferait croire à des index et des sommaires refaits.
+        print("\nInstallation terminée, sans régénération ni vérification : "
+              "un lien symbolique de la cible aurait été traversé.")
+    else:
+        print("\nInstallation terminée.")
     if mode == "copie":
         print("Coffre installé : %s" % coffre)
     print("Prompt système : python3 scripts/generer_prompt.py -o prompt-systeme.md --mcp")

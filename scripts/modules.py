@@ -95,20 +95,40 @@ personne sur sa machine, pas le coffre.
 """
 
 
+def sous_un_lien(depart: Path, chemin: Path) -> Path | None:
+    """Le premier maillon de `chemin`, sous `depart`, qui est un lien symbolique.
+
+    Un lien ne se suit ni en lecture ni en écriture : écrire au travers, c'est
+    écrire ailleurs que dans le coffre qu'on croit remplir. Les deux scripts
+    d'installation s'en servent avant chaque geste.
+    """
+    courant = depart
+    for morceau in chemin.relative_to(depart).parts:
+        courant = courant / morceau
+        if courant.is_symlink():
+            return courant
+    return None
+
+
 def ecrire_gabarits_dinstance(racine: Path) -> None:
     """Pose les fichiers que le contrat exige et que l'instance doit remplir.
 
     `profil-utilisateur.md` est cité par le §6 : absent, il ferait échouer le
     contrôle des chemins. Vide mais présent, il dit aussi à quoi il sert.
-    """
-    memoire = racine / "mémoire"
-    memoire.mkdir(parents=True, exist_ok=True)
-    (memoire / "profil-utilisateur.md").write_text(
-        GABARIT_PROFIL_UTILISATEUR, encoding="utf-8")
 
-    log = racine / "IA" / "system" / "session-log"
-    log.mkdir(parents=True, exist_ok=True)
-    (log / "README.md").write_text(GABARIT_SESSION_LOG, encoding="utf-8")
+    Rien n'est écrasé : une réinstallation ne doit pas emporter le profil de qui
+    utilise déjà le coffre. C'est leur absence qui déclenche l'écriture. Rien
+    n'est écrit non plus à travers un lien : le gabarit atterrirait ailleurs.
+    """
+    for relatif, gabarit in (("mémoire/profil-utilisateur.md",
+                              GABARIT_PROFIL_UTILISATEUR),
+                             ("IA/system/session-log/README.md",
+                              GABARIT_SESSION_LOG)):
+        chemin = racine / relatif
+        if chemin.is_file() or sous_un_lien(racine, chemin) is not None:
+            continue
+        chemin.parent.mkdir(parents=True, exist_ok=True)
+        chemin.write_text(gabarit, encoding="utf-8")
 
 
 # ------------------------------------------------------------ YAML minimal
