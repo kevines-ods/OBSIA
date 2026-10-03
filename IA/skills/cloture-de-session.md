@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: cloture-de-session
-description: Clore une séance de travail — consigner ce qui a été décidé dans la note de projet, en distiller ce qui est durable vers profil/préférences/expériences, proposer le log du §9. À charger en fin de séance, quand une session se termine ou qu'un lot de travail est livré. Pas pour écrire une note isolée en cours de route.
+description: Tenir le carnet d'un chantier et clore une séance — reprendre un chantier interrompu au démarrage, écrire l'étape en cours avant d'agir, mettre à jour le résumé du projet, distiller le durable vers profil/préférences/expériences, archiver les carnets d'un projet clos. À charger au démarrage pour reprendre après une coupure, et en fin de séance ou quand un lot de travail est livré.
 module: noyau
 type: core
 read_only: false
@@ -11,7 +11,7 @@ read_only: false
 # Skill — Clôture de session
 
 Une session laisse deux traces de nature différente : ce qui s'est **passé**
-(chronologie, propre au projet) et ce qui a été **appris** (durable,
+(le carnet, propre au chantier) et ce qui a été **appris** (durable,
 transversal). Sans distillation explicite, la seconde reste enfouie dans la
 première et se re-découvre à chaque fois.
 
@@ -26,56 +26,64 @@ git log --oneline origin/main..HEAD
 
 Ne pas se fier à sa mémoire de la conversation : lire le diff.
 
-### 2. Écrire ou compléter la note de projet
+### 2. Mettre à jour le carnet et le résumé
 
-**D'abord, où.** Confondre les destinations expose du privé dans un dépôt
-public (§7.3.1), ou encombre `-PROJETS/` de travaux finis :
+**D'abord, où.** Le §6 et le §7.3.1 donnent deux domiciles, selon ce que
+décrit le projet :
 
-| La séance portait sur… | La note va dans… |
+| La séance portait sur… | Carnet et résumé dans… |
 | --- | --- |
-| le coffre lui-même — un skill, un agent, une règle | `mémoire/projets/<nom-projet>/AAAA-MM-JJ-titre.md` |
-| un projet de l'utilisateur **encore en cours ou à venir** | `Mon coffre/-PROJETS/<nom-du-projet> — résumé.md` |
-| une tâche terminée qui laisse un état à tenir à jour (une configuration, une organisation) | `Mon coffre/-PERSONNELS/<sujet>.md`, avec `auteur: <nom-agent>` |
-| une tâche terminée qui ne laisse qu'une trace de ce qui a été fait | `Mon coffre/_MAINTENANCE/AAAA-MM-JJ-<sujet>.md` |
+| le coffre lui-même — un skill, un agent, une règle | `mémoire/projets/<projet>/` — versionné, entre dans la PR |
+| un projet de l'utilisateur | `Mon coffre/-PROJETS/<projet>/` — preview à la création (§7.4) |
+| rien de tout cela — dépannage, correction ponctuelle | le carnet du jour du projet de domaine (§6) : `obsia`, ou `-PROJETS/<domaine>/` |
+| une tâche terminée qui laisse un état à tenir à jour | `Mon coffre/-PERSONNELS/<sujet>.md`, avec `auteur: <nom-agent>` |
 
-Deux tests, dans l'ordre. *Est-ce que ça décrit le coffre ?* Si oui,
-`mémoire/projets/` ; si non, rien n'entre dans le dépôt — un contenu privé
-poussé reste dans l'historique Git même effacé. *Le travail continue-t-il ?*
-Si oui, `-PROJETS/`. Sinon ce n'est plus un projet : `-PERSONNELS/` pour
-l'état, `_MAINTENANCE/` pour l'historique — les deux à la fois quand la séance
-laisse l'un et l'autre, chaque note renvoyant à l'autre. Dans le doute,
-demander à l'utilisateur plutôt que de créer une note dans `-PROJETS/` par
-défaut.
+Test : *est-ce que ça décrit le coffre ?* Si oui, `mémoire/projets/` ; si
+non, rien n'entre dans le dépôt. Dans le doute, demander plutôt que de créer
+un projet par défaut — une tâche terminée n'est pas un projet.
 
-La note de suivi d'un projet est **vivante** : une seule note par projet, mise
-à jour sur place, pas une pile de notes datées. Elle dit où en est le projet,
-ce qui a été décidé et ce qui reste. Quand le projet se termine, sa note quitte
-`-PROJETS/` selon le même tableau — contenu repris en entier, déplacement
-prévisualisé et consigné dans `_MAINTENANCE/` (§7.4). Le gabarit daté ci-dessous vaut pour
-`mémoire/projets/`, qui raconte une chronologie.
-
-`mémoire/projets/<nom-projet>/AAAA-MM-JJ-titre.md`, structurée pour que le
-générateur de sommaires en tire quelque chose d'utile :
+**Le carnet** — `carnets/AAAA-MM-JJ-<projet>-<sujet>.md`, un par chantier.
+Il s'écrit **pendant** la séance (voir « En cours de route » plus bas) ; à
+la clôture, on le relit, on complète, on règle `statut:`.
 
 ```markdown
-# AAAA-MM-JJ — Titre
+---
+agent: <nom-agent>
+projet: <projet>
+statut: en cours | en attente | clos
+---
 
-Une ou deux phrases de chapeau. C'est ce qui remontera dans le sommaire.
+# <Sujet>
 
-## Statut
-🟢 / 🟡 / 🔴 — état en une ligne.
-
-## Décisions
-## Évidence
-## Interprétation
-## Questions ouvertes
-## Synthèse IA
-## URLs sources
+## Demande
+## Plan
+## Étape en cours        écrite AVANT d'agir
+## Fait                  dont actions à effet externe, horodatées (§9)
+## Worktrees et branches
+## Questions en attente
 ```
 
-Le §8 du contrat impose de distinguer évidence, interprétation et synthèse. Le
-chapeau et `## Statut` sont ce que le sommaire extrait : les bâcler rend le
-sommaire inutile.
+Aucune valeur que le §9 interdit — IP, nom d'hôte interne, URL interne,
+identifiant —, même dans le privé.
+
+**Le résumé** — `<projet> — résumé.md`, à la racine du projet, **vivant** :
+où en est le projet, ce qui a été décidé, ce qui reste. Une seule note,
+corrigée sur place. Le §8 impose d'y distinguer évidence, interprétation et
+synthèse.
+
+**Clore un projet.** Le corps du résumé n'est pas réécrit : le bilan, c'est la
+section `## État` posée par-dessus. On coiffe ainsi :
+
+| Élément | Règle |
+| --- | --- |
+| `statut:` | `clos`, dans le frontmatter |
+| bandeau | **juste sous le H1**, avant le `## État`. Sous-projet : `> Sous-projet de [[<projet> — résumé\|<projet>]], clos le <AAAA-MM-JJ>.` Projet racine : `> Clos le <AAAA-MM-JJ>.` — jamais de lien vers un parent qui n'existe pas |
+| bilan | un `## État` **juste après le H1** : le résultat atteint, ce qui reste, ce qui rouvrirait. Posé par-dessus le corps, sans le réécrire |
+| `description:` | réécrite pour dire l'issue (« … clos le <AAAA-MM-JJ> »), pas l'enquête |
+
+Le carnet passe `statut: clos` et rejoint `archives/` ; sa section
+`## Étape en cours` devient un avis de clôture, l'état de la séance restant
+conservé en citation.
 
 ### 3. Distiller — l'étape qui se saute toujours
 
@@ -117,14 +125,14 @@ correction.
 
 Dans les deux derniers cas, ajouter une ligne à
 `IA/system/impact-des-skills.md` — dossier `IA/system/`, donc **patch soumis à
-revue** comme le log de session (§2).
+revue** (§2).
 
 **Une seule leçon compilée par clôture.** Deux skills modifiés dans le même
 patch, et plus rien ne dit lequel a aidé.
 
 ### 5. Surveiller la taille
 
-Une note de projet dépassant **~6 000 caractères** mérite d'être découpée ou
+Un résumé ou un carnet dépassant **~6 000 caractères** mérite d'être découpée ou
 résumée. Repère mesuré le 2026-09-03 : la note moyenne du coffre fait 3 200
 caractères, et une seule note de 15 900 en représentait alors 29 % à elle
 seule. Une note qui enfle est le vrai risque de surcharge — pas l'absence de
@@ -134,15 +142,11 @@ couche d'index.
 find mémoire -name '*.md' ! -name sommaire.md -exec wc -m {} \; | sort -rn | head -5
 ```
 
-### 6. Proposer le log de session
+### 6. Pas de log de session
 
-`IA/system/session-log/AAAA-MM-JJ-<nom-agent>.md` — décisions, fichiers
-modifiés, questions ouvertes. Si le fichier du jour existe déjà pour cet agent,
-le compléter au lieu d'en créer un second. Ce dossier vit sous `IA/system/` : **patch soumis à revue**, jamais
-d'écriture directe (§9).
-
-Le log raconte la séance ; la note de projet documente le sujet. Les deux ne
-disent pas la même chose et ne se remplacent pas.
+Le carnet **est** la trace (§9). `IA/system/session-log/` est archivé : on
+n'y écrit plus. Pour un projet du coffre, carnet et résumé entrent dans la
+pull request du travail, et se relisent avec le diff.
 
 ### 7. Régénérer et vérifier
 
@@ -156,4 +160,37 @@ python3 scripts/verifier_coffre.py
 
 Les zones d'écriture directe et celles qui passent par patch sont définies au
 §2 de `../system/VAULT-CONTRACT.md`. La distillation écrit dans `mémoire/`
-— zone directe, sauf le dossier d'un autre agent ; le log de session, non.
+— zone directe, sauf le dossier d'un autre agent.
+
+## En cours de route — tenir le carnet
+
+Ce skill se charge aussi **au démarrage** et **avant chaque étape**, pas
+seulement à la fin : un carnet écrit après coup ne sert pas à reprendre.
+
+- **Au démarrage** (§10, étape 0) : chercher ses carnets en cours.
+
+  ```bash
+  principal=$(git worktree list --porcelain | sed -n '1s/^worktree //p')
+  git worktree list --porcelain | sed -n 's/^worktree //p' \
+    | while IFS= read -r arbre; do
+        grep -rl --include='*.md' -e '^statut: en cours' "$arbre/mémoire/projets"
+      done | xargs -r -d '\n' grep -l '^agent: <nom-agent>'
+  grep -rl --include='*.md' -e '^statut: en cours' "$principal/../-PROJETS" \
+    | xargs -r -d '\n' grep -l '^agent: <nom-agent>'
+  ```
+
+  Le coffre parent s'atteint depuis l'**arbre principal**, jamais depuis
+  `..` : un worktree vit ailleurs. Si `"$principal/../-PROJETS"` n'existe
+  pas, le dire — une recherche vide n'est pas « aucun carnet ».
+  Le carnet d'un chantier du coffre vit dans le **worktree** du chantier
+  (§2.1) : chercher dans l'arbre principal seul ne le trouve pas. Et un
+  worktree peut disparaître — un dossier temporaire vidé au redémarrage — :
+  **commiter le carnet à chaque étape**, c'est ce qui le fait survivre.
+
+  Pour chacun, rapprocher le carnet de l'état réel — `git status`,
+  `git worktree list`, existence des fichiers et worktrees cités. Dire à
+  l'utilisateur ce qui concorde et ce qui diffère. S'il y en a plusieurs, les
+  lister : **l'utilisateur choisit**, l'agent ne reprend pas d'office.
+- **Avant chaque étape** : écrire `## Étape en cours` — ce qu'on va faire,
+  sur quels fichiers. Puis agir.
+- **Après une action à effet externe** : une ligne horodatée sous `## Fait`.

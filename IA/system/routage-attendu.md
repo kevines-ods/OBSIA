@@ -74,6 +74,8 @@ descriptions et tranche.
 | « je veux écrire un nouveau skill pour le coffre » | createur-de-skill | 3 | — |
 | « relis ce diff et dis-moi ce qui cloche avant que je fusionne » | revue-de-code | 3 | — |
 | « cette décision d'architecture me paraît risquée, cherche ce qui la ferait tomber » | relecture-adverse | 3 | — |
+| « aide-moi à fixer la finalité de mon projet et où il pourrait aller » | extrapolation-des-finalites | 3 | — |
+| « est-ce que ce changement va dans le sens de la finalité du projet ? » | controle-de-cap | 3 | revue-de-code |
 | « combien de ressources restent sur l'hôte de virtualisation ? » | proxmox | 3 | — |
 | « crée-moi un nouveau conteneur LXC et fais-le démarrer tout seul avec l'hôte » | administration-proxmox | 3 | — |
 | « je n'ai reçu aucune alerte Telegram alors que la sauvegarde n'a pas tourné » | surveillance-et-alertes | 3 | — |

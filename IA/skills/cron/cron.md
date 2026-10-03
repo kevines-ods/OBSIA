@@ -105,7 +105,9 @@ deux : un doublon déclenche deux fois, et rien ne le signale.
 
 ### 2. Créer la tâche — patch Git
 
-`IA/tâches/<nom>.md`, frontmatter conforme au §5 :
+`IA/tâches/<nom>.md`, frontmatter conforme au §5 du contrat — le détail des
+champs d'une tâche est dans l'annexe
+`../../system/contrat/contrat-frontmatter.md` :
 
 ```yaml
 ---
@@ -239,7 +241,7 @@ un doublon : c'est la réconciliation elle-même qui casse alors la règle.
 
 Afficher le tableau des écarts **avant** d'agir : c'est une action
 multi-fichiers, le preview du §2 s'applique. Consigner ensuite les gestes
-effectués dans le log de session (§9).
+effectués au carnet — du chantier, ou du jour hors chantier — (§9).
 
 ## Syntaxe de `quand`
 

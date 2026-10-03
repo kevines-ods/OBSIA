@@ -125,7 +125,7 @@ Ce sont quatre contrôles, pas un audit. Un audit complet relève de
 ## Contraintes
 
 Le MCP `chrome-devtools` est en `permission: elevated` — il lance un
-navigateur et atteint le réseau. Son usage se consigne dans le log de session,
+navigateur et atteint le réseau. Son usage se consigne au carnet — du chantier, ou du jour hors chantier —,
 comme tout appel de MCP (§9), sans URL interne ni identifiant : le dépôt est
 public.
 

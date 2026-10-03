@@ -8,7 +8,7 @@ essentiel: true
 
 ## Ce que ce module apporte
 
-L'agent `assistant` et les compétences sans lesquelles le coffre ne fonctionne
+Les agents `assistant` et `visionnaire`, et les compétences sans lesquelles le coffre ne fonctionne
 pas : décider où chercher, retrouver ce qui existe, écrire en mémoire, créer un
 skill, clore une séance.
 
@@ -23,3 +23,8 @@ qu'une extension de son périmètre, pas sa raison d'être.
 `configuration-mcp` est ici aussi : dès qu'un module apporte un MCP, il faut
 savoir le brancher. Le placer dans un module optionnel ferait dépendre le
 branchement du hasard de l'installation.
+
+`visionnaire` est ici et non dans un module optionnel : `assistant` et
+`batisseur` le rappellent à chaque moment clé, et un rappel vers un agent
+absent tomberait dans le vide. Il garde la finalité de tout projet, pas
+seulement des projets de code.

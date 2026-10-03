@@ -117,11 +117,23 @@ def lire_note(chemin: str) -> dict:
             titre = re.sub(r"^\d{4}-\d{2}-\d{2}\s*[—–-]\s*", "", ligne[2:].strip())
             break
 
+    # Le frontmatter n'est pas du texte : on l'écarte, et son `statut:` (§6,
+    # carnets) fait foi sur une ligne de statut écrite dans le corps.
+    statut_fm = ""
+    if lignes and lignes[0].strip() == "---":
+        for i, ligne in enumerate(lignes[1:], 1):
+            if ligne.strip() == "---":
+                for l in lignes[1:i]:
+                    if l.startswith("statut:"):
+                        statut_fm = l.split(":", 1)[1].strip()
+                lignes = lignes[i + 1:]
+                break
+
     preambule, sections = decouper_sections(lignes)
     par_titre = dict(sections)
 
-    statut = "—"
-    for ligne in par_titre.get("statut", []):
+    statut = statut_fm or "—"
+    for ligne in ([] if statut_fm else par_titre.get("statut", [])):
         if est_prose(ligne):
             statut = tronquer(nettoyer(ligne), 60)
             break

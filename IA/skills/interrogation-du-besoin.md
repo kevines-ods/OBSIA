@@ -54,6 +54,12 @@ Compter les questions : **en dessous de huit, on n'a pas creusé**. Au delà de
 la vingtaine sans convergence, le projet est trop gros — le dire, et proposer
 d'en cadrer une partie.
 
+**Exception — la voie rapide.** Pour un petit outil qui suit la voie rapide du
+`batisseur`, ce plancher ne s'applique pas : **une seule question** suffit, la
+plus tranchante, avec sa recommandation et le coût de l'autre choix. La
+reformulation de cinq lignes et son silence valent toujours ; la descente
+entière, non.
+
 ## Ce qu'on ne demande pas ici
 
 - Une technologie, un langage, un hébergeur : c'est `choix-de-la-stack`.

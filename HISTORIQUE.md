@@ -145,5 +145,41 @@ C'est ce qu'établit `VAULT-CONTRACT.md` §1, qui fait foi.
 
 ## Le projet « système d'exploitation »
 
-Écarté. OBSIA est un **système d'orchestration agentic**, jamais un système
+Écarté. OBSIA est un **système d'orchestration agentic** (le coffre la décrit,
+il ne l'exécute pas — cf. 2 octobre 2026, ci-dessous), jamais un système
 d'exploitation. Toute formulation en ce sens est une erreur à corriger.
+
+---
+
+## Les équipes d'agents appartiennent au harness (2 octobre 2026)
+
+L'intention d'origine annonçait, dans `IA/system/prompt-fondateur.md`, « des
+chats avec un agent spécifique mais aussi avec des équipes d'agents ». Le dépôt
+s'est construit sans jamais écrire cette partie : il déclare des agents, leurs
+rôles, leurs skills et leurs bornes, et laisse à chaque harness le soin de les
+faire travailler ensemble. Le choix a donc été fait en le faisant ; il est
+désormais écrit.
+
+La composition d'une équipe — qui la mène, dans quel ordre, qui relit qui — reste
+au **harness**. Le coffre fournit ce qu'un harness a besoin de lire pour la
+composer, et les règles de coexistence de plusieurs agents sur un même dépôt
+vivent dans `IA/system/travail-en-parallele.md` (le §2.1 du contrat mis en
+commandes).
+
+L'accroche de `README.md` et de `README.fr.md` disait « système d'orchestration
+d'agents » : un lecteur pouvait y comprendre qu'OBSIA fait tourner les équipes.
+Elle a été reformulée. L'entrée « système d'exploitation » ci-dessus reste vraie
+en son sens : le coffre **décrit** l'orchestration — qui fait quoi, dans quel
+ordre, avec quelles bornes — il ne l'exécute pas.
+
+### Ce qu'il ne faut pas reconstruire
+
+- **Un ordonnanceur dans le cœur** : ni format d'équipe, ni chef déclaré, ni
+  exécuteur. Un protocole que seul un harness peut honorer n'orchestre rien ; un
+  exécuteur livré par OBSIA serait un harness de plus, et la reprise cesserait
+  d'être indépendante du harness (P4 de la vision).
+- **« Système d'orchestration » comme description publique du dépôt** : le coffre
+  décrit *quoi* faire, le harness fournit *avec quoi*.
+- Rien à défaire du reste : les rôles, les skills et les bornes des agents
+  **restent** dans le coffre. C'est ce qui permet à n'importe quel harness de
+  composer une équipe, et ce qui revient intact quand on change de harness.

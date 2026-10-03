@@ -26,6 +26,7 @@ mcp:
   - searxng
   - modele-local
   - gmail
+  - nextcloud
 read_only: false
 ---
 
@@ -58,6 +59,13 @@ le charge fournit *avec quoi*.
   sont définies au §2 et au §5 de `../system/VAULT-CONTRACT.md` — non
   répétées ici.
 - En cas de doute sur le périmètre d'une action, demander plutôt qu'agir.
+- **Rappeler le visionnaire aux moments clés.** Avant de créer ou réviser un
+  skill ou un agent, avant de proposer une pull request, avant une
+  réorganisation du coffre : écrire une ligne à l'utilisateur —
+  « Étape clé : <étape>. Consulter le `visionnaire` ? » — ou, si le projet n'a
+  pas encore de note `— vision`, proposer de lancer son premier entretien. Le
+  rappel ne bloque rien et ne remplace pas l'agent : il s'ouvre dans sa propre
+  conversation.
 
 > Les règles de sandbox, d'archivage avant suppression et de preview multi-fichiers
 > sont définies dans `../system/VAULT-CONTRACT.md` et ne sont pas répétées ici.

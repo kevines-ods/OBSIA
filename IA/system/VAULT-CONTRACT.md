@@ -2,7 +2,8 @@
 schema: 1
 kind: contract
 name: vault-contract
-description: Règles communes à tous les agents et skills du coffre OBSIA. Source unique de vérité.
+description: Règles communes à tous les agents et skills du coffre OBSIA — le noyau, toujours chargé. Source unique de vérité.
+module: noyau
 ---
 
 # Contrat du coffre — OBSIA
@@ -12,7 +13,23 @@ et tous les skills. Un fichier agent ou skill ne redéfinit jamais ces règles :
 il les référence. En cas de contradiction entre ce contrat et un autre fichier,
 **ce contrat fait foi**.
 
-Emplacement attendu : `IA/system/VAULT-CONTRACT.md`, depuis la racine du dépôt.
+Le contrat, c'est ce fichier — le **noyau**, toujours chargé — et ses annexes
+(`IA/system/contrat/`). Toute règle qu'on peut enfreindre sans avoir rien
+chargé est ici ; une annexe n'en porte que le pourquoi, les exemples et les
+procédures, et n'ajoute aucune règle. En cas de contradiction, ce fichier fait
+foi et l'annexe est à corriger. **Modifier une règle ici, c'est reporter la
+modification dans son annexe dans la même PR.** La correspondance avec le
+contrat d'avant le découpage : `IA/system/contrat/registre.md` (document de
+travail, non normatif).
+
+| Annexe | À lire avant de… |
+| --- | --- |
+| `contrat/contrat-frontmatter.md` | écrire ou modifier un agent, un skill, un MCP, une tâche, un module ou un fichier du contrat |
+| `contrat/contrat-memoire.md` | créer, renommer ou déplacer un projet, un carnet ou une note durable ; changer la forme d'un skill |
+| `contrat/contrat-coffre-parent.md` | écrire dans le coffre parent hors d'`-EN-VRAC/` |
+| `contrat/contrat-verification.md` | toucher un script de vérification ou un fichier généré ; relâcher une attente de routage ; travailler sur un clone neuf |
+| `contrat/contrat-taches.md` | créer, modifier ou suspendre une tâche ; en instancier ou retirer une instance |
+| `contrat/contrat-distribution.md` | installer, publier, synchroniser ; toucher `installer.py` ou `publier.py` ; écrire un module ou une sonde ; écrire un skill qui charge le skill d'un autre module ; citer dans un fichier publié un chemin vers une zone non publiée |
 
 ---
 
@@ -26,103 +43,60 @@ Emplacement attendu : `IA/system/VAULT-CONTRACT.md`, depuis la racine du dépôt
 | **tâche** | une action planifiée | `IA/tâches/` | dit quoi déclencher, quand, pour quel agent ; ne décide pas |
 
 Un agent **utilise** des skills. Un skill n'est jamais un agent. Une tâche
-n'est ni l'un ni l'autre : elle *déclenche* un agent, qui charge ensuite les
-skills dont il a besoin.
+*déclenche* un agent, qui charge ensuite les skills dont il a besoin.
+**`obsidian-manager` est un SKILL** : toute formulation suggérant qu'un skill
+est un agent est une erreur à corriger.
 
-Piège historique à ne pas reproduire : **`obsidian-manager` est un SKILL** ; il a
-longtemps été pris pour un agent qui n'a jamais existé en tant que fichier.
-Toute formulation suggérant qu'un skill est un agent est une erreur à corriger,
-pas une convention à suivre.
-
-**Un agent n'est nommé que s'il a son fichier dans `IA/agents/`.** Lesquels
-existent, c'est `agents-index.md` qui le dit — pas ce contrat, qui vieillirait
-à chaque agent ajouté. Aucun autre nom n'apparaît nulle part : ni dans un
-skill, ni dans un exemple, ni dans un diagramme, ni dans une note. Nommer un
-agent avant qu'il existe le fait exister dans les têtes, et c'est ainsi qu'un
-agent fantôme s'installe. La règle vaut aussi pour les noms cités en exemple :
-prendre un nom de skill, jamais un nom d'agent imaginaire.
-`scripts/verifier_coffre.py` la contrôle.
-
-Le coffre n'a longtemps porté qu'un agent, et cette règle s'écrivait « un seul
-agent peut être nommé ». La formulation confondait l'interdiction — les agents
-fantômes — avec un plafond qui n'a jamais été l'intention.
-
-Les tournures `agent 1`, `agent 2` restent employées ailleurs dans ce contrat :
-ce ne sont pas des noms d'agents mais des **contre-exemples de nommage de
-dossier**, et elles ne désignent personne.
-
----
+**Un agent n'est nommé que s'il a son fichier dans `IA/agents/`**
+(`agents-index.md` dit lesquels existent). Aucun autre nom n'apparaît nulle
+part — skill, exemple, diagramme, note. Pour un exemple, prendre un nom de
+skill, jamais un nom d'agent imaginaire. `scripts/verifier_coffre.py` le
+contrôle.
 
 ## 2. Écriture dans le coffre
 
 - Le coffre est en **lecture seule pour les agents** dont `read_only: true`.
-- Un agent `read_only: false` peut écrire **directement, sans patch**, dans
-  trois zones seulement :
-  - `brouillon/` — sans restriction ;
-  - `mémoire/`, **sauf le dossier d'un autre agent** : la mémoire partagée
-    (`profil-utilisateur.md`, `préférences/`, `projets/`) est ouverte à tous
-    les agents ; `mémoire/<nom-agent>/` n'appartient qu'à l'agent qui le
-    porte. Le détail de qui écrit quoi et où vit au §6 ;
-  - `IA/skills/` — uniquement s'il déclare le skill `createur-de-skill` dans
-    son frontmatter.
-- Tout le reste du coffre (`IA/agents/`, `IA/system/`, `IA/tâches/`, la
-  structure du dépôt) reste protégé : toute modification durable y passe par un
-  **patch Git** soumis à revue humaine. Les interventions hors du coffre
-  relèvent du §3.
-- Aucune suppression sans archivage préalable dans `.archive/`, y compris dans
-  une zone en écriture directe. Ce dossier est **versionné** : ignoré par Git,
-  il ne survivrait pas à un clone neuf et la règle ne promettrait rien. Rien
-  n'y est lu ni indexé — les dossiers commençant par un point sont écartés
-  partout.
+- Un agent `read_only: false` écrit **directement, sans patch**, dans trois
+  zones seulement : `brouillon/` ; `mémoire/` **sauf le dossier d'un autre
+  agent** ; `IA/skills/` s'il déclare le skill `createur-de-skill`.
+- Tout le reste du dépôt (`IA/agents/`, `IA/system/`, `IA/tâches/`, la
+  structure) passe par un **patch Git** soumis à revue humaine.
+- **Aucune suppression sans archivage préalable dans `.archive/`**, zones
+  directes comprises. `.archive/` reste **versionné** (jamais ignoré par Git) ;
+  rien n'y est lu ni indexé — les dossiers commençant par un point sont
+  écartés partout.
 - Toute action touchant plusieurs fichiers exige un **preview** affiché avant
-  exécution, listant les chemins concernés — que l'écriture soit directe ou
-  passe par patch.
-- Les **fichiers générés** ne sont jamais édités à la main ni par un agent,
-  même dans une zone en écriture directe : `sommaire.md`, `agents-index.md`,
-  `skills-index.md`, `taches-index.md` et `IA/README.md` sont régénérés par les
-  scripts du §11,
-  qui donne la liste complète et la commande.
-- Ces trois zones sont les seules **du dépôt**. Hors du dépôt, les écritures
-  dans le coffre parent suivent le §7 : zones d'écriture (7.3), preview et
-  registre consignés dans `_MAINTENANCE/` (7.4).
+  exécution, listant les chemins — écriture directe ou patch.
+- Les **fichiers générés** ne s'éditent jamais à la main ni par un agent :
+  `sommaire.md`, `agents-index.md`, `skills-index.md`, `taches-index.md`,
+  `modules-index.md`, `IA/README.md`.
+- Hors du dépôt : un dépôt extérieur suit le §3, le coffre parent le §7.
 
 ### 2.1 Plusieurs agents, un seul dépôt
 
-Plusieurs agents travaillent **en même temps** sur ce dépôt, chacun dans sa
-conversation. L'arbre de travail principal est donc une ressource commune :
-une séance qui y change de branche déplace celle d'une autre entre deux de ses
-commandes, et un commit atterrit sur la mauvaise branche sans que rien ne le
-signale. Trois règles en découlent :
-
-- **Jamais de commit dans l'arbre principal.** Il reste sur la branche par
+- **Jamais de commit dans l'arbre principal** : il reste sur la branche par
   défaut et ne fait que se mettre à jour ; tout travail se fait dans un
-  *worktree* lié, propre à la séance.
+  *worktree* lié, propre à la séance, **jamais sous `/tmp`**.
 - **Une branche porte le nom de son agent** : `<nom-agent>/<sujet>`. La branche
-  et le worktree d'un autre agent ne se touchent pas — on le signale à
-  l'utilisateur.
-- **On se resynchronise avant de pousser** : branche reprise sur la branche
-  par défaut distante, fichiers générés régénérés, vérifications passées.
+  et le worktree d'un autre agent ne se touchent pas — on le signale.
+- **Une PR s'ouvre sur la branche par défaut**, jamais sur la branche d'une
+  autre PR.
+- **On se resynchronise avant de pousser** : reprise sur la branche par défaut
+  distante, fichiers générés régénérés, vérifications passées.
 
-Le crochet de pré-commit fait respecter les deux premières sur une machine qui
-l'active. Les commandes, la publication et le ménage :
-`IA/system/travail-en-parallele.md`.
+Les commandes : `IA/system/travail-en-parallele.md`.
 
 ## 3. Périmètre hors du coffre
 
-Ce coffre ne dépend d'aucun harness et n'en connaît aucun : il décrit *quoi*
-faire, le harness fournit *avec quoi*. Aucune base de code extérieure n'est
-nommée ici, et aucun agent n'en a le monopole.
-
-Quand un agent dont le frontmatter porte `read_only: false` intervient sur un
-dépôt extérieur (interface, outillage, infrastructure), les règles suivantes
-s'appliquent — elles ne dépendent ni du langage ni du projet :
+Le coffre ne dépend d'aucun harness et n'en nomme aucun, ni aucune base de
+code extérieure : il décrit *quoi* faire, le harness fournit *avec quoi*.
+Quand un agent `read_only: false` intervient sur un dépôt extérieur :
 
 - Toute modification passe par un **patch Git revu** — jamais de commit direct
   sur la branche par défaut.
-- Les vérifications du projet visé (compilation, analyse statique, tests)
-  passent **avant** de proposer le patch.
-- **Jamais de secret** (clé API, jeton) dans le code : variables
-  d'environnement ou configuration hors dépôt uniquement.
+- Les vérifications du projet visé passent **avant** de proposer le patch.
+- **Jamais de secret** dans le code : variables d'environnement ou
+  configuration hors dépôt uniquement.
 - Ajouter une fonctionnalité = d'abord un **skill** documenté dans
   `IA/skills/`, puis l'implémentation.
 
@@ -134,499 +108,240 @@ s'appliquent — elles ne dépendent ni du langage ni du projet :
 
 ## 5. Frontmatter — format obligatoire
 
-Tout fichier agent ou skill commence par un frontmatter YAML valide.
+Tout agent, skill, MCP, tâche, module et fichier du contrat commence par un
+frontmatter YAML valide. Champs communs : `schema` (`1`), `kind`, `name`,
+`description` (une ligne), `read_only`, `module` (le module du §13 ; un fichier
+sans module est refusé). **Exceptions** : un MCP n'a ni `read_only` ni
+`skills` ; une tâche n'a pas de `read_only` ; un fichier du contrat
+(`kind: contract`) n'a pas de `read_only`.
 
-**Champs communs**
-
-| Champ | Type | Obligatoire | Notes |
-| --- | --- | --- | --- |
-| `schema` | entier | oui | version du format. Actuellement `1`. |
-| `kind` | `agent` \| `skill` \| `mcp` \| `tâche` \| `contract` | oui | permet de valider le type sans se fier au dossier |
-| `name` | texte | oui | minuscules, tirets, **sans espaces**. Identique au nom du fichier. |
-| `description` | texte | oui | une ligne. Réutilisée par le générateur de sommaires. |
-| `read_only` | booléen | oui | cf. sémantique ci-dessous |
-| `module` | texte | oui | le module du §13 auquel ce fichier appartient. Un fichier sans module est inclassable à l'installation. |
-
-**Sémantique de `read_only`**
-
-| Valeur | Signification |
-| --- | --- |
-| `true` | **Lecture seule absolue** : aucune écriture nulle part (ni coffre, ni hors coffre, même via patch). |
-| `false` | **Écriture directe** dans `brouillon/`, `mémoire/` sauf le dossier d'un autre agent, et `IA/skills/` si `createur-de-skill` est déclaré (détail au §2), ainsi que dans les zones du coffre parent que le §7 ouvre (7.3) ; écriture hors coffre autorisée (§3) ; le reste du coffre passe par patch Git revu. |
-
-**Champs propres aux agents**
-
-| Champ | Type | Notes |
-| --- | --- | --- |
-| `skills` | liste | une entrée par ligne, tirets YAML |
-| `mcp` | liste | idem |
-
-**Champs propres aux skills**
-
-| Champ | Type | Notes |
-| --- | --- | --- |
-| `type` | `core` \| `outil` | `core` = indispensable au fonctionnement du coffre |
-
-**Emplacement d'un agent ou d'un skill**
-
-Un agent vit dans `IA/agents/<nom>.md`. Un skill prend deux formes — plate
-(`IA/skills/<nom>.md`) ou dossier (`IA/skills/<nom>/<nom>.md`, flanqué de
-`references/`, `scripts/` et `assets/`). Dans les deux cas, le point d'entrée
-porte **le nom du skill**, jamais `SKILL.md` : le `name` vaut le nom du
-fichier, et le §6 impose l'unicité des noms de notes dans le coffre parent —
-une douzaine de `SKILL.md` la violerait. Seul `references/` contient des
-notes ; `scripts/` et `assets/` sont écartés du balayage des noms.
-
-Quand passer d'une forme à l'autre, ce que chaque sous-dossier accueille et
-comment citer une référence depuis le corps : `createur-de-skill`
-(`IA/skills/createur-de-skill.md`).
-
-**Une information vit à un seul endroit.** Écrite deux fois — dans ce contrat
-et dans un skill, dans un corps et dans sa référence — elle diverge, et rien ne
-le signale. C'est cette règle qui décide de ce qui entre ici : une **règle**
-qu'un agent peut violer sans avoir rien chargé, jamais une **procédure** qui ne
-s'applique qu'en faisant la chose.
-
-**Champs propres aux MCP**
-
-Un fichier de `IA/MCP/` décrit un outil, pas un interlocuteur : il n'a ni
-`read_only` (il n'écrit rien par lui-même, c'est l'agent qui l'appelle) ni
-`skills`. Le détail de son frontmatter — `type`, `transport`, et les valeurs
-admises — vit dans `createur-de-skill` (`IA/skills/createur-de-skill.md`), avec
-le reste de ce qu'on écrit en rédigeant une fiche. Deux règles restent ici :
-
-- `permission: elevated` **dès qu'un système externe est touché** : réseau,
-  dépôt distant, navigateur. `normal` gradue la prudence *avant* l'appel ; il
-  ne dispense jamais de consigner l'usage *après* (§9).
-- **Un MCP n'est utilisable que déclaré par un agent** (§10.2). Un fichier de
-  `IA/MCP/` que personne ne déclare est du code mort : le vérificateur le
-  signale.
-- **Une fiche MCP porte son `module`** (§13), comme tout ce qui se déclare :
-  sans lui, l'installeur ne saurait ni la retenir ni l'écarter.
-
-**Champs propres aux tâches**
-
-Un fichier de `IA/tâches/` décrit une action planifiée. Il n'a pas de
-`read_only` : une tâche n'écrit rien par elle-même — c'est l'agent ou la
-commande qu'elle déclenche qui agit, sous ses propres règles.
-
-| Champ | Type | Obligatoire | Notes |
-| --- | --- | --- | --- |
-| `schema` | entier | oui | comme partout, actuellement `1` |
-| `kind` | `tâche` | oui | |
-| `name` | texte | oui | identique au nom du fichier |
-| `description` | texte | oui | une ligne |
-| `module` | texte | oui | comme partout — le module du §13 |
-| `mode` | `agent` \| `commande` | oui | `agent` : une instruction part vers un agent, il faut donc un harness. `commande` : une commande shell, qui tourne sans modèle. |
-| `quand` | texte **entre guillemets** | oui | cron à 5 champs — `"0 9 * * 1"`. Les guillemets ne sont pas décoratifs : `*/15 * * * *` non quoté est une ancre YAML invalide, et tout lecteur YAML réel refuse le fichier. |
-| `fuseau` | texte | oui | `Europe/Paris`, `UTC`… Un cron sans fuseau est ambigu, et les planificateurs distants raisonnent en UTC. |
-| `exécutant` | `local` \| `harness` | oui | **qui a le droit de la déclencher** — `local` : la machine (timer systemd, cron) ; `harness` : le planificateur du harness, quand il en a un. Ce n'est pas un état mais une contrainte : une tâche qui touche des fichiers locaux ne peut pas être `harness`, une tâche qui doit partir machine éteinte ne peut pas être `local`. |
-| `agent` | texte | si `mode: agent` | nom d'un agent existant (§1) |
-| `actif` | booléen | oui | `false` = déclarée mais non instanciée |
-
-Le corps du fichier porte ce que le frontmatter ne peut pas contenir : une
-section `## Instruction` en `mode: agent`, `## Commande` en `mode: commande`.
-Elle est obligatoire et contrôlée — une tâche sans elle ne déclenche rien.
-
-**Règles de syntaxe**
-
-- Les listes s'écrivent en YAML, une entrée par ligne précédée d'un tiret.
-  Jamais `skills: a, b` — ça vaut une chaîne de caractères, pas une liste.
-- Les clés utilisent l'underscore (`read_only`), pas le tiret.
-- Les noms (fichier, `name`) sont en minuscules avec tirets, **sans espaces**.
-  Les accents sont autorisés (`sauvegardes-chiffrées`, `diagnostic-réseau`).
-- Un champ déclaré dans le frontmatter n'est **pas** répété dans le corps du
-  fichier : le frontmatter est la vérité machine.
-
-## 6. Nommage, rétroliens et mémoire
-
-- Le coffre est la **racine du dépôt** (`OBSIA/`) : il n'y a pas de sous-dossier
-  intermédiaire. Tous les chemins de ce contrat partent de cette racine.
-- Le dépôt est destiné à être cloné **dans** un coffre Obsidian préexistant,
-  appelé ici *coffre parent* (non versionné). Les rétroliens Obsidian se
-  résolvent à l'échelle de ce coffre parent, **pas** de `OBSIA/`.
-- Conséquence : les noms de notes doivent être **uniques dans tout le coffre
-  parent**, pas seulement dans `OBSIA/`.
-- Les liens vers ce contrat s'écrivent en chemin relatif, et la profondeur
-  dépend de la forme du skill (§5) :
+- `read_only: true` = **aucune écriture nulle part**, même via patch.
+- `name` = le nom du fichier, en minuscules avec tirets, **sans espaces**
+  (accents permis). Un skill vit en `IA/skills/<nom>.md` ou
+  `IA/skills/<nom>/<nom>.md` — **jamais `SKILL.md`** ; seul `references/`
+  contient des notes. Un agent ou un skill cite le contrat **en chemin
+  relatif**, dont la profondeur dépend de sa forme :
 
   ```
   depuis IA/agents/ ou IA/skills/          ../system/VAULT-CONTRACT.md
   depuis IA/skills/<nom>/ (forme dossier)  ../../system/VAULT-CONTRACT.md
   ```
+- Les listes YAML s'écrivent **une entrée par ligne** (jamais `skills: a, b`) ;
+  les clés prennent l'underscore (`read_only`) ; un champ du frontmatter n'est
+  **pas répété** dans le corps.
+- MCP : `permission: elevated` **dès qu'un système externe est touché**
+  (réseau, dépôt distant, navigateur). Un MCP n'est utilisable que **déclaré
+  par un agent**.
+- Tâche : `quand` **entre guillemets** (cron à 5 champs), `fuseau` obligatoire,
+  `exécutant` (`local` | `harness`) dit qui a le droit de la déclencher,
+  le champ `agent:` quand le mode est `agent`, et une section `## Instruction` ou `## Commande`
+  obligatoire.
 
-  Passer un skill d'une forme à l'autre casse donc ses liens.
-  `scripts/verifier_coffre.py` résout tout chemin relatif cité — entre accents
-  graves comme en lien Markdown — depuis le fichier qui le cite, et refuse
-  celui qui ne mène nulle part. Les chemins du coffre parent (§7) en sont
-  exclus : ils désignent des dossiers hors du dépôt.
-- **Structure de la mémoire.** La mémoire se partage sur un seul axe : **ce
-  que la note décrit**. Ce qui décrit l'utilisateur ou un chantier est commun
-  à tous les agents et vit à la racine ; ce qu'un agent a appris en
-  travaillant reste chez lui.
+**Une information vit à un seul endroit.** Une **règle** qu'un agent peut
+violer sans avoir rien chargé vit dans ce contrat ; une **procédure** qui ne
+s'applique qu'en faisant la chose vit dans un skill.
+
+## 6. Nommage, rétroliens et mémoire
+
+- Les noms de notes sont **uniques dans tout le coffre parent**, pas seulement
+  dans `OBSIA/`. Le nom d'une note dit son sujet (pas `notes.md`). Un dossier
+  d'agent porte le nom de l'agent, un projet le nom du chantier — jamais
+  `agent 1` ni `projets 1`.
+- La mémoire se partage sur un seul axe, **ce que la note décrit** :
 
   ```
   mémoire/
   ├── profil-utilisateur.md              faits stables sur l'utilisateur et sa machine
   ├── préférences/<sujet>.md             goûts et règles de conduite transversaux
-  ├── projets/<nom-projet>/AAAA-MM-JJ-titre.md   avancement daté d'un chantier
+  ├── projets/<projet>/                  un projet du coffre
+  │   ├── <projet> — résumé.md           état vivant, mis à jour sur place
+  │   ├── <projet> — vision.md           finalité — visionnaire seul (§7.3)
+  │   ├── carnets/AAAA-MM-JJ-<projet>-<sujet>.md  un carnet par chantier
+  │   ├── documents/                     cadrages, schémas, plans hors dépôt de code
+  │   ├── <sous-projet>/                 un seul niveau, même structure, sans vision
+  │   └── archives/                      carnets clos
   └── <nom-agent>/
       └── expériences/<sujet>.md         leçons réutilisables, tirées d'un cas réel
   ```
-
-  L'espace d'un agent porte son nom — jamais `agent 1`, `agent 2`. Les noms de
-  projet sont explicites — jamais `projets 1`, `projets 2` — et disent le
-  chantier, pas qui l'a mené : `construction-du-batisseur`, pas
-  `agent-batisseur`, qu'on lirait comme l'espace mémoire d'un agent.
-
-- **Où écrire, selon la nature de l'information** :
 
   | Ce qu'on a appris | Destination | Commun ? |
   | --- | --- | --- |
   | un fait stable sur l'utilisateur, son poste, son infrastructure | `mémoire/profil-utilisateur.md`, **mis à jour sur place** | oui |
   | un goût ou une règle qui vaudra pour d'autres projets | `mémoire/préférences/<sujet>.md` | oui |
-  | une décision ou un avancement sur un chantier **du coffre** | `mémoire/projets/<nom-projet>/AAAA-MM-JJ-titre.md` | oui |
+  | l'état d'un projet **du coffre** | `mémoire/projets/<projet>/<projet> — résumé.md`, **mis à jour sur place** | oui |
+  | une demande, un plan, une étape, une action sur un chantier du coffre | `mémoire/projets/<projet>/carnets/AAAA-MM-JJ-<projet>-<sujet>.md` | oui |
   | une leçon tirée d'un échec ou d'une manœuvre qui a marché | `mémoire/<nom-agent>/expériences/<sujet>.md` | non — chez l'agent |
 
-  Les deux premières ne sont **pas datées** : une préférence qui change se
-  corrige, elle ne s'empile pas. `expériences/` ne l'est pas non plus. Seules
-  les notes de projet portent une date, parce qu'elles racontent une
-  chronologie.
-
-  Dans le doute, écrire dans le projet : une note de projet peut être distillée
-  plus tard vers `préférences/` ou `expériences/`, l'inverse fait perdre le
-  contexte.
-
-- **`mémoire/projets/` ne porte que les chantiers du coffre.** Le dépôt est
-  public (§4) : un projet de l'utilisateur n'y a pas sa place, et sa note de
-  suivi vit dans `Mon coffre/-PROJETS/` — privé, non versionné. Le partage
-  exact est au §7.3.1.
-
-- **Rien de ce qui décrit l'utilisateur ne vit chez un agent.**
-  `profil-utilisateur.md` décrit la personne, `préférences/` décrit ses règles :
-  ni l'un ni l'autre n'appartient à l'agent qui les a écrits. Les ranger chez
-  un agent obligeait les autres à passer par patch pour corriger un fait sur
-  leur propre utilisateur — une exception dont la racine dispense. Tout agent
-  `read_only: false` les corrige **directement, sur place** (§2).
-
-  Un projet ne vit pas chez un agent non plus, et pour une raison qu'on ne
-  voit qu'après coup : un chantier ouvert par un agent et repris par un autre
-  aurait vu son histoire coupée en deux dossiers, sans que rien ne le signale.
-  Ce qu'un agent apprend sur **sa propre manière de travailler** reste, lui,
-  dans son `expériences/` : c'est la seule chose qui lui appartienne vraiment.
-
-- **Un agent `read_only: true` n'a pas d'espace mémoire.** Le §5 lui interdit
-  toute écriture, y compris par patch : il n'a donc pas de dossier sous
-  `mémoire/`, et rien à y régénérer. Il **lit** en revanche toute la mémoire
-  commune — profil, préférences, projets — comme n'importe quel agent. Ses
-  constats, eux, vivent le temps de la conversation, et c'est à l'agent qui
-  reprend le travail d'en écrire la leçon. La contrepartie est réelle et
-  s'assume : un constat non repris est un constat perdu.
-
-- Une note durable n'est utile que si elle est **retrouvée** : son nom dit son
-  sujet (`licences-et-logiciel-libre.md`, pas `notes.md`) et respecte la règle
-  d'unicité ci-dessus.
+  Seuls les carnets portent une date. Dans le doute, écrire dans le carnet.
+- **`mémoire/projets/` ne porte que les chantiers du coffre** ; un projet de
+  l'utilisateur vit dans `Mon coffre/-PROJETS/` (§7.3.1).
+- **Un projet du coffre passe par une PR, demande comprise** : sa note d'état,
+  sa vision et ses carnets entrent par la même PR que la modification, relue
+  par l'utilisateur, le `visionnaire` (cap) et le `contradicteur` (relecture)
+  pour un changement qui touche la base.
+- **Le carnet** : un par chantier, frontmatter `agent:`, `projet:`,
+  `statut: en cours | en attente | clos`. Il porte la demande, le plan,
+  l'**étape en cours écrite avant d'agir**, les actions horodatées (§9), les
+  worktrees et branches, les questions en attente. Un chantier transverse
+  écrit dans le carnet du projet `obsia`, sauf ce qui décrit un projet de
+  l'utilisateur (carnet de ce projet dans `-PROJETS/`).
+- **Une séance sans chantier** écrit dans le **carnet du jour** du projet de
+  domaine qui la porte (`obsia`, ou `-PROJETS/<domaine>/`), sans créer de
+  chantier. Un agent `read_only: true` n'écrit aucun carnet : l'agent qui
+  reprend son travail consigne ses constats et ses appels.
+- **Reprise** : au démarrage, chercher — dans l'arbre principal **et dans
+  chaque worktree lié** — ses carnets `statut: en cours` (par nom d'agent,
+  jamais de harness), les rapprocher de l'état réel (`git status`,
+  `git worktree list`, fichiers cités) avant de proposer de reprendre ; s'il y
+  en a plusieurs, l'utilisateur choisit. Procédure : `cloture-de-session`.
+- **Le carnet se commite à chaque étape** : seul ce qui est commité survit à
+  la coupure.
+- **Clôture** : le `— résumé` devient un bilan avec une section « État » ; les
+  carnets passent `statut: clos` et rejoignent `archives/` ; le durable remonte
+  vers `préférences/` ou `expériences/`.
+- **Rien de ce qui décrit l'utilisateur ne vit chez un agent** : profil et
+  préférences sont communs, et tout agent `read_only: false` les corrige
+  **directement, sur place**. Un agent `read_only: true` n'a pas d'espace
+  mémoire ; il lit la mémoire commune.
 
 ## 7. Le coffre parent — la base de connaissances
 
-Le dépôt OBSIA est cloné **à la racine du coffre parent**, côte à côte avec
-les dossiers de connaissance. Ce coffre parent est la base de connaissances
-primordiale : il se lit, s'enrichit et s'administre — par l'utilisateur, et
-par les agents qui y accèdent selon ce paragraphe. Seul `OBSIA/` est
-versionné ; les autres dossiers ne le sont pas.
+Le dépôt est cloné à la racine du **coffre parent**, côte à côte avec les
+dossiers de connaissance ; seul `OBSIA/` est versionné. Le coffre parent
+s'écrit **`Mon coffre/`** dans ce dépôt (nom réel : `coffre_parent` dans
+`obsia.local.yml`). **`../` ne sert qu'à naviguer à l'intérieur du dépôt**,
+jamais à désigner le coffre parent.
 
-**Le coffre parent s'écrit `Mon coffre/` partout dans ce dépôt.** C'est une
-**convention d'écriture**, pas une contrainte sur le disque : le nom réel du
-dossier se lit dans `obsia.local.yml` (clé `coffre_parent`, §13), que
-l'installeur remplit et qui n'est pas versionné. Le dépôt est public et ne peut
-pas connaître le nom que chacun donne à son coffre ; il lui en faut pourtant un
-pour en parler, sans quoi chaque skill inventerait le sien. Voici donc comment
-on le désigne :
-
-| Ce qu'on veut dire | Comment l'écrire |
-| --- | --- |
-| un dossier du coffre parent | `Mon coffre/-SAVOIRS/` — jamais `../-SAVOIRS/` |
-| le dépôt lui-même | `Mon coffre/OBSIA/`, ou son chemin interne (`IA/skills/…`) |
-| un fichier du dépôt, depuis un autre fichier du dépôt | relatif : `../system/VAULT-CONTRACT.md` |
-
-La règle tient en une phrase : **`../` ne sert qu'à naviguer à l'intérieur du
-dépôt**, jamais à désigner le coffre parent. Sans elle, le même `../` veut dire
-deux choses selon la cible — relatif au fichier ici, relatif au répertoire de
-travail là — et c'est ainsi qu'un skill finit par pointer à côté.
-
-Une **commande** reste une exception assumée : lancée depuis la racine du
-dépôt, elle atteint le coffre parent par `..` (`rg "motif" ../-SAVOIRS`). C'est
-du shell, pas une désignation — et c'est aussi la forme qui se moque du nom
-réel du dossier, ce qui la rend préférable au chemin absolu partout où elle
-suffit. Un chemin absolu, lui, contient une espace et
-se cite : `"$HOME/Mon coffre/-SAVOIRS"`.
-
-**Le tiret initial est un piège d'exécution, pas une coquetterie.** Les
-dossiers du coffre parent commencent par `-`, et un argument qui commence par
-`-` est lu comme une **option** par la quasi-totalité des commandes Unix :
-`rg "motif" -SAVOIRS` échoue, `ls -PROJETS` aussi. D'où trois formes à
-respecter, sans exception :
-
-| Cas | Ce qui casse | Ce qui marche |
-| --- | --- | --- |
-| commande depuis la racine du dépôt | `rg "x" -SAVOIRS` | `rg "x" ../-SAVOIRS` |
-| chemin absolu | — | `"$HOME/Mon coffre/-SAVOIRS"` |
-| valeur d'option | `--dossier -SAVOIRS` | `--dossier=-SAVOIRS` |
-
-Le préfixe `../` ou `./` suffit à désamorcer le tiret, parce que l'argument ne
-commence alors plus par lui. Un chemin nu ne s'écrit jamais dans une commande.
+**Piège du tiret** : les dossiers du coffre parent commencent par `-`, qu'une
+commande lit comme une option. Un chemin nu ne s'écrit jamais dans une
+commande : `../-SAVOIRS`, `./-PROJETS` ou un chemin absolu entre guillemets.
 
 ### 7.1 La structure — fixe
 
-La structure de premier niveau est **fixe**. Seul l'utilisateur crée, renomme
-ou supprime un dossier de premier niveau. Les agents ne modifient jamais cette
-structure : ils travaillent dans les dossiers existants, sans y créer de
-sous-structure de premier niveau.
-
-Les dossiers de premier niveau s'écrivent **en majuscules**, tels qu'ils sont
-sur le disque : `_MAINTENANCE/`, `-PROJETS/`… Linux distingue la casse, et un
-agent qui cherche `_maintenance/` conclut à tort que le dossier manque.
-
-| Dossier | Rôle |
-| --- | --- |
-| `Mon coffre/` | la racine — le coffre Obsidian lui-même, ouvert à ce niveau |
-| `OBSIA/` | le dépôt, versionné — agents, skills, tâches, mémoire d'OBSIA |
-| `_MAINTENANCE/` | journaux, astuces de débogage, previews consignés, registre des notes traitées |
-| `-PROJETS/` | les projets en cours ou à venir — notes, et le dépôt git du projet quand il en a un (7.3) |
-| `-DOCUMENTS/` | revues, articles web, transcriptions YouTube |
-| `-PERSONNELS/` | contexte personnel : configuration matérielle/logicielle, préférences, CV… |
-| `-SAVOIRS/` | les connaissances accumulées — un fichier Markdown = un concept |
-| `-EN-VRAC/` | zone de dépôt : notes brutes, parfois un simple titre à traiter |
-
-Déplacer un dossier de premier niveau (ex. `OBSIA/` dans `-PROJETS/`) est une
-décision de l'utilisateur, pas des agents.
+Seul l'utilisateur crée, renomme, déplace ou supprime un dossier de premier
+niveau. Ces dossiers s'écrivent tels qu'ils sont sur le disque, en majuscules :
+`_MAINTENANCE/` (entretien, previews, registre), `-PROJETS/` (projets de
+l'utilisateur), `-DOCUMENTS/` (revues, articles, transcriptions),
+`-PERSONNELS/` (contexte personnel), `-SAVOIRS/` (un fichier = un concept),
+`-EN-VRAC/` (notes brutes à traiter), `OBSIA/` (le dépôt).
 
 ### 7.2 Lecture
 
-Les agents `read_only: false` peuvent **lire tout le coffre parent** dès que
-le harness donne accès à sa racine (7.6) : la recherche couvre
-`_MAINTENANCE/`, `-PROJETS/`, `-DOCUMENTS/`, `-PERSONNELS/`, `-SAVOIRS/` et
-`-EN-VRAC/`. Ces dossiers se désignent par leur nom complet depuis la racine
-(`Mon coffre/-SAVOIRS/`) ; dans une commande lancée depuis la racine du dépôt,
-ils s'atteignent par `..`.
-
-Le coffre parent n'est **pas** un « dépôt extérieur » au sens du §3 : ce
-paragraphe vise des bases de code, pas des notes.
-
-Lire n'est pas recopier : le coffre parent est privé, le dépôt est public
-(§4). Rien du coffre parent ne migre dans `OBSIA/` au fil des réponses, et
-aucun secret du coffre parent n'entre dans le dépôt.
+Un agent `read_only: false` lit tout le coffre parent. **Lire n'est pas
+recopier** : rien du coffre parent ne migre dans `OBSIA/`, aucun secret n'y
+entre.
 
 ### 7.3 Écriture — zones autorisées
 
-Le coffre parent n'étant pas versionné, il n'y a **pas de patch Git**
-possible. Les écritures autorisées d'un agent `read_only: false` y sont
-directes, limitées et tracées (7.4) :
+Écritures directes, limitées et tracées (7.4) :
 
-- `-EN-VRAC/` — remplir une note, poser tags et rétroliens, préparer le
-  classement ;
-- `-SAVOIRS/` — compléter une note que l'utilisateur y a déposée (tags,
-  rétroliens, corps manquant), sans en changer le sens ni la déplacer ;
-- `_MAINTENANCE/` — consigner previews, actions et registre des notes
-  traitées ;
-- le **classement** : déplacer une note d'`-EN-VRAC/` vers sa destination
-  (`-PROJETS/`, `-DOCUMENTS/`, `-PERSONNELS/`, `-SAVOIRS/`) une fois traitée ;
-- `-PROJETS/<nom-du-projet> — résumé.md` — **la note de suivi d'un projet**,
-  créée et tenue par l'agent, **mise à jour sur place** : où en est le projet,
-  ce qui a été décidé, ce qui reste à faire. Une note vivante par projet, pas
-  une pile de notes datées — un état qui change se corrige, comme au §6. Elle
-  vit **à côté** du dépôt, jamais dedans : le dossier du dépôt est exclu de
-  l'index d'Obsidian, une note posée à l'intérieur serait invisible à la
-  recherche et aux rétroliens ;
-- `-PROJETS/<nom-du-projet>/` — **le dépôt git d'un projet construit ici** :
-  l'agent y crée le dossier, y écrit le code et ses documents, y commite.
-  C'est un dépôt à part entière, versionné pour lui-même, et la seule zone du
-  coffre parent où du code vit. Le §3 s'y applique intégralement : patch revu,
-  vérifications du projet passées avant de proposer, aucun secret dans le
-  dépôt. Ce dossier est **exclu de l'index d'Obsidian** — sans quoi le
-  Markdown du dépôt et de ses dépendances entre dans la recherche du coffre et
-  fait tomber l'unicité des noms de notes (§6) dès le deuxième projet ;
-- `-PERSONNELS/` — **une note de référence dont l'agent est l'auteur**, créée
-  et tenue par lui, **mise à jour sur place**, et marquée `auteur: <nom-agent>`
-  dans son frontmatter : l'inventaire d'une infrastructure, par exemple, qui
-  décrit l'utilisateur et doit rester vivant — une machine ajoutée, une adresse
-  changée. Seul l'agent nommé dans ce champ y écrit, et chaque mise à jour
-  passe par le preview du 7.4.
+- `-EN-VRAC/` — remplir, tagger, relier, préparer le classement ;
+- `-SAVOIRS/` — compléter une note déposée par l'utilisateur, sans en changer
+  le sens ni la déplacer ;
+- `_MAINTENANCE/` — previews, actions, registre ;
+- le **classement** d'une note d'`-EN-VRAC/` vers sa destination ;
+- `-PROJETS/<projet>/` — résumé (` — résumé`), `carnets/`, `documents/`,
+  `archives/`, un niveau de sous-projet ; `code/`, le dépôt git d'un projet
+  construit ici, où le §3 s'applique intégralement ;
+- `-PROJETS/<projet>/<projet> — vision.md` — **le `visionnaire` seul**, après
+  validation de l'utilisateur ;
+- `-PERSONNELS/` — une note de référence dont l'agent est l'auteur
+  (`auteur: <nom-agent>`), mise à jour sur place par lui seul.
 
-Une **note** de `-PROJETS/` n'est pas un dépôt de projet : elle reste protégée
-comme le reste. Hors des dépôts de projet, de la note de suivi et des notes de
-référence ci-dessus, une écriture dans `-PROJETS/`, `-DOCUMENTS/` ou `-PERSONNELS/` se limite au
-**dépôt d'une note classée venue d'`-EN-VRAC/`**, et à rien d'autre. On n'y
-modifie **jamais** une note existante, même à la demande de l'utilisateur :
-une note à enrichir repasse d'abord par `-EN-VRAC/`, puis est classée. On n'y
+Hors de ces notes dont l'agent est l'auteur (suffixe ` — résumé` ou
+` — vision`, dossier `carnets/`, champ `auteur:`), une écriture dans
+`-PROJETS/`, `-DOCUMENTS/` ou `-PERSONNELS/` se limite au **dépôt d'une note
+classée venue d'`-EN-VRAC/`**. On n'y modifie **jamais** une note existante,
+même à la demande de l'utilisateur : elle repasse par `-EN-VRAC/`. On n'y
 déplace ni n'y supprime rien.
 
-La note de suivi et la note de référence sont les deux seules exceptions, et
-elles tiennent à la même raison : **ce sont les seules notes de ces dossiers
-dont l'agent est l'auteur.** Il les a créées, il les met à jour, personne
-d'autre n'écrit dedans. La règle générale protège les notes de l'utilisateur
-d'une réécriture silencieuse sans Git pour la rattraper ; elle ne protège de
-rien quand l'agent corrige son propre texte. Ce qui rend la distinction
-visible sans ouvrir la note, c'est le suffixe ` — résumé` pour la première et
-le champ `auteur:` pour la seconde : une note qui ne porte ni l'un ni l'autre
-n'est pas à l'agent.
+### 7.3.1 Où va la note d'un projet
 
-### 7.3.1 Où va la note d'un projet — le dépôt est public
-
-Deux endroits portent des notes de projet, et les confondre expose du privé :
-
-| Le projet porte sur… | La note va dans… | Visibilité |
-| --- | --- | --- |
-| le coffre lui-même — un skill, un agent, une règle | `mémoire/projets/<nom-projet>/AAAA-MM-JJ-titre.md` | **publique** — le dépôt est public (§4) |
-| n'importe quoi d'autre — un projet de l'utilisateur | `-PROJETS/<nom-du-projet> — résumé.md` | privée — le coffre parent n'est pas versionné |
-
-`mémoire/` vit dans le dépôt, et le dépôt est public : **rien de privé n'y
-entre**, un projet personnel pas davantage qu'un secret (§7.2). Un chantier
-sur le coffre y a sa place parce qu'il *est* le dépôt ; un projet de
-l'utilisateur, non.
-
-Le test, avant d'écrire : *est-ce que ça décrit le coffre ?* Si non, ça va dans
-`-PROJETS/`. Dans le doute, `-PROJETS/` : un contenu privé qui atterrit dans
-un dépôt public ne se rattrape pas — l'historique Git le garde même effacé.
-
-`-PERSONNELS/` porte du contenu **personnel mais non critique** : configuration
-matérielle, préférences, CV. Il **participe au graphe de liens** comme les
-autres dossiers — ces notes doivent être reliées au reste, sinon elles ne
-servent à rien. Un agent le lit donc librement pour établir des rétroliens et
-pour répondre.
-
-Deux limites tiennent quand même : on n'y **écrit** que pour y classer une note
-dont la nature est manifestement personnelle, ou pour tenir une note de
-référence dont on est l'auteur (§7.3 ci-dessus), et son contenu
-ne migre jamais dans `OBSIA/`, qui est public (§7.2). Un secret — mot de passe,
-jeton, clé — n'a sa place ni ici ni ailleurs (§4).
+Le test, avant d'écrire : *est-ce que ça décrit le coffre ?* Si oui,
+`mémoire/projets/` (privé, versionné, relu par PR, retiré du miroir public) ;
+sinon `-PROJETS/`. **Dans le doute, `-PROJETS/`.** Jamais une valeur interdite
+par le §9 dans `mémoire/`, même pour décrire le coffre : le §9 l'emporte.
+`-PERSONNELS/` se lit librement ; on n'y écrit que pour y classer une note
+manifestement personnelle ou tenir sa note de référence, et son contenu ne
+migre jamais dans `OBSIA/`.
 
 ### 7.4 Preview et traçabilité — `_MAINTENANCE/`
 
-Sans Git, **le preview tient lieu de trace**. Avant toute action qui touche
-plusieurs fichiers, déplace une note ou écrit hors d'`-EN-VRAC/`, l'agent :
+Avant toute écriture dans le coffre parent hors d'`-EN-VRAC/` — y compris la
+création du carnet d'un projet de l'utilisateur — et avant toute action qui
+touche plusieurs fichiers : 1. afficher le preview ; 2. en **conserver une
+copie datée dans `_MAINTENANCE/`** ; 3. exécuter, puis consigner l'action.
 
-1. affiche le preview — fichiers concernés, contenu final, destination ;
-2. en **conserve une copie datée dans `_MAINTENANCE/`** ;
-3. exécute, puis consigne l'action (quoi, où, résultat) dans `_MAINTENANCE/`,
-   comme au §9.
-
-Le registre des notes traitées est le fichier
-**`Mon coffre/_MAINTENANCE/notes_remplies.md`** — une note Markdown, pour
-qu'Obsidian l'indexe et la rende consultable comme le reste. Il liste les
-notes déjà remplies, surtout celles de `-SAVOIRS/` que l'utilisateur dépose
-brutes. Une note qui y figure n'est pas à revérifier ; le registre est mis à
-jour après chaque traitement.
+Une action menée dans un chantier se consigne au carnet ; `_MAINTENANCE/` ne
+reçoit que celles faites hors chantier. Un carnet dont l'agent est l'auteur se
+met ensuite à jour sur place sans nouveau preview. Le registre des notes
+traitées est `Mon coffre/_MAINTENANCE/notes_remplies.md` : une note qui y
+figure n'est pas à revérifier, et il se met à jour après chaque traitement.
 
 ### 7.5 Rétroliens et tags — ce qui ne se viole pas
 
-Un rétrolien Obsidian est **du texte** : `[[Nom de la note]]`, qu'Obsidian
-résout à la lecture. Aucune API ni aucun greffon n'est requis. Le **comment**
-— format du lien, frontmatter d'une note, procédure de traitement — vit dans le
-skill `traitement-des-notes`
-(`IA/skills/traitement-des-notes/traitement-des-notes.md`). Trois règles
-restent ici, parce qu'on peut les violer sans avoir chargé quoi que ce soit :
+- **Les tags suivent un vocabulaire contrôlé** :
+  `IA/system/tags-du-coffre-parent.md` fait foi ; jamais un tag hors liste ;
+  un tag nouveau se propose par patch sur ce registre.
+- **Un lien ne relie que si sa cible existe.**
+- **Les noms de notes sont uniques dans tout le coffre parent** : vérifier
+  avant de créer une note ou un lien.
 
-- **Les tags suivent un vocabulaire contrôlé.** Le registre
-  `IA/system/tags-du-coffre-parent.md` fait foi ; on ne pose **jamais** un tag
-  hors liste, et un tag nouveau se propose par patch sur ce registre. Des tags
-  générés librement par une IA, sans cohérence, surchargent les recherches.
-- **Un lien ne relie que si sa cible existe.** `[[Nom]]` vers une note absente
-  n'affiche qu'une « note non créée » et ne relie rien.
-- **Les noms de notes sont uniques dans tout le coffre parent** (§6) : avant de
-  créer une note ou un lien, vérifier qu'aucun nom identique n'existe ailleurs.
-
-Ces liens se résolvent à l'échelle du coffre parent, jamais de `OBSIA/` seul,
-ce qui suppose le coffre ouvert dans Obsidian **à sa racine** — c'est au
-harness d'y répondre (7.6).
+La procédure (format, frontmatter d'une note) : skill `traitement-des-notes`.
 
 ### 7.6 Accès du harness
 
-Le coffre ne nomme aucun harness (§3) : la manière de donner accès au coffre
-parent appartient à la configuration de chaque harness, **hors dépôt**. Le
-besoin est unique, et c'est la seule part qui relève de ce contrat — le harness
-doit pouvoir **lire et écrire dans la racine du coffre parent** (le dossier qui
-contient `OBSIA/`), pas seulement dans `OBSIA/`.
-
-Les voies possibles, le serveur MCP « fichiers » et les gabarits par harness
-vivent dans `IA/system/adaptateurs-harness/README.md`. Une limite ne s'y dilue
-pas pour autant : un serveur de fichiers braqué sur la racine du coffre peut
-écrire **partout**, alors que le §7.3 n'en ouvre qu'une poignée. C'est la fiche
-`IA/MCP/coffre-parent.md` qui porte cette limite, pas le serveur — d'où
-l'obligation de la lire avant d'appeler un de ses outils (§10.2).
+Le harness doit pouvoir lire et écrire à la racine du coffre parent. Lire la
+fiche `IA/MCP/coffre-parent.md` avant d'appeler un de ses outils : elle porte
+les limites que le serveur ne porte pas.
 
 ### 7.7 Cycle d'une note d'`-EN-VRAC/`
 
-`-EN-VRAC/` est un **dossier tampon**, pas une destination : il ne stocke rien
-durablement. Une session de rangement le traite **en entier**, et il est vide
-quand elle se termine : c'est le critère d'achèvement, et ce qui y reste est ce
-qui n'a pas pu être tranché — le dire. Conséquence pratique : une note
-d'`-EN-VRAC/` n'est jamais une cible de rétrolien stable, puisqu'elle aura
-changé de dossier avant qu'on la relise.
-
-La procédure — lire, vérifier qu'un doublon n'existe pas, remplir, tagger,
-prévisualiser, classer, consigner au registre — vit dans le skill
-`traitement-des-notes`
-(`IA/skills/traitement-des-notes/traitement-des-notes.md`). Elle n'est pas
-reprise ici : ce qui s'écrit à deux endroits diverge, et c'est la destination
-qui décide — une **règle** violable sans avoir rien chargé reste dans ce
-contrat, une **procédure** qui ne s'applique qu'en faisant la chose part dans
-le skill.
+`-EN-VRAC/` est un tampon : une session de rangement le traite **en entier**,
+et ce qui y reste est ce qui n'a pas pu être tranché — le dire. Une note
+d'`-EN-VRAC/` n'est **jamais une cible de rétrolien stable**.
 
 ## 8. Sources et citations
 
-Une note durable distingue explicitement trois natures d'information :
-**évidence** (avec son URL source), **interprétation** et **synthèse produite
-par un agent**. Les URLs sont regroupées en fin de fichier.
+Une note durable distingue **évidence** (avec son URL source),
+**interprétation** et **synthèse produite par un agent**. Les URLs sont
+regroupées en fin de fichier.
 
-## 9. Log des sessions
+## 9. Trace des séances — le carnet
 
-À la fin de chaque session de travail, une note est **proposée en patch** dans
-`IA/system/session-log/AAAA-MM-JJ-<nom-agent>.md` : décisions prises,
-fichiers modifiés, questions restées ouvertes. Ce dossier vit sous
-`IA/system/`, donc son écriture suit la règle générale du §2 (patch Git revu)
-— ce n'est pas une des trois zones en écriture directe.
+La trace d'une séance est le **carnet** — du chantier, ou du jour hors
+chantier (§6) —, écrit au fil de l'eau. Pour un projet du coffre, il est
+versionné et entre dans la PR du travail, où il se relit avec le diff. Il n'y
+a pas d'autre journal.
+`IA/system/session-log/` est **archivé** : on n'y écrit plus, et ses notes ne
+se réécrivent pas.
 
-Le nom de l'agent dans le nom du fichier n'est pas décoratif : deux agents
-menés le même jour, dans deux conversations parallèles, écriraient sinon le
-même fichier, et le second patch écraserait le premier. Il permet aussi à un
-agent de retrouver ses propres séances d'un seul motif
-(`session-log/*-<nom-agent>.md`) quand l'utilisateur le lui demande. Deux
-séances du même agent le même jour partagent un seul log, complété. Les logs
-antérieurs à cette règle gardent leur nom daté : les renommer demanderait de
-deviner l'agent, et un récit ne se réécrit pas (§11).
+**Les actions à effet externe figurent au carnet**, chacune sur une ligne
+horodatée — quoi, où, résultat : **tout appel de MCP, quel que soit son
+`permission`**, et toute correction appliquée à un système.
 
-**Les actions à effet externe y figurent aussi** : **tout appel de MCP, quel
-que soit son `permission`**, et toute correction appliquée à un système. Une
-ligne suffit — quoi, où, résultat.
+Deux limites :
 
-`permission: normal` dit qu'un outil ne sort pas de la machine ; il ne dispense
-pas d'en consigner l'usage. Un serveur « local » qui crée et modifie des notes
-du coffre parent produit des effets aussi durables qu'un serveur distant, et
-le coffre parent n'a pas d'historique Git pour les rattraper. Ce que la
-permission gradue, c'est la prudence avant d'appeler — pas la trace après. Il n'existe **pas** de journal séparé : un fichier
-d'audit que personne ne relit ne sert à rien, alors que cette note passe par
-une revue.
+- Le carnet est écrit par l'agent qui agit : ce n'est **pas un journal d'audit
+  infalsifiable**. Ce qui le rend contradictoire, c'est la relecture de la PR ;
+  le carnet d'un projet de l'utilisateur, hors Git, n'a que le preview du §7.4.
+- On consigne la **nature** de l'action, pas nécessairement sa cible :
+  **jamais d'adresse IP privée, de nom d'hôte interne, d'URL interne ni
+  d'identifiant**. Une trace qu'on ne pourrait pas publier ne s'écrit pas
+  davantage dans le privé. La liste locale des noms interdits est
+  `~/.config/obsia/noms-interdits`, hors dépôt.
 
-Deux limites, à connaître plutôt qu'à découvrir :
-
-- La note s'écrit **en fin de session**. Une session interrompue ne laisse
-  rien. C'est un journal de travail, pas un journal d'audit infalsifiable —
-  le coffre n'en fournit pas, et n'a pas vocation à en fournir.
-- Le dépôt est **public** (§4). On consigne la **nature** de l'action, pas
-  nécessairement sa cible : jamais d'adresse IP privée, de nom d'hôte interne,
-  d'URL interne ni d'identifiant. Une trace qui ne peut pas être publiée n'a
-  pas sa place dans ce dépôt — et c'est une raison de ne pas créer de journal
-  dédié, qui inviterait précisément à l'y mettre.
-
-Pour une trace vivante pendant la session, `brouillon/` est la zone du
-provisoire ; le skill `cloture-de-session` la consolide ici à la fermeture.
+`brouillon/` reste la zone du provisoire ; il ne sert pas de trace.
 
 ## 10. Méthode d'exécution
 
 Ce contrat lu, l'ordre à suivre pour toute demande — un harness peut le
-citer ou l'injecter, il ne le redéfinit jamais (cf. préambule) :
+citer ou l'injecter, il ne le redéfinit jamais :
 
+0. Au démarrage, cherche tes carnets `statut: en cours` — dans l'arbre
+   principal **et dans chaque worktree lié** — et propose de reprendre, après
+   les avoir rapprochés de l'état réel (§6). Un agent `read_only: true` n'a
+   pas de carnet : il saute cette étape.
 1. Choisis l'agent pertinent pour la demande, via `IA/system/agents-index.md`
    ou l'index fourni par le harness. S'il n'y en a qu'un, c'est lui par
    défaut. Lis `IA/agents/<nom>.md` pour son rôle et ses règles propres.
@@ -634,19 +349,17 @@ citer ou l'injecter, il ne le redéfinit jamais (cf. préambule) :
    nécessaire à la demande — et seulement ça.
    - Skill : lis `IA/skills/<nom>.md`, applique la procédure décrite.
    - MCP : lis `IA/MCP/<nom>.md` avant d'appeler un de ses outils — il donne
-     les permissions et les règles de sécurité propres à cet outil (marqué
-     `permission: elevated` quand il touche un système externe : réseau,
-     dépôt distant).
+     les permissions et les règles de sécurité propres à cet outil.
+   - Annexe : lis-la avant l'acte que sa ligne nomme (tableau du préambule).
 3. Mémoire — dès qu'une décision est prise ou qu'une information mérite
    d'être retrouvée plus tard : écris-la à l'emplacement que le §6 assigne à
-   sa nature — `mémoire/profil-utilisateur.md`, `mémoire/préférences/`,
-   `mémoire/projets/<nom-projet>/`, ou ton propre `expériences/`. Crée le
+   sa nature. L'étape en cours s'écrit au carnet **avant** d'agir. Crée le
    dossier s'il n'existe pas. Vérifie au §2 si l'écriture est directe ou passe
    par patch.
 
    Avant d'écrire une note durable, **lis celle qui existe déjà** sur le même
    sujet : un fait qui change se corrige sur place, il ne se réécrit pas à
-   côté. Ne touche JAMAIS un fichier généré à la main — voir §11.
+   côté. Ne touche JAMAIS un fichier généré à la main.
 4. Cite les chemins des fichiers utilisés dans ta réponse.
 
 Ne charge pas de fichier « pour voir ». Si aucun skill ne correspond, réponds
@@ -656,320 +369,74 @@ sans la faire.
 
 ## 11. Fichiers générés et vérification
 
-Certains fichiers du coffre **décrivent** d'autres fichiers. Ils sont produits
-par script, jamais saisis : écrits à la main, ils divergent de leur source sans
-que rien ne le signale.
-
-| Fichier | Produit par | Source de vérité |
-| --- | --- | --- |
-| `mémoire/**/sommaire.md` | `scripts/regenerate_sommaire.py` — **non versionné** | le contenu des notes |
-| `IA/system/agents-index.md` | `scripts/regenerate_index.py` | le frontmatter des agents |
-| `IA/system/skills-index.md` | `scripts/regenerate_index.py` | le frontmatter des skills |
-| `IA/system/taches-index.md` | `scripts/regenerate_index.py` | le frontmatter des tâches |
-| `IA/system/modules-index.md` | `scripts/regenerate_index.py` | le frontmatter des modules |
-| `IA/README.md` | `scripts/regenerate_index.py` | les frontmatters d'agents, skills, MCP et tâches |
-
-Les sommaires de `mémoire/` ne sont **pas versionnés** : générés, ils étaient
-réécrits par presque chaque pull request touchant la mémoire, et mettaient en
-conflit deux travaux sans rapport menés en parallèle (§2.1). Ils se régénèrent
-localement — crochets `post-merge` et `post-checkout`, installeur, revue
-hebdomadaire — et le vérificateur ne les exige plus.
-
-Corollaire : si un index et un frontmatter se contredisent, **le frontmatter a
-raison**. On corrige la source, puis on régénère — jamais l'inverse.
-
-**Deux contrôles, qui ne voient pas la même chose :**
-
-- `scripts/verifier_coffre.py` contrôle la **forme** — frontmatter, noms,
-  chemins cités, index à jour — et refuse un coffre incohérent en sortant
-  en 1, sans rien écrire.
-- `scripts/evaluer_routage.py` contrôle le **déclenchement** — la
-  `description` d'un skill est le seul élément toujours présent en contexte,
-  donc la seule chose qui décide qu'il se charge, et rien d'autre ne vérifie
-  qu'elle porte les mots que l'utilisateur emploie.
-
-Ce que chacun contrôle exactement, ce qu'il écarte et pourquoi, vit dans **son
-propre docstring** — `python3 scripts/verifier_coffre.py --help` ou la tête du
-fichier. Le recopier ici en ferait une seconde version à tenir à jour, ce que
-le §5 interdit.
-
-Trois règles, en revanche, appartiennent à ce contrat et pas au code :
-
-- **Un échec de routage veut dire « corriger la description »**, pas
-  « corriger le registre ». Une attente ne se relâche que lorsqu'elle demande
-  l'impossible à une mesure lexicale, et cela s'écrit dans
-  `IA/system/routage-attendu.md` avec sa raison.
+- **Les index sont versionnés, donc canoniques.** `IA/README.md` et les quatre
+  `IA/system/*-index.md` décrivent le catalogue **entier** : ils ne dépendent
+  pas de la machine et ne se réduisent **jamais** au profil (§13). Sinon la CI,
+  qui n'a pas de profil, verrait un index périmé, et une machine réduite ne
+  pourrait plus rien committer sans mentir sur son contenu. Le profil ne réduit
+  que ce qui n'est pas versionné — le prompt système et `AGENTS.md`.
+- Si un index et un frontmatter se contredisent, **le frontmatter a raison** :
+  on corrige la source, puis on régénère — jamais l'inverse.
+- **Un échec de routage veut dire « corriger la description ».** Une attente
+  ne se relâche que lorsqu'elle demande l'impossible à une mesure lexicale, et
+  cela s'écrit dans `IA/system/routage-attendu.md` avec sa raison.
 - **Les exemptions vivent dans le script, jamais dans le frontmatter d'un
-  skill** : un skill qui se déclare lui-même dispensé d'un contrôle annule le
-  contrôle.
-- **Un contrôle qu'on croit plus large qu'il n'est vaut moins que pas de
-  contrôle du tout.** Le contrôle des chemins couvre `IA/` et les documents de
-  la racine — là où un chemin faux *agit* ; `mémoire/` et
-  `IA/system/session-log/` en sont exemptés, parce qu'un récit cite
-  légitimement un état révolu, et le corriger après coup falsifierait le récit
-  pour faire taire le contrôle.
+  skill.**
+- Le crochet de pré-commit s'active **une fois par clone** :
+  `git config core.hooksPath .githooks`.
+- Avant un commit :
 
-Le vérificateur tourne en intégration continue à chaque poussée
-(`.github/workflows/verifier-coffre.yml`), et localement en crochet de
-pré-commit — à activer une fois par clone :
-
-```bash
-git config core.hooksPath .githooks
-```
-
-Le crochet refuse alors un commit qui laisserait le coffre incohérent, et
-rappelle la commande de régénération. `git commit --no-verify` le contourne
-ponctuellement ; la CI, elle, ne se contourne pas.
-
-À lancer aussi à la main, avant un commit :
-
-```bash
-python3 scripts/regenerate_sommaire.py
-python3 scripts/regenerate_index.py
-python3 scripts/verifier_coffre.py
-python3 scripts/evaluer_routage.py
-```
-
-Les deux scripts du §13 — `scripts/installer.py` et `scripts/publier.py` — ne
-font pas partie de cette séquence : ils ne se lancent pas avant un commit mais
-à l'installation et à la publication, et ils n'écrivent qu'avec `--appliquer`.
-
-Pour savoir quel skill répondrait à une demande, sans rien vérifier :
-
-```bash
-python3 scripts/evaluer_routage.py --explique "ça plante quand je clique"
-```
-
-Un cinquième script, `scripts/evaluer_modele.py`, éprouve un **modèle**
-candidat contre les règles de ce contrat. Il ne fait pas partie de la chaîne
-ci-dessus : il lui faut un serveur qui réponde, donc il ne tourne ni en crochet
-ni en CI.
-
-Ces scripts n'utilisent que la bibliothèque standard de Python, à dessein : le
-coffre ne doit dépendre d'aucune installation pour être vérifiable.
-
----
+  ```bash
+  python3 scripts/regenerate_sommaire.py
+  python3 scripts/regenerate_index.py
+  python3 scripts/verifier_coffre.py
+  python3 scripts/evaluer_routage.py
+  ```
 
 ## 12. Tâches planifiées
 
-Une tâche planifiée est déclarée **dans le coffre**, jamais seulement chez
-celui qui l'exécute. Le fichier `IA/tâches/<nom>.md` est la source de vérité ;
-le timer systemd, le planificateur du harness ou le cron de la machine n'en
-sont que des **instances** — jetables, reconstructibles.
+Une tâche se déclare **dans le coffre** (`IA/tâches/<nom>.md`, qui fait foi) ;
+le timer, le cron ou le planificateur du harness n'en est qu'une **instance**.
 
-Le motif est le même qu'au §11 pour les index : ce qui n'existe qu'à un seul
-endroit se perd sans que rien ne le signale. Sans registre, changer de harness
-ou de machine efface silencieusement des tâches dont plus personne ne connaît
-l'existence. Avec registre, la perte se répare : on relit le registre et on
-ré-instancie.
-
-Trois règles en découlent :
-
-- **Le registre déclare une intention, jamais un état.** Ni identifiant
-  d'instance, ni nom de machine, ni date du dernier déclenchement : ces
-  informations vieillissent mal, et le dépôt est public (§9). L'état se lit
-  chez l'exécutant, au moment où on le demande. `exécutant` n'y déroge pas :
-  il dit quelle **classe** d'exécutant a le droit de déclencher la tâche, pas
-  où elle tourne en ce moment — une règle, pas un constat.
-- **Une tâche = au plus une instance vivante, tous exécutants confondus.**
-  C'est l'invariant du registre. Sans lui, une tâche créée par le
-  planificateur du harness puis instanciée en timer local se déclenche deux
-  fois — et la réconciliation, qui ne regarderait qu'un seul exécutant,
-  fabriquerait elle-même le doublon en croyant réparer un manque. Le champ
-  `exécutant` du §5 tranche d'avance : il dit qui, et donc qui pas.
-- **Une instance porte le nom de sa tâche, préfixé `obsia-`.** C'est la seule
-  clé qui permette de rapprocher registre et exécutant quel que soit ce
-  dernier ; le préfixe distingue au passage ce qui vient du coffre de ce que
-  l'utilisateur a planifié par ailleurs.
-- **L'instruction d'une tâche est auto-suffisante.** Au déclenchement il n'y a
-  plus de conversation : le corps du fichier est tout ce qui sera reçu.
-
-Créer, modifier ou suspendre une tâche touche `IA/tâches/` : **patch Git revu**
-(§2). Instancier ou retirer une instance chez l'exécutant est une action à
-effet externe : une ligne dans le log de session (§9).
-
-`IA/system/taches-index.md` en est l'index généré, toujours présent en
-contexte : c'est par lui qu'un harness neuf apprend qu'une tâche existe.
-**Savoir n'est pas instancier** — l'index informe, il ne déclenche rien ; c'est
-ce qui permet de constater qu'une tâche déclarée ne tourne nulle part.
-
-La procédure — lister, créer, instancier, réconcilier — vit dans le skill
-`cron` (`IA/skills/cron/cron.md`). Ce contrat ne nomme aucun exécutant : il dit
-*quoi* planifier, le harness fournit *avec quoi*.
-
----
+- Le registre déclare une **intention, jamais un état** (ni identifiant
+  d'instance, ni nom de machine, ni date de dernier déclenchement).
+- **Au plus une instance vivante par tâche**, tous exécutants confondus ; le
+  champ `exécutant` dit qui, et donc qui pas.
+- Une instance porte le nom de sa tâche, préfixé **`obsia-`**.
+- L'instruction d'une tâche est **auto-suffisante** : au déclenchement, il n'y
+  a plus de conversation.
+- Créer, modifier ou **suspendre** une tâche passe par **patch Git revu**.
+  **Instancier ou retirer une instance** est une action à effet externe : une
+  ligne horodatée au carnet (§9).
+- `IA/system/taches-index.md`, toujours en contexte, informe : **savoir n'est
+  pas instancier**.
 
 ## 13. Modules, installation et publication
 
-Le coffre est un **catalogue**, pas une livraison. Tout y est déclaré ; rien
-n'oblige à tout retenir. Un coffre installé sur une machine sans Docker
-n'embarque pas les skills qui pilotent des conteneurs — non pour économiser des
-octets, mais parce qu'un skill qui ne peut pas s'exécuter coûte plus cher que
-son absence : il occupe le contexte, se propose au mauvais moment, et échoue
-là où il aurait fallu qu'il se taise.
-
-### 13.1 Un module
-
-Un **module** regroupe ce qui n'a de sens qu'ensemble. Il vit dans
-`IA/system/modules/<nom>.md` et porte le frontmatter suivant :
-
-| Champ | Type | Obligatoire | Notes |
-| --- | --- | --- | --- |
-| `schema` | entier | oui | comme partout, actuellement `1` |
-| `kind` | `module` | oui | |
-| `name` | texte | oui | identique au nom du fichier, et **unique dans tout le coffre parent** comme n'importe quelle note (§6) — un module `sauvegardes` à côté d'un skill `sauvegardes` casse les rétroliens |
-| `description` | texte | oui | une ligne |
-| `essentiel` | booléen | oui | `true` = toujours installé, aucune question posée |
-| `question` | texte | si non essentiel | ce que l'installeur demande. Un module non essentiel sans question ne pourrait jamais être choisi. |
-| `sondes` | liste | non | ce que la machine peut constater seule (13.2) |
-| `requiert` | liste | non | modules entraînés par celui-ci |
-
-Le corps dit ce que le module apporte et **pourquoi le découpage tombe là** :
-c'est la seule information qu'on ne retrouve pas en listant ses fichiers.
-
-Réciproquement, **tout agent, skill, MCP et tâche déclare son `module`** (§5).
-Un fichier sans module est inclassable : l'installeur ne saurait ni le retenir
-ni l'écarter. `scripts/verifier_coffre.py` le refuse.
-
-Un module reste **libre de ses dépendances mais pas de ses renvois** : si un
-skill de `A` dit de charger un skill de `B`, `A` doit entraîner `B` **ou**
-écrire, à l'endroit du renvoi, quoi faire quand `B` n'est pas installé — en
-nommant le module. Sinon la consigne tombe dans le vide chez qui n'a installé
-que `A`. Le repli écrit convient quand entraîner `B` imposerait un module
-disproportionné : on ne force pas la relecture sur quiconque construit. Le
-vérificateur l'avertit ; c'est un avertissement et non une erreur, pour la même
-raison qu'au §11 — la détection repose sur le verbe employé.
-
-### 13.2 Les sondes — ce que la machine dit d'elle-même
-
-Une sonde est **déclarative**, et son vocabulaire tient en quatre formes :
-
-| Forme | Vrai quand |
-| --- | --- |
-| `commande:<nom>` | le binaire est dans le `PATH` |
-| `fichier:<chemin>` | le chemin existe (`~` développé) |
-| `distribution:<id>` | `ID` ou `ID_LIKE` de `/etc/os-release` correspond |
-| `parent:<nom>` | le dossier existe à côté du dépôt — donc dans le coffre parent |
-
-Il n'y en a pas de cinquième, et surtout aucune qui exécuterait une commande
-arbitraire : un catalogue dont les fichiers déclenchent du code devient un
-vecteur d'exécution, et on installe justement un catalogue qu'on n'a pas encore
-lu. Aucune sonde n'ouvre le réseau (§4).
-
-**Une sonde ne décide jamais seule.** Elle constate que `docker` est installé ;
-elle ne sait pas si l'utilisateur veut gérer des conteneurs. Elle propose une
-réponse par défaut, la question tranche. Un module sans sonde n'est pas un
-module mal fait : il est simplement indécidable depuis la machine, et c'est
-honnête de le dire plutôt que de deviner.
-
-### 13.3 Le profil — `obsia.local.yml`
-
-Le profil dit quels modules sont retenus **sur cette machine**. Il vit à la
-racine du dépôt, **n'est pas versionné**, et n'est pas une des trois zones
-d'écriture du §2 : ce n'est pas un agent qui l'écrit, c'est l'installeur.
-
-**Absence de profil = catalogue complet.** C'est l'état du dépôt de
-distribution, et l'état sous lequel la CI vérifie le coffre — sans quoi la CI
-ne contrôlerait qu'une installation particulière, et les modules écartés
-pourriraient sans que rien ne le signale.
-
-Le profil ne décrit qu'une **sélection**. Il ne contredit donc jamais un
-frontmatter, et la règle du §11 — le frontmatter a raison — tient sans
-exception : le frontmatter dit ce qui existe, le profil dit ce qu'on en retient.
-
-### 13.4 Deux modes d'installation
-
-`scripts/installer.py` sonde, montre, demande, puis écrit — et seulement avec
-`--appliquer` : l'aperçu du §2 n'est pas décoratif.
-
-| Mode | Ce qui se passe | Quand le choisir |
-| --- | --- | --- |
-| **en place** | rien n'est déplacé ni supprimé ; seuls les fichiers générés (les quatre index, `IA/README.md`, le prompt système) sont réduits au profil | on utilise le clone tel quel, et on veut pouvoir changer d'avis d'une commande |
-| **copie** | seuls les fichiers retenus atterrissent dans le coffre cible, et les déclarations d'agents y sont réduites pour rester cohérentes | on veut un coffre réellement minimal, versionné pour lui-même |
-
-La différence n'est pas cosmétique. **En place, les frontmatters ne sont jamais
-réécrits** : les fichiers écartés sont toujours là, un agent qui les déclare ne
-déclare rien d'absent, et `git checkout -- IA` remet tout. **En copie, ils le
-sont** : les fichiers écartés manquent réellement, un agent qui les déclarerait
-ferait échouer le vérificateur de la cible. Une tâche visant un agent absent est
-retirée pour la même raison.
-
-Trois règles protègent le travail de qui installe, et tiennent dans les deux
-modes : l'installation **ne vide jamais** `mémoire/`, `brouillon/` ni
-`IA/system/session-log/` de la cible ; elle **n'écrase jamais** un
-`AGENTS.md` qui ne porte pas son marqueur « généré » ; elle **ne suit aucun
-lien symbolique** de la cible. `--installer` ne touche jamais à la source, et
-`--tout` veut dire catalogue complet dans les deux modes.
-
-Le détail — `AGENTS.md`, dossiers de l'instance, liens, `--tout` — vit dans
-`IA/system/installation-et-publication.md`, **à lire avant de lancer
-`installer.py` avec `--appliquer`**.
-
-Revenir au catalogue complet : `python3 scripts/installer.py --tout --appliquer`.
-
-### 13.5 Public et privé
-
-Le dépôt de travail est **privé** : il porte la mémoire, les logs de session et
-le profil de son propriétaire. Le dépôt **public** est la distribution : le même
-coffre, moins ce qui décrit une personne ou une machine.
-
-**Le privé fait foi.** Il n'y a pas deux sources de vérité : `scripts/publier.py`
-dérive la seconde de la première, et refuse de publier ce qu'il ne sait pas
-relire. Il exporte l'arbre suivi par Git à `HEAD` — jamais le répertoire de
-travail, parce que ce qui n'est pas suivi n'a pas été relu —, vide `mémoire/`,
-`IA/system/session-log/`, `brouillon/` et `.archive/` de tout sauf leurs
-`README.md`, régénère, vérifie, passe un contrôle de fuite sur l'export final, et
-n'écrit dans la cible qu'avec `--appliquer`. Il ne pousse jamais.
-
-**`synchroniser` refuse cinq cibles** avant d'exporter quoi que ce soit —
-jamais la source ni ce qui la contient, jamais un coffre vivant, jamais un
-clone du privé, jamais une cible qui n'est ni vierge ni un miroir d'OBSIA. Le
-détail des refus vit dans `IA/system/installation-et-publication.md`, **à lire
-avant de lancer `publier.py` avec `--appliquer`**.
-
-Le sens unique n'est pas qu'une précaution, c'est **ce qui crée la fenêtre de
-validation**. Le privé est l'atelier : une fonctionnalité y naît, s'y éprouve
-sur des séances réelles, et ne franchit la frontière que le jour où on lance
-`publier.py`. Rien ne part tout seul — pas de poussée automatique, pas de
-synchronisation de fond. Le public ne reçoit donc jamais qu'un état que
-quelqu'un a jugé bon, et la durée du test est celle qu'on veut bien lui
-laisser.
-
-Un flux bidirectionnel aurait supprimé cette fenêtre en même temps que la
-frontière : ce qui circule dans les deux sens finit par circuler tout seul.
-
-La contrepartie s'assume : **une correction proposée sur le public se reporte
-à la main dans le privé.** L'inverse — publier depuis le public et y rapatrier
-le privé — aurait exposé la mémoire au premier oubli, et un contenu privé entré
-dans un historique public ne se rattrape pas (§7.3.1).
-
-**Rendre un dépôt privé ne dépublie pas son passé.** Le basculement cache les
-poussées à venir, pas l'historique déjà servi : ce qui a été public le reste
-chez qui l'a cloné. C'est une raison de plus de n'avoir jamais rien mis de
-secret dans le coffre, et non un filet auquel se fier après coup. Le dépôt
-public, lui, part propre par construction : `publier.py` écrit l'arbre exporté
-dans un clone neuf, sans y verser l'historique du privé.
-
-**Un fichier publié ne cite pas un chemin qui ne sera pas publié.** Les zones
-vidées — `mémoire/`, `brouillon/`, `.archive/`, `IA/system/session-log/` — ne
-se désignent pas par leur chemin depuis `IA/` ni depuis la racine : le lien
-mènerait nulle part dans la distribution, et l'export échouerait loin de
-l'endroit où la faute a été écrite. Ce n'est pas une interdiction d'y
-**renvoyer** : nommer la note suffit, et c'est déjà ce que le §7.5 demande pour
-les rétroliens — un lien par nom survit aux déplacements, un lien par chemin
-casse. Deux exceptions, parce qu'elles survivent : les `README.md` de ces
-zones, et `mémoire/profil-utilisateur.md`, que l'installeur et le publieur
-réécrivent tous deux en gabarit vide. `scripts/verifier_coffre.py` contrôle la
-règle dans le dépôt privé, où la faute s'écrit.
-
-Le contrôle de fuite vise des **valeurs**, jamais les mots qui les nomment :
-une adresse de courriel, une adresse IP privée, un bloc de clé privée, un
-préfixe de jeton connu, un secret affecté à une variable, un nom d'hôte
-interne — et tout nom de la **liste locale des noms interdits**, tenue hors du
-dépôt, seul moyen d'attraper un nom de machine qui n'a pas de forme de
-domaine. Il passe sur l'export final, après régénération, et dit ce qu'il n'a
-pas pu relire. `--forcer` ne passe **jamais** outre une clé privée, un jeton
-connu ni un nom interdit ; pour le reste, il publie et écrit la dérogation dans le message de
-commit. S'en servir sans avoir lu la trouvaille, c'est se priver du seul
-filet qui reste une fois l'historique public. Les motifs exacts et leurs
-limites : `IA/system/installation-et-publication.md`.
+- **Tout agent, skill, MCP et tâche déclare son `module`** (§5).
+- Un module est libre de ses dépendances, **pas de ses renvois** : si un skill
+  du module A dit de charger un skill du module B, A entraîne B (`requiert`)
+  **ou** écrit, à l'endroit du renvoi, quoi faire quand B n'est pas installé,
+  en nommant le module B.
+- Une **sonde** est déclarative et tient en quatre formes (`commande:`,
+  `fichier:`, `distribution:`, `parent:`) : **aucune n'exécute de commande
+  arbitraire, aucune n'ouvre le réseau**, et une sonde ne décide jamais seule.
+- Le profil `obsia.local.yml` dit quels modules sont retenus sur la machine ;
+  il n'est pas versionné et seul l'installeur l'écrit. **Pas de profil =
+  catalogue complet**, et c'est sous cet état que la CI vérifie le coffre.
+- `scripts/installer.py` et `scripts/publier.py` n'écrivent qu'avec
+  `--appliquer`. Lire `IA/system/installation-et-publication.md` **avant** de
+  les lancer avec `--appliquer`.
+- **Le privé fait foi** : le dépôt public en est dérivé par `publier.py`, à
+  sens unique ; une correction faite sur le public se reporte à la main dans
+  le privé.
+- **Un fichier publié ne cite pas un chemin qui ne sera pas publié**
+  (`mémoire/`, `brouillon/`, `.archive/`, `IA/system/session-log/`), sauf les
+  `README.md` de ces zones et `mémoire/profil-utilisateur.md` : nommer la note
+  suffit.
+- **Contrôle de fuite** : une valeur à forme reconnaissable (clé privée,
+  jeton, IP privée, courriel, nom d'hôte à domaine) refuse la publication ;
+  `--forcer` ne franchit **jamais** une clé privée ni un jeton connu. Un nom de
+  la liste locale **avertit sans bloquer**, et l'agent qui reçoit
+  l'avertissement le rapporte à l'utilisateur. Liste absente = aucun nom
+  contrôlé : « aucune trouvaille » ne dit alors rien des noms nus.

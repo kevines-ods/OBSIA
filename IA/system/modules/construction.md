@@ -15,8 +15,9 @@ requiert:
 ## Ce que ce module apporte
 
 L'agent `batisseur` et les skills de ses deux parcours. La création : les six
-portes de cadrage, l'amorçage, le plancher de qualité, la construction par
-tranches, les tests d'abord, la vérification aux sources, l'investigation de
+portes de cadrage — ou la voie rapide pour un petit outil —, l'amorçage, le
+plancher de qualité, la construction par tranches, les tests d'abord, la
+vérification aux sources, l'investigation de
 bug, la livraison Git et la mise en ligne. L'évolution d'un projet existant :
 la reprise, les tests de caractérisation, le refactoring sûr, la montée de
 version, la dette technique, la migration de données et la documentation. Plus le MCP `git-hub`.

@@ -18,6 +18,13 @@ vérification qu'on n'a jamais écrite n'existera jamais.
 Cette étape se fait **une fois**, entre `docs/PLAN.md` validé et la première
 tranche. Elle prend dix minutes.
 
+**Exception — la voie rapide.** Pour un petit outil qui suit la voie rapide du
+`batisseur`, il n'y a ni `docs/PLAN.md` ni tranches : l'amorçage se réduit au
+dépôt git, à sa licence, au `.gitignore` qui couvre les secrets et à la commande
+de vérification écrite dès le premier jour. Ni `.env.example`, ni CI s'il n'y a
+rien à y mettre : on ne crée pas un fichier pour remplir une case. Le premier
+commit ne porte que ce squelette.
+
 ## 1. La licence — demandée, jamais supposée
 
 Poser la question une fois, avec ses conséquences :

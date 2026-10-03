@@ -34,7 +34,7 @@ trancher, et se dit comme tel.
   nouveau se propose par patch sur ce registre, il ne s'invente pas dans une
   note.
 - Le **frontmatter minimal** d'une note de connaissance : `type` (parmi
-  `concept`, `revue`, `projet`, `personnel`, `maintenance`, `note`) et `tags`. `source`
+  `concept`, `revue`, `projet`, `personnel`, `maintenance`, `idée`, `note`) et `tags`. `source`
   (URL) s'ajoute pour une note venue de l'extérieur (`-DOCUMENTS/`).
 - La **`description`** — un champ d'une seule ligne — n'est pas obligatoire,
   mais c'est elle que les index du coffre parent reprennent pour décider
@@ -54,9 +54,16 @@ trancher, et se dit comme tel.
 3. Remplir le corps dans la note, sans dénaturer l'intention de départ.
 4. Poser le frontmatter (`type`, `tags` du vocabulaire, `description`) et les
    rétroliens vers les notes liées.
-5. Décider la destination : projet → `Mon coffre/-PROJETS/` ; revue, article,
+5. Décider la destination : projet → `Mon coffre/-PROJETS/<projet>/documents/`
+   (le dossier du projet, §7.3 — jamais à plat dans `-PROJETS/`) ; revue, article,
    transcription → `Mon coffre/-DOCUMENTS/` ; fait personnel → `Mon coffre/-PERSONNELS/` ;
    concept → `Mon coffre/-SAVOIRS/`.
+   **Idée** — titre commençant par `Idée` ou `type: idée` →
+   `Mon coffre/-PROJETS/Idées/documents/Idée — <sujet>.md`, frontmatter
+   `statut: à évaluer` et `ajoutée: AAAA-MM-JJ`, une section vide
+   « Faisabilité — revue d'équipe » ; puis ajouter sa ligne au tableau
+   d'`Idées — résumé.md`. La faisabilité ne se juge pas au tri : elle se
+   tranche en revue d'équipe, à la demande de l'utilisateur.
 6. Afficher le preview (contenu final + destination), en conserver une copie
    datée dans `Mon coffre/_MAINTENANCE/` (§7.4).
 7. Classer (déplacer), puis mettre à jour `Mon coffre/_MAINTENANCE/notes_remplies.md`.

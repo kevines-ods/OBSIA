@@ -29,7 +29,7 @@ phrase, le balayage ramène tout et ne conclut rien.
 | Source | Ce qu'on y cherche | Comment |
 | --- | --- | --- |
 | le coffre parent | notes, décisions, comparatifs déjà écrits | recherche plein texte via `obsidian-manager` |
-| la mémoire d'OBSIA | ce qui a déjà été tranché, et pourquoi | `mémoire/projets/`, et `expériences/` de chaque agent |
+| la mémoire d'OBSIA | ce qui a déjà été tranché, et pourquoi | `mémoire/projets/` (résumés et carnets), et `expériences/` de chaque agent |
 | les dépôts | tentatives précédentes, code réutilisable | `ls` du coffre parent, puis `git log` de chacun |
 | la machine | ce qui est déjà installé et qui marche | l'inventaire logiciel du poste et des conteneurs |
 
@@ -63,6 +63,14 @@ l'inventaire**. Elle ne se devine pas — se la faire dire.
 Présenter les trois listes en tableau. Demander explicitement : *« Ce qu'on
 reprend et ce qu'on condamne, c'est bien ça ? »* La porte 1 n'est franchie
 qu'une fois cette confirmation obtenue.
+
+Si l'inventaire ouvre une construction, dire aussi **quelle voie s'applique** :
+le parcours complet, ou la voie rapide pour un petit outil. Recopier alors les
+quatre tests d'entrée du `batisseur` et donner la réponse de chacun. Deux se
+**constatent** — l'outil est-il exposé, touche-t-il un secret ou écrit-il hors
+de chez lui ; deux s'**affirment** — « rien à préserver », « environ 200
+lignes » — et ce sont ces deux-là qu'une séance ultérieure devra revérifier au
+lieu de les recopier.
 
 ## Pièges
 

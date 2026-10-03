@@ -9,6 +9,9 @@
 > Les chemins cités ci-dessous partent de la racine du dépôt.
 > L'interface graphique et son périmètre de modification ne vivent plus dans ce
 > dépôt, et aucune interface n'y est nommée : cf. `HISTORIQUE.md`.
+> Les équipes d'agents ne vivent pas non plus dans ce dépôt : le coffre déclare
+> chaque agent, ses skills et ses bornes, et c'est le harness qui compose
+> l'équipe — cf. `HISTORIQUE.md`, 2 octobre 2026.
 
 Je veux créer un système d'orchestration agentic natif Linux. Le système permet
 des chats avec un agent spécifique mais aussi avec des équipes d'agents. Il

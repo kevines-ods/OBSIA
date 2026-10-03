@@ -50,20 +50,22 @@ comme l'exige la règle d'or de `README.md` et le §7.6 du contrat.
 }
 ```
 
-**Une seule entrée, et c'est le contrat.** Les entrées de `instructions`
+**Une seule entrée, et c'est le noyau.** Les entrées de `instructions`
 *s'ajoutent* à `AGENTS.md` — la documentation le dit en toutes lettres : « All
 instruction files are combined with your `AGENTS.md` files ». Or l'`AGENTS.md`
 du §1 porte déjà l'index des agents, celui des skills, celui des tâches et la
 méthode : les quatre fichiers `IA/system/` qu'on listait ici y sont donc en
-double. Le contrat, lui, n'y est pas : la méthode se contente d'ordonner « Lis
-`IA/system/VAULT-CONTRACT.md` en entier avant toute action ». Le nommer ici le
-met dans le contexte **d'emblée**, au lieu de laisser l'agent aller le
+double. Le noyau, lui, n'y est pas : la méthode se contente d'ordonner « Lis en
+entier le noyau `IA/system/VAULT-CONTRACT.md` avant toute action ». Le nommer ici
+le met dans le contexte **d'emblée**, au lieu de laisser l'agent aller le
 chercher — et c'est la seule pièce du cerveau qui manquait à `AGENTS.md`.
 
-Le contrat est nommé **lui-même**, et non par la syntaxe `@IA/system/…` de
+Le noyau est nommé **lui-même**, et non par la syntaxe `@IA/system/…` de
 `CLAUDE.md` : OpenCode **ne résout pas** les références de fichier d'un
 `AGENTS.md` — la documentation le dit, et propose de charger explicitement ce
 qu'on veut voir arriver. Nommer le fichier garantit qu'il est inséré **entier**.
+Les annexes de `IA/system/contrat/`, elles, ne s'insèrent pas : elles se lisent à
+la demande, avant l'acte que le tableau du préambule du noyau assigne à chacune.
 
 Deux points de la documentation, à connaître :
 
@@ -86,7 +88,8 @@ donner le fichier produit comme instruction de démarrage.
 
 Un agent se déclare soit en JSON dans `opencode.json`, soit en Markdown à
 frontmatter. **Les deux formats de frontmatter ne coïncident pas** : celui du
-coffre porte `schema`, `kind`, `name`, `read_only`, `skills`, `mcp` (§5) ;
+coffre porte `schema`, `kind`, `name`, `read_only`, `skills`, `mcp` (§5, annexe
+`../contrat/contrat-frontmatter.md`) ;
 celui du harness attend `description`, `mode`, `model`, `permission`. Un
 fichier de `IA/agents/` ne se dépose donc pas tel quel dans le dossier
 d'agents du harness.

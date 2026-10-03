@@ -293,5 +293,219 @@ class TestProfilFautif(BaseVerificateur):
         self.assertIn("absent", self.avertissements_texte())
 
 
+class TestCarnets(BaseVerificateur):
+    """§6 : forme des carnets, un seul niveau de sous-projet, transition."""
+
+    def carnet(self, projet: str, nom: str, frontmatter: str) -> Path:
+        return self.ecrire("mémoire/projets/%s/carnets/%s" % (projet, nom),
+                           "---\n%s\n---\n\nCorps.\n" % frontmatter)
+
+    def test_un_carnet_conforme_est_muet(self):
+        self.carnet("refonte-de-la-memoire",
+                    "2026-10-02-refonte-de-la-memoire-t1.md",
+                    "agent: assistant\nprojet: refonte-de-la-memoire\nstatut: en cours\n")
+        VC.verifier_carnets()
+        self.assertEqual([], VC.erreurs)
+        self.assertEqual([], VC.avertissements)
+
+    def test_un_carnet_mal_nomme_est_refuse(self):
+        self.carnet("refonte-de-la-memoire",
+                    "2026-10-02-autre-projet-t1.md",
+                    "agent: assistant\nprojet: refonte-de-la-memoire\nstatut: en cours\n")
+        VC.verifier_carnets()
+        self.assertIn("ne correspond pas au dossier", self.erreurs_texte())
+
+    def test_un_carnet_sans_date_est_refuse(self):
+        self.carnet("refonte-de-la-memoire", "t1.md",
+                    "agent: assistant\nprojet: refonte-de-la-memoire\nstatut: en cours\n")
+        VC.verifier_carnets()
+        self.assertIn("mal nommé", self.erreurs_texte())
+
+    def test_un_carnet_sans_statut_est_refuse(self):
+        self.carnet("refonte-de-la-memoire",
+                    "2026-10-02-refonte-de-la-memoire-t1.md",
+                    "agent: assistant\nprojet: refonte-de-la-memoire\n")
+        VC.verifier_carnets()
+        self.assertIn("`statut:`", self.erreurs_texte())
+
+    def test_un_statut_hors_liste_est_refuse(self):
+        self.carnet("refonte-de-la-memoire",
+                    "2026-10-02-refonte-de-la-memoire-t1.md",
+                    "agent: assistant\nprojet: refonte-de-la-memoire\nstatut: perdu\n")
+        VC.verifier_carnets()
+        self.assertIn("en cours", self.erreurs_texte())
+
+    def test_un_statut_vide_est_refuse(self):
+        self.carnet("refonte-de-la-memoire",
+                    "2026-10-02-refonte-de-la-memoire-t1.md",
+                    "agent: assistant\nprojet: refonte-de-la-memoire\nstatut:\n")
+        VC.verifier_carnets()
+        self.assertIn("`statut:` vide", self.erreurs_texte())
+
+    def test_un_agent_vide_est_refuse(self):
+        self.carnet("refonte-de-la-memoire",
+                    "2026-10-02-refonte-de-la-memoire-t1.md",
+                    "agent:\nprojet: refonte-de-la-memoire\nstatut: en cours\n")
+        VC.verifier_carnets()
+        self.assertIn("`agent:` vide", self.erreurs_texte())
+
+    def test_un_projet_qui_ne_correspond_pas_au_dossier_est_refuse(self):
+        self.carnet("refonte-de-la-memoire",
+                    "2026-10-02-refonte-de-la-memoire-t1.md",
+                    "agent: assistant\nprojet: autre-projet\nstatut: en cours\n")
+        VC.verifier_carnets()
+        self.assertIn("`projet: autre-projet`", self.erreurs_texte())
+
+    def test_un_sous_dossier_dans_carnets_est_refuse(self):
+        self.ecrire("mémoire/projets/un-projet/carnets/archive/vieux.md", "Corps.\n")
+        VC.verifier_carnets()
+        self.assertIn("sous-dossier dans `carnets/`", self.erreurs_texte())
+
+    def test_une_note_datee_a_plat_est_toleree(self):
+        self.ecrire("mémoire/projets/ancien-projet/2026-09-18-une-note.md",
+                    "---\nagent: assistant\n---\n\nCorps.\n")
+        VC.verifier_carnets()
+        self.assertEqual([], VC.erreurs)
+        self.assertIn("ancienne forme", self.avertissements_texte())
+
+    def test_un_sous_projet_imbrique_est_refuse(self):
+        self.ecrire("mémoire/projets/un-projet/sous/encore/fichier.md", "Corps.\n")
+        VC.verifier_carnets()
+        self.assertIn("un seul niveau", self.erreurs_texte())
+
+    def test_un_seul_niveau_de_sous_projet_est_admis(self):
+        self.carnet("un-projet", "2026-10-02-un-projet-t1.md",
+                    "agent: assistant\nprojet: un-projet\nstatut: clos\n")
+        self.ecrire("mémoire/projets/un-projet/sous/carnets/2026-10-02-sous-t1.md",
+                    "---\nagent: assistant\nprojet: sous\nstatut: clos\n---\n\nCorps.\n")
+        VC.verifier_carnets()
+        self.assertEqual([], VC.erreurs)
+
+
+class TestAnnexesContrat(BaseVerificateur):
+    """§5, §13 : les annexes du noyau, tout `IA/system/contrat/*.md`.
+
+    Une annexe se définit **par son dossier** : tout `*.md` du dossier est
+    contrôlé, sauf `registre.md`, l'index exempté nommément. Une annexe renommée
+    doit rester dans le filet. Le frontmatter réutilise les gardes communes —
+    `schema` entier, `name` qui suit le fichier et `NOM_VALIDE`, `description`
+    d'une seule ligne physique — sans `read_only`, réservé aux fiches qui
+    s'exécutent.
+    """
+
+    DOSSIER = "IA/system/contrat"
+
+    def annexe(self, nom: str, champs: dict, corps: str = "") -> list[dict]:
+        """Écrit une annexe et la relit comme le fait le vérificateur."""
+        valeurs = {"schema": "1", "kind": "contract", "name": nom,
+                   "description": "Annexe de test.", "module": "noyau"}
+        valeurs.update(champs)
+        lignes = ["%s: %s" % (c, v) for c, v in valeurs.items() if v is not None]
+        self.ecrire("%s/%s.md" % (self.DOSSIER, nom),
+                    "---\n%s\n---\n\n%s\n" % ("\n".join(lignes), corps))
+        return VC.verifier_annexes_contrat(
+            self.racine / self.DOSSIER,
+            self.modules_a_la_main("noyau", "construction"))
+
+    def test_une_annexe_conforme_passe(self):
+        annexes = self.annexe("contrat-noyau", {})
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+        self.assertEqual(1, len(annexes))
+
+    def test_un_kind_autre_que_contract_est_refuse(self):
+        self.annexe("contrat-noyau", {"kind": "module"})
+        self.assertIn("le dossier des annexes du contrat", self.erreurs_texte())
+
+    def test_un_schema_qui_n_est_pas_un_entier_est_refuse(self):
+        self.annexe("contrat-noyau", {"schema": "un"})
+        self.assertIn("`schema` doit être un entier", self.erreurs_texte())
+
+    def test_un_name_qui_ne_suit_pas_le_fichier_est_refuse(self):
+        self.annexe("contrat-noyau", {"name": "contrat-autre"})
+        self.assertIn("≠ nom du fichier", self.erreurs_texte())
+
+    def test_un_name_hors_nom_valide_est_refuse(self):
+        self.annexe("contrat_Noyau", {})
+        self.assertIn("minuscules et tirets", self.erreurs_texte())
+
+    def test_une_description_vide_est_refusee(self):
+        self.annexe("contrat-noyau", {"description": ""})
+        self.assertIn("`description` vide", self.erreurs_texte())
+
+    def test_une_description_repliee_est_refusee(self):
+        self.annexe("contrat-noyau", {"description": ">"})
+        self.assertIn("scalaire replié", self.erreurs_texte())
+
+    def test_une_description_poursuivie_sur_la_ligne_suivante_est_refusee(self):
+        self.annexe("contrat-noyau", {"description": "Une phrase qui s'achève :"})
+        self.assertIn("se poursuivre sur la ligne suivante", self.erreurs_texte())
+
+    def test_un_module_inconnu_est_refuse(self):
+        self.annexe("contrat-noyau", {"module": "fantome"})
+        self.assertIn("module inexistant", self.erreurs_texte())
+
+    def test_un_module_absent_est_refuse(self):
+        self.annexe("contrat-noyau", {"module": None})
+        self.assertIn("champ obligatoire manquant : `module`", self.erreurs_texte())
+
+    def test_un_frontmatter_absent_est_refuse(self):
+        self.ecrire("%s/contrat-noyau.md" % self.DOSSIER, "Corps sans en-tête.\n")
+        VC.verifier_annexes_contrat(self.racine / self.DOSSIER,
+                                    self.modules_a_la_main("noyau"))
+        self.assertIn("frontmatter absent", self.erreurs_texte())
+
+    def test_le_registre_est_exempte(self):
+        self.ecrire("%s/registre.md" % self.DOSSIER, "# Registre\n\nSans en-tête.\n")
+        VC.verifier_annexes_contrat(self.racine / self.DOSSIER,
+                                    self.modules_a_la_main("noyau"))
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+
+    def test_tout_fichier_du_dossier_est_controle(self):
+        """Un nom qui ne commence plus par `contrat-` ne sort pas du filet."""
+        self.ecrire("%s/annexe-noyau.md" % self.DOSSIER, "Sans en-tête.\n")
+        VC.verifier_annexes_contrat(self.racine / self.DOSSIER,
+                                    self.modules_a_la_main("noyau"))
+        self.assertIn("frontmatter absent", self.erreurs_texte())
+
+    def test_le_dossier_absent_avertit(self):
+        """Pas de dossier : on le dit, on ne sort pas en 0 sans rien dire."""
+        VC.verifier_annexes_contrat(self.racine / self.DOSSIER,
+                                    self.modules_a_la_main("noyau"))
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+        self.assertIn("dossier des annexes du contrat absent",
+                      self.avertissements_texte())
+
+    def test_les_chemins_cites_dans_une_annexe_sont_controles(self):
+        """Point 3 : le dossier est déjà dans le filet de `verifier_chemins_cites`."""
+        self.annexe("contrat-noyau", {},
+                    "Voir `IA/skills/inexistant.md` pour la suite.\n")
+        VC.verifier_chemins_cites()
+        self.assertIn("IA/skills/inexistant.md", self.erreurs_texte())
+
+    def test_un_chemin_relatif_du_dossier_est_resolu(self):
+        """`../VAULT-CONTRACT.md` mène bien à `IA/system/VAULT-CONTRACT.md`.
+
+        C'est le cas qui a motivé l'écart voulu de N1 : une annexe cite le
+        contrat depuis son dossier, et le chemin n'est valide que résolu depuis
+        le fichier qui le cite."""
+        self.ecrire("IA/system/VAULT-CONTRACT.md", "# Contrat\n\nRien à voir ici.\n")
+        self.annexe("contrat-noyau", {},
+                    "Voir `../VAULT-CONTRACT.md` pour la règle (§5).\n")
+        VC.verifier_chemins_cites()
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+
+    def test_un_chemin_relatif_casse_du_dossier_est_signale(self):
+        self.annexe("contrat-noyau", {},
+                    "Voir `../inexistant.md` pour la règle (§5).\n")
+        VC.verifier_chemins_cites()
+        self.assertIn("../inexistant.md", self.erreurs_texte())
+
+    def test_une_annexe_ne_peuple_pas_son_module(self):
+        """Une annexe déclare un module, elle ne l'habite pas (§13)."""
+        self.annexe("contrat-noyau", {})
+        VC.verifier_appartenance(self.modules_a_la_main("noyau"), [], [], [], [])
+        self.assertIn("n'installerait rien", self.avertissements_texte())
+
+
 if __name__ == "__main__":
     unittest.main()

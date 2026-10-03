@@ -2,7 +2,8 @@
 
 **English** | [Français](README.fr.md)
 
-An AI agent orchestration system built on an Obsidian vault.
+An Obsidian vault that describes your AI agents — roles, skills, memory, rules —
+and the tasks they run.
 
 Agents, their skills and their memory are Markdown files. No database, no
 proprietary format: the vault can be read and edited by hand, in Obsidian or in
@@ -204,15 +205,21 @@ command or opens the network.
 
 Two modes:
 
-- **in place** — nothing is moved or deleted, only generated files are reduced
-  to the profile. `git checkout -- IA` restores everything;
+- **in place** — nothing is moved or deleted, only the **non-versioned** files
+  are reduced to the profile (the system prompt and `AGENTS.md`). The indexes
+  are versioned and stay at the full catalogue;
 - **copy** (`--installer TARGET`) — only the kept files land in the target, and
   agent declarations are trimmed there to stay consistent.
+
+Back from a profile to the full catalogue: `python3 scripts/installer.py --tout
+--appliquer`.
 
 The profile lives in `obsia.local.yml`, at the root, **not versioned**: it
 describes this machine, not the vault. Without a profile, the whole catalogue
 is active — that is the state of the distribution repository and the one CI
-checks against. Full rules in §13 of `IA/system/VAULT-CONTRACT.md`.
+checks against. It only reduces what is not versioned (system prompt,
+`AGENTS.md`): versioned indexes always show the whole catalogue, otherwise CI
+would see a stale index. Full rules in §13 of `IA/system/VAULT-CONTRACT.md`.
 
 ## Checking the vault
 
@@ -249,7 +256,8 @@ git config core.hooksPath .githooks
 A skill is a file `IA/skills/<name>.md`. When it grows — beyond roughly 500
 lines — it becomes a folder `IA/skills/<name>/` whose entry point is called
 `<name>.md`, not `SKILL.md`, alongside `references/`, `scripts/` and
-`assets/`. Details in `VAULT-CONTRACT.md` §5.
+`assets/`. Rule in `VAULT-CONTRACT.md` §5, details in
+`IA/system/contrat/contrat-frontmatter.md`.
 
 Every agent or skill file starts with a strict YAML frontmatter.
 

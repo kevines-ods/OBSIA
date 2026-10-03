@@ -98,7 +98,8 @@ sur la bonne racine.
 L'interface prévoit des exécutions planifiées, donc une tâche du registre
 pourrait s'y instancier en `exécutant: harness` au lieu de `local`. Deux
 réserves avant de s'y fier : la forme du `quand` du coffre est un cron à cinq
-champs avec fuseau (§5), à confronter à ce que l'interface accepte ; et
+champs avec fuseau (§5, annexe `../contrat/contrat-frontmatter.md`), à
+confronter à ce que l'interface accepte ; et
 l'invariant du §12 tient — **au plus une instance vivante, tous exécutants
 confondus**. Instancier la même tâche des deux côtés la déclencherait deux
 fois, sans qu'aucune erreur ne le signale.

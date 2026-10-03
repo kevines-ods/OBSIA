@@ -146,7 +146,11 @@ class TestSortie(BaseLigneDeCommande):
 
 
 class TestProfilDeBoutEnBout(BaseLigneDeCommande):
-    """Le profil gouverne le prompt réellement produit, pas seulement l'index."""
+    """Le profil gouverne le prompt produit — et lui seul, plus les index.
+
+    Les index versionnés restent au catalogue complet ; c'est
+    `test_regenerate_index.py` qui le garantit.
+    """
 
     def test_sans_profil_tout_apparait(self):
         resultat = self.lancer()

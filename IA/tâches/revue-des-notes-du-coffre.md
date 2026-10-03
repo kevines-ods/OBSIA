@@ -5,7 +5,7 @@ name: revue-des-notes-du-coffre
 description: Traiter les notes brutes du coffre parent — remplir et classer celles d'-EN-VRAC, compléter celles déposées dans -SAVOIRS, et signaler les tags hors vocabulaire contrôlé. À charger via le skill traitement-des-notes.
 module: coffre-obsidian
 mode: agent
-quand: "0 10 * * 1"
+quand: "0 10 * * *"
 fuseau: Europe/Paris
 exécutant: local
 agent: assistant
@@ -37,6 +37,9 @@ procédure, depuis la racine du dépôt OBSIA :
    (`IA/system/tags-du-coffre-parent.md`), crée les rétroliens, puis classe la
    note selon sa nature vers `Mon coffre/-PROJETS/`,
    `Mon coffre/-DOCUMENTS/`, `Mon coffre/-PERSONNELS/` ou `Mon coffre/-SAVOIRS/`.
+   Une note dont le titre commence par `Idée` (ou `type: idée`) va dans
+   `Mon coffre/-PROJETS/Idées/documents/` avec `statut: à évaluer`, et
+   reçoit sa ligne dans `Mon coffre/-PROJETS/Idées/Idées — résumé.md`.
 2. Vérifie `Mon coffre/_MAINTENANCE/notes_remplies.md`, puis complète les notes de
    `Mon coffre/-SAVOIRS/` déposées brutes qui n'y figurent pas encore.
 3. Consigne chaque preview (copie datée) et chaque action dans

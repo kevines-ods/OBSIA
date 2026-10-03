@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Régénère IA/system/agents-index.md et IA/system/skills-index.md.
+Régénère les index dérivés de `IA/` : `IA/system/agents-index.md`,
+`skills-index.md`, `taches-index.md`, `modules-index.md` et `IA/README.md`.
 
-Les deux index sont **dérivés** des frontmatters, qui font foi. Les maintenir à
+Ces index sont **dérivés** des frontmatters, qui font foi. Les maintenir à
 la main les fait diverger sans que rien ne le signale — c'est arrivé, voir
 mémoire/assistant/expériences/index-maintenus-a-la-main.md.
+
+Les cinq fichiers sont **versionnés** : ils décrivent le catalogue entier,
+jamais un coffre réduit à un profil. `obsia.local.yml` (§13) ne les lit ni
+ne les filtre ; il ne réduit que ce qui n'est pas versionné — le prompt
+système et `AGENTS.md`, produits par `generer_prompt.py` / `installer.py`.
 
 Usage :
     python3 scripts/regenerate_index.py
@@ -19,8 +25,7 @@ sys.dont_write_bytecode = True                    # pas de __pycache__ dans le c
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from generer_prompt import (RACINE_DEFAUT, collecter,   # même lecteur que le prompt
-                            filtrer_par_profil, lire_frontmatter,
-                            reduire_aux_actifs)
+                            lire_frontmatter)
 
 RACINE = RACINE_DEFAUT
 
@@ -55,7 +60,7 @@ def rendre_skills(agents: list[dict], skills: list[dict]) -> str:
                     s.get("description", ""), par))
     L += ["",
           "> `core` = indispensable au fonctionnement du coffre ; `outil` = compétence",
-          "> ponctuelle. (cf. `VAULT-CONTRACT.md` §5)",
+          "> ponctuelle. (cf. `VAULT-CONTRACT.md` §5 et `contrat/contrat-frontmatter.md`)",
           "",
           "> Fichier **généré** par `scripts/regenerate_index.py`. La colonne description",
           "> reproduit mot pour mot le champ `description` du frontmatter, qui fait foi :",
@@ -111,8 +116,9 @@ def rendre_ia_readme(agents: list[dict], skills: list[dict], mcp: list[dict],
          "Toutes les définitions d'agents, de compétences (skills), d'outils",
          "structurés (MCP) et de tâches planifiées vivent ici. C'est la partie",
          "déclarative du coffre.", "",
-         "Les règles de format sont au §5 de `system/VAULT-CONTRACT.md`, qui fait foi",
-         "et n'est pas reformulé ici.", "",
+         "Les règles de format sont au §5 du contrat `system/VAULT-CONTRACT.md`,",
+         "et le détail des champs dans `system/contrat/contrat-frontmatter.md` ;",
+         "les deux font foi et ne sont pas reformulés ici.", "",
          "## Agents — `IA/agents/`", ""]
     for a in agents:
         L.append("- **%s** — %s" % (a["name"], a.get("description", "")))
@@ -146,11 +152,13 @@ def rendre_ia_readme(agents: list[dict], skills: list[dict], mcp: list[dict],
           "- `agents-index.md`, `skills-index.md`, `taches-index.md`,",
           "  `modules-index.md` — index générés (§11).",
           "- `modules/` — le catalogue de modules installables (§13). Un module",
-          "  regroupe ce qui n'a de sens qu'ensemble ; `obsia.local.yml`, non",
-          "  versionné, dit lesquels sont retenus sur cette machine.",
+          "  regroupe ce qui n'a de sens qu'ensemble ; quels modules sont retenus",
+          "  ici se lit dans `obsia.local.yml`, s'il existe ; son absence vaut",
+          "  catalogue complet.",
           "- `providers.md` — repère pour choisir un modèle. Aucune clé n'y vit.",
           "- `prompt-fondateur.md` — intention d'origine, non normative.",
-          "- `session-log/` — une note par session de travail (§9).",
+          "- `session-log/` — archives : on n'y écrit plus, les carnets (§6) le",
+          "  remplacent (§9).",
           "",
           "Le registre des tâches planifiées vit à côté, dans `IA/tâches/` (§12) ;",
           "`system/taches-index.md` en est l'index généré.",
@@ -161,31 +169,37 @@ def rendre_ia_readme(agents: list[dict], skills: list[dict], mcp: list[dict],
     return "\n".join(L)
 
 
-def rendre_modules(modules: list[dict], actifs, contenu: dict[str, int]) -> str:
-    """Index du catalogue de modules — ce qui existe, et ce qui est retenu ici.
+def rendre_modules(modules: list[dict], contenu: dict[str, int]) -> str:
+    """Index du catalogue de modules — ce qui existe, et ce que chacun apporte.
 
     Toujours présent en contexte : c'est par lui qu'on sait qu'un module
     écarté *existe*, et donc qu'on peut le retenir plus tard. Un catalogue
     dont on ignore les entrées absentes n'est pas un catalogue, c'est une
     liste (§13).
+
+    Le catalogue est montré **entier** : ce fichier est versionné, donc il ne
+    dépend pas de la machine. Il n'a pas de colonne « retenu ici » — avec un
+    profil, elle vaudrait « oui » partout et ne dirait rien ; sans profil, tout
+    est retenu. Quels modules le sont se lit dans `obsia.local.yml`, s'il existe.
     """
     L = ["# modules-index.md — Index des modules installables", "",
-         "| Module | Essentiel | Retenu ici | Déclarations | Sondes | Requiert | Description |",
-         "|---|---|---|---|---|---|---|"]
+         "| Module | Essentiel | Déclarations | Sondes | Requiert | Description |",
+         "|---|---|---|---|---|---|"]
     for m in modules:
         nom = m["name"]
-        L.append("| [%s](modules/%s) | %s | %s | %d | %s | %s | %s |" % (
+        L.append("| [%s](modules/%s) | %s | %d | %s | %s | %s |" % (
             nom, m["_fichier"],
             "oui" if m.get("essentiel") else "non",
-            "oui" if (actifs is None or nom in actifs) else "non",
             contenu.get(nom, 0),
             ", ".join("`%s`" % s for s in m.get("sondes", [])) or "—",
             ", ".join(m.get("requiert", [])) or "—",
             m.get("description", "")))
     L += ["",
-          "> `Retenu ici` se lit dans `obsia.local.yml`, non versionné. Sans profil,",
-          "> tout est retenu — c'est l'état du dépôt de distribution, et celui sous",
-          "> lequel la CI vérifie le coffre (cf. `VAULT-CONTRACT.md` §13).",
+          "> Ce fichier montre le **catalogue complet** : versionné, il ne dépend",
+          "> pas de la machine, et ne se réduit jamais au profil. Quels modules",
+          "> sont retenus *ici* se lit dans `obsia.local.yml`, s'il existe ; son",
+          "> absence vaut catalogue complet (cf. `VAULT-CONTRACT.md` §13 et",
+          "> `contrat/contrat-distribution.md`).",
           "",
           "> Retenir un module écarté, ou en écarter un autre :",
           "> `python3 scripts/installer.py --appliquer`. L'installeur sonde la",
@@ -242,19 +256,12 @@ def main() -> int:
     taches = lire_taches(RACINE / "IA" / "tâches")
     modules = lire_modules_locaux(RACINE)
 
-    # Le catalogue complet sert à compter ce que chaque module apporte ; les
-    # index, eux, ne montrent que ce que le profil retient (§13).
+    # Le catalogue entier alimente les compteurs : les index montrent tout ce
+    # que le coffre déclare, sans jamais le réduire au profil (§13).
     contenu: dict[str, int] = {}
     for fm in agents + skills + mcp + taches:
         if fm.get("module"):
             contenu[fm["module"]] = contenu.get(fm["module"], 0) + 1
-
-    import modules as _mod                       # tardif, comme dans generer_prompt
-    actifs = _mod.modules_actifs(RACINE)
-
-    agents, skills, mcp, taches = filtrer_par_profil(RACINE, agents, skills,
-                                                     mcp, taches)
-    reduire_aux_actifs(agents, skills, {m["name"] for m in mcp})
 
     if not agents or not skills:
         print("Aucun agent ou aucun skill collecté — index non régénéré.", file=sys.stderr)
@@ -264,7 +271,7 @@ def main() -> int:
         RACINE / "IA" / "system" / "agents-index.md": rendre_agents(agents),
         RACINE / "IA" / "system" / "skills-index.md": rendre_skills(agents, skills),
         RACINE / "IA" / "system" / "taches-index.md": rendre_taches(taches),
-        RACINE / "IA" / "system" / "modules-index.md": rendre_modules(modules, actifs, contenu),
+        RACINE / "IA" / "system" / "modules-index.md": rendre_modules(modules, contenu),
         RACINE / "IA" / "README.md": rendre_ia_readme(agents, skills, mcp, taches),
     }
 

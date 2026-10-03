@@ -474,7 +474,10 @@ class TestNomsInterdits(BaseControle):
 
     Un nom d'hôte nu n'a pas de forme : seul l'utilisateur sait qu'il en est
     un. Ce qui doit être prouvé : la liste se lit, un nom s'attrape entier et
-    sans casse, un nom trop court est écarté, et un nom interdit ne se force pas.
+    sans casse, un nom trop court est écarté — et surtout, un nom de cette
+    liste **avertit** au lieu de refuser : il n'est ni une trouvaille
+    bloquante ni quelque chose que `--forcer` doit franchir. Il signale,
+    ligne par ligne, et laisse publier.
     """
 
     def liste(self, contenu: str) -> Path:
@@ -495,15 +498,44 @@ class TestNomsInterdits(BaseControle):
         self.ecrire("a.md", "À instancier sur Poste-Atelier seulement.\n")
         self.ecrire("b.md", "poste-atelier-2 et poste-ateliers ne sont pas lui.\n")
         controle = PUB.controler_fuites(self.racine, ["poste-atelier"])
-        self.assertEqual([(t[0], t[2]) for t in controle.trouvailles],
+        self.assertEqual(controle.trouvailles, [])
+        self.assertEqual([(t[0], t[2]) for t in controle.avertissements],
                          [("a.md", "nom interdit")])
 
     def test_sans_noms_le_controle_ne_change_pas(self):
         self.ecrire("a.md", "poste-atelier\n")
-        self.assertEqual(self.controler().trouvailles, [])
+        controle = self.controler()
+        self.assertEqual(controle.trouvailles, [])
+        self.assertEqual(controle.avertissements, [])
 
-    def test_un_nom_interdit_ne_se_force_pas(self):
-        self.assertIn("nom interdit", PUB.SANS_FORCAGE)
+    def test_un_nom_interdit_n_a_rien_a_forcer(self):
+        """Un nom de la liste avertit : il ne refuse pas, il n'a rien à forcer.
+
+        Il n'est pas dans `SANS_FORCAGE` — ce qui y reste, ce sont les valeurs à
+        forme reconnaissable (clé privée, jeton), les seules que `--forcer` ne
+        franchit jamais.
+        """
+        self.assertNotIn("nom interdit", PUB.SANS_FORCAGE)
+
+    def test_un_mot_banal_ne_bloque_ni_la_prose_ni_le_home(self):
+        """Témoin négatif : un mot banal déclaré n'arrête pas la publication.
+
+        La liste frappe des mots, pas seulement des identités : « table » est
+        un mot banal, il apparaît dans la prose courante, et le témoin est vrai
+        jusque dans un chemin `$HOME/.config/table/…` — le mot y figure
+        vraiment. Aucun des deux ne produit de trouvaille bloquante : le nom
+        devient un avertissement, la publication passe. C'est ce qui protège le
+        passage du refus à l'avertissement.
+        """
+        self.ecrire("prose.md", "La table est mise, le repas est prêt.\n")
+        self.ecrire("config.md",
+                    "liste lue dans $HOME/.config/table/noms-interdits\n")
+        controle = PUB.controler_fuites(self.racine, ["table"])
+
+        self.assertEqual(controle.trouvailles, [])
+        self.assertEqual(
+            [(rel, etiquette) for rel, _, etiquette, _ in controle.avertissements],
+            [("config.md", "nom interdit"), ("prose.md", "nom interdit")])
 
 
 class BasePublicationReelle(unittest.TestCase):
@@ -636,6 +668,9 @@ class TestCeQuiNeSeForcePas(BasePublicationReelle):
 
         self.assertEqual(resultat.returncode, 1, resultat.stdout + resultat.stderr)
         self.assertIn("clé privée", resultat.stdout + resultat.stderr)
+        self.assertRegex(resultat.stdout,
+                         r"\d+ fichier\(s\) relu\(s\), \d+ non relu\(s\)",
+                         "le total s'affiche aussi quand le refus tombe")
         self.assertEqual(self.publies(), set(),
                          "rien ne doit être écrit dans la cible")
 
@@ -664,6 +699,107 @@ class TestCeQuiNeSeForcePas(BasePublicationReelle):
             capture_output=True, text=True, check=True).stdout
         self.assertIn("--forcer", message)
         self.assertIn("adresse IP privée", message)
+
+
+class TestUnNomInterditAvertit(BasePublicationReelle):
+    """Un nom de la liste locale avertit : la publication passe, sans `--forcer`.
+
+    La liste doit retenir des identités mais frappe des mots : un mot banal y
+    figure un faux positif — ici une ligne de prose. La publication ne doit ni
+    s'arrêter ni exiger `--forcer` : l'avertissement s'écrit, et le fichier part
+    quand même. Le témoin du chemin `$HOME/` vit dans le contrôle unitaire,
+    `test_un_mot_banal_ne_bloque_ni_la_prose_ni_le_home`. Ici la liste est
+    fictive, portée par `OBSIA_NOMS_INTERDITS` : jamais un nom de la vraie liste
+    de l'utilisateur dans le dépôt, qui se publie.
+    """
+
+    def lancer_avec_liste(self, *arguments: str) -> subprocess.CompletedProcess:
+        liste = self.parent / "noms-fictifs"
+        liste.write_text("table\n", encoding="utf-8")
+        return subprocess.run(
+            [sys.executable, "-B", str(PUBLIER), "--racine", str(self.source),
+             "--cible", str(self.cible), *arguments],
+            capture_output=True, text=True, check=False,
+            env={**os.environ,
+                 "OBSIA_NOMS_INTERDITS": str(liste),
+                 "GIT_AUTHOR_NAME": "Tests", "GIT_AUTHOR_EMAIL": "tests@example.com",
+                 "GIT_COMMITTER_NAME": "Tests",
+                 "GIT_COMMITTER_EMAIL": "tests@example.com"})
+
+    def test_un_mot_banal_n_arrete_pas_la_publication(self):
+        self.ecrire("notes.md", "La table est mise, le repas est prêt.\n")
+        self.committer()
+
+        resultat = self.lancer_avec_liste("--appliquer")
+
+        self.assertEqual(resultat.returncode, 0, resultat.stdout + resultat.stderr)
+        self.assertIn("nom interdit", resultat.stdout)
+        self.assertIn("avertissement", resultat.stdout)
+        self.assertIn("notes.md", self.publies(),
+                      "la prose signalée doit quand même être publiée")
+
+    def test_un_nom_interdit_ne_demande_pas_forcer(self):
+        """L'avertissement n'exige pas `--forcer` : il n'y a rien à forcer."""
+        self.ecrire("notes.md", "Une simple table au milieu de la prose.\n")
+        self.committer()
+
+        resultat = self.lancer_avec_liste("--appliquer")
+
+        self.assertEqual(resultat.returncode, 0, resultat.stdout + resultat.stderr)
+        self.assertNotIn("--forcer", resultat.stdout)
+
+    def test_l_avertissement_du_nom_s_ecrit_dans_le_commit(self):
+        """Le message part dans le public : le nombre, jamais le chemin ni le nom."""
+        self.ecrire("notes.md", "La table est mise, le repas est prêt.\n")
+        self.committer()
+
+        resultat = self.lancer_avec_liste("--appliquer", "--commit")
+
+        self.assertEqual(resultat.returncode, 0, resultat.stdout + resultat.stderr)
+        message = subprocess.run(
+            ["git", "-C", str(self.cible), "log", "-1", "--format=%B"],
+            capture_output=True, text=True, check=True).stdout
+        self.assertIn("1 avertissement(s) de nom interdit", message)
+        self.assertNotIn("notes.md", message,
+                         "le chemin n'a rien à faire dans le message public")
+        self.assertNotIn("table", message,
+                         "le nom lui-même ne doit pas partir dans le public")
+
+    def test_le_nom_ne_fuit_pas_par_le_chemin_du_fichier(self):
+        """Un fichier nommé d'après le mot ne doit pas le porter dans le commit.
+
+        Le nom peut tenir au chemin lui-même (`inventaire-table.md`) : citer
+        `chemin:ligne` dans le message public le ferait fuir. Seul le nombre
+        part ; le détail reste dans le rapport local, affiché sur la sortie.
+        """
+        self.ecrire("inventaire-table.md", "La table est mise, le repas est prêt.\n")
+        self.committer()
+
+        resultat = self.lancer_avec_liste("--appliquer", "--commit")
+
+        self.assertEqual(resultat.returncode, 0, resultat.stdout + resultat.stderr)
+        self.assertIn("inventaire-table.md:1", resultat.stdout,
+                      "le détail doit rester dans le rapport local")
+        message = subprocess.run(
+            ["git", "-C", str(self.cible), "log", "-1", "--format=%B"],
+            capture_output=True, text=True, check=True).stdout
+        self.assertIn("1 avertissement(s) de nom interdit", message)
+        self.assertNotIn("table", message,
+                         "le nom ne doit pas fuir par le chemin du fichier")
+
+    def test_l_avertissement_ne_cache_pas_le_total_des_fichiers(self):
+        """Le total « N relus, M non relus » s'affiche même sous un avertissement."""
+        self.ecrire("notes.md", "La table est mise, le repas est prêt.\n")
+        self.ecrire("assets/logo.png", b"\x89PNG\r\n\x1a\n\x00\x00\xff")
+        self.committer()
+
+        resultat = self.lancer_avec_liste("--appliquer")
+
+        self.assertEqual(resultat.returncode, 0, resultat.stdout + resultat.stderr)
+        self.assertIn("avertissement(s)", resultat.stdout)
+        self.assertRegex(resultat.stdout,
+                         r"\d+ fichier\(s\) relu\(s\), 1 non relu\(s\)")
+        self.assertIn("assets/logo.png (extension binaire)", resultat.stdout)
 
 
 if __name__ == "__main__":
