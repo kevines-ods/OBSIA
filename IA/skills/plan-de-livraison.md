@@ -18,6 +18,9 @@ l'interface » — n'a rien de fini avant la toute fin, et découvre ses erreurs
 au moment où elles coûtent le plus cher. Un projet découpé en **tranches
 verticales** livre quelque chose de vérifiable dès la première.
 
+En **voie rapide** du `batisseur` — un petit outil —, il n'y a rien à découper :
+une fiche courte remplace `docs/PLAN.md`, et ce skill n'est pas chargé.
+
 ## Procédure
 
 ### 1. Relire le cadrage et la stack

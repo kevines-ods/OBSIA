@@ -44,7 +44,7 @@ Ce qui reste autorisé, malgré la portée du serveur :
 | `Mon coffre/-EN-VRAC/` | oui | oui — remplir, tagger, rétrolier |
 | `Mon coffre/-SAVOIRS/` | oui | compléter seulement, sans déplacer |
 | `Mon coffre/_MAINTENANCE/` | oui | oui — previews, actions, registre |
-| `Mon coffre/-PROJETS/` | oui | la **note de suivi** `<projet> — résumé.md`, dont l'agent est l'auteur ; sinon classement seul |
+| `Mon coffre/-PROJETS/` | oui | le dossier `<projet>/` : résumé, vision (visionnaire seul), carnets, documents, archives (§7.3) — jamais `code/`, qui ne s'écrit que par commit dans son dépôt ; sinon classement seul |
 | `Mon coffre/-DOCUMENTS/`, `-PERSONNELS/` | oui | **classement seul** : y déposer une note venue d'`-EN-VRAC/` |
 | `Mon coffre/OBSIA/` | oui | non par ce serveur — le dépôt passe par Git (§2) |
 
@@ -58,10 +58,10 @@ Le détail fait foi au §7.3 du contrat, qui n'est pas reformulé ici.
   preview *est* la trace.
 - **Consigner l'usage** : tout appel de ce serveur laisse une ligne dans le log
   de session (§9) — quoi, où, résultat.
-- **Ne pas recopier** : le coffre parent est privé, le dépôt est public (§7.2).
+- **Ne pas recopier** : le coffre parent est privé, le dépôt se publie (§7.2).
   Rien de ce qu'on y lit ne migre dans `OBSIA/`. Dans l'autre sens, la note de
   suivi d'un projet de l'utilisateur s'écrit **ici**, jamais dans
-  `mémoire/projets/` qui est public (§7.3.1).
+  `mémoire/projets/`, réservé aux projets du coffre (§7.3.1).
 - **Ne pas toucher la structure** : les dossiers de premier niveau
   appartiennent à l'utilisateur (§7.1). Ce serveur pourrait en créer un ; il
   ne le fait pas.

@@ -11,12 +11,17 @@ cible en reçoit un est `TestRegenerationSansLien` — parce que la régénérat
 est justement ce qu'on y juge.
 """
 
+import json
 import os
+import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 
 sys.dont_write_bytecode = True          # ne pas semer de __pycache__ dans le dépôt
@@ -144,6 +149,86 @@ class TestEcritureAgentsMd(BaseInstalleur):
         texte = self.agents_md().read_text(encoding="utf-8")
         self.assertIn("agent-verif", texte)
         self.assertNotIn("agent-hors-profil", texte)
+
+    def test_l_etape_de_reprise_borne_son_champ(self):
+        """L'étape 0 vaut pour qui écrit, dans l'arbre principal et les worktrees."""
+        self.ecrire("IA/agents/agent-ecrit.md",
+                    "---\nschema: 1\nkind: agent\nname: agent-ecrit\n"
+                    "description: Un agent qui écrit.\nread_only: false\n"
+                    "module: construction\n---\n\nCorps.\n")
+        self.profil()
+
+        self.lancer("--appliquer")
+
+        texte = self.agents_md().read_text(encoding="utf-8")
+        # L'étape 0 engendrée reprend le §10 du contrat, mot pour mot.
+        self.assertIn("dans l'arbre\n   principal **et dans chaque worktree lié**",
+                      texte)
+        self.assertIn("`read_only: true` n'a pas de carnet : il saute cette étape.",
+                      texte)
+        # L'index marque les agents en lecture seule, comme les skills.
+        self.assertIn("**agent-verif** [lecture seule]", texte)
+        self.assertIn("**agent-ecrit** —", texte)
+
+    def test_l_etape_0_engendree_reprend_celle_du_contrat(self):
+        """N1 : l'étape 0 de l'`AGENTS.md` et celle du §10 disent la même chose."""
+        def etape_0(texte):
+            bloc = re.search(r"^0\. Au démarrage.*?(?=\n1\. |\Z)", texte,
+                             re.MULTILINE | re.DOTALL).group(0)
+            return " ".join(bloc.replace("**", "").split())
+
+        self.profil()
+        self.lancer("--appliquer")
+        contrat = (SCRIPTS.parent / "IA" / "system"
+                   / "VAULT-CONTRACT.md").read_text(encoding="utf-8")
+        self.assertEqual(etape_0(contrat),
+                         etape_0(self.agents_md().read_text(encoding="utf-8")))
+
+    def test_la_methode_renvoie_au_noyau_et_pas_aux_annexes(self):
+        """N3 : le noyau se lit en entier, une annexe seulement avant son acte.
+
+        Le contrat est découpé en un noyau (`IA/system/VAULT-CONTRACT.md`) et
+        des annexes (`IA/system/contrat/`) : la méthode doit dire lequel des
+        deux se lit à l'entrée — sinon « lire le contrat en entier » se lit
+        comme la somme des deux, ce qui coûte plus qu'avant le découpage.
+        """
+        self.profil()
+        self.lancer("--appliquer")
+        texte = self.agents_md().read_text(encoding="utf-8")
+
+        methode = re.search(r"^## Méthode\n(.*?)(?=\n## |\Z)", texte,
+                            re.MULTILINE | re.DOTALL).group(1)
+        self.assertIn("Lis en entier le noyau `IA/system/VAULT-CONTRACT.md`",
+                      methode)
+        self.assertIn("`IA/system/contrat/`", methode)
+        self.assertIn("avant l'acte", methode)
+
+        # Le prompt cite les fichiers, il n'en recopie aucune ligne — sauf
+        # l'étape 0 du §10, copiée exprès (le test voisin la tient égale). Ce
+        # qui entrerait par une annexe entrerait sans qu'on le voie.
+        racine = SCRIPTS.parent / "IA" / "system"
+        dossier = racine / "contrat"
+        annexes = sorted(a for a in dossier.glob("*.md")
+                         if a.name != "registre.md")
+        self.assertTrue(annexes, "aucune annexe trouvée : rien n'est prouvé")
+        self.assertEqual(len(annexes), 6, "le nombre d'annexes a changé")
+
+        def sans_etape_0(texte):
+            coupe, n = re.subn(r"^0\. Au démarrage.*?(?=\n1\. |\n## |\Z)", "",
+                               texte, flags=re.MULTILINE | re.DOTALL)
+            self.assertEqual(n, 1, "étape 0 du §10 introuvable")
+            self.assertLess(len(texte) - len(coupe), 400,
+                            "la coupe de l'étape 0 a emporté trop de texte")
+            return coupe
+
+        sources = [sans_etape_0((racine / "VAULT-CONTRACT.md")
+                                .read_text(encoding="utf-8")),
+                   *(annexe.read_text(encoding="utf-8") for annexe in annexes)]
+        recopiees = [ligne.strip()
+                     for source in sources
+                     for ligne in source.splitlines()
+                     if len(ligne.strip()) > 40 and ligne.strip() in texte]
+        self.assertEqual(recopiees, [])
 
     def test_le_fichier_se_termine_par_un_saut_de_ligne(self):
         self.profil()
@@ -769,6 +854,133 @@ class TestRegenerationSansLien(BaseInstalleur):
         self.assertNotIn("index et sommaires à jour",
                          resultat.stdout + resultat.stderr)
         self.assertIn("sans régénération", resultat.stdout)
+
+
+class TestExclusionObsidian(BaseInstalleur):
+    """`installer.py` exclut le `code/` des projets des Fichiers exclus d'Obsidian.
+
+    Le motif est écrit en regex entre barres obliques (§7.3) ; l'ancien motif à
+    joker `-PROJETS/*/code`, non documenté, est retiré au passage."""
+
+    def app_json(self) -> Path:
+        return self.parent / ".obsidian" / "app.json"
+
+    def coffre_obsidian(self) -> None:
+        """Un coffre parent qui a de quoi exclure : `.obsidian/` et `-PROJETS/`."""
+        (self.parent / ".obsidian").mkdir()
+        (self.parent / "-PROJETS").mkdir()
+
+    def test_sans_coffre_obsidian_rien_n_est_ecrit(self):
+        (self.parent / "-PROJETS").mkdir()
+        INS.exclure_code_d_obsidian(self.racine)
+        self.assertFalse(self.app_json().exists())
+
+    def test_sans_projets_rien_n_est_ecrit_et_le_dit(self):
+        # Rien à exclure : on ne touche pas au réglage d'un autre usage, et on
+        # prévient qu'il faudra relancer l'installeur après le premier projet.
+        (self.parent / ".obsidian").mkdir()
+        sortie = StringIO()
+        with redirect_stdout(sortie):
+            INS.exclure_code_d_obsidian(self.racine)
+        self.assertFalse(self.app_json().exists())
+        self.assertIn("pas de -PROJETS/ : exclusion Obsidian non posée",
+                      sortie.getvalue())
+
+    def test_un_fichier_neuf_nait_en_0600(self):
+        self.coffre_obsidian()
+        INS.exclure_code_d_obsidian(self.racine)
+        mode = stat.S_IMODE(os.stat(self.app_json()).st_mode)
+        self.assertEqual(0o600, mode)
+
+    def test_le_mode_existant_est_preserve(self):
+        self.coffre_obsidian()
+        self.app_json().write_text('{"userIgnoreFilters": []}\n', encoding="utf-8")
+        os.chmod(self.app_json(), 0o644)
+        INS.exclure_code_d_obsidian(self.racine)
+        self.assertEqual(0o644, stat.S_IMODE(os.stat(self.app_json()).st_mode))
+
+    def test_le_motif_vise_le_code_des_projets_et_rien_d_autre(self):
+        # Obsidian délimite ses motifs par des barres obliques : on compile le
+        # corps pour vérifier ce que le motif attrape vraiment.
+        corps = INS.MOTIF_CODE_OBSIDIAN[1:-1]
+        motif = re.compile(corps)
+        for chemin in ("-PROJETS/mon-projet/code/",
+                       "-PROJETS/mon-projet/code/src/main.py"):
+            self.assertIsNotNone(motif.search(chemin), chemin)
+        for chemin in ("-PROJETS/mon-projet/",
+                       "-PROJETS/mon-projet/docs/code/x.md",
+                       "-PROJETS/code/",
+                       "notes/-PROJETS/mon-projet/code/x.py"):
+            self.assertIsNone(motif.search(chemin), chemin)
+
+    def test_le_motif_est_ajoute_sans_ecraser(self):
+        self.coffre_obsidian()
+        self.app_json().write_text('{"userIgnoreFilters": ["autre"]}\n',
+                                   encoding="utf-8")
+        INS.exclure_code_d_obsidian(self.racine)
+        donnees = json.loads(self.app_json().read_text(encoding="utf-8"))
+        self.assertIn(INS.MOTIF_CODE_OBSIDIAN, donnees["userIgnoreFilters"])
+        self.assertIn("autre", donnees["userIgnoreFilters"])
+
+    def test_deja_present_ne_reecrit_pas(self):
+        self.coffre_obsidian()
+        self.app_json().write_text(
+            json.dumps({"userIgnoreFilters": [INS.MOTIF_CODE_OBSIDIAN]}) + "\n",
+            encoding="utf-8")
+        avant = self.app_json().read_text(encoding="utf-8")
+        INS.exclure_code_d_obsidian(self.racine)
+        self.assertEqual(avant, self.app_json().read_text(encoding="utf-8"))
+
+    def test_l_ancien_motif_a_joker_est_retire(self):
+        self.coffre_obsidian()
+        self.app_json().write_text(
+            json.dumps({"userIgnoreFilters": [INS.MOTIF_CODE_OBSIDIAN_ANCIEN,
+                                              "autre"]}) + "\n",
+            encoding="utf-8")
+        INS.exclure_code_d_obsidian(self.racine)
+        donnees = json.loads(self.app_json().read_text(encoding="utf-8"))
+        self.assertNotIn(INS.MOTIF_CODE_OBSIDIAN_ANCIEN,
+                         donnees["userIgnoreFilters"])
+        self.assertIn(INS.MOTIF_CODE_OBSIDIAN, donnees["userIgnoreFilters"])
+        self.assertIn("autre", donnees["userIgnoreFilters"])
+
+    def test_deux_passages_laissent_le_meme_fichier(self):
+        self.coffre_obsidian()
+        INS.exclure_code_d_obsidian(self.racine)
+        apres_un = self.app_json().read_text(encoding="utf-8")
+        INS.exclure_code_d_obsidian(self.racine)
+        self.assertEqual(apres_un, self.app_json().read_text(encoding="utf-8"))
+
+    def test_l_ecriture_ne_laisse_pas_de_temporaire(self):
+        self.coffre_obsidian()
+        INS.exclure_code_d_obsidian(self.racine)
+        restes = [f.name for f in (self.parent / ".obsidian").iterdir()
+                  if f.name != "app.json"]
+        self.assertEqual([], restes,
+                         "l'écriture atomique doit nettoyer son temporaire")
+
+    def test_un_user_ignore_filters_d_un_autre_type_n_est_pas_touche(self):
+        self.coffre_obsidian()
+        avant = '{"userIgnoreFilters": "pas une liste"}\n'
+        self.app_json().write_text(avant, encoding="utf-8")
+        INS.exclure_code_d_obsidian(self.racine)
+        self.assertEqual(avant, self.app_json().read_text(encoding="utf-8"))
+
+    def test_un_lien_symbolique_sur_app_json_n_est_pas_suivi(self):
+        self.coffre_obsidian()
+        cible = self.parent / "ailleurs.json"
+        cible.write_text('{"userIgnoreFilters": []}\n', encoding="utf-8")
+        os.symlink(cible, self.app_json())
+        INS.exclure_code_d_obsidian(self.racine)
+        self.assertTrue(self.app_json().is_symlink())
+        self.assertEqual('{"userIgnoreFilters": []}\n',
+                         cible.read_text(encoding="utf-8"))
+
+    def test_config_illisible_laissee_telle_quelle(self):
+        self.coffre_obsidian()
+        self.app_json().write_text("{pas du json", encoding="utf-8")
+        INS.exclure_code_d_obsidian(self.racine)
+        self.assertEqual("{pas du json", self.app_json().read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

@@ -14,9 +14,12 @@ Depuis l'arbre principal, sans y changer de branche :
 
 ```bash
 git fetch origin
-git worktree add /tmp/obsia-<nom-agent>-<sujet> -b <nom-agent>/<sujet> origin/main
-cd /tmp/obsia-<nom-agent>-<sujet>
+git worktree add ~/obsia-worktrees/<nom-agent>-<sujet> -b <nom-agent>/<sujet> origin/main
+cd ~/obsia-worktrees/<nom-agent>-<sujet>
 ```
+
+Jamais sous `/tmp` : un dossier temporaire se vide au redémarrage, et le
+worktree part avec lui — ce qui n'est pas commité est perdu.
 
 Tout se fait ensuite dans ce dossier : édition, régénération, vérifications,
 commit, poussée. Le crochet de pré-commit y est actif comme ailleurs —
@@ -42,6 +45,17 @@ sur la branche par défaut **avant** d'ouvrir la pull request évite de livrer u
 conflit à l'utilisateur. Un conflit sur un fichier généré ne se résout jamais à
 la main : on prend la version de la branche par défaut, puis on régénère.
 
+## Jamais une PR sur la branche d'une autre PR
+
+Une pull request s'ouvre **toujours sur la branche par défaut**. Si un
+travail dépend d'une PR encore ouverte, on attend qu'elle soit fusionnée,
+puis on reprend la branche sur `origin/main` et on ouvre la PR. Une PR
+ouverte sur la branche d'une autre est fusionnée dans cette branche, et pas
+dans `main`, dès que la première est fusionnée avant elle. GitHub ne la
+rebascule que si la branche de base est supprimée, et rien ne le signale.
+Si l'on empile malgré tout, on vérifie après fusion que le contenu est
+dans `origin/main`.
+
 ## Publier
 
 `scripts/publier.py` exporte `HEAD`. Dans l'arbre principal, `HEAD` est ce
@@ -50,8 +64,8 @@ la branche par défaut distante :
 
 ```bash
 git fetch origin
-git worktree add --detach /tmp/obsia-<nom-agent>-publication origin/main
-cd /tmp/obsia-<nom-agent>-publication
+git worktree add --detach ~/obsia-worktrees/<nom-agent>-publication origin/main
+cd ~/obsia-worktrees/<nom-agent>-publication
 python3 scripts/publier.py --cible ~/OBSIA-public   # aperçu
 ```
 
@@ -60,7 +74,7 @@ python3 scripts/publier.py --cible ~/OBSIA-public   # aperçu
 Une fois la pull request ouverte, le worktree n'a plus d'usage :
 
 ```bash
-git worktree remove /tmp/obsia-<nom-agent>-<sujet>
+git worktree remove ~/obsia-worktrees/<nom-agent>-<sujet>
 ```
 
 La branche locale peut rester jusqu'à la fusion ; elle se supprime ensuite.

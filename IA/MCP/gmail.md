@@ -100,7 +100,7 @@ faire un appel réel.
   objet de courriel. Le dépôt est public (§7.2).
 - **Les fichiers OAuth et le jeton vivent hors dépôt**, jamais dans une note
   (§4). Qui les détient lit et envoie au nom de l'utilisateur.
-- **Consigner l'usage** : tout appel laisse une ligne au log de session (§9) —
+- **Consigner l'usage** : tout appel laisse une ligne au carnet — du chantier, ou du jour hors chantier — (§9) —
   la nature de l'action (« envoi d'un document avec une pièce jointe »), jamais
   le destinataire ni l'objet.
 - **Révocation** : en cas de doute, retirer l'accès depuis la page « Sécurité »

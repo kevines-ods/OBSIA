@@ -3,7 +3,8 @@
 **English** | [Français](DEMARRAGE.md)
 
 From zero to a first exchange with an OBSIA agent, in five steps. The details
-of each rule live in `IA/system/VAULT-CONTRACT.md` (in French); this guide only
+of each rule live in `IA/system/VAULT-CONTRACT.md` (the core) and its
+annexes in `IA/system/contrat/` (in French); this guide only
 gives the order of the steps.
 
 **Requirements**: `git` and Python 3 — standard library only, nothing to
@@ -46,7 +47,8 @@ python3 scripts/installer.py --appliquer  # apply
 The installer asks, module by module, what you want to keep. At the end:
 
 - `OBSIA/obsia.local.yml` — your profile, not versioned;
-- the indexes in `IA/system/` reduced to the kept modules;
+- the versioned indexes in `IA/system/` and `IA/README.md` — untouched, at the
+  full catalogue: they do not depend on the machine;
 - **`Mon coffre/AGENTS.md`** — OBSIA's brain, at the vault root, where
   harnesses look for it. Do not edit it: it is regenerated.
 

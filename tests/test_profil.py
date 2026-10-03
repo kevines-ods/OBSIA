@@ -8,6 +8,11 @@ essentiels et ce que les retenus déclarent dans `requiert`.
 Ce que ces tests protègent : un profil qui écarte un module ne doit pas
 laisser un agent ou un skill citer un fichier absent du coffre.
 
+Le filtrage ne s'applique qu'à ce qui n'est pas versionné — le prompt système
+et `AGENTS.md`. Les index versionnés (`IA/system/*-index.md`, `IA/README.md`)
+ne se réduisent jamais au profil : c'est `test_regenerate_index.py` qui le
+garantit.
+
 Chaque test écrit dans un coffre temporaire ; le coffre réel n'est jamais lu.
 """
 

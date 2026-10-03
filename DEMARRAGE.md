@@ -3,7 +3,8 @@
 [English](GETTING-STARTED.md) | **Français**
 
 De zéro à un premier échange avec un agent d'OBSIA, en cinq étapes. Le détail
-de chaque règle vit dans `IA/system/VAULT-CONTRACT.md` ; ce guide ne dit que
+de chaque règle vit dans `IA/system/VAULT-CONTRACT.md` (le noyau) et ses
+annexes `IA/system/contrat/` ; ce guide ne dit que
 l'ordre des gestes.
 
 **Prérequis** : `git` et Python 3 — bibliothèque standard seule, rien à
@@ -47,7 +48,8 @@ python3 scripts/installer.py --appliquer  # exécute
 L'installeur demande, module par module, ce que vous voulez garder. À la fin :
 
 - `OBSIA/obsia.local.yml` — votre profil, non versionné ;
-- les index d'`IA/system/` réduits aux modules retenus ;
+- les index versionnés d'`IA/system/` et `IA/README.md` — inchangés, au
+  catalogue complet : ils ne dépendent pas de la machine ;
 - **`Mon coffre/AGENTS.md`** — le cerveau d'OBSIA, à la racine du coffre, là
   où les harness le cherchent. Ne l'éditez pas : il se régénère.
 

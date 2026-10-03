@@ -9,9 +9,10 @@ et écrit le profil `obsia.local.yml`. Le §13 du contrat fait foi.
 
 Deux modes, et la différence tient en une phrase :
 
-    en place   les fichiers restent tous là ; seuls les fichiers générés
-               (index, IA/README.md, prompt système) sont réduits au profil.
-               Réversible d'une commande.
+    en place   les fichiers restent tous là ; le prompt système et l'`AGENTS.md`
+               qui l'accompagne sont réduits au profil. Les index, eux, sont
+               versionnés : ils restent au catalogue complet. Réversible d'une
+               commande.
     copie      seuls les fichiers retenus atterrissent dans le coffre cible,
                et les déclarations d'agents y sont réduites pour rester
                cohérentes. Le coffre obtenu est réellement minimal.
@@ -30,10 +31,13 @@ Aucun accès réseau, aucune commande système modifiante (§4).
 """
 
 import argparse
+import json
 import os
 import shutil
+import stat
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 sys.dont_write_bytecode = True
@@ -179,11 +183,12 @@ def apercu(modules: list[dict], actifs: set[str], racine: Path,
             deja = contenu_dinstance(cible / rel)
             print("      %-9s: %s" % ("conservé" if deja else "créé", rel))
     else:
-        print("\n  Aucun fichier n'est déplacé ni supprimé. Seuls les fichiers")
-        print("  générés seront réduits au profil :")
-        print("    IA/system/agents-index.md, skills-index.md, taches-index.md,")
-        print("    IA/system/modules-index.md, IA/README.md")
-        print("  `git checkout -- IA` les remet au catalogue complet.")
+        print("\n  Aucun fichier n'est déplacé ni supprimé. Le profil ne réduit")
+        print("  que ce qui n'est pas versionné : l'AGENTS.md voisin du coffre,")
+        print("  et le prompt système si vous en produisez un.")
+        print("  Les index versionnés (agents, skills, taches, modules et")
+        print("  IA/README.md) restent au catalogue complet — c'est ce que la CI")
+        print("  et le contrôle d'avant-commit vérifient.")
 
     coffre = cible if mode == "copie" else racine
     etat = etat_agents(coffre)
@@ -533,6 +538,113 @@ def ecrire_agents(coffre: Path) -> str:
     return etat
 
 
+# Entrée des « Fichiers exclus » d'Obsidian : le `code/` de tout projet. Forme
+# regex entre barres obliques — la seule qui ait un sens sur le chemin complet
+# `-PROJETS/<projet>/code/<…>`. Le joker au milieu d'un chemin
+# (`-PROJETS/*/code`, essayé d'abord) n'est documenté nulle part, et la doc
+# officielle d'Obsidian décrit l'effet du réglage sans en donner la syntaxe.
+MOTIF_CODE_OBSIDIAN = "/^-PROJETS\\/[^\\/]+\\/code\\//"
+# Motif écrit par la première version, retiré à la réinstallation.
+MOTIF_CODE_OBSIDIAN_ANCIEN = "-PROJETS/*/code"
+
+
+def exclure_code_d_obsidian(coffre: Path) -> None:
+    """Exclut le `code/` des projets de l'index d'Obsidian, si le coffre parent
+    en est un.
+
+    Le dépôt git de chaque projet ne doit ni paraître dans la recherche, le
+    graphe ou les mentions non liées, ni peser dans le sélecteur rapide et les
+    suggestions de liens (§7.3) — c'est ce que promet le réglage « Fichiers
+    exclus » (aide officielle Obsidian). Obsidian le range dans
+    `.obsidian/app.json`, clé `userIgnoreFilters`. On ne crée rien sans coffre
+    Obsidian, on ne touche à rien si le parent ne porte pas de `-PROJETS/` (il
+    n'y a alors rien à exclure), on ne suit jamais un lien symbolique, et une
+    configuration illisible ou d'un format inattendu est laissée telle quelle :
+    un réglage d'éditeur ne doit pas faire tomber l'installation.
+
+    **Ce que la documentation officielle ne dit pas** : si l'ancre `^` du motif
+    correspond bien au chemin qu'Obsidian compare — la syntaxe du réglage n'est
+    documentée nulle part. L'appariement reste donc à confirmer à la main, une
+    fois, sur un coffre réel, par la recette affichée après l'ajout et reprise
+    dans `installation-et-publication.md` ; la même réserve est écrite au §7.3.
+
+    L'écriture est **idempotente** : le motif n'est ajouté qu'une fois, et
+    l'ancien motif à joker est retiré s'il traîne — les autres entrées de
+    l'utilisateur ne sont pas touchées. Si rien ne change, le fichier n'est pas
+    réécrit. L'écriture passe par un fichier temporaire puis `os.replace`, pour
+    qu'une interruption ne laisse jamais un `app.json` tronqué ; le fichier naît
+    en `0600` (un réglage d'éditeur n'a rien à faire sous les yeux du voisin) et
+    garde son mode s'il existait déjà.
+    """
+    parent = coffre.parent
+    projets = parent / "-PROJETS"
+    dossier = parent / ".obsidian"
+    if not dossier.is_dir():
+        return
+    if not projets.is_dir():
+        print("pas de -PROJETS/ : exclusion Obsidian non posée, relancer "
+              "l'installeur après le premier projet.")
+        return
+    config = dossier / "app.json"
+    if MOD.sous_un_lien(parent, config) is not None:
+        print("  ! %s : lien symbolique sur le chemin, Fichiers exclus non "
+              "modifiés." % config, file=sys.stderr)
+        return
+    if config.is_file():
+        try:
+            donnees = json.loads(config.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            print("  ! %s : configuration illisible, Fichiers exclus non "
+                  "modifiés." % config, file=sys.stderr)
+            return
+        if not isinstance(donnees, dict):
+            print("  ! %s : format inattendu, Fichiers exclus non modifiés."
+                  % config, file=sys.stderr)
+            return
+    else:
+        donnees = {}
+    filtres_initiaux = donnees.get("userIgnoreFilters")
+    if filtres_initiaux is None:
+        filtres_initiaux = []
+    elif not isinstance(filtres_initiaux, list):
+        print("  ! %s : `userIgnoreFilters` n'est pas une liste, Fichiers "
+              "exclus non modifiés." % config, file=sys.stderr)
+        return
+    filtres = [f for f in filtres_initiaux if f != MOTIF_CODE_OBSIDIAN_ANCIEN]
+    if MOTIF_CODE_OBSIDIAN not in filtres:
+        filtres.append(MOTIF_CODE_OBSIDIAN)
+    if filtres == filtres_initiaux:
+        return
+    donnees["userIgnoreFilters"] = filtres
+    contenu = json.dumps(donnees, ensure_ascii=False, indent=2) + "\n"
+    temporaire = None
+    try:
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=dossier,
+                                         prefix=".app.json.", suffix=".tmp",
+                                         delete=False) as flux:
+            temporaire = Path(flux.name)
+            flux.write(contenu)
+        # Le temporaire naît en 0600 ; on garde le mode du fichier qu'on remplace.
+        if config.is_file():
+            os.chmod(temporaire, stat.S_IMODE(os.stat(config).st_mode))
+        os.replace(temporaire, config)
+    except OSError as souci:
+        if temporaire is not None:
+            try:
+                temporaire.unlink()
+            except OSError:
+                pass
+        print("  ! %s : écriture impossible (%s), Fichiers exclus non modifiés."
+              % (config, souci.strerror or souci), file=sys.stderr)
+        return
+    print("  + Fichiers exclus d'Obsidian : `%s` dans %s."
+          % (MOTIF_CODE_OBSIDIAN, config))
+    print("    Vérification manuelle à faire une fois : poser un fichier sous")
+    print("    `-PROJETS/<projet>/code/`, puis chercher son nom dans Obsidian ;")
+    print("    s'il n'apparaît ni dans la recherche, ni dans le graphe, ni dans")
+    print("    les suggestions de liens, le motif agit comme voulu.")
+
+
 # ---------------------------------------------------------------------- main
 
 def main() -> int:
@@ -645,9 +757,14 @@ def main() -> int:
 
     code = regenerer(coffre)
 
-    # Après `regenerer` : le prompt embarque l'index, il doit lire l'index à jour.
+    # Après `regenerer` : `ecrire_agents` refait le prompt depuis les frontmatters
+    # filtrés par le profil — il n'embarque pas l'index. L'`AGENTS.md` est donc
+    # écrit après coup, une fois index et sommaires à jour.
     # Sur le coffre effectif, donc en place comme en copie.
     ecrire_agents(coffre)
+
+    # Les dépôts git des projets n'ont pas leur place dans l'index d'Obsidian.
+    exclure_code_d_obsidian(coffre)
 
     if code != 0:
         print("\nInstallation terminée, mais le coffre est incohérent "

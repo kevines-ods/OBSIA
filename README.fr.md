@@ -2,7 +2,8 @@
 
 [English](README.md) | **Français**
 
-Système d'orchestration d'agents IA reposant sur un coffre Obsidian.
+Un coffre Obsidian qui décrit vos agents IA — rôles, compétences, mémoire,
+règles — et les tâches qu'ils exécutent.
 
 Les agents, leurs compétences et leur mémoire sont des fichiers Markdown. Pas de
 base de données, pas de format propriétaire : le coffre se lit et s'édite à la
@@ -198,16 +199,22 @@ ouvre le réseau.
 
 Deux modes :
 
-- **en place** — rien n'est déplacé ni supprimé, seuls les fichiers générés
-  sont réduits au profil. `git checkout -- IA` remet tout ;
+- **en place** — rien n'est déplacé ni supprimé, seuls les fichiers **non
+  versionnés** sont réduits au profil (le prompt système et l'`AGENTS.md`). Les
+  index, versionnés, restent au catalogue complet ;
 - **copie** (`--installer CIBLE`) — seuls les fichiers retenus atterrissent
   dans la cible, et les déclarations d'agents y sont réduites pour rester
   cohérentes.
 
+Revenir du profil au catalogue complet : `python3 scripts/installer.py --tout
+--appliquer`.
+
 Le profil vit dans `obsia.local.yml`, à la racine, **non versionné** : il
 décrit cette machine, pas le coffre. Sans profil, tout le catalogue est actif —
-c'est l'état du dépôt de distribution et celui sous lequel la CI vérifie. Règles
-complètes au §13 de `IA/system/VAULT-CONTRACT.md`.
+c'est l'état du dépôt de distribution et celui sous lequel la CI vérifie. Il ne
+réduit que ce qui n'est pas versionné (prompt système, `AGENTS.md`) : les index
+versionnés montrent toujours le catalogue entier, sinon la CI verrait un index
+périmé. Règles complètes au §13 de `IA/system/VAULT-CONTRACT.md`.
 
 ## Vérifier le coffre
 
@@ -244,7 +251,8 @@ git config core.hooksPath .githooks
 Un skill est un fichier `IA/skills/<nom>.md`. Quand il grossit — au-delà de
 500 lignes environ — il devient un dossier `IA/skills/<nom>/` dont le point
 d'entrée s'appelle `<nom>.md`, et non `SKILL.md`, aux côtés de `references/`,
-`scripts/` et `assets/`. Détail dans `VAULT-CONTRACT.md` §5.
+`scripts/` et `assets/`. Règle au §5 de `VAULT-CONTRACT.md`, détail dans
+`IA/system/contrat/contrat-frontmatter.md`.
 
 Tout fichier agent ou skill commence par un frontmatter YAML strict.
 
@@ -284,7 +292,8 @@ Ce frontmatter est la frontière entre le coffre et tout programme qui le lit.
 
 ## Règles
 
-Elles vivent dans `IA/system/VAULT-CONTRACT.md`, qui fait foi. En
+Elles vivent dans `IA/system/VAULT-CONTRACT.md` — le noyau, toujours chargé —
+et ses annexes `IA/system/contrat/` ; le noyau fait foi. En
 résumé :
 
 - Le coffre est en lecture seule pour les agents. Les modifications passent par

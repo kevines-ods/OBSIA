@@ -374,7 +374,7 @@ def main() -> int:
                               for n in posees)
         print("\nsystemd injoignable depuis ici. Les changements sont sur "
               "disque ; à faire sur la machine :\n" + rappel)
-    print("Consigner ces actions dans le log de session (§9).")
+    print("Agent appelant : consigner ces actions au carnet — du chantier, ou du jour hors chantier — (§9).")
     return 0
 
 

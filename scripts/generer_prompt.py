@@ -174,8 +174,9 @@ def construire_prompt(racine: Path, agents: list[dict], skills: list[dict],
         a("## Agents disponibles")
         a("")
         for ag in agents:
+            marque = " [lecture seule]" if ag.get("read_only") else ""
             desc = ag.get("description", "(sans description)")
-            a(f"- **{ag['name']}** — {desc}")
+            a(f"- **{ag['name']}**{marque} — {desc}")
             details = []
             if ag.get("skills"):
                 details.append("skills : " + ", ".join(ag["skills"]))
@@ -211,13 +212,19 @@ def construire_prompt(racine: Path, agents: list[dict], skills: list[dict],
 
     a("## Méthode")
     a("")
-    a("Lis IA/system/VAULT-CONTRACT.md en entier avant toute action. Il fait foi")
-    a("sur toutes les règles (écriture, suppression, preview, sandbox, secrets,")
-    a("frontmatter) ET sur la méthode à suivre pour toute demande (son §10 :")
-    a("choix de l'agent, choix des skills/MCP, écriture en mémoire, citation des")
-    a("chemins). Ne déduis rien de ces sujets d'une autre source, y compris de")
-    a("ce prompt — les listes ci-dessus ne sont que l'index paresseux que le §10")
-    a("te demande d'utiliser.")
+    a("Lis en entier le noyau `IA/system/VAULT-CONTRACT.md` avant toute action.")
+    a("Il fait foi sur toutes les règles (écriture, suppression, preview, sandbox,")
+    a("secrets, frontmatter) ET sur la méthode à suivre pour toute demande (son")
+    a("§10 : choix de l'agent, choix des skills/MCP, écriture en mémoire, citation")
+    a("des chemins). Une annexe de `IA/system/contrat/` ne se lit qu'avant l'acte")
+    a("que lui assigne le tableau du préambule du noyau. Ne déduis rien de ces")
+    a("sujets d'une autre source, y compris de ce prompt — les listes ci-dessus")
+    a("ne sont que l'index paresseux que le §10 te demande d'utiliser.")
+    a("")
+    a("0. Au démarrage, cherche tes carnets `statut: en cours` — dans l'arbre")
+    a("   principal **et dans chaque worktree lié** — et propose de reprendre,")
+    a("   après les avoir rapprochés de l'état réel (§6). Un agent")
+    a("   `read_only: true` n'a pas de carnet : il saute cette étape.")
 
     return "\n".join(lignes)
 

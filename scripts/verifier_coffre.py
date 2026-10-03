@@ -22,6 +22,10 @@ Chacun de ces cas sort en 1 :
   · un nom de note en double dans le dépôt ;
   · un fichier généré périmé (§11 du contrat) ;
   · une déclaration sans `module`, ou visant un module inexistant (§13) ;
+  · une annexe du contrat (`IA/system/contrat/*.md`, sauf `registre.md`) au
+    frontmatter invalide — `kind` autre que `contract`, `schema` non entier,
+    `name` ≠ nom du fichier ou hors `NOM_VALIDE`, `description` vide, repliée
+    ou poursuivie sur la ligne suivante, module absent ou inexistant (§5, §13) ;
   · un module au frontmatter invalide : `essentiel` non booléen, module non
     essentiel sans `question`, sonde au préfixe inconnu (§13.2) ;
   · un cycle de dépendances entre modules, qui boucle l'installeur ;
@@ -109,6 +113,8 @@ from generer_prompt import RACINE_DEFAUT, fichiers_declaratifs, lire_frontmatter
 RACINE = RACINE_DEFAUT
 
 CHAMPS_COMMUNS = ("schema", "kind", "name", "description", "read_only")
+CHAMPS_CONTRAT = ("schema", "kind", "name", "description")   # ni read_only, ni type
+NOM_EXEMPT_CONTRAT = "registre.md"      # l'index du dossier, pas une annexe
 NOM_VALIDE = re.compile(r"^[^\W_]+(?:-[^\W_]+)*$", re.UNICODE)   # minuscules-et-tirets, accents admis
 TYPES_SKILL = ("core", "outil")
 
@@ -183,7 +189,20 @@ def ligne_description_brute(chemin: Path) -> str | None:
     return ligne_frontmatter_brute(chemin, "description")
 
 
-def verifier_fichier(chemin: Path, genre: str) -> dict | None:
+def verifier_fichier(chemin: Path, genre: str, champs_requis: tuple = CHAMPS_COMMUNS,
+                     emplacement: str | None = None) -> dict | None:
+    """Frontmatter d'une fiche déclarative — agent, skill ou annexe du contrat.
+
+    `champs_requis` dit quels champs doivent être **présents** : les annexes du
+    contrat n'ont ni `read_only` — elles ne s'exécutent pas — ni `type`, réservé
+    aux skills. Tout le reste est vérifié dans tous les cas, quel que soit
+    l'appelant : `kind` égal au genre, `name` qui suit le nom du fichier et
+    `NOM_VALIDE`, `schema` entier, `description` non vide et d'une seule ligne
+    physique, `skills` et `mcp` en listes si elles sont là. Un `module` non vide
+    est également exigé, hors `champs_requis` : il se vérifie pour toute fiche
+    (§13). Réutiliser cette garde vaut mieux que la réécrire — deux copies d'un
+    contrôle finissent par diverger.
+    """
     fm = lire_frontmatter(chemin)
     rel = chemin.relative_to(RACINE)
 
@@ -191,13 +210,14 @@ def verifier_fichier(chemin: Path, genre: str) -> dict | None:
         erreur(rel, "frontmatter absent ou non fermé")
         return None
 
-    for champ in CHAMPS_COMMUNS:
+    for champ in champs_requis:
         if champ not in fm:
             erreur(rel, "champ obligatoire manquant : `%s` (§5)" % champ)
 
     if fm.get("kind") != genre:
-        erreur(rel, "`kind: %s` alors que le fichier est dans le dossier des %ss (§5)"
-               % (fm.get("kind"), genre))
+        erreur(rel, "`kind: %s` alors que le fichier est dans %s (§5)"
+               % (fm.get("kind"),
+                  emplacement or ("le dossier des %ss" % genre)))
 
     nom = fm.get("name")
     if nom:
@@ -206,7 +226,7 @@ def verifier_fichier(chemin: Path, genre: str) -> dict | None:
         if not NOM_VALIDE.match(nom):
             erreur(rel, "`name: %s` — attendu : minuscules et tirets, sans espace (§5)" % nom)
 
-    if not isinstance(fm.get("read_only"), bool):
+    if "read_only" in champs_requis and not isinstance(fm.get("read_only"), bool):
         erreur(rel, "`read_only` doit valoir true ou false (§5)")
 
     if not isinstance(fm.get("schema"), int):
@@ -694,6 +714,92 @@ def verifier_unicite_des_noms():
                    % ", ".join(chemins))
 
 
+# ------------------------------------------------------------------- carnets
+
+DATE_CARNET = re.compile(r"^\d{4}-\d{2}-\d{2}-")
+NOTE_DATEE_A_PLAT = re.compile(r"^\d{4}-\d{2}-\d{2}-.*\.md$")
+STATUTS_CARNET = ("en cours", "en attente", "clos")
+RESERVES_PROJET = ("carnets", "documents", "archives")
+
+def verifier_carnets():
+    """§6 : forme des carnets, un seul niveau de sous-projet, transition.
+
+    - un carnet est `mémoire/projets/<projet>/carnets/AAAA-MM-JJ-<projet>-<sujet>.md`,
+      avec `agent:`, `projet:` et `statut:` — trois chaînes non vides, le
+      `projet:` égal au nom du dossier, et un `statut:` dans
+      `en cours | en attente | clos` ;
+    - un sous-projet a droit à un seul niveau, même structure, sans vision ;
+    - un sous-dossier dans `carnets/` est refusé : un carnet est un fichier ;
+    - `-PROJETS/` n'est pas contrôlé : le code des projets vit hors de ce dépôt
+      (un dépôt git à lui, exclu d'Obsidian) ;
+    - tant que la migration n'est pas finie (§6, transition), une note datée à
+      plat dans le dossier du projet reste tolérée : avertissement, pas erreur.
+    """
+    projets = RACINE / "mémoire" / "projets"
+    if not projets.is_dir():
+        return
+    for projet in sorted(projets.iterdir()):
+        if not projet.is_dir() or projet.name.startswith("."):
+            continue
+        parcourir_projet(projet, projet.name, 0)
+
+def parcourir_projet(dossier: Path, projet: str, niveau: int):
+    """`niveau` 0 pour un projet, 1 pour son sous-projet ; au-delà, refus (§6)."""
+    for entree in sorted(dossier.iterdir()):
+        if entree.name in ("sommaire.md", "README.md"):
+            continue
+        if entree.is_file():
+            if NOTE_DATEE_A_PLAT.match(entree.name):
+                avertir(entree.relative_to(RACINE),
+                        "ancienne forme : note datée à plat, à migrer vers "
+                        "`carnets/` (§6, transition)")
+            continue
+        if entree.name == "carnets":
+            verifier_carnets_dun_projet(entree, projet)
+        elif entree.name in RESERVES_PROJET:
+            continue
+        elif niveau >= 1:
+            erreur(entree.relative_to(RACINE),
+                   "sous-projet imbriqué — un seul niveau de sous-projet est "
+                   "admis (§6)")
+        else:
+            parcourir_projet(entree, entree.name, 1)
+
+def verifier_carnets_dun_projet(dossier: Path, projet: str):
+    for carnet in sorted(dossier.iterdir()):
+        if carnet.name in ("sommaire.md", "README.md"):
+            continue
+        if carnet.is_dir():
+            erreur(carnet.relative_to(RACINE),
+                   "sous-dossier dans `carnets/` — un carnet est un fichier (§6)")
+            continue
+        if carnet.is_file() and carnet.name.endswith(".md"):
+            verifier_carnet(carnet, projet)
+
+def verifier_carnet(chemin: Path, projet: str):
+    rel = chemin.relative_to(RACINE)
+    if not DATE_CARNET.match(chemin.name):
+        erreur(rel, "carnet mal nommé — attendu `AAAA-MM-JJ-<projet>-<sujet>.md` (§6)")
+    elif not chemin.name.startswith(chemin.name[:11] + projet + "-"):
+        erreur(rel, "carnet mal nommé : `<projet>` ne correspond pas au dossier "
+                    "`%s` (§6)" % projet)
+    fm = lire_frontmatter(chemin)
+    if fm is None:
+        erreur(rel, "carnet sans frontmatter fermé (§6)")
+        return
+    for champ in ("agent", "projet", "statut"):
+        valeur = fm.get(champ)
+        if not isinstance(valeur, str) or not valeur.strip():
+            erreur(rel, "carnet `%s:` vide ou absent (§6)" % champ)
+    statut = fm.get("statut")
+    if isinstance(statut, str) and statut.strip() and statut not in STATUTS_CARNET:
+        erreur(rel, "carnet `statut: %s` — attendu `en cours`, `en attente` ou "
+                    "`clos` (§6)" % statut)
+    projet_fm = fm.get("projet")
+    if isinstance(projet_fm, str) and projet_fm.strip() and projet_fm != projet:
+        erreur(rel, "carnet `projet: %s` ne correspond pas au dossier `%s` (§6)"
+               % (projet_fm, projet))
+
 PREFIXES_SONDE = ("commande", "fichier", "distribution", "parent")
 
 
@@ -816,6 +922,19 @@ def cloture(modules: list[dict], nom: str) -> set[str]:
     return resolu
 
 
+def module_declare(chemin, module, noms: set) -> bool:
+    """Le `module` d'une déclaration existe-t-il dans le catalogue (§13) ?"""
+    if not module:
+        erreur(chemin, "ne déclare aucun `module` — inclassable à "
+                       "l'installation (§13)")
+        return False
+    if module not in noms:
+        erreur(chemin, "`module: %s` — module inexistant dans "
+                       "IA/system/modules/ (§13)" % module)
+        return False
+    return True
+
+
 def verifier_appartenance(modules, agents, skills, mcp, taches):
     """§13 : tout ce qui se déclare appartient à un module du catalogue."""
     noms = {m.get("name") for m in modules}
@@ -823,15 +942,8 @@ def verifier_appartenance(modules, agents, skills, mcp, taches):
 
     for fm in list(agents) + list(skills) + list(mcp) + list(taches):
         chemin = fm.get("_chemin", fm.get("name", "?"))
-        module = fm.get("module")
-        if not module:
-            erreur(chemin, "ne déclare aucun `module` — inclassable à "
-                           "l'installation (§13)")
-        elif module not in noms:
-            erreur(chemin, "`module: %s` — module inexistant dans "
-                           "IA/system/modules/ (§13)" % module)
-        else:
-            peuples.add(module)
+        if module_declare(chemin, fm.get("module"), noms):
+            peuples.add(fm["module"])
 
     if REDUITE:
         return              # ici, un module sans déclaration est un module écarté
@@ -839,6 +951,51 @@ def verifier_appartenance(modules, agents, skills, mcp, taches):
         if m.get("name") not in peuples:
             avertir(m["_chemin"], "module qu'aucun agent, skill, MCP ou tâche "
                                   "ne rejoint — il n'installerait rien (§13)")
+
+
+def verifier_annexes_contrat(dossier: Path, modules: list[dict]) -> list[dict]:
+    """Les annexes du noyau, `IA/system/contrat/*.md` (§5, §13).
+
+    Une annexe est un document déclaratif : elle se définit **par son dossier**,
+    pas par son nom. Tout `*.md` de `IA/system/contrat/` est donc contrôlé comme
+    une annexe, à une seule exception, `registre.md`, nommée ici : c'est l'index
+    du dossier, sans frontmatter. Définir l'annexe par le préfixe `contrat-`
+    laisserait une annexe renommée sortir du filet sans que rien ne le dise.
+
+    Le frontmatter est vérifié par `verifier_fichier()`, appelé avec
+    `CHAMPS_CONTRAT = (schema, kind, name, description)` : une annexe n'a ni
+    `read_only` — elle ne s'exécute pas — ni `type`, réservé aux skills. Le
+    contrôle exige en plus un `module` non vide (comme pour toute fiche), et
+    `module_declare()` vérifie que ce module existe au catalogue.
+
+    Les chemins qu'une annexe cite sont, eux, déjà contrôlés par
+    `verifier_chemins_cites()` : tout `IA/**/*.md` y passe, le dossier compris,
+    et les chemins **relatifs** sont résolus depuis le fichier qui les cite —
+    `../VAULT-CONTRACT.md` depuis ici mène bien à `IA/system/VAULT-CONTRACT.md`.
+    Aucune cible de ce dossier n'échappe au filet.
+
+    Une annexe ne peuple pas son module : une déclaration dit à quoi elle
+    appartient, elle n'installe rien. Seuls agents, skills, MCP et tâches
+    comptent comme occupants (§13), sans quoi une annexe suffirait à faire
+    passer un module vide pour un module habité.
+    """
+    if not dossier.is_dir():
+        avertir(dossier.relative_to(RACINE),
+                "dossier des annexes du contrat absent — aucune annexe contrôlée "
+                "(§5, §13)")
+        return []
+    noms = {m.get("name") for m in modules}
+    annexes: list[dict] = []
+    for chemin in sorted(dossier.glob("*.md")):
+        if chemin.name == NOM_EXEMPT_CONTRAT:
+            continue
+        fm = verifier_fichier(chemin, "contract", CHAMPS_CONTRAT,
+                              "le dossier des annexes du contrat")
+        if fm is None:
+            continue
+        module_declare(fm["_chemin"], fm.get("module"), noms)
+        annexes.append(fm)
+    return annexes
 
 
 def verifier_renvois_entre_modules(modules, skills):
@@ -911,6 +1068,7 @@ def main() -> int:
     mcp = verifier_mcp(RACINE / "IA" / "MCP")
     taches = verifier_taches(RACINE / "IA" / "tâches", agents)
     modules = verifier_modules(RACINE / "IA" / "system" / "modules")
+    verifier_annexes_contrat(RACINE / "IA" / "system" / "contrat", modules)
     verifier_profil(modules)
     verifier_appartenance(modules, agents, skills, mcp, taches)
     verifier_renvois_entre_modules(modules, skills)
@@ -920,6 +1078,7 @@ def main() -> int:
     verifier_chemins_cites()
     verifier_citations_de_memoire()
     verifier_unicite_des_noms()
+    verifier_carnets()
     verifier_derives()
 
     if avertissements and not silencieux:

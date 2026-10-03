@@ -1,12 +1,35 @@
 #!/bin/sh
 # Garde des noms interdits — VAULT-CONTRACT.md §9 et §13.5.
 #
-# Refuse un commit dont les lignes ajoutées citent un nom de la liste locale
-# (`~/.config/obsia/noms-interdits`, ou `$OBSIA_NOMS_INTERDITS`) : noms d'hôtes,
-# nom du dépôt privé — ce qui désigne l'infrastructure sans forme
-# reconnaissable. La liste vit hors du dépôt ; sans elle, rien n'est contrôlé.
-# Même liste, même règle que le contrôle de fuite de `scripts/publier.py`, mais
-# au moment où la faute s'écrit plutôt qu'au moment de publier.
+# Avertit — sans refuser — d'un commit dont les lignes ajoutées citent un nom de
+# la liste locale (`~/.config/obsia/noms-interdits`, ou `$OBSIA_NOMS_INTERDITS`) :
+# noms d'hôtes, nom du dépôt privé — ce qui désigne l'infrastructure sans forme
+# reconnaissable. La liste vit hors du dépôt ; sans elle, rien n'est signalé.
+# Même liste, même règle que le contrôle de fuite de `scripts/publier.py` : un
+# nom de la liste est une identité qui frappe des mots, il avertit et ne refuse
+# pas — un avertissement n'a pas besoin de converger. La correspondance est la
+# même des deux côtés : un tiret compte comme un caractère de mot, donc `poste`
+# ne se trouve ni dans `poste-12` ni dans `mon-poste`. `grep -w` ne le fait pas
+# — il s'arrête au tiret — d'où le motif encadré construit plus bas, calqué sur
+# `motif_des_noms()` de publier.py : `(?<![\w-])nom(?![\w-])`.
+#
+# La frontière est celle de `\w` en Python, qui est Unicode : une lettre
+# accentuée compte comme caractère de mot, et `poste` ne doit pas se trouver
+# dans `postes` ni dans `caféposte`. `[[:alnum:]]` ne reconnaît l'accentuée
+# qu'en locale UTF-8 ; on essaie donc de poser une telle locale, sans dépendre
+# du réglage de l'appelant.
+
+# Si aucune locale UTF-8 n'est offerte, grep retombe en ASCII et la frontière
+# borne alors plus large — plus de signalements, jamais moins. C'est le bon
+# sens de l'écart : un faux positif d'avertissement se corrige à la main, un
+# silence ne se voit pas.
+for essai in C.UTF-8 fr_FR.UTF-8 en_US.UTF-8; do
+    if LC_ALL=$essai locale charmap 2>/dev/null | grep -qi utf; then
+        LC_ALL=$essai
+        export LC_ALL
+        break
+    fi
+done
 
 liste=${OBSIA_NOMS_INTERDITS:-$HOME/.config/obsia/noms-interdits}
 [ -r "$liste" ] || exit 0
@@ -19,16 +42,27 @@ sed -e 's/#.*//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' "$liste" \
     | awk 'length($0) >= 4' > "$motifs"
 [ -s "$motifs" ] || exit 0
 
+# Motif encadré, même règle que `motif_des_noms()` : le nom entier, sans casse,
+# borné par autre chose qu'un caractère de mot ou un tiret. `[[:alnum:]]` porte
+# l'accentuée en locale UTF-8 (posée plus haut), comme `\w` en Python. Les
+# métacaractères du motif étendu sont neutralisés — un nom peut être un nom
+# d'hôte à points.
+motif=$(sed 's/[][\.^$*+?(){}|\\]/\\&/g' "$motifs" | paste -sd'|' -)
+motif="(^|[^[:alnum:]_-])($motif)([^[:alnum:]_-]|\$)"
+
 trouve=$(git diff --cached -U0 --no-color --no-ext-diff \
          | grep -E '^\+' | grep -vE '^\+\+\+ ' \
-         | grep -inwF -f "$motifs")
+         | grep -inE "$motif")
 [ -z "$trouve" ] && exit 0
-printf "%s\n" "$trouve" >&2
 
+printf '%s\n' "$trouve" >&2
 cat >&2 <<'MSG'
-Commit refusé : une ligne ajoutée cite un nom de la liste des noms interdits
-(§9 — jamais de nom d'hôte interne ni d'identifiant dans le dépôt). Le
-remplacer par un rôle (« poste secondaire », « serveur principal ») ou le
-déplacer dans une configuration hors dépôt, sous ~/.config/obsia/.
+Avertissement — pas un refus : une ligne ajoutée cite un nom de la liste des
+noms interdits (§9 — jamais de nom d'hôte interne ni d'identifiant dans le
+dépôt). À vérifier avant publication : le remplacer par un rôle (« poste
+secondaire », « serveur principal ») ou le déplacer dans une configuration hors
+dépôt, sous ~/.config/obsia/. La liste retient des identités mais frappe des
+mots : si c'est un faux positif, rien à faire. Un agent qui reçoit cet
+avertissement le rapporte à l'utilisateur : il ne le tait pas.
 MSG
-exit 1
+exit 0

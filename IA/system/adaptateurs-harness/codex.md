@@ -187,7 +187,8 @@ sans profil c'est le catalogue entier qui part.
    ```
 
 2. **réduire le prompt** — un profil qui ne retient que les modules utiles
-   (`obsia.local.yml`, §13.4 du contrat) est la réponse propre quand le coffre
+   (`obsia.local.yml`, §13.3 du contrat et annexe
+   `../contrat/contrat-distribution.md`) est la réponse propre quand le coffre
    grandit. Découper sur plusieurs `AGENTS.md` de sous-dossiers ne s'applique
    pas ici : sans racine Git, Codex ne lit que le répertoire courant.
 

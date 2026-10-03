@@ -47,7 +47,7 @@ coffre.
   comment rédiger la consigne, et comment relire.
 - **Le résultat ne s'écrit jamais tel quel** : l'agent le contrôle contre la
   source, puis écrit lui-même selon le §7.
-- **Consigner l'usage** : une ligne par appel dans le log de session (§9).
+- **Consigner l'usage** : une ligne par appel au carnet — du chantier, ou du jour hors chantier — (§9).
 
 ## Sécurité
 

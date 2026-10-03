@@ -31,13 +31,37 @@ avertissement, fichier intact, code de retour inchangé. Ce fichier vit **hors d
 dépôt** : il n'est ni versionné, ni concerné par `publier.py`, qui n'exporte que
 l'arbre suivi.
 
-**Les trois dossiers de l'instance** — `mémoire/`, `brouillon/` et
+**Les trois dossiers de l'instance** — `mémoire/`, `brouillon/` et l'archive
 `IA/system/session-log/` — sont **créés s'ils manquent** dans la cible, avec le
 README de la source, mais **jamais vidés** : c'est là que vit le travail de qui
 installe, et réinstaller ne doit rien lui emporter. Si l'un d'eux porte déjà un
 contenu, il est laissé tel quel, et l'aperçu le dit (« conservé »). Leur contenu
 n'est pas copié depuis la source non plus : la mémoire et les journaux de
 l'auteur ne partent pas chez le copié.
+
+**Fichiers exclus d'Obsidian** — l'installation ajoute le motif
+`/^-PROJETS\/[^\/]+\/code\//` au réglage « Fichiers exclus » d'Obsidian
+(`.obsidian/app.json`, clé `userIgnoreFilters`), pour tenir le code d'un projet
+hors de la recherche et du graphe du coffre (§7.3). Pour le retirer, ouvrir
+Obsidian → Réglages → Fichiers et liens → Fichiers exclus, et supprimer la
+ligne ; une réinstallation le repose. Le motif est écrit de façon idempotente,
+et l'ancienne forme `-PROJETS/*/code` est retirée au passage si elle traîne.
+Rien n'est écrit si le coffre parent n'a pas de `-PROJETS/`, ou si
+`userIgnoreFilters` n'est pas une liste : on ne touche pas au réglage d'un
+autre usage.
+
+**Ce que la documentation officielle ne dit pas** : la syntaxe du motif — donc
+si l'ancre `^` correspond bien au chemin qu'Obsidian compare. La promesse de
+l'aide (masqué de la recherche, du graphe et des mentions non liées ; moins
+visible dans le sélecteur rapide et les suggestions) reste à confirmer une
+fois, à la main, sur un coffre réel :
+
+1. poser un fichier sous `-PROJETS/<projet>/code/` ;
+2. chercher son nom dans Obsidian.
+
+S'il n'apparaît ni dans la recherche, ni dans le graphe, ni dans les
+suggestions de liens, le motif agit. Sinon, ajuster le motif dans les Fichiers
+exclus. `installer.py` affiche cette recette après avoir posé le motif.
 
 **Aucun lien symbolique de la cible n'est suivi**, ni en lecture ni en écriture.
 Un `IA` déplacé ailleurs, une `mémoire/` partagée : l'installation écrirait
@@ -57,11 +81,33 @@ refusé d'y toucher.
 
 **`--tout` veut dire catalogue complet, dans les deux modes.** En place, le
 profil disparaît : c'est lui qui décrit un coffre réduit, et rien ne l'est plus.
+Les index versionnés, eux, étaient déjà au catalogue complet et ne changent pas ;
+c'est l'`AGENTS.md` qui repasse du profil réduit au catalogue entier.
 En copie, il disparaît aussi, **et la copie a lieu** — la cible reçoit les
 fichiers de tous les modules, y compris ceux que le profil écartait. Un
 `--tout --installer` qui annonçait le catalogue entier et laissait la cible
 vide ne le disait nulle part ; l'aperçu écrit donc « aucun — catalogue
 complet » plutôt que de promettre un profil qui ne sera pas posé.
+
+### Un modèle local — choisir un profil minimal
+
+Le contexte qu'un harness charge avant la première question est le noyau du
+contrat plus l'`AGENTS.md` engendré. L'`AGENTS.md` ne liste que les agents et
+les skills des modules retenus : le profil est donc le levier, sans rien
+réécrire. Mesures du 2026-10-02 :
+
+| Profil | `AGENTS.md` | Avec le noyau (≈ 3 600 mots) |
+| --- | --- | --- |
+| catalogue complet | ≈ 3 800 mots | ≈ 7 400 mots, ≈ 10 000 tokens |
+| `noyau` seul | ≈ 800 mots | ≈ 4 400 mots, ≈ 6 000 tokens |
+| noyau, coffre Obsidian, documents, modèles locaux | ≈ 1 100 mots | ≈ 4 700 mots, ≈ 6 500 tokens |
+
+**Cible retenue : un modèle d'au moins 16 000 tokens de contexte**, qui garde
+alors plus de 9 000 tokens pour travailler avec un profil minimal. En dessous
+(8 000), le noyau seul ne laisse pas assez de place : ce n'est pas une
+configuration visée. Sur une machine à modèle local, ne retenir que les modules
+dont on se sert, puis `python3 scripts/installer.py --appliquer` pour
+régénérer l'`AGENTS.md`.
 
 ## Publication — `publier.py` (§13.5)
 
@@ -124,12 +170,15 @@ le fichier que désigne `OBSIA_NOMS_INTERDITS`), un nom par ligne, `#` pour
 commenter. Elle vit hors du dépôt, sans quoi elle publierait ce qu'elle
 protège. Un nom s'y cherche entier et sans casse ; en dessous de quatre
 caractères il est ignoré, parce que `ia` signalerait `IA/` dans chaque fichier —
-et le rapport le dit. Un nom interdit **ne se force pas** : c'est l'utilisateur
-qui l'a déclaré, pas une heuristique qui a pu se tromper. Le rapport dit aussi
-quand la liste est absente : « aucune trouvaille » ne vaut alors rien pour les
-noms nus. La même liste nourrit la garde de pré-commit
-`.githooks/pre-commit.d/20-noms-interdits`, qui refuse la faute au moment où
-elle s'écrit, sur les seules lignes ajoutées.
+et le rapport le dit. Un nom interdit **avertit, il ne refuse pas** : la liste
+doit retenir des identités, mais elle frappe des mots — un mot banal peut s'y
+trouver — et un avertissement n'a pas besoin de converger. Le contrôle le
+signale donc ligne par ligne, sans bloquer, et `--forcer` n'a pas à le
+franchir : il n'y a rien à forcer. Le rapport dit aussi quand la liste est
+absente : « aucune trouvaille » ne vaut alors rien pour les noms nus — liste
+absente, aucun nom contrôlé. La même liste nourrit la garde de pré-commit
+`.githooks/pre-commit.d/20-noms-interdits`, qui avertit au moment où la faute
+s'écrit, sur les seules lignes ajoutées, puis laisse le commit passer.
 
 La phrase de passe **sans guillemets** est attrapée sous condition de position :
 mot-clé fort (`password`, `secret`, `mdp`, `mot de passe`) en tête de ligne,
@@ -161,4 +210,10 @@ faut-il le faire avant qu'il ait servi. Pour les autres catégories, il publie,
 et **écrit la dérogation et ses catégories dans le message de commit** : une
 publication forcée qui ne laisse aucune trace est indiscernable d'une
 publication propre. S'en servir sans avoir lu la trouvaille, c'est se priver du
-seul filet qui reste une fois l'historique public.
+seul filet qui reste une fois l'historique public. Ce filet-là vise les valeurs
+à **forme reconnaissable** — un jeton, une clé, une adresse IP : pour un **nom**
+de la liste locale, il n'en existe aucun. Un nom est signalé deux fois — par la
+garde de pré-commit au moment de l'écriture, puis par `publier.py` au moment de
+la publication — et c'est dans ce rapport local, et nulle part ailleurs, que
+survit le détail `fichier:ligne` : le message de commit, lui, n'en porte que le
+nombre.

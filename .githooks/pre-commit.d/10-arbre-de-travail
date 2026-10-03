@@ -23,7 +23,7 @@ if [ "$(git rev-parse --absolute-git-dir)" = "$(cd "$(git rev-parse --git-common
 Commit refusé : ceci est l'arbre de travail principal, partagé par toutes les
 séances (§2.1). Travailler dans un worktree :
 
-    git worktree add /tmp/obsia-<nom-agent>-<sujet> -b <nom-agent>/<sujet> origin/main
+    git worktree add ~/obsia-worktrees/<nom-agent>-<sujet> -b <nom-agent>/<sujet> origin/main
 MSG
     exit 1
 fi

@@ -30,6 +30,7 @@ fois.
 | `projet` | note d'un projet — `-PROJETS/` |
 | `personnel` | contexte personnel — `-PERSONNELS/` |
 | `maintenance` | trace de maintenance — previews et journaux §7.4, `_MAINTENANCE/` |
+| `idée` | une idée à évaluer — `-PROJETS/Idées/documents/` |
 | `note` | toute autre note classée |
 
 ## Vocabulaire — tags existants

@@ -130,7 +130,9 @@ verts, ils ne disent rien de la justesse de ce qui vient d'être écrit.
   qu'aucun cas réel n'a confirmé ;
 - une section `## Compilée dans un skill` à la fin de la note d'expérience, qui
   nomme le skill destinataire. Sans ce retour, la note laisse croire que sa
-  leçon dort encore.
+  leçon dort encore. **Si la leçon appartient à un autre agent**, on ne pose
+  pas ce marqueur : on n'écrit pas dans le dossier d'un autre (§2). La ligne du
+  registre fait foi, et l'agent propriétaire pose le marqueur s'il le souhaite ;
 
 ### 8. Si la modification se révèle fausse
 

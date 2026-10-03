@@ -98,8 +98,9 @@ faut pour faire le travail, rien d'autre. Le reste est de l'encombrement.
 
 ## Conventions OBSIA
 
-Tout skill du coffre respecte le frontmatter défini dans
-`../system/VAULT-CONTRACT.md` :
+Tout skill du coffre respecte le frontmatter défini par le contrat : les règles
+au §5 de `../system/VAULT-CONTRACT.md`, le détail des champs par genre dans
+l'annexe `../system/contrat/contrat-frontmatter.md` :
 
 ```yaml
 ---
@@ -119,6 +120,9 @@ Rappels qui découlent du contrat :
 - Le nom du fichier est identique au champ `name`.
 - Les noms doivent être uniques dans tout le coffre parent, pas seulement dans
   `OBSIA/` — les rétroliens Obsidian ignorent la frontière git.
+- Le lien vers le contrat dépend de la forme — un niveau de `../` de plus
+  pour un skill en dossier (`IA/skills/<nom>/<nom>.md`) que pour un skill
+  plat. Changer de forme, c'est corriger ce lien.
 
 ## Frontmatter d'une fiche MCP
 

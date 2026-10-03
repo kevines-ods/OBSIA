@@ -62,8 +62,10 @@ l'était pas (§7.3.1 du contrat).
 2. **Ne jamais deviner** une adresse, un chemin, un nom de machine ou un
    identifiant : le lire dans l'inventaire, puis le confirmer par une commande
    de lecture.
-3. **Lire l'état du chantier** concerné dans `Mon coffre/-PROJETS/` (notes
-   « — résumé ») avant de reprendre un travail en cours.
+3. **Lire l'état du chantier** concerné dans `Mon coffre/-PROJETS/<chantier>/`
+   (résumé et carnets `statut: en cours`, §6) avant de reprendre un travail
+   en cours. Une intervention hors chantier s'écrit au carnet du jour du
+   projet de domaine qui porte l'infrastructure (§6).
 4. Avant une commande distante, vérifier dans l'inventaire **le shell de la
    cible** et **ce que l'agent a le droit d'y faire** : un poste sous `fish`
    refuse les heredocs, un `sudo` à mot de passe interdit toute opération root.
@@ -112,7 +114,7 @@ en échec, disque presque plein, sauvegarde manquée, tâche silencieuse.
 | Ce qu'on a appris | Où |
 | --- | --- |
 | un **fait durable** sur l'infrastructure (nouvelle machine, adresse changée, service modifié) | la note concernée de `Mon coffre/-PERSONNELS/Homelab/`, **corrigée sur place** — note de référence dont l'agent est l'auteur (`auteur: administrateur`, §7.3) |
-| l'**état d'un chantier** (fait, reste à faire, décision ouverte) | sa note de suivi `Mon coffre/-PROJETS/<chantier> — résumé.md` |
+| l'**état d'un chantier** (fait, reste à faire, décision ouverte) | `Mon coffre/-PROJETS/<chantier>/` — `<chantier> — résumé.md` et son carnet ; pour un chantier du coffre, `mémoire/projets/<chantier>/` (§6) |
 | une **leçon de méthode** réutilisable | `mémoire/administrateur/expériences/<sujet>.md` — sans aucune adresse, nom d'hôte ni identifiant |
 | un **piège générique** qui vaudra sur toute infrastructure | le skill du domaine, par `createur-de-skill` |
 
@@ -133,4 +135,4 @@ le coffre parent laisse son preview dans `Mon coffre/_MAINTENANCE/` (§7.4).
 - `read_only: false` : zones d'écriture et patchs au §2, §5 et §7.3 de
   `../system/VAULT-CONTRACT.md` — non répétés ici.
 - Aucune adresse, aucun nom d'hôte interne ni identifiant n'entre dans ce
-  dépôt, ni dans le log de session (§9).
+  dépôt, ni au carnet — du chantier, ou du jour hors chantier — (§9).

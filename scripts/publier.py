@@ -131,18 +131,29 @@ BLOQUANTS = (
 BOITES_ADMISES = ("noreply", "utilisateur")
 DOMAINES_ADMIS = ("example.com", "exemple.fr")
 
-#: Les deux étiquettes qu'un `--forcer` ne publie pas. Une clé privée ne se
-#: révoque pas — elle se remplace. Un jeton connu se révoque, mais seulement
-#: avant d'avoir servi : publié, il est déjà trop tard. Les autres catégories
-#: — une adresse, un nom d'hôte, un mot de passe à changer — se rattrapent.
-SANS_FORCAGE = ("clé privée", "jeton d'API", "nom interdit")
+#: Les étiquettes qu'un `--forcer` ne publie jamais — les valeurs à forme
+#: reconnaissable. Une clé privée ne se révoque pas — elle se remplace. Un jeton
+#: connu se révoque, mais seulement avant d'avoir servi : publié, il est déjà
+#: trop tard. Les autres catégories — une adresse, un nom d'hôte, un mot de
+#: passe à changer — se rattrapent.
+#:
+#: Un *nom interdit* n'en fait pas partie : ce n'est pas une forme
+#: reconnaissable, c'est une liste personnelle qui frappe des mots. Il est
+#: signalé en avertissement, pas bloqué — un avertissement n'a pas besoin de
+#: converger, un faux positif se corrige à la main sans perdre la publication.
+SANS_FORCAGE = ("clé privée", "jeton d'API")
 
 #: La liste locale des noms interdits — noms d'hôtes, nom du dépôt privé, tout
 #: ce qui désigne l'infrastructure sans avoir de forme reconnaissable. Elle vit
 #: hors du dépôt, à dessein : la versionner publierait précisément ce qu'elle
 #: protège. Un nom par ligne, `#` pour commenter. `OBSIA_NOMS_INTERDITS` en
-#: désigne une autre. Un nom interdit ne se force pas : c'est l'utilisateur qui
-#: l'a déclaré tel, pas une heuristique qui a pu se tromper.
+#: désigne une autre.
+#:
+#: Un nom de cette liste **avertit**, il ne refuse pas : la liste doit retenir
+#: des identités, mais elle frappe des mots — un mot banal peut s'y trouver, et
+#: un avertissement n'a pas besoin de converger. Le contrôle signale chaque
+#: occurrence, ligne par ligne, puis laisse publier. Liste absente ou vide =
+#: aucun nom contrôlé.
 NOMS_INTERDITS = Path(os.environ.get(
     "OBSIA_NOMS_INTERDITS", os.path.expanduser("~/.config/obsia/noms-interdits")))
 
@@ -197,12 +208,16 @@ class Controle(NamedTuple):
     un fichier propre, c'est un fichier dont on ne sait rien.
     """
 
-    #: (chemin, ligne, étiquette, extrait) par trouvaille.
+    #: (chemin, ligne, étiquette, extrait) par trouvaille bloquante — ce que
+    #: `--forcer` ne franchit pas (forme reconnaissable : clé, jeton).
     trouvailles: list
     #: (chemin, raison) par fichier sauté : binaire, non UTF-8, illisible.
     non_relus: list
     #: Nombre de fichiers effectivement relus.
     relus: int
+    #: (chemin, ligne, étiquette, extrait) par avertissement — un nom de la
+    #: liste locale, signalé sans bloquer ; `--forcer` ne sert pas, il passe.
+    avertissements: list
 
 
 def controler_fuites(racine: Path, noms_interdits=()) -> Controle:
@@ -211,11 +226,9 @@ def controler_fuites(racine: Path, noms_interdits=()) -> Controle:
     `noms_interdits` vient de la liste locale (`charger_noms_interdits`) ; par
     défaut vide, pour que le contrôle ne dépende pas de la machine qui le lance.
     """
-    trouvailles, non_relus, relus = [], [], 0
+    trouvailles, avertissements, non_relus, relus = [], [], [], 0
     motifs = list(BLOQUANTS)
     motif_noms = motif_des_noms(noms_interdits)
-    if motif_noms:
-        motifs.append(("nom interdit", motif_noms))
     for chemin in sorted(racine.rglob("*")):
         if not chemin.is_file() or chemin.is_symlink():
             continue
@@ -243,7 +256,13 @@ def controler_fuites(racine: Path, noms_interdits=()) -> Controle:
                 if etiquette == "adresse de courriel" and courriel_admis(extrait):
                     continue
                 trouvailles.append((str(rel), numero, etiquette, ligne.strip()[:110]))
-    return Controle(trouvailles, non_relus, relus)
+            if motif_noms:
+                trouve = motif_noms.search(ligne)
+                if trouve:
+                    avertissements.append(
+                        (str(rel), numero, "nom interdit",
+                         ligne.strip()[:110]))
+    return Controle(trouvailles, non_relus, relus, avertissements)
 
 
 # --------------------------------------------------------------------- export
@@ -530,12 +549,34 @@ def main() -> int:
               % ("%d nom(s)" % len(noms) if noms else "absente ou vide — "
                  "noms d'hôtes nus non contrôlés (%s)" % NOMS_INTERDITS))
         controle = controler_fuites(export, noms)
+        if controle.avertissements:
+            for rel, numero, etiquette, ligne in controle.avertissements:
+                print("  ⚠ %s:%d  [%s]" % (rel, numero, etiquette))
+                print("      %s" % ligne)
+            print("  %d nom(s) interdit(s) signalé(s) — avertissement, pas un refus."
+                  % len(controle.avertissements))
+            print("  La liste retient des identités mais frappe des mots : un faux "
+                  "positif se corrige à la main, sans perdre la publication.")
         if controle.trouvailles:
             for rel, numero, etiquette, ligne in controle.trouvailles:
                 print("  ✗ %s:%d  [%s]" % (rel, numero, etiquette))
                 print("      %s" % ligne)
-            print("\n  %d trouvaille(s) sur %d fichier(s) relu(s)."
-                  % (len(controle.trouvailles), controle.relus))
+
+        # Le total se dit toujours — avertissement comme refus : « aucune
+        # trouvaille » sur des fichiers qu'on n'a pas ouverts ne vaut que si le
+        # nombre de fichiers sautés est sous les yeux.
+        if not controle.trouvailles and not controle.avertissements:
+            print("  Aucune trouvaille sur %d fichier(s) relu(s) — %d non relu(s)."
+                  % (controle.relus, len(controle.non_relus)))
+        else:
+            print("  %d trouvaille(s) bloquante(s), %d avertissement(s) — "
+                  "%d fichier(s) relu(s), %d non relu(s)."
+                  % (len(controle.trouvailles), len(controle.avertissements),
+                     controle.relus, len(controle.non_relus)))
+        for rel, raison in controle.non_relus:
+            print("      - %s (%s)" % (rel, raison))
+
+        if controle.trouvailles:
             posees = [trouvaille[2] for trouvaille in controle.trouvailles]
             signalees = sorted(set(posees))
             interdites = sorted(set(posees) & set(SANS_FORCAGE))
@@ -552,11 +593,6 @@ def main() -> int:
             forcees = signalees
             print("  --forcer : publication malgré tout — %s."
                   % ", ".join(forcees))
-        else:
-            print("  Aucune trouvaille sur %d fichier(s) relu(s) — %d non relu(s)."
-                  % (controle.relus, len(controle.non_relus)))
-        for rel, raison in controle.non_relus:
-            print("      - %s (%s)" % (rel, raison))
 
         fichiers = sorted(p.relative_to(export) for p in export.rglob("*") if p.is_file())
         print("\nAperçu")
@@ -593,6 +629,13 @@ def main() -> int:
         if forcees:
             message += ("\n\nPublié malgré le contrôle de fuite (--forcer) :\n"
                         + "\n".join("- %s" % etiquette for etiquette in forcees))
+        if controle.avertissements:
+            # Le nombre, et rien d'autre : un avertissement peut tenir au nom
+            # d'un fichier (`inventaire-nas-maison.md`), et `chemin:ligne` le
+            # ferait entrer dans le message public. Le détail — fichier et ligne
+            # — reste dans le rapport local, imprimé plus haut.
+            message += ("\n\nPublié avec %d avertissement(s) de nom interdit, "
+                        "relus avant publication." % len(controle.avertissements))
         git(cible, "add", "-A")
         git(cible, "commit", "-m", message)
         print("  Committé. La poussée reste à faire à la main — par une branche :")

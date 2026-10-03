@@ -19,8 +19,9 @@ des index.
 ## Procédure
 
 1. Lire `../system/VAULT-CONTRACT.md`.
-2. Localiser le ou les projets concernés via `mémoire/projets/<nom-projet>/sommaire.md`
-   et les rétroliens.
+2. Localiser le ou les projets concernés via `mémoire/projets/<projet>/sommaire.md`,
+   le `<projet> — résumé.md` et les carnets `statut: en cours`, puis les
+   rétroliens.
 3. Extraire le contexte pertinent, en citant systématiquement les chemins des
    fichiers utilisés.
 4. Si les index sont désynchronisés : le **dire**, sans y toucher. Ce skill

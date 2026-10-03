@@ -28,8 +28,9 @@ Traitement de PDF avec des bibliothèques libres.
 | `ocrmypdf` | MPL-2.0 | OCR sur PDF scannés |
 | `qpdf` | Apache-2.0 | déchiffrement, linéarisation |
 
-Installation par paquets système — le gestionnaire dépend de la
-distribution, que `obsia.local.yml` a relevée à l'installation (§13.3) :
+Installation par paquets système — le gestionnaire dépend de la distribution,
+que `obsia.local.yml` a relevée à l'installation (§13.3, annexe
+`../system/contrat/contrat-distribution.md`) :
 
 ```bash
 sudo pacman -S poppler python-pypdf qpdf ocrmypdf     # Arch et dérivées
