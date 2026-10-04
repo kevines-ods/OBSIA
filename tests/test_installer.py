@@ -161,11 +161,12 @@ class TestEcritureAgentsMd(BaseInstalleur):
         self.lancer("--appliquer")
 
         texte = self.agents_md().read_text(encoding="utf-8")
-        # L'étape 0 engendrée reprend le §10 du contrat, mot pour mot.
-        self.assertIn("dans l'arbre\n   principal **et dans chaque worktree lié**",
-                      texte)
-        self.assertIn("`read_only: true` n'a pas de carnet : il saute cette étape.",
-                      texte)
+        # L'étape 0 engendrée reprend le §10 du contrat, mot pour mot — le
+        # passage est long, il se replie : on compare mot à mot, pas ligne à ligne.
+        normalise = " ".join(texte.replace("**", "").split())
+        self.assertIn("dans l'arbre principal et dans chaque worktree lié", normalise)
+        self.assertIn("Un agent `read_only: true` n'a pas de carnet : il saute "
+                      "cette étape.", normalise)
         # L'index marque les agents en lecture seule, comme les skills.
         self.assertIn("**agent-verif** [lecture seule]", texte)
         self.assertIn("**agent-ecrit** —", texte)
@@ -217,7 +218,11 @@ class TestEcritureAgentsMd(BaseInstalleur):
             coupe, n = re.subn(r"^0\. Au démarrage.*?(?=\n1\. |\n## |\Z)", "",
                                texte, flags=re.MULTILINE | re.DOTALL)
             self.assertEqual(n, 1, "étape 0 du §10 introuvable")
-            self.assertLess(len(texte) - len(coupe), 400,
+            # L'étape 0 porte la clause de transition — trois emplacements à
+            # essayer, une date de fin — et se replie sur huit lignes : elle est
+            # longue à dessein. Ce qui est contrôlé ici, c'est que la coupe
+            # n'emporte pas une section entière avec elle.
+            self.assertLess(len(texte) - len(coupe), 800,
                             "la coupe de l'étape 0 a emporté trop de texte")
             return coupe
 
@@ -645,13 +650,19 @@ class TestLaCopieNeTouchePasALInstance(BaseInstalleur):
 
     def test_l_apercu_dit_conserve(self):
         self.profil(mode="copie")
-        note = self.cible() / "mémoire" / "mes-notes.md"
+        note = self.cible() / "brouillon" / "mes-notes.md"
         note.parent.mkdir(parents=True)
         note.write_text("mon travail\n", encoding="utf-8")
+        # La mémoire se lit à côté du dépôt, pas dedans (§7.1).
+        profil = self.cible().parent / "0-PERSONNELS" / "profil-utilisateur.md"
+        profil.parent.mkdir(parents=True)
+        profil.write_text("Nom : moi\n", encoding="utf-8")
 
         resultat = self.lancer("--installer", str(self.cible()))
 
         self.assertIn("conservé", resultat.stdout)
+        self.assertIn("0-PERSONNELS/profil-utilisateur.md", resultat.stdout)
+        self.assertIn("0-MEMOIRES/README.md", resultat.stdout)
 
 
 class TestAucunLienSuivi(BaseInstalleur):
@@ -722,10 +733,11 @@ class TestAucunLienSuivi(BaseInstalleur):
 class TestRegenerationSansLien(BaseInstalleur):
     """La régénération n'écrit pas à travers un lien de la cible.
 
-    `regenerate_sommaire.py` pose les `sommaire.md` dans `mémoire/`,
-    `regenerate_index.py` les index dans `IA/system/`. Si l'une de ces deux
-    racines est un lien, ces scripts écrivent hors du coffre visé ; le
-    vérificateur, lui, lit des fichiers qui ne sont pas au coffre.
+    `regenerate_sommaire.py` pose les `sommaire.md` dans la mémoire du coffre
+    parent — le dossier qui contient la cible (§7.1) —, `regenerate_index.py`
+    les index dans `IA/system/`. Si l'une de ces racines est un lien, ces
+    scripts écrivent hors du coffre visé ; le vérificateur, lui, lit des
+    fichiers qui ne sont pas au coffre.
 
     Les coffres des autres tests n'ont pas de `scripts/`, donc rien n'y est
     régénéré. Ici on en pose un, avec trois béquilles qui écrivent exactement
@@ -735,6 +747,10 @@ class TestRegenerationSansLien(BaseInstalleur):
 
     def cible(self) -> Path:
         return self.parent / "chez-moi" / "OBSIA"
+
+    def memoire(self) -> Path:
+        """La mémoire du coffre cible : à côté du dépôt, pas dedans (§7.1)."""
+        return self.cible().parent / "0-SAVOIRS"
 
     def ailleurs(self) -> Path:
         chemin = self.parent / "ailleurs"
@@ -748,8 +764,9 @@ class TestRegenerationSansLien(BaseInstalleur):
         (scripts / "regenerate_sommaire.py").write_text(
             "from pathlib import Path\n"
             "racine = Path(__file__).resolve().parent.parent\n"
-            "(racine / 'mémoire' / 'sommaire.md').write_text('sommaire\\n',\n"
-            "    encoding='utf-8')\n", encoding="utf-8")
+            "cible = racine.parent / '0-SAVOIRS' / 'sommaire.md'\n"
+            "cible.parent.mkdir(parents=True, exist_ok=True)\n"
+            "cible.write_text('sommaire\\n', encoding='utf-8')\n", encoding="utf-8")
         (scripts / "regenerate_index.py").write_text(
             "from pathlib import Path\n"
             "racine = Path(__file__).resolve().parent.parent\n"
@@ -769,12 +786,13 @@ class TestRegenerationSansLien(BaseInstalleur):
         self.profil(mode="copie")
         cible = self.cible()
         cible.mkdir(parents=True)
+        self.memoire().mkdir(parents=True)
         self.poser_les_generateurs()
 
         resultat = self.lancer("--appliquer", "--installer", str(cible))
 
         self.assertEqual(resultat.returncode, 0, resultat.stderr)
-        self.assertTrue((cible / "mémoire" / "sommaire.md").is_file())
+        self.assertTrue((self.memoire() / "sommaire.md").is_file())
         self.assertTrue((cible / "IA" / "system" / "agents-index.md").is_file())
         self.assertIn("index et sommaires à jour", resultat.stdout)
 
@@ -782,7 +800,7 @@ class TestRegenerationSansLien(BaseInstalleur):
         self.profil(mode="copie")
         cible = self.cible()
         cible.mkdir(parents=True)
-        (cible / "mémoire").symlink_to(self.ailleurs(), target_is_directory=True)
+        self.memoire().symlink_to(self.ailleurs(), target_is_directory=True)
         self.poser_les_generateurs()
 
         resultat = self.lancer("--appliquer", "--installer", str(cible))
@@ -837,11 +855,11 @@ class TestRegenerationSansLien(BaseInstalleur):
         self.assertIn("sans régénération", resultat.stdout)
 
     def test_un_fichier_lie_dans_la_memoire_n_est_pas_regenere(self):
-        """Même un fichier lié compte : `mémoire/sommaire.md` pointé ailleurs."""
+        """Même un fichier lié compte : `0-SAVOIRS/sommaire.md` pointé ailleurs."""
         self.profil(mode="copie")
         cible = self.cible()
-        (cible / "mémoire").mkdir(parents=True)
-        (cible / "mémoire" / "sommaire.md").symlink_to(
+        self.memoire().mkdir(parents=True)
+        (self.memoire() / "sommaire.md").symlink_to(
             self.ailleurs() / "sommaire.md")
         self.poser_les_generateurs()
 
@@ -860,18 +878,18 @@ class TestExclusionObsidian(BaseInstalleur):
     """`installer.py` exclut le `code/` des projets des Fichiers exclus d'Obsidian.
 
     Le motif est écrit en regex entre barres obliques (§7.3) ; l'ancien motif à
-    joker `-PROJETS/*/code`, non documenté, est retiré au passage."""
+    joker `0-PROJETS/*/code`, non documenté, est retiré au passage."""
 
     def app_json(self) -> Path:
         return self.parent / ".obsidian" / "app.json"
 
     def coffre_obsidian(self) -> None:
-        """Un coffre parent qui a de quoi exclure : `.obsidian/` et `-PROJETS/`."""
+        """Un coffre parent qui a de quoi exclure : `.obsidian/` et `0-PROJETS/`."""
         (self.parent / ".obsidian").mkdir()
-        (self.parent / "-PROJETS").mkdir()
+        (self.parent / "0-PROJETS").mkdir()
 
     def test_sans_coffre_obsidian_rien_n_est_ecrit(self):
-        (self.parent / "-PROJETS").mkdir()
+        (self.parent / "0-PROJETS").mkdir()
         INS.exclure_code_d_obsidian(self.racine)
         self.assertFalse(self.app_json().exists())
 
@@ -883,7 +901,7 @@ class TestExclusionObsidian(BaseInstalleur):
         with redirect_stdout(sortie):
             INS.exclure_code_d_obsidian(self.racine)
         self.assertFalse(self.app_json().exists())
-        self.assertIn("pas de -PROJETS/ : exclusion Obsidian non posée",
+        self.assertIn("pas de 0-PROJETS/ : exclusion Obsidian non posée",
                       sortie.getvalue())
 
     def test_un_fichier_neuf_nait_en_0600(self):
@@ -904,13 +922,13 @@ class TestExclusionObsidian(BaseInstalleur):
         # corps pour vérifier ce que le motif attrape vraiment.
         corps = INS.MOTIF_CODE_OBSIDIAN[1:-1]
         motif = re.compile(corps)
-        for chemin in ("-PROJETS/mon-projet/code/",
-                       "-PROJETS/mon-projet/code/src/main.py"):
+        for chemin in ("0-PROJETS/mon-projet/code/",
+                       "0-PROJETS/mon-projet/code/src/main.py"):
             self.assertIsNotNone(motif.search(chemin), chemin)
-        for chemin in ("-PROJETS/mon-projet/",
-                       "-PROJETS/mon-projet/docs/code/x.md",
-                       "-PROJETS/code/",
-                       "notes/-PROJETS/mon-projet/code/x.py"):
+        for chemin in ("0-PROJETS/mon-projet/",
+                       "0-PROJETS/mon-projet/docs/code/x.md",
+                       "0-PROJETS/code/",
+                       "notes/0-PROJETS/mon-projet/code/x.py"):
             self.assertIsNone(motif.search(chemin), chemin)
 
     def test_le_motif_est_ajoute_sans_ecraser(self):
@@ -981,6 +999,148 @@ class TestExclusionObsidian(BaseInstalleur):
         self.app_json().write_text("{pas du json", encoding="utf-8")
         INS.exclure_code_d_obsidian(self.racine)
         self.assertEqual("{pas du json", self.app_json().read_text(encoding="utf-8"))
+
+
+GABARITS_DEPOT = (Path(__file__).resolve().parent.parent
+                  / "IA" / "system" / "depot-de-donnees")
+LISTE_BLANCHE = (GABARITS_DEPOT / "gitignore-coffre").read_text(encoding="utf-8")
+
+
+def git(ou, *arguments):
+    return subprocess.run(["git", "-C", str(ou), *arguments],
+                          capture_output=True, text=True)
+
+
+class TestDepotDeDonnees(BaseInstalleur):
+    """§7.1 : l'installeur outille le dépôt de données du coffre parent — sa
+    liste blanche (jamais écrasée), son `git init`, son distant, ses crochets.
+
+    Le coffre parent, ici, est le dossier qui contient le dépôt produit.
+    """
+
+    def marquer_le_coffre(self):
+        """Un coffre parent reconnaissable : un marqueur suffit (§7.1)."""
+        (self.parent / "0-PROJETS").mkdir(parents=True, exist_ok=True)
+
+    def outiller_le_produit(self):
+        """Le produit porte ses gabarits, comme le dépôt versionné les publie."""
+        for nom in ("gitignore-coffre", "pre-commit", "post-commit"):
+            self.ecrire("IA/system/depot-de-donnees/" + nom,
+                        (GABARITS_DEPOT / nom).read_text(encoding="utf-8"))
+
+    def profil_avec_distant(self, url="ssh://nas/volume/coffre.git"):
+        self.ecrire("obsia.local.yml",
+                    "schema: 1\nmode: en-place\nmodules:\n  - construction\n"
+                    "coffre_distant: %s\n" % url)
+
+    def test_la_liste_blanche_est_posee_depuis_le_gabarit(self):
+        self.marquer_le_coffre()
+        self.outiller_le_produit()
+        self.profil()
+        resultat = self.lancer("--appliquer")
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        self.assertEqual(LISTE_BLANCHE,
+                         (self.parent / ".gitignore").read_text(encoding="utf-8"))
+        self.assertIn("liste blanche", resultat.stdout)
+
+    def test_la_liste_blanche_n_est_jamais_ecrasee(self):
+        self.marquer_le_coffre()
+        self.outiller_le_produit()
+        self.profil()
+        (self.parent / ".gitignore").write_text("# à moi\n", encoding="utf-8")
+        resultat = self.lancer("--appliquer")
+        self.assertEqual("# à moi\n",
+                         (self.parent / ".gitignore").read_text(encoding="utf-8"))
+        self.assertIn("reste tel quel", resultat.stderr)
+
+    def test_le_depot_de_donnees_est_initialise(self):
+        self.marquer_le_coffre()
+        self.outiller_le_produit()
+        self.profil()
+        self.lancer("--appliquer")
+        self.assertTrue((self.parent / ".git").is_dir())
+
+    def test_les_crochets_sont_poses_et_actives(self):
+        self.marquer_le_coffre()
+        self.outiller_le_produit()
+        self.profil()
+        self.lancer("--appliquer")
+        crochet = self.parent / ".githooks" / "pre-commit"
+        self.assertTrue(crochet.is_file())
+        self.assertTrue(os.access(crochet, os.X_OK), "un crochet doit être exécutable")
+        texte = crochet.read_text(encoding="utf-8")
+        self.assertNotIn("@PRODUIT@", texte)
+        self.assertIn('outils="$racine/OBSIA"', texte)
+        self.assertEqual(".githooks",
+                         git(self.parent, "config", "core.hooksPath").stdout.strip())
+
+    def test_le_distant_declare_devient_origin_sans_jamais_pousser(self):
+        self.marquer_le_coffre()
+        self.outiller_le_produit()
+        self.profil_avec_distant()
+        self.lancer("--appliquer")
+        self.assertEqual("ssh://nas/volume/coffre.git",
+                         git(self.parent, "remote", "get-url", "origin").stdout.strip())
+        # L'installeur n'enregistre que l'adresse : aucun commit n'est fait.
+        self.assertNotEqual(0, git(self.parent, "rev-parse", "--verify", "HEAD").returncode)
+
+    def test_le_distant_declare_survit_a_une_reinstallation(self):
+        self.marquer_le_coffre()
+        self.outiller_le_produit()
+        self.profil_avec_distant()
+        self.lancer("--appliquer")
+        self.lancer("--appliquer")
+        self.assertIn("coffre_distant: ssh://nas/volume/coffre.git",
+                      (self.racine / "obsia.local.yml").read_text(encoding="utf-8"))
+
+    def test_un_profil_rempli_n_est_pas_ecrase_par_le_gabarit(self):
+        """§7.1 : un profil rempli quelque part fait refuser la pose du gabarit."""
+        self.marquer_le_coffre()
+        self.outiller_le_produit()
+        self.profil()
+        ancien = self.parent / "-PERSONNELS" / "profil-utilisateur.md"
+        ancien.parent.mkdir(parents=True, exist_ok=True)
+        ancien.write_text("---\nschema: 1\n---\n\nQuelqu'un, et ce qu'il aime.\n",
+                          encoding="utf-8")
+        resultat = self.lancer("--appliquer")
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        self.assertFalse((self.parent / "0-PERSONNELS" / "profil-utilisateur.md").exists())
+        self.assertIn("migration", resultat.stderr)
+        self.assertIn("Quelqu'un, et ce qu'il aime.",
+                      ancien.read_text(encoding="utf-8"))
+
+    def test_sans_marqueur_de_coffre_rien_n_est_outille(self):
+        self.outiller_le_produit()
+        self.profil()
+        resultat = self.lancer("--appliquer")
+        self.assertIn("pas de coffre parent reconnu", resultat.stdout)
+        self.assertFalse((self.parent / ".git").exists())
+        self.assertFalse((self.parent / ".gitignore").exists())
+        self.assertFalse((self.parent / ".githooks").exists())
+
+    def test_le_readme_de_la_memoire_dit_les_deux_memoires(self):
+        """§6 : `0-MEMOIRES/` n'est pas qu'une archive, et son README le dit."""
+        self.marquer_le_coffre()
+        self.outiller_le_produit()
+        self.profil()
+
+        self.lancer("--appliquer")
+
+        lireme = (self.parent / "0-MEMOIRES" / "README.md").read_text(encoding="utf-8")
+        self.assertIn("préférences/", lireme)
+        self.assertIn("expériences/", lireme)
+        self.assertIn("gelé", lireme)
+        self.assertIn("ne peut s'appeler", lireme)
+
+    def test_les_preferences_ont_un_dossier_des_l_installation(self):
+        """§6 : `0-MEMOIRES/préférences/` est posé même vide, et se retrouve."""
+        self.marquer_le_coffre()
+        self.outiller_le_produit()
+        self.profil()
+
+        self.lancer("--appliquer")
+
+        self.assertTrue((self.parent / "0-MEMOIRES" / "préférences").is_dir())
 
 
 if __name__ == "__main__":

@@ -48,16 +48,19 @@ secrets/
 .stfolder/
 .stversions/
 
-# .archive/ n'est PAS ignoré : le §2 du contrat impose un archivage avant toute
-# suppression. Ignoré, cet archivage ne survivait pas à un clone neuf.
+# .archive/ n'est PAS ignoré : c'est l'archive des fichiers retirés du dépôt de
+# l'outil, et un clone neuf doit la retrouver. Pour la mémoire, l'archivage,
+# c'est l'historique Git du dépôt du coffre parent (§2) : plus de dossier.
 
 # Caches Python — créés par les scripts du coffre
 __pycache__/
 *.pyc
 
-# Sommaires de la mémoire (VAULT-CONTRACT §11) : générés, et réécrits par
-# presque chaque pull request qui touche mémoire/. Versionnés, ils mettaient en
-# conflit deux pull requests sans rapport dès que plusieurs agents travaillaient
-# en parallèle. Ils se régénèrent localement — crochets post-merge et
-# post-checkout, installeur, revue hebdomadaire.
+# Sommaires de la mémoire (VAULT-CONTRACT §11) : générés localement, et
+# réécrits par presque chaque séance. Versionnés, ils mettaient en conflit deux
+# travaux sans rapport dès que plusieurs agents écrivaient en parallèle. La
+# mémoire vit dans le coffre parent (§7.1) : ce filtre ne concerne que l'ancien
+# `mémoire/` resté dans le dépôt pendant la bascule, dont les sommaires se
+# régénèrent — crochets post-merge et post-checkout, installeur, revue
+# hebdomadaire.
 mémoire/**/sommaire.md

@@ -1,0 +1,22 @@
+# Dépôt de données du coffre — liste blanche (§7.1 du contrat).
+#
+# Posé par `scripts/installer.py` depuis le gabarit du dépôt produit. Une fois
+# en place, il appartient au coffre : il n'est **jamais** écrasé par une
+# réinstallation. S'il diverge du gabarit, `scripts/verifier_coffre.py` le dit.
+#
+# Tout est ignoré, sauf les dossiers de mémoire et ce fichier : le dépôt de
+# données suit la mémoire, jamais l'outil, jamais le bruit d'Obsidian.
+/*
+!/.gitignore
+!/0-*/
+!/_MAINTENANCE/
+
+# `0-PROJETS/<projet>/code/` est le dépôt git d'une application : il a le sien.
+0-PROJETS/**/code/
+
+# BASCULE — du 2026-10-04 au plus tard le 2026-12-31, fin de la migration du
+# chantier `souverainete-des-donnees` : les dossiers de mémoire portent encore
+# leur ancien nom à tiret. Ces deux lignes disparaissent avec la migration, et
+# avec elles seules.
+!/-*/
+-PROJETS/**/code/

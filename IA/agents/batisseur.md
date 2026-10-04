@@ -181,7 +181,7 @@ parcours complet**, sans négociation en cours de route.
 ### Le verdict de voie — obligatoire, daté, révisable
 
 Il s'écrit avant la construction, dans la note de suivi de l'outil
-(`Mon coffre/-PROJETS/<outil>/<outil> — résumé.md`) : la date, les quatre tests
+(`Mon coffre/0-PROJETS/<outil>/<outil> — résumé.md`) : la date, les quatre tests
 **recopiés et cochés** un par un, et la voie retenue. Un verdict non écrit ne se
 révise pas — et c'est lui qu'on rouvre à chaque séance qui retouche l'outil.
 
@@ -198,7 +198,7 @@ devient un plafond, pas une suppression.
 et 6, et saute les portes 4 et 5. La fiche (5 à 10 lignes) remplace les quatre
 documents : problème, ce que l'outil fait, ce qu'il ne fait **pas**, deux ou
 trois critères d'acceptation, la commande de vérification. Elle vit dans le
-README du dépôt de l'outil, et se résume en une ligne dans la note de suivi.
+README du dépôt produit, et se résume en une ligne dans la note de suivi.
 
 - pas de `STACK.md` : `python3` et la bibliothèque standard, ou le langage déjà
   installé pour la tâche — s'il faut *choisir* une stack, ce n'est plus un petit
@@ -299,26 +299,31 @@ sans plan.
 ## Où vit un projet
 
 Un projet a **son propre dépôt git**, créé à la porte 3, dans
-`Mon coffre/-PROJETS/<projet>/code/`. Le coffre OBSIA ne contient jamais le
-code d'une application (§3) : il garde la mémoire des décisions, pas un second
-exemplaire des documents.
+`Mon coffre/0-PROJETS/<projet>/code/`. Le dépôt produit ne contient jamais
+le code d'une application (§3) : il garde la mémoire des décisions, pas un
+second exemplaire des documents.
 
 ```
-Mon coffre/-PROJETS/<projet>/
+Mon coffre/0-PROJETS/<projet>/
 ├── <projet> — résumé.md   <projet> — vision.md
-├── carnets/   documents/   archives/
+├── carnets/   documents/
 └── code/                   dépôt git du projet
     ├── docs/CADRAGE.md   STACK.md   DESIGN.md   PLAN.md
     └── …le code
 ```
 
+Aucun `archives/` : à la clôture d'un chantier, son dossier entier — résumé
+devenu bilan, carnets, documents — gèle dans `0-MEMOIRES/<projet>/<chantier>/`,
+où il ne se modifie plus. La vision et le résumé du domaine, eux, restent dans
+`0-PROJETS/` (§6).
+
 Les notes Obsidian sur le projet restent des notes, dans le dossier du projet
-à côté de `code/` — résumé, carnets (§6, §7.3). Elles ne vont **pas** dans
-`mémoire/projets/`, réservé aux projets du coffre (§7.3.1). `code/` est
-**exclu de l'index d'Obsidian** (Options →
-Fichiers et liens → Fichiers exclus) : sans quoi le Markdown du dépôt et de
-ses dépendances entre dans la recherche, et l'unicité des noms de notes (§6)
-casse dès le deuxième projet.
+à côté de `code/` — résumé, carnets (§6, §7.3). Une note qui décrit une
+personne, un savoir ou un chantier vit dans le coffre parent, sous `0-…`
+(§7.3.1) ; jamais dans `OBSIA/`. `code/` est **exclu de l'index d'Obsidian**
+(Options → Fichiers et liens → Fichiers exclus) : sans quoi le Markdown du
+dépôt et de ses dépendances entre dans la recherche, et l'unicité des noms de
+notes (§6) casse dès le deuxième projet.
 
 ## Règles propres à cet agent
 
@@ -330,14 +335,18 @@ casse dès le deuxième projet.
 - **Mise en ligne** : chaque action est annoncée, exécutée, puis vérifiée
   avant la suivante — la discipline de `remediation-linux`. L'hôte Proxmox
   reste en lecture seule, sans exception.
-- Ce qui lui appartient vit dans `mémoire/batisseur/expériences/` : ce qui a
+- Ce qui lui appartient vit dans `0-MEMOIRES/batisseur/expériences/` : ce qui a
   été appris sur la manière de construire — une pile décevante, un piège
   d'intégration.
-- Le reste est **commun** et vit à la racine de `mémoire/` (§6) : le résumé et
-  les carnets d'un chantier du coffre dans `mémoire/projets/<projet>/`, les faits stables
-  sur l'utilisateur dans `mémoire/profil-utilisateur.md`, ses règles dans
-  `mémoire/préférences/`. Il les lit, et les corrige **sur place** — sans
+- Le reste est **commun** et vit dans le coffre parent (§6) : le résumé et
+  les carnets d'un chantier dans `0-PROJETS/<projet>/`, les faits stables
+  sur l'utilisateur dans `0-PERSONNELS/profil-utilisateur.md`, ses règles dans
+  `0-MEMOIRES/préférences/`. Il les lit, et les corrige **sur place** — sans
   patch, et sans jamais en recopier le contenu ailleurs.
+- **Son carnet se tient avant d'agir** (§6) : l'étape en cours écrite dans
+  `0-PROJETS/<projet>/carnets/` avant chaque porte, commitée à chaque étape —
+  c'est ce qui permet de reprendre un chantier interrompu sans relire tout le
+  dépôt.
 - En cas de doute sur le périmètre, demander plutôt qu'agir.
 
 > Sandbox, archivage avant suppression et preview multi-fichiers sont définis

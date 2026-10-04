@@ -2,12 +2,13 @@
 
 [English](README.md) | **Français**
 
-Un coffre Obsidian qui décrit vos agents IA — rôles, compétences, mémoire,
-règles — et les tâches qu'ils exécutent.
+Un dépôt qui décrit vos agents IA — rôles, compétences, règles — et les tâches
+qu'ils exécutent, à cloner à la racine d'un coffre de notes.
 
-Les agents, leurs compétences et leur mémoire sont des fichiers Markdown. Pas de
-base de données, pas de format propriétaire : le coffre se lit et s'édite à la
-main, dans Obsidian ou dans n'importe quel éditeur de texte.
+Les agents, leurs compétences et leurs tâches sont des fichiers Markdown. Pas de
+base de données, pas de format propriétaire : le dépôt se lit et s'édite à la
+main, dans Obsidian ou dans n'importe quel éditeur de texte. La **mémoire**, elle,
+vit dans le coffre parent, pas ici (§6, §7.1).
 
 ## Principe
 
@@ -31,7 +32,7 @@ lorsqu'il devient nécessaire.
 ## Structure
 
 ```
-OBSIA/                       le coffre — la racine du dépôt EST le coffre
+OBSIA/                       le dépôt — l'outil, pas la mémoire
 ├── IA/
 │   ├── agents/              définition des agents
 │   ├── skills/              compétences réutilisables
@@ -41,15 +42,13 @@ OBSIA/                       le coffre — la racine du dépôt EST le coffre
 │                            modules/ (le catalogue installable),
 │                            prompt-fondateur.md (intention d'origine),
 │                            adaptateurs-harness/ (gabarits d'intégration)
-├── mémoire/                 commun → profil, préférences, projets ;
-│                            par agent → expériences
 ├── brouillon/               zone de travail libre
 ├── scripts/
 │   ├── installer.py         sonde la machine, retient les modules utiles
 │   ├── publier.py           dérive le miroir public de ce dépôt
 │   ├── generer_prompt.py    prompt système depuis les frontmatters
 │   ├── regenerate_index.py  les quatre index et IA/README.md
-│   ├── regenerate_sommaire.py  les sommaire.md de mémoire/
+│   ├── regenerate_sommaire.py  les sommaire.md du coffre parent
 │   └── verifier_coffre.py   cohérence du coffre — utilisé en CI
 ├── HISTORIQUE.md            ce qui a été décidé puis écarté
 ├── LICENSE                  AGPL-3.0-or-later
@@ -57,28 +56,38 @@ OBSIA/                       le coffre — la racine du dépôt EST le coffre
 └── .gitignore
 ```
 
-Il n'y a pas de sous-dossier « coffre » : le dépôt lui-même en tient lieu. Pour
-l'utiliser, cloner `OBSIA/` **à la racine** de votre coffre Obsidian, côte à
-côte avec vos dossiers de connaissance, et ouvrir Obsidian sur ce coffre entier
-(et non sur `OBSIA/` seul) : c'est la condition pour que les rétroliens se
-résolvent à l'échelle du coffre (§7).
+Il n'y a pas de sous-dossier « coffre » : `OBSIA/` s'installe **à la racine** de
+votre coffre Obsidian, côte à côte avec vos dossiers de connaissance, et Obsidian
+s'ouvre sur ce coffre entier (et non sur `OBSIA/` seul) : c'est la condition pour
+que les rétroliens se résolvent à l'échelle du coffre (§7). La mémoire — résumés,
+carnets, savoirs, profil — vit dans les dossiers `0-…` de ce coffre parent, sous
+son propre dépôt Git (§6, §7.1) ; `OBSIA/` n'en contient aucun.
 
 Le coffre ne connaît aucune interface et n'en nomme aucune. Il décrit *quoi*
 faire ; le harness de ton choix fournit *avec quoi*. Rien ici ne dépend d'un
 programme particulier — c'est la condition pour qu'OBSIA reste libre de ses
 mouvements.
 
-## Le coffre parent — votre base de connaissances
+## Le coffre parent — votre mémoire
 
-OBSIA est le cœur ; le coffre qui l'entoure est votre base de connaissances.
-Il s'appelle `Mon coffre/`, et le dépôt se clone à sa racine, à côté de
-`_MAINTENANCE/`, `-PROJETS/`, `-DOCUMENTS/`, `-PERSONNELS/`, `-SAVOIRS/` et
-`-EN-VRAC/`. Seul `OBSIA/` est versionné.
+OBSIA est l'outil ; le coffre qui l'entoure porte votre mémoire. Il s'appelle
+`Mon coffre/`, et `OBSIA/` s'installe à sa racine, à côté de `_MAINTENANCE/`,
+`0-PROJETS/` (projets), `0-MEMOIRES/` (mémoire des agents, et chantiers clos),
+`0-DOCUMENTS/`, `0-PERSONNELS/` (personnel), `0-SAVOIRS/` (connaissances) et
+`0-EN-VRAC/` (à trier). Les dossiers de mémoire de premier niveau commencent tous
+par `0-` (§7.1).
+
+Le coffre parent est **son propre dépôt Git** : la mémoire y est versionnée, sur
+un seul écrivain, et poussée vers un unique dépôt distant (nu, sur le NAS).
+`OBSIA/`, `brouillon/`, `.obsidian/` et le reste de l'outil en sont exclus par un
+`.gitignore` en liste blanche ; `**/.git` reste hors de Syncthing (§7). Rien de
+privé ne sort de l'outil : `OBSIA/brouillon/` et `OBSIA/IA/system/session-log/`
+ne sont jamais publiés (§8).
 
 La structure de premier niveau est fixe (seul vous la modifiez). Les agents
-lisent tout le coffre parent, remplissent les notes d'`-EN-VRAC/` (corps, tags,
-rétroliens) puis les classent, complètent les notes déposées dans `-SAVOIRS/`,
-et consignent previews et actions dans `_MAINTENANCE/`. `-EN-VRAC/` est un
+lisent tout le coffre parent, remplissent les notes d'`0-EN-VRAC/` (corps, tags,
+rétroliens) puis les classent, complètent les notes déposées dans `0-SAVOIRS/`,
+et consignent previews et actions dans `_MAINTENANCE/`. `0-EN-VRAC/` est un
 **tampon** : une session de rangement le vide entièrement. Les règles complètes
 sont au §7 de `IA/system/VAULT-CONTRACT.md`.
 
@@ -240,7 +249,8 @@ en double, ou un fichier généré périmé. Il n'écrit rien et sort en code 1.
 Les mêmes contrôles tournent en intégration continue à chaque poussée. Aucune
 dépendance : bibliothèque standard de Python uniquement.
 
-Pour les lancer automatiquement avant chaque commit, une fois par clone :
+Pour les lancer automatiquement avant chaque commit, une fois par clone — c'est
+`installer.py --appliquer` qui l'arme (§13) :
 
 ```bash
 git config core.hooksPath .githooks
@@ -287,7 +297,7 @@ read_only: false
 Les listes s'écrivent avec des tirets, une entrée par ligne. `skills: a, b`
 vaut une chaîne de caractères, pas une liste.
 
-Ce frontmatter est la frontière entre le coffre et tout programme qui le lit.
+Ce frontmatter est la frontière entre l'outil et tout programme qui le lit.
 `schema` permet de le faire évoluer sans casser les consommateurs existants.
 
 ## Règles
@@ -300,9 +310,10 @@ résumé :
   des patches Git soumis à revue.
 - Aucune suppression sans archivage préalable.
 - Aperçu obligatoire avant toute action touchant plusieurs fichiers.
-- Les fichiers générés — `sommaire.md`, `agents-index.md`, `skills-index.md`,
-  `taches-index.md`, `IA/README.md` — sont régénérés par script, jamais édités à la main. Si un
-  index contredit un frontmatter, le frontmatter a raison.
+- Les fichiers générés — `sommaire.md` (dans le coffre parent), `agents-index.md`,
+  `skills-index.md`, `taches-index.md`, `IA/README.md` — sont régénérés par
+  script, jamais édités à la main. Si un index contredit un frontmatter, le
+  frontmatter a raison.
 - Un agent et un skill sont deux choses distinctes. Un agent décide ; un skill
   décrit une manière de faire.
 
@@ -325,9 +336,12 @@ révoquer le secret d'abord, nettoyer l'historique ensuite.
 
 ## Public et privé
 
-Le dépôt de travail est **privé** : il porte la mémoire, les logs de session et
-le profil de son propriétaire. Ce dépôt-ci, public, en est la **distribution** :
-le même coffre, moins ce qui décrit une personne ou une machine.
+Le dépôt de travail est **privé** : il porte l'outil, ses logs de session et son
+`brouillon/`. Ce dépôt-ci, public, en est la **distribution** : le même outil,
+moins ce qui décrit une personne ou une machine.
+
+La **mémoire** n'est ni dans l'un ni dans l'autre : elle a son propre dépôt, à la
+racine du coffre parent, poussé vers le NAS (§7.1). Elle ne se publie pas.
 
 Le privé fait foi, et `scripts/publier.py` en dérive le public. Le sens unique
 n'est pas qu'une précaution : c'est ce qui crée la **fenêtre de validation**.
@@ -351,10 +365,11 @@ documentation : le README du privé annonce l'adresse du privé, qui donnerait u
 404 à un lecteur du public sans lui dire pourquoi.
 
 Il exporte l'arbre suivi par Git à `HEAD` — jamais le répertoire de travail,
-parce que ce qui n'est pas suivi n'a pas été relu —, vide `mémoire/`,
+parce que ce qui n'est pas suivi n'a pas été relu —, vide
 `IA/system/session-log/`, `brouillon/` et `.archive/` de tout sauf leurs
-`README.md`, passe un contrôle de fuite, régénère les index, vérifie le coffre
-obtenu, puis écrit dans la cible. Il ne pousse jamais.
+`README.md` (pendant la bascule, l'ancien `mémoire/` aussi), passe un contrôle de
+fuite, régénère les index, vérifie le coffre obtenu, puis écrit dans la cible. Il
+ne pousse jamais.
 
 Le contrôle de fuite vise des **valeurs**, pas les mots qui les nomment : une
 adresse de courriel, une IP privée, un bloc de clé privée, un préfixe de jeton

@@ -1,12 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Régénère les sommaire.md du dossier mémoire/ depuis le contenu des notes.
+Régénère les sommaire.md des dossiers de mémoire qui en portent.
 
 Un sommaire.md est la couche de résumé d'un dossier : il doit permettre de
 décider si une note mérite d'être ouverte, SANS l'ouvrir. Il porte donc, pour
 chaque entrée, un statut et un résumé extraits de la note elle-même — jamais
 saisis à la main (cf. VAULT-CONTRACT.md §2).
+
+Les sommaires ne se sèment pas partout (§2). Trois emplacements en portent, et
+trois seulement : les **projets** du coffre parent (`0-PROJETS/`) et ses
+**chantiers gelés** (`0-MEMOIRES/`), plus — le temps de la bascule (§11) — le
+dossier `mémoire/` qui vit encore dans le dépôt produit et où les sommaires
+existent aujourd'hui. Ailleurs — `0-SAVOIRS/`, `0-DOCUMENTS/`,
+`0-PERSONNELS/`, `0-EN-VRAC/` et leurs anciens noms `-…/` — on n'en écrit
+pas : ces zones se parcourent par leur nom, un sommaire y serait du bruit à
+tenir à jour, et il ne décrirait rien de plus.
+
+Sans coffre parent (un clone de la CI, par exemple), le script le dit et sort
+proprement : la CI du produit ne doit pas dépendre d'une mémoire qu'elle n'a
+pas.
 
 Rien n'est inventé ni résumé par un modèle : tout est prélevé dans les notes.
 Un dossier parent reprend les chiffres de ses enfants, de bas en haut.
@@ -23,7 +36,15 @@ import re
 import sys
 
 RACINE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-MEMOIRE = "mémoire"
+#: Le coffre parent : le dossier qui contient ce dépôt, et donc la mémoire.
+COFFRE = os.path.dirname(RACINE)
+#: L'ancienne mémoire, encore dans le dépôt produit : la bascule ne l'a pas
+#: encore déplacée (§11). C'est là que les sommaires existent aujourd'hui, et
+#: on continue de les y tenir jusqu'à la migration.
+ANCIENNE_MEMOIRE = os.path.join(RACINE, "mémoire")
+#: Les zones du coffre parent qui portent des sommaires (§2) : les projets, et
+#: les chantiers gelés. Aucune autre — voir l'en-tête.
+ZONES_SOMMAIRE = ("0-PROJETS", "0-MEMOIRES")
 
 LARGEUR_RESUME = 120          # caractères, coupés sur un mot
 DATE = re.compile(r"^(\d{4}-\d{2}-\d{2})")
@@ -107,7 +128,6 @@ def lire_note(chemin: str) -> dict:
     except (OSError, UnicodeDecodeError) as err:
         print("  ! illisible : %s (%s)" % (nom, err), file=sys.stderr)
         return {"nom": nom, "date": "", "titre": nom, "statut": "—", "resume": "—"}
-
     m = DATE.match(nom)
     date = m.group(1) if m else ""
 
@@ -156,6 +176,23 @@ def lire_note(chemin: str) -> dict:
 
 
 # -------------------------------------------------------------------- collecte
+
+def racines_de_memoire():
+    """Les dossiers de mémoire qui portent des sommaires.
+
+    L'ancienne mémoire du dépôt produit tant qu'elle est là (§11), puis les
+    projets et les chantiers gelés du coffre parent. Vide si rien n'existe :
+    un clone de la CI n'a pas de mémoire, et n'en invente pas.
+    """
+    racines = []
+    if os.path.isdir(ANCIENNE_MEMOIRE):
+        racines.append(ANCIENNE_MEMOIRE)
+    for nom in ZONES_SOMMAIRE:
+        chemin = os.path.join(COFFRE, nom)
+        if os.path.isdir(chemin):
+            racines.append(chemin)
+    return sorted(racines)
+
 
 def notes_de(dossier: str):
     return sorted(f for f in os.listdir(dossier)
@@ -213,7 +250,7 @@ def phrase_couverture(infos: dict, nb_dossiers: int) -> str:
 # ---------------------------------------------------------------------- rendu
 
 def rendre(dossier: str, cumul: dict) -> str:
-    rel = os.path.relpath(dossier, RACINE)
+    rel = os.path.relpath(dossier, COFFRE)
     nom = os.path.basename(dossier)
     dossiers = sous_dossiers_de(dossier)
     notes = cumul[dossier]["notes"]
@@ -251,16 +288,19 @@ def rendre(dossier: str, cumul: dict) -> str:
 
 def main() -> int:
     verifier = "--verifier" in sys.argv
-    racine_memoire = os.path.join(RACINE, MEMOIRE)
-    if not os.path.isdir(racine_memoire):
-        print("Dossier introuvable : %s" % racine_memoire, file=sys.stderr)
-        return 1
+    racines = racines_de_memoire()
+    if not racines:
+        print("Aucun dossier à sommaire — ni %s, ni %s dans %s : rien à résumer."
+              % ("/".join(ZONES_SOMMAIRE), os.path.relpath(ANCIENNE_MEMOIRE, RACINE),
+                 COFFRE))
+        return 0
 
     # Bas vers le haut : un parent lit les chiffres déjà calculés de ses enfants.
     dossiers = []
-    for chemin, sous, _ in os.walk(racine_memoire):
-        sous[:] = [d for d in sous if not d.startswith(".")]
-        dossiers.append(chemin)
+    for racine_memoire in racines:
+        for chemin, sous, _ in os.walk(racine_memoire):
+            sous[:] = [d for d in sous if not d.startswith(".")]
+            dossiers.append(chemin)
     dossiers.sort(key=lambda p: p.count(os.sep), reverse=True)
 
     cumul = {}
@@ -282,7 +322,7 @@ def main() -> int:
         ancien = open(cible, encoding="utf-8").read() if os.path.isfile(cible) else None
         if ancien == neuf:
             continue
-        rel = os.path.relpath(cible, RACINE)
+        rel = os.path.relpath(cible, COFFRE)
         if verifier:
             perimes.append(rel)
             continue

@@ -3,9 +3,11 @@
 """
 Produit le miroir public d'OBSIA à partir de ce dépôt, qui fait foi.
 
-Ce dépôt-ci est privé : il porte la mémoire, les logs de session et le profil
-d'installation de son propriétaire. Le dépôt public est la **distribution** :
-le même coffre, moins ce qui décrit une personne et une machine.
+Ce dépôt-ci est privé : il a porté la mémoire, et il porte encore les logs de
+session et le profil d'installation de son propriétaire. La mémoire vit
+désormais dans le coffre parent (§7.1), hors du dépôt : le dépôt public est la
+**distribution** — le même outil, moins ce qui décrit une personne et une
+machine.
 
 Il n'y a pas deux sources de vérité. Ce script en dérive une seconde, et il
 refuse de publier ce qu'il ne sait pas relire.
@@ -40,8 +42,10 @@ from generer_prompt import RACINE_DEFAUT
 
 #: Ce qui décrit une personne ou une machine, et ne franchit jamais la
 #: frontière du public. Les README de ces dossiers, eux, passent : ils
-#: expliquent à quoi la zone sert.
-PRIVE = ("mémoire", "IA/system/session-log", "brouillon", ".archive")
+#: expliquent à quoi la zone sert. `mémoire` est transitoire : la mémoire vit
+#: dans le coffre parent (§7.1) et ce dossier quitte le dépôt à la migration ;
+#: tant qu'il est là, la vider est ce qui empêche de la publier par accident.
+PRIVE = ("IA/system/session-log", "brouillon", ".archive", "mémoire")
 
 #: Ce qui ne devrait même pas être suivi par Git, mais qu'on écarte quand même :
 #: une ceinture coûte moins cher qu'un secret dans un historique public.
@@ -49,16 +53,11 @@ JAMAIS = ("obsia.local.yml", "prompt-systeme.md", ".env", "mcp.json", ".mcp.json
 
 #: Ce qui trahit un coffre vivant du côté de la cible. `synchroniser` efface
 #: tout ce que la cible contient hors `.git/` : lui donner un coffre de travail,
-#: c'est effacer le travail de quelqu'un.
-MARQUES_DE_COFFRE = (".obsidian", "-SAVOIRS", "-PROJETS")
-
-#: Dans `mémoire/`, les seuls fichiers qu'un export légitime contient : le
-#: README du dossier, le profil en gabarit que l'installeur y pose, et le
-#: sommaire que `regenerate_sommaire.py` réécrit avant la synchronisation. Tout
-#: le reste est du travail — un clone du dépôt public n'en a jamais.
-#: (Trois noms, trois sources : les élargir, c'est élargir ce qu'on accepte
-#: d'effacer. Vérifié en publiant à blanc, puis en republiant sur le résultat.)
-MEMOIRE_DE_DISTRIBUTION = ("README.md", "profil-utilisateur.md", "sommaire.md")
+#: c'est effacer le travail de quelqu'un. Les deux noms du même dossier y sont —
+#: `0-…` depuis la bascule (§7.1), `-…` pour les coffres qui ne l'ont pas finie.
+MARQUES_DE_COFFRE = (".obsidian", "_MAINTENANCE", "Mon coffre",
+                     "0-SAVOIRS", "0-PROJETS", "0-MEMOIRES", "0-PERSONNELS",
+                     "-SAVOIRS", "-PROJETS")
 
 # ------------------------------------------------------------ contrôle de fuite
 
@@ -220,6 +219,45 @@ class Controle(NamedTuple):
     avertissements: list
 
 
+def _balayer(lignes, chemin, trouvailles, avertissements, motif_noms=None) -> None:
+    """Passe des lignes au crible des motifs, et verse ce qu'il y voit.
+
+    Partagé par `controler_fuites` (un arbre de fichiers) et `controler_texte`
+    (le titre et la description d'une pull request) : la règle qui décide ce qui
+    fuit ne doit exister qu'une fois. `chemin` est ce qui s'imprime à gauche de
+    `:ligne` — un chemin relatif, ou le nom de la source textuelle.
+    """
+    for numero, ligne in enumerate(lignes, 1):
+        for etiquette, motif in BLOQUANTS:
+            trouve = motif.search(ligne)
+            if not trouve:
+                continue
+            extrait = trouve.group(0)
+            if etiquette == "adresse de courriel" and courriel_admis(extrait):
+                continue
+            trouvailles.append((chemin, numero, etiquette, ligne.strip()[:110]))
+        if motif_noms:
+            trouve = motif_noms.search(ligne)
+            if trouve:
+                avertissements.append(
+                    (chemin, numero, "nom interdit", ligne.strip()[:110]))
+
+
+def controler_texte(texte: str, noms_interdits=(), etiquette="texte") -> Controle:
+    """Relit un texte libre — le titre et la description d'une pull request.
+
+    Le contrôle d'arbre ne voit que des fichiers versionnés ; or le titre d'une
+    PR paraît sur le dépôt public *avant* son contenu, et il y reste. D'où ce
+    second point d'entrée, qui applique exactement les mêmes motifs au texte
+    fourni. `relus` compte la source, pas ses lignes : un texte vide n'en est
+    pas une, et « aucune trouvaille » doit alors ne rien dire.
+    """
+    trouvailles, avertissements = [], []
+    _balayer(texte.splitlines(), etiquette, trouvailles, avertissements,
+             motif_des_noms(noms_interdits))
+    return Controle(trouvailles, [], 1 if texte.strip() else 0, avertissements)
+
+
 def controler_fuites(racine: Path, noms_interdits=()) -> Controle:
     """Relit tout l'arbre exporté, et dit aussi ce qu'il n'a pas pu relire.
 
@@ -227,7 +265,6 @@ def controler_fuites(racine: Path, noms_interdits=()) -> Controle:
     défaut vide, pour que le contrôle ne dépende pas de la machine qui le lance.
     """
     trouvailles, avertissements, non_relus, relus = [], [], [], 0
-    motifs = list(BLOQUANTS)
     motif_noms = motif_des_noms(noms_interdits)
     for chemin in sorted(racine.rglob("*")):
         if not chemin.is_file() or chemin.is_symlink():
@@ -247,21 +284,8 @@ def controler_fuites(racine: Path, noms_interdits=()) -> Controle:
             non_relus.append((str(rel), "illisible"))
             continue
         relus += 1
-        for numero, ligne in enumerate(texte.splitlines(), 1):
-            for etiquette, motif in motifs:
-                trouve = motif.search(ligne)
-                if not trouve:
-                    continue
-                extrait = trouve.group(0)
-                if etiquette == "adresse de courriel" and courriel_admis(extrait):
-                    continue
-                trouvailles.append((str(rel), numero, etiquette, ligne.strip()[:110]))
-            if motif_noms:
-                trouve = motif_noms.search(ligne)
-                if trouve:
-                    avertissements.append(
-                        (str(rel), numero, "nom interdit",
-                         ligne.strip()[:110]))
+        _balayer(texte.splitlines(), str(rel), trouvailles, avertissements,
+                 motif_noms)
     return Controle(trouvailles, non_relus, relus, avertissements)
 
 
@@ -333,8 +357,8 @@ def exporter(source: Path, vers: Path) -> None:
 
 
 def regenerer_et_verifier(racine: Path) -> int:
-    # Les index seulement : les sommaires de `mémoire/` ne sont pas versionnés
-    # (§11), et la mémoire publiée est vide — il n'y a rien à résumer.
+    # Les index seulement : les sommaires décrivent la mémoire du coffre parent
+    # (§7.1), et la distribution n'en porte aucune — il n'y a rien à résumer.
     for script in ("regenerate_index.py",):
         res = subprocess.run([sys.executable, str(racine / "scripts" / script)],
                              cwd=str(racine), capture_output=True, text=True)
@@ -371,14 +395,6 @@ def synchroniser(export: Path, cible: Path) -> None:
 
 
 # ------------------------------------------------------------------ la cible
-
-def travail_dans_memoire(memoire: Path) -> bool:
-    """Vrai si `mémoire/` porte autre chose que le gabarit de distribution."""
-    for enfant in memoire.rglob("*"):
-        if enfant.is_dir() or enfant.name not in MEMOIRE_DE_DISTRIBUTION:
-            return True
-    return False
-
 
 #: Ce qu'un miroir d'OBSIA porte et que rien d'autre ne porte. Les marques de
 #: coffre disent ce qu'il ne faut pas écraser ; celle-ci dit ce qu'on a le droit
@@ -441,9 +457,6 @@ def raison_de_refus(source: Path, cible: Path) -> str | None:
     for marque in MARQUES_DE_COFFRE:
         if (cible / marque).exists():
             return "la cible porte la marque d'un coffre : %s" % marque
-    memoire = cible / "mémoire"
-    if memoire.is_dir() and travail_dans_memoire(memoire):
-        return "la cible a une mémoire remplie : %s" % memoire
     origine = url_origine(cible)
     if origine and origine == url_origine(source):
         return "la cible a la même origine que la source : %s" % origine
@@ -472,12 +485,53 @@ def chemins_a_supprimer(cible: Path) -> list[str]:
 
 # ----------------------------------------------------------------------- main
 
+def controler_le_texte(forcer: bool = False) -> int:
+    """Le mode `--controler-texte` : lit l'entrée standard et juge.
+
+    Sert à la vérification CI : le titre et la description d'une pull request
+    paraissent sur le dépôt public avant que `publier.py` n'ait vu un seul
+    fichier de l'export, et le contrôle d'arbre ne les lit donc jamais. Le même
+    sens de `--forcer` s'applique — une clé privée se remplace, un jeton connu se
+    révoque, aucun des deux ne se force.
+    """
+    texte = sys.stdin.read()
+    noms, _ = charger_noms_interdits()
+    etiquette = "titre ou description de PR"
+    controle = controler_texte(texte, noms, etiquette)
+    for _, numero, trouvaille, ligne in controle.trouvailles:
+        print("  ✗ %s:%d  [%s]" % (etiquette, numero, trouvaille))
+        print("      %s" % ligne)
+    for _, numero, avertissement, ligne in controle.avertissements:
+        print("  ⚠ %s:%d  [%s]" % (etiquette, numero, avertissement))
+        print("      %s" % ligne)
+    if not controle.trouvailles:
+        print("  Aucune trouvaille dans le %s." % etiquette)
+        return 0
+    if not forcer:
+        print("  Corriger le texte de la PR, ou passer --forcer si c'est un "
+              "faux positif.", file=sys.stderr)
+        return 1
+    interdites = sorted({t[2] for t in controle.trouvailles} & set(SANS_FORCAGE))
+    if interdites:
+        print("  --forcer ne s'applique pas ici : %s." % ", ".join(interdites),
+              file=sys.stderr)
+        return 1
+    print("  --forcer : texte accepté malgré %d trouvaille(s)."
+          % len(controle.trouvailles))
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         description="Produit le miroir public d'OBSIA depuis ce dépôt privé.")
     ap.add_argument("--racine", type=Path, default=RACINE_DEFAUT)
-    ap.add_argument("--cible", type=Path, required=True,
-                    help="clone local du dépôt public")
+    ap.add_argument("--cible", type=Path,
+                    help="clone local du dépôt public (requis hors "
+                         "--controler-texte)")
+    ap.add_argument("--controler-texte", action="store_true",
+                    help="relit l'entrée standard — titre et description d'une "
+                         "pull request — et refuse ce qui y fuit, sans lire "
+                         "aucun arbre : ni --cible ni --racine ne servent")
     ap.add_argument("--appliquer", action="store_true",
                     help="écrit dans la cible ; sans lui, aperçu seulement")
     ap.add_argument("--commit", action="store_true",
@@ -492,6 +546,11 @@ def main() -> int:
     ap.add_argument("--autoriser-modifications", action="store_true",
                     help="publie depuis un arbre de travail sale (HEAD reste la source)")
     args = ap.parse_args()
+
+    if args.controler_texte:
+        return controler_le_texte(args.forcer)
+    if args.cible is None:
+        ap.error("--cible est requis (sauf avec --controler-texte)")
 
     source = args.racine.resolve()
     cible = args.cible.expanduser().resolve()

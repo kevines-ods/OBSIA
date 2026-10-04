@@ -89,8 +89,8 @@ python3 scripts/generer_prompt.py -o prompt-systeme.md
 
 Les serveurs sont initialisés **au démarrage de l'application** : un
 redémarrage est nécessaire après modification. Puis, dans une conversation :
-lister la racine du coffre, lire une note de `Mon coffre/-SAVOIRS/`, retrouver
-le registre des tags. Si `-SAVOIRS/` n'apparaît pas, le serveur n'est pas monté
+lister la racine du coffre, lire une note de `Mon coffre/0-SAVOIRS/`, retrouver
+le registre des tags. Si `0-SAVOIRS/` n'apparaît pas, le serveur n'est pas monté
 sur la bonne racine.
 
 ## Tâches planifiées — une réserve à ne pas oublier

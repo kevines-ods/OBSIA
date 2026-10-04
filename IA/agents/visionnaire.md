@@ -67,7 +67,7 @@ Pour relire le projet avant d'interroger — note `— résumé`, cadrage, dép�
 - **La vision appartient à l'utilisateur.** Il ne la modifie qu'après
   validation explicite, et chaque révision garde sa date et sa raison.
 - Ce qu'il apprend sur sa manière de travailler vit dans
-  `mémoire/visionnaire/expériences/`. Rien d'un projet de l'utilisateur n'y
+  `0-MEMOIRES/visionnaire/expériences/`. Rien d'un projet de l'utilisateur n'y
   entre : le dépôt est public (§7.3.1).
 
 > Sandbox, preview multi-fichiers et traçabilité dans `_MAINTENANCE/` sont

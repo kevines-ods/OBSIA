@@ -24,8 +24,8 @@ You get `<vault>/OBSIA/` — the repository writes `Mon coffre/` for the root of
 your vault, whatever its real name. Then open Obsidian on **the whole vault**,
 not on `OBSIA/` alone: backlinks resolve at that level.
 
-No vault yet? An empty folder will do; the knowledge folders (`-SAVOIRS/`,
-`-EN-VRAC/`…) are created when you need them (§7.1 of the contract).
+No vault yet? An empty folder will do; the knowledge folders (`0-SAVOIRS/`,
+`0-EN-VRAC/`…) are created when you need them (§7.1 of the contract).
 
 ## 2. See what the machine has
 
@@ -50,7 +50,10 @@ The installer asks, module by module, what you want to keep. At the end:
 - the versioned indexes in `IA/system/` and `IA/README.md` — untouched, at the
   full catalogue: they do not depend on the machine;
 - **`Mon coffre/AGENTS.md`** — OBSIA's brain, at the vault root, where
-  harnesses look for it. Do not edit it: it is regenerated.
+  harnesses look for it. Do not edit it: it is regenerated;
+- **`Mon coffre/0-MEMOIRES/`** and **`Mon coffre/0-PERSONNELS/profil-utilisateur.md`**
+  — the vault's memory, created if missing (§6, §7.1). Never overwritten
+  afterwards: whatever is already there stays.
 
 Changed your mind: run the same command again. Start over:
 `python3 scripts/installer.py --tout --appliquer` — which deletes the profile:
@@ -85,7 +88,7 @@ Ask the agent:
 
 > Which agents do you know, and where do the knowledge notes live?
 
-It should name the agents of `IA/system/agents-index.md` and the `-SAVOIRS/`
+It should name the agents of `IA/system/agents-index.md` and the `0-SAVOIRS/`
 folder. If it answers generically, its instructions were not read: check that
 `AGENTS.md` exists at the vault root and that the harness was launched from
 there. With Claude Code, also look for a `CLAUDE.md` above the vault (up to
@@ -103,8 +106,9 @@ harness is launched from the root.
   `AGENTS.md` — `python3 scripts/installer.py --rejouer --appliquer` reuses
   your profile without asking the questions again.
 - **Before proposing a change to the repository**:
-  `python3 scripts/verifier_coffre.py`. Only `OBSIA/` is a Git repository;
-  your notes are not.
+  `python3 scripts/verifier_coffre.py`. The tool (`OBSIA/`) and the memory (the
+  vault root) are **two distinct Git repositories** (§7.1) — one ships by pull
+  request, the other is committed in place.
 - **Going further**: [`README.md`](README.md) for the architecture, the
   contract for the rules, `IA/system/agents-index.md` to know which agent to
   talk to.

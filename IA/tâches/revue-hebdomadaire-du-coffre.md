@@ -20,15 +20,15 @@ Les fichiers générés du §11 se périment en silence, et une tâche instanci�
 une machine puis oubliée devient invisible. Un passage hebdomadaire remet les
 deux en cohérence tant que l'écart est petit.
 
-`exécutant: local` parce qu'elle a besoin d'un clone du coffre sous la main :
-un planificateur distant n'aurait rien à régénérer.
+`exécutant: local` parce qu'elle a besoin du clone de l'outil **et** de sa
+mémoire sous la main : un planificateur distant n'aurait rien à régénérer.
 
 C'est aussi la tâche de référence du registre : celle sur laquelle vérifier que
 la chaîne déclaration → instanciation → réconciliation fonctionne.
 
 ## Instruction
 
-Place-toi à la racine du coffre OBSIA et exécute, dans cet ordre :
+Place-toi à la racine du dépôt produit et exécute, dans cet ordre :
 
 ```bash
 python3 scripts/regenerate_sommaire.py

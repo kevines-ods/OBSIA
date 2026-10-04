@@ -6,7 +6,7 @@ Régénère les index dérivés de `IA/` : `IA/system/agents-index.md`,
 
 Ces index sont **dérivés** des frontmatters, qui font foi. Les maintenir à
 la main les fait diverger sans que rien ne le signale — c'est arrivé, voir
-mémoire/assistant/expériences/index-maintenus-a-la-main.md.
+0-MEMOIRES/assistant/expériences/index-maintenus-a-la-main.md.
 
 Les cinq fichiers sont **versionnés** : ils décrivent le catalogue entier,
 jamais un coffre réduit à un profil. `obsia.local.yml` (§13) ne les lit ni

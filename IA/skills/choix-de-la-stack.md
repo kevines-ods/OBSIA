@@ -31,7 +31,7 @@ déjà. Six critères, pondérés par l'utilisateur :
 | **Dépendances** | combien de paquets tiers, et lesquels sont maintenus par une seule personne ? |
 | **Sortie de secours** | si ce choix déçoit, que coûte le changement ? |
 
-Lire `mémoire/profil-utilisateur.md` avant de pondérer : poste,
+Lire `0-PERSONNELS/profil-utilisateur.md` avant de pondérer : poste,
 infrastructure, valeurs et rapport au code y sont déjà écrits. Ne pas
 redemander ce qui s'y trouve.
 
@@ -94,5 +94,5 @@ Pour que personne ne rouvre le débat sans élément nouveau.
 ## Après la décision
 
 Une pile qui déçoit à l'usage donne une leçon réutilisable : la consigner dans
-`mémoire/batisseur/expériences/`, pas dans la note du projet, qui ne sera plus
+`0-MEMOIRES/batisseur/expériences/`, pas dans la note du projet, qui ne sera plus
 relue.

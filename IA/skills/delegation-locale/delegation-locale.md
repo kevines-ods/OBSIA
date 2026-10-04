@@ -87,7 +87,7 @@ soi. Avant de s'en servir :
 Le contenu transmis quitte le processus de l'agent. Le serveur configuré doit
 rester **sous le contrôle de l'utilisateur** — sur la machine ou sur son
 réseau privé. Si son adresse désigne un service tiers, ne rien transmettre de
-`-PERSONNELS/` ni aucun secret, et le signaler à l'utilisateur.
+`0-PERSONNELS/` ni aucun secret, et le signaler à l'utilisateur.
 
 ## Tracer
 

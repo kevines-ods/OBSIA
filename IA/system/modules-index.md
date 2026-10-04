@@ -4,7 +4,7 @@
 |---|---|---|---|---|---|
 | [noyau](modules/noyau.md) | oui | 10 | — | — | Le socle — contrat, méthode, mémoire, recherche, création de skills, clôture de session. Toujours installé. |
 | [administration-homelab](modules/administration-homelab.md) | non | 4 | — | noyau, linux-poste, virtualisation, conteneurs, controle-des-sauvegardes | Administrer une infrastructure auto-hébergée — l'agent administrateur, la surveillance et les alertes, Nextcloud AIO et Home Assistant OS. |
-| [coffre-obsidian](modules/coffre-obsidian.md) | non | 5 | `parent:.obsidian`, `parent:-SAVOIRS`, `parent:-EN-VRAC` | noyau | Travailler dans un coffre Obsidian parent — remplir et classer les notes brutes, cartographier les connaissances, tenir le registre des tags. |
+| [coffre-obsidian](modules/coffre-obsidian.md) | non | 5 | `parent:.obsidian`, `parent:0-SAVOIRS`, `parent:0-EN-VRAC` | noyau | Travailler dans un coffre Obsidian parent — remplir et classer les notes brutes, cartographier les connaissances, tenir le registre des tags. |
 | [construction](modules/construction.md) | non | 22 | `commande:git` | noyau, controle-des-sauvegardes | Construire des applications, sites et outils, ou faire évoluer un projet existant — l'agent batisseur, ses portes de création et son parcours de reprise, de refactoring et de dette technique. |
 | [conteneurs](modules/conteneurs.md) | non | 2 | `commande:docker`, `commande:podman` | noyau, linux-poste | Conteneurs et reverse proxy — état, journaux, volumes, réseaux, compose, labels de routage, certificats TLS. |
 | [controle-des-sauvegardes](modules/controle-des-sauvegardes.md) | non | 1 | — | noyau | Vérifier que les sauvegardes existent, sont récentes, respectent la règle 3-2-1, et se restaurent réellement. |

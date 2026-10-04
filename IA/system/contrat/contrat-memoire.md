@@ -16,13 +16,16 @@ module: noyau
 
 ## 6. Nommage, rétroliens et mémoire
 
-- Le coffre est la **racine du dépôt** (`OBSIA/`) : il n'y a pas de sous-dossier
-  intermédiaire. Tous les chemins de ce contrat partent de cette racine.
-- Le dépôt est destiné à être cloné **dans** un coffre Obsidian préexistant,
-  appelé ici *coffre parent* (non versionné). Les rétroliens Obsidian se
-  résolvent à l'échelle de ce coffre parent, **pas** de `OBSIA/`.
+- `OBSIA/` est la **racine du dépôt produit** : il n'y a pas de sous-dossier
+  intermédiaire dans ce clone. Les chemins du produit (§3, §5) partent de cette
+  racine. La **mémoire**, elle, vit **hors** de ce clone — dans le coffre parent,
+  versionnée à part (§7.1) — et ses chemins partent de la racine du coffre.
+- Le dépôt produit est destiné à être cloné **dans** un coffre Obsidian,
+  appelé ici *coffre parent* : c'est là que vivent les notes, et c'est ce coffre
+  qui porte le dépôt de données (§7.1). Les rétroliens Obsidian se résolvent à
+  l'échelle de ce coffre parent, **pas** de `OBSIA/`.
 - Conséquence : les noms de notes doivent être **uniques dans tout le coffre
-  parent**, pas seulement dans `OBSIA/`.
+  parent** (§6), pas seulement dans `OBSIA/`.
 - Les liens vers ce contrat s'écrivent en chemin relatif, et la profondeur
   dépend de la forme du skill (§5) :
 
@@ -37,78 +40,117 @@ module: noyau
   celui qui ne mène nulle part. Les chemins du coffre parent (§7) en sont
   exclus : ils désignent des dossiers hors du dépôt.
 - **Structure de la mémoire.** La mémoire se partage sur un seul axe : **ce
-  que la note décrit**. Ce qui décrit l'utilisateur ou un chantier est commun
-  à tous les agents et vit à la racine ; ce qu'un agent a appris en
-  travaillant reste chez lui.
+  que la note décrit**. Ce qui décrit l'utilisateur, un projet ou un chantier
+  est commun à tous les agents ; ce qu'un agent a appris de sa propre manière de
+  travailler reste chez lui.
 
   ```
-  mémoire/
-  ├── profil-utilisateur.md              faits stables sur l'utilisateur et sa machine
-  ├── préférences/<sujet>.md             goûts et règles de conduite transversaux
-  ├── projets/<projet>/                  un projet du coffre (cf. ci-dessous)
-  │   ├── <projet> — résumé.md           état vivant, mis à jour sur place
-  │   ├── <projet> — vision.md           finalité — visionnaire seul (§7.3)
-  │   ├── carnets/AAAA-MM-JJ-<projet>-<sujet>.md  un carnet par chantier
-  │   ├── documents/                     cadrages, schémas, plans hors dépôt de code
-  │   ├── <sous-projet>/                 un seul niveau, même structure, sans vision
-  │   └── archives/                      carnets clos
-  └── <nom-agent>/
-      └── expériences/<sujet>.md         leçons réutilisables, tirées d'un cas réel
+  0-PROJETS/<projet>/                    un projet du coffre
+  ├── <projet> — résumé.md               état vivant, mis à jour sur place
+  ├── <projet> — vision.md               finalité — visionnaire seul (§7.3)
+  ├── carnets/AAAA-MM-JJ-<projet>-<sujet>.md  carnets du jour, hors chantier
+  ├── documents/                         documents du projet entier
+  ├── code/                              le dépôt git du projet, hors mémoire (§7.1)
+  └── <chantier>/                        un chantier — son dossier à lui
+      ├── <chantier> — résumé.md         l'état du chantier, mis à jour sur place
+      ├── carnets/AAAA-MM-JJ-<chantier>-<sujet>.md
+      ├── documents/                     cadrages, plans, schémas du chantier
+      └── code/                          le dépôt git, quand il n'appartient qu'à lui
+
+  0-MEMOIRES/                             deux mémoires : l'une vit, l'autre est gelée
+  ├── préférences/<sujet>.md             goûts et règles transversaux, corrigés sur place
+  ├── <nom-agent>/expériences/<sujet>.md leçons de l'agent, corrigées sur place
+  └── <projet>/<chantier>/               chantier clos, gelé — plus jamais modifié
+      └── (le résumé devenu bilan, ses carnets `statut: clos`, ses documents)
+
+  0-PERSONNELS/
+  └── profil-utilisateur.md              faits stables sur l'utilisateur et sa machine
   ```
 
-  L'espace d'un agent porte son nom — jamais `agent 1`, `agent 2`. Les noms de
-  projet sont explicites — jamais `projets 1`, `projets 2` — et disent le
-  chantier, pas qui l'a mené : `construction-du-batisseur`, pas
-  `agent-batisseur`, qu'on lirait comme l'espace mémoire d'un agent.
+  `0-MEMOIRES/` porte **deux mémoires, et une seule est gelée**. La mémoire des
+  agents — `préférences/` et `<nom-agent>/expériences/` — y **vit** : elle se
+  corrige sur place, comme le profil. Seuls les **chantiers clos** y sont
+  gelés : le dossier du chantier n'y entre qu'au moment de la clôture, tel quel,
+  et ne se modifie plus ensuite. Un dossier `0-MEMOIRES/` par projet n'existe que
+  s'il a des chantiers clos.
+
+  Un nom de premier niveau sous `0-MEMOIRES/` est donc, et rien d'autre :
+  `préférences`, le nom d'un agent, ou un projet gelé. **Un projet ne peut
+  porter ni `préférences` ni le nom d'un agent** : la collision rendrait la
+  mémoire des agents indistinguable d'un chantier gelé, et `verifier_coffre.py`
+  la refuse.
+
+  L'espace d'un agent porte son nom — jamais `agent 1`, `agent 2` — et c'est le
+  **même nom** que celui de son fichier `IA/agents/`. Les noms de projet sont
+  explicites — jamais `projets 1`, `projets 2` — et disent le chantier, pas qui
+  l'a mené : `construction-du-batisseur`, pas `agent-batisseur`, qui se lirait
+  comme l'espace mémoire d'un agent — et le serait.
 
 - **Où écrire, selon la nature de l'information** :
 
   | Ce qu'on a appris | Destination | Commun ? |
   | --- | --- | --- |
-  | un fait stable sur l'utilisateur, son poste, son infrastructure | `mémoire/profil-utilisateur.md`, **mis à jour sur place** | oui |
-  | un goût ou une règle qui vaudra pour d'autres projets | `mémoire/préférences/<sujet>.md` | oui |
-  | l'état d'un projet **du coffre** | `mémoire/projets/<projet>/<projet> — résumé.md`, **mis à jour sur place** | oui |
-  | une demande, un plan, une étape, une action sur un chantier du coffre | `mémoire/projets/<projet>/carnets/AAAA-MM-JJ-<projet>-<sujet>.md` | oui |
-  | une leçon tirée d'un échec ou d'une manœuvre qui a marché | `mémoire/<nom-agent>/expériences/<sujet>.md` | non — chez l'agent |
+  | un fait stable sur l'utilisateur, son poste, son infrastructure | `0-PERSONNELS/profil-utilisateur.md`, **mis à jour sur place** | oui |
+  | un goût ou une règle qui vaudra pour d'autres projets | `0-MEMOIRES/préférences/<sujet>.md` | oui |
+  | l'état d'un projet | `0-PROJETS/<projet>/<projet> — résumé.md`, **mis à jour sur place** | oui |
+  | l'état d'un chantier | `0-PROJETS/<projet>/<chantier>/<chantier> — résumé.md`, **mis à jour sur place** | oui |
+  | une demande, un plan, une étape, une action sur un chantier | `0-PROJETS/<projet>/<chantier>/carnets/AAAA-MM-JJ-<chantier>-<sujet>.md` | oui |
+  | une séance sans chantier | `0-PROJETS/<projet>/carnets/AAAA-MM-JJ-<projet>-<sujet>.md` | oui |
+  | une leçon tirée d'un échec ou d'une manœuvre qui a marché | `0-MEMOIRES/<nom-agent>/expériences/<sujet>.md` | non — chez l'agent |
+  | un savoir détaché de tout chantier | `0-SAVOIRS/` | oui |
 
-  Les deux premières ne sont **pas datées** : une préférence qui change se
-  corrige, elle ne s'empile pas. `expériences/` ne l'est pas non plus. Seuls
-  les carnets portent une date, parce qu'ils racontent une chronologie.
+  Les notes de `0-PROJETS/`, `0-PERSONNELS/`, `0-MEMOIRES/préférences/` et
+  `0-SAVOIRS/` ne sont **pas datées** : une préférence qui change se corrige,
+  elle ne s'empile pas ; `expériences/` non plus. Seuls les carnets portent une
+  date, parce qu'ils racontent une chronologie.
 
   Dans le doute, écrire dans le carnet : un carnet peut être distillé
-  plus tard vers `préférences/` ou `expériences/`, l'inverse fait perdre le
-  contexte.
+  plus tard vers `0-MEMOIRES/préférences/` ou `0-MEMOIRES/<agent>/expériences/`,
+  l'inverse fait perdre le contexte.
 
-- **`mémoire/projets/` ne porte que les chantiers du coffre.** Le dépôt de
-  travail est privé, mais il se publie : `scripts/publier.py` en dérive le
-  miroir public en vidant `mémoire/` (§13.5). Un projet de l'utilisateur n'a
-  donc rien à faire dans le dépôt ; il vit dans `Mon coffre/-PROJETS/` —
-  privé, non versionné. Le partage exact est au §7.3.1.
+- **Tout projet vit dans `0-PROJETS/`** — celui du coffre comme celui de
+  l'utilisateur. Le test qui les sépare est le §7.3.1 : *est-ce que ça décrit le
+  produit ?* Si oui, la note va dans `OBSIA/` ; sinon, dans le coffre parent.
+  Le dépôt produit se publie (`scripts/publier.py` en dérive un miroir
+  public) ; le coffre parent, jamais.
 
-- **Un projet du coffre passe par une PR, demande comprise.** Sa note
-  d'état, sa vision et ses carnets sont versionnés : la **demande**, le plan
-  et le récit entrent par la même pull request que la modification, et se
-  relisent avec elle — par l'utilisateur, le `visionnaire` (cap) et le
-  `contradicteur` (relecture) pour un changement qui touche la base. C'est ce qui fait de la relecture une garde sur
-  l'intention, pas seulement sur le diff.
+- **Un projet passe par une PR, la demande comprise.** La **demande** — ce qui
+  était voulu, ce qui a été fait, ce qui reste — s'écrit dans la description de
+  la pull request, avec le résumé de séance. Le carnet, lui, vit dans le dépôt
+  de données du coffre (§7.1) : il ne monte plus dans la PR, puisque le dépôt de
+  l'outil ne porte pas de mémoire. C'est ce qui fait de la relecture une garde
+  sur l'intention, pas seulement sur le diff — par l'utilisateur, le
+  `visionnaire` (cap) et le `contradicteur` (relecture) pour un changement qui
+  touche la base.
 
 - **Le carnet.** Un carnet par chantier, nommé
   `AAAA-MM-JJ-<projet>-<sujet>.md` — le nom du projet le rend unique dans le
   coffre parent (§7.5) —, frontmatter `agent:`, `projet:` et
-  `statut: en cours | en attente | clos`. Il porte la demande, le plan,
+  `statut: en cours | en attente | clos`. Il vit dans le `carnets/` du **dossier
+  de son chantier** — `0-PROJETS/<projet>/<chantier>/carnets/`, avec le nom du
+  chantier dans `projet:` ; une séance sans chantier écrit dans le `carnets/` du
+  projet. Il porte la demande, le plan,
   l'**étape en cours écrite avant d'agir**, les actions horodatées — effets
   externes compris (§9) —, les worktrees et branches ouverts, les questions
   en attente. Un carnet écrit après coup ne sert pas à reprendre : entre la
   dernière ligne et la coupure, il y a un trou que rien ne comble. Un
   chantier qui touche plusieurs projets écrit dans le carnet du projet
-  `obsia` — sauf ce qui décrit un projet de l'utilisateur, qui va au carnet
-  de ce projet dans `-PROJETS/` (§7.3.1).
+  `obsia`.
+
+- **Un chantier est un dossier à lui.** Sous son projet :
+  `0-PROJETS/<projet>/<chantier>/`, avec ses `carnets/`, ses `documents/` et son
+  `<chantier> — résumé.md` — mis à jour sur place, comme le résumé du projet.
+  Le `carnets/` du projet ne garde que les carnets du jour, ceux d'une séance
+  hors chantier. Un seul niveau : un dossier de chantier n'en contient pas
+  d'autre. Le nom du dossier dit le chantier, pas l'agent
+  (`souverainete-des-donnees`, pas `batisseur`) : il devient le nom du carnet et
+  le dossier de `0-MEMOIRES/` à la clôture.
 
 - **Une séance sans chantier** — dépannage ponctuel, correction sur un
   système, question qui finit en action — écrit dans le **carnet du jour**
-  du projet de domaine qui la porte : `obsia` si elle touche le coffre,
-  sinon un projet de l'utilisateur tenu pour ce domaine
-  (`-PROJETS/<domaine>/`). Elle ne crée pas
+  du projet de domaine qui la porte : `0-PROJETS/obsia/` si elle touche le
+  coffre, sinon le projet de domaine tenu pour ce sujet
+  (`0-PROJETS/<domaine>/`). Elle ne crée pas
   de chantier pour avoir un carnet. Un agent `read_only: true` n'écrit
   aucun carnet : c'est l'agent qui reprend son travail qui consigne ses
   constats et les appels qu'il a menés.
@@ -121,41 +163,65 @@ module: noyau
   reprendre ; s'il en trouve plusieurs, il les liste et l'utilisateur
   choisit. La procédure vit dans `cloture-de-session`.
 
-- **Le carnet se commite à chaque étape**, sur la branche du chantier : un
-  worktree se perd (dossier temporaire vidé, `git worktree prune`), un commit
-  non. Seul ce qui est commité survit à la coupure.
+- **Le carnet se commite à chaque étape**, dans le dépôt de données du coffre
+  (§7.1) : un worktree se perd (dossier temporaire vidé, `git worktree prune`),
+  un commit non. Seul ce qui est commité survit à la coupure.
 
-- **Transition.** Tant que la migration n'est pas faite, des projets gardent
-  l'ancienne forme — notes datées à plat dans `mémoire/projets/<projet>/`,
-  vision ou résumé à plat dans `-PROJETS/`. Leur absence de `carnets/` ne
-  veut pas dire absence d'historique : lire aussi ces notes avant de conclure.
+- **Transition.** Tant que la bascule dure — chantier `souverainete-des-donnees`,
+  au plus tard le 2026-12-31 (§11) — les carnets, les projets et les notes
+  personnelles se cherchent à **tout emplacement qui existe**, dans cet ordre :
+  `0-PROJETS/`, l'ancien nom du coffre `-PROJETS/`, puis l'ancien
+  `mémoire/projets/` du dépôt ; le profil sous `0-PERSONNELS/`, `-PERSONNELS/`,
+  puis `mémoire/` ; les préférences et les expériences sous `0-MEMOIRES/`
+  (`préférences/`, `<nom-agent>/expériences/`), puis `0-PERSONNELS/`,
+  `-PERSONNELS/`, puis `mémoire/`. Des projets
+  gardent l'ancienne forme — notes datées à plat dans le dossier du projet,
+  vision ou résumé à plat à côté. Leur absence de `carnets/` ne veut pas dire
+  absence d'historique : lire aussi ces notes avant de conclure.
 
-- **Clôture.** Un projet clos garde son `— résumé`, réécrit en bilan avec
-  une section « état » (pour pouvoir le rouvrir) ; ses carnets passent
-  `statut: clos` et rejoignent son `archives/`. Ce qui est durable remonte
-  vers `préférences/` (une règle qui vaut ailleurs) ou vers
-  `expériences/` (une manière de travailler de l'agent).
+  `IA/system/session-log/` — des notes de séance, donc de la **mémoire** — suit
+  `mémoire/` : il quitte le dépôt à la bascule, pour
+  `0-MEMOIRES/obsia/session-log/`, gelé. Passé le jour dit, ni lui ni `mémoire/`
+  ne doivent rester dans le dépôt (§11, `verifier_coffre.py`).
+
+- **Clôture.** À la clôture d'un chantier, son **dossier entier** quitte
+  `0-PROJETS/<projet>/<chantier>/` pour `0-MEMOIRES/<projet>/<chantier>/`, tel
+  quel : le `— résumé` devient un bilan avec une section « État » (pour pouvoir
+  le rouvrir), les carnets passent `statut: clos`, les documents suivent. Ce qui
+  est durable a été distillé **avant** vers `0-MEMOIRES/préférences/` (une
+  règle qui vaut ailleurs) ou `0-MEMOIRES/<agent>/expériences/` (une manière
+  de travailler de l'agent). Le dossier gelé ne se modifie plus.
+
+  **Rouvrir** un chantier clos le ramène dans `0-PROJETS/`, `statut: en cours`,
+  **sans copie laissée** dans `0-MEMOIRES/`.
+
+  **Un domaine dormant n'est pas clos** : sans chantier actif, son dossier reste
+  dans `0-PROJETS/` et **sa vision reste** — on n'archive pas un domaine vivant.
 
 - **Rien de ce qui décrit l'utilisateur ne vit chez un agent.**
-  `profil-utilisateur.md` décrit la personne, `préférences/` décrit ses règles :
-  ni l'un ni l'autre n'appartient à l'agent qui les a écrits. Les ranger chez
+  `0-PERSONNELS/profil-utilisateur.md` décrit la personne,
+  `0-MEMOIRES/préférences/` décrit ses règles : ni l'un ni l'autre n'appartient à
+  l'agent qui les a écrits — `préférences/` est un dossier **commun** de
+  `0-MEMOIRES/`, jamais un dossier d'agent. Les ranger chez
   un agent obligeait les autres à passer par patch pour corriger un fait sur
   leur propre utilisateur — une exception dont la racine dispense. Tout agent
-  `read_only: false` les corrige **directement, sur place** (§2).
+  `read_only: false` les corrige **directement, sur place** (§2), sans preview
+  (§7.4).
 
   Un projet ne vit pas chez un agent non plus, et pour une raison qu'on ne
   voit qu'après coup : un chantier ouvert par un agent et repris par un autre
   aurait vu son histoire coupée en deux dossiers, sans que rien ne le signale.
   Ce qu'un agent apprend sur **sa propre manière de travailler** reste, lui,
-  dans son `expériences/` : c'est la seule chose qui lui appartienne vraiment.
+  dans son `0-MEMOIRES/<nom-agent>/expériences/` : c'est la seule chose qui
+  lui appartienne vraiment.
 
 - **Un agent `read_only: true` n'a pas d'espace mémoire.** Le §5 lui interdit
   toute écriture, y compris par patch : il n'a donc pas de dossier sous
-  `mémoire/`, et rien à y régénérer. Il **lit** en revanche toute la mémoire
-  commune — profil, préférences, projets — comme n'importe quel agent. Ses
-  constats, eux, vivent le temps de la conversation, et c'est à l'agent qui
-  reprend le travail d'en écrire la leçon. La contrepartie est réelle et
-  s'assume : un constat non repris est un constat perdu.
+  `0-MEMOIRES/<nom-agent>/`, et rien à y régénérer. Il **lit** en revanche
+  toute la mémoire commune — profil, préférences, projets — comme n'importe quel
+  agent. Ses constats, eux, vivent le temps de la conversation, et c'est à
+  l'agent qui reprend le travail d'en écrire la leçon. La contrepartie est
+  réelle et s'assume : un constat non repris est un constat perdu.
 
 - Une note durable n'est utile que si elle est **retrouvée** : son nom dit son
   sujet (`licences-et-logiciel-libre.md`, pas `notes.md`) et respecte la règle
@@ -183,6 +249,7 @@ reconstituable.
 `permission: normal` dit qu'un outil ne sort pas de la machine ; il ne
 dispense pas d'en consigner l'usage. Un serveur « local » qui crée et
 modifie des notes du coffre parent produit des effets aussi durables qu'un
-serveur distant, et le coffre parent n'a pas d'historique Git pour les
-rattraper. Ce que la permission gradue, c'est la prudence avant d'appeler —
+serveur distant. Le dépôt de données rattrape désormais ce qui est commité
+(§7.1), mais pas ce qu'aucune étape n'a pris le temps d'écrire. Ce que la
+permission gradue, c'est la prudence avant d'appeler —
 pas la trace après.

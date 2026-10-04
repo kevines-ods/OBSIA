@@ -189,8 +189,8 @@ supprime ce doute pour le prix d'une commande.
 Ce que le répertoire de lancement change, c'est ce qui est **chargé tout
 seul** — pas ce qui est **atteignable**. Faute de restriction de chemin, le
 coffre parent reste accessible dans les deux cas ; dans la voie B il s'atteint
-par `..`, et les dossiers à tiret s'écrivent `../-SAVOIRS`, jamais `-SAVOIRS`
-nu (§7).
+par `..`, et les dossiers de mémoire s'écrivent `../0-SAVOIRS/` depuis le dépôt
+(§7).
 
 Régénérer le prompt après toute modification d'un frontmatter : un cerveau
 généré une fois décrit le coffre tel qu'il était (§11).
@@ -198,8 +198,8 @@ généré une fois décrit le coffre tel qu'il était (§11).
 ## 6. Vérifier
 
 Les trois vérifications communes de `commun.md` d'abord : lister la racine du
-coffre, lire une note de `Mon coffre/-SAVOIRS/`, retrouver le registre des
-tags. ⚠️ écrire `./-SAVOIRS`, jamais `-SAVOIRS` nu.
+coffre, lire une note de `Mon coffre/0-SAVOIRS/`, retrouver le registre des
+tags. ⚠️ écrire `./0-SAVOIRS`, jamais `0-SAVOIRS` nu.
 
 Trois de plus, propres à cette fiche — chacune prouve une chose que la
 précédente ne prouve pas :

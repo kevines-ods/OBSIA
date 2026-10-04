@@ -132,7 +132,7 @@ Puis le corps : `## Intention`, et `## Instruction` (mode agent) ou
 
 **Le corps et le frontmatter nomment des rôles, jamais des machines.** Un nom
 d'hôte, une adresse IP privée, un VMID nommé, un domaine interne ou un nom de
-dépôt privé vient de l'inventaire (`-PERSONNELS/Homelab/`) et n'a rien à faire
+dépôt privé vient de l'inventaire (`0-PERSONNELS/Homelab/`) et n'a rien à faire
 ici : `IA/tâches/` est publié (§9). Écrire « poste secondaire », « serveur
 principal », « dépôt privé ». Ce qui doit désigner une machine précise se lit à
 l'exécution dans une configuration hors dépôt — voir les garde-fous.
@@ -291,7 +291,7 @@ correctement.
   se lisent en clair, et `IA/tâches/` est versionné dans un dépôt public.
 - **Aucun nom de l'infrastructure non plus, dans une tâche comme dans son
   script.** Nom d'hôte, adresse IP privée, VMID nommé, domaine interne, nom de
-  dépôt privé : ces noms vivent dans l'inventaire (`-PERSONNELS/Homelab/`),
+  dépôt privé : ces noms vivent dans l'inventaire (`0-PERSONNELS/Homelab/`),
   jamais dans le dépôt, qui est public (§9). Le fichier parle de **rôles** —
   « poste secondaire », « serveur principal », « dépôt privé ». Ce qui doit
   désigner une machine précise est lu à l'exécution dans une configuration hors

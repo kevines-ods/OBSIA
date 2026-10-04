@@ -57,8 +57,9 @@ SOCLE = ("CLAUDE.md", "README.md", "README.fr.md", "DEMARRAGE.md",
          "IA/system", "IA/MCP/mcp.example.json")
 
 #: Dossiers recréés vides dans la cible — le contenu appartient à l'instance,
-#: jamais à la distribution (§13).
-PROPRES_A_LINSTANCE = ("mémoire", "brouillon", "IA/system/session-log")
+#: jamais à la distribution (§13). La mémoire n'y figure plus : elle vit dans le
+#: coffre parent (§7.1), et c'est `MOD.ecrire_memoire_du_coffre` qui la pose.
+PROPRES_A_LINSTANCE = ("brouillon", "IA/system/session-log")
 
 
 # --------------------------------------------------------------- présentation
@@ -189,6 +190,23 @@ def apercu(modules: list[dict], actifs: set[str], racine: Path,
         print("  Les index versionnés (agents, skills, taches, modules et")
         print("  IA/README.md) restent au catalogue complet — c'est ce que la CI")
         print("  et le contrôle d'avant-commit vérifient.")
+
+    # La mémoire vit à côté du dépôt, dans le coffre parent (§7.1).
+    coffre_parent = (cible if mode == "copie" else racine).parent
+    print("\n  Mémoire du coffre parent : %s" % coffre_parent)
+    for rel in ("0-PERSONNELS/profil-utilisateur.md", "0-MEMOIRES/README.md",
+                "0-MEMOIRES/préférences/"):
+        chemin = coffre_parent / rel
+        print("      %-9s: %s" % ("conservé" if chemin.exists() else "créé", rel))
+    if est_un_coffre_parent(coffre_parent):
+        for rel, mot in ((".gitignore", "conservé"),
+                         (".githooks/pre-commit", "rafraîchi"),
+                         (".githooks/post-commit", "rafraîchi")):
+            chemin = coffre_parent / rel
+            print("      %-9s: %s" % (mot if chemin.is_file() else "posé", rel))
+        print("      dépôt de données : %s"
+              % ("déjà initialisé" if (coffre_parent / ".git").is_dir()
+                 else "à initialiser (git init)"))
 
     coffre = cible if mode == "copie" else racine
     etat = etat_agents(coffre)
@@ -352,24 +370,37 @@ def copier(racine: Path, cible: Path, emportes: list[Path]) -> None:
 
 # ---------------------------------------------------------------- régénération
 
-#: Les deux dossiers que la régénération écrit : `regenerate_sommaire.py` pose
-#: les `sommaire.md` dans `mémoire/`, `regenerate_index.py` les index dans
-#: `IA/system/`. Un lien n'importe où sous l'une de ces deux racines ferait
+#: Ce que la régénération écrit : `regenerate_index.py` pose les index dans
+#: `IA/system/`, `regenerate_sommaire.py` les `sommaire.md` dans la mémoire du
+#: coffre parent (§7.1). Un lien n'importe où sous l'une de ces racines ferait
 #: écrire — et lire — hors du coffre visé.
-DOSSIERS_REGENERES = ("IA", "mémoire")
+DOSSIER_INDEX = "IA"
+#: Les deux noms d'un dossier de mémoire : `0-…` depuis la bascule, `-…` pour
+#: les coffres qui ne l'ont pas finie (§7.1).
+PREFIXES_DE_MEMOIRE = ("0-", "-")
+
+
+def dossiers_a_regenerer(racine: Path) -> list[Path]:
+    """`IA/` dans le dépôt, plus la mémoire du coffre parent quand il est là."""
+    cibles = [racine / DOSSIER_INDEX]
+    parent = racine.parent
+    if parent.is_dir():
+        cibles += [parent / nom for nom in sorted(os.listdir(parent))
+                   if nom.startswith(PREFIXES_DE_MEMOIRE) and not nom.startswith(".")
+                   and (parent / nom).is_dir()]
+    return cibles
 
 
 def premier_lien(racine: Path) -> Path | None:
-    """Le premier lien symbolique sous `IA/` ou `mémoire/`, ou None.
+    """Le premier lien symbolique sous `IA/` ou dans la mémoire, ou None.
 
-    Tout l'arbre est parcouru, pas seulement les deux racines : un
-    `IA/system` déplacé ailleurs, un `mémoire/sommaire.md` partagé font écrire
+    Tout l'arbre est parcouru, pas seulement les racines : un `IA/system`
+    déplacé ailleurs, un `sommaire.md` partagé dans une mémoire liée font écrire
     les générateurs hors du coffre visé aussi sûrement qu'un `IA/` entier.
     `os.walk` ne descend pas dans les liens qu'il croise (`followlinks` est
     faux) : c'est à chaque niveau qu'on teste les noms, dossiers et fichiers.
     """
-    for relatif in DOSSIERS_REGENERES:
-        depart = racine / relatif
+    for depart in dossiers_a_regenerer(racine):
         if depart.is_symlink():
             return depart
         if not depart.is_dir():
@@ -382,12 +413,50 @@ def premier_lien(racine: Path) -> Path | None:
     return None
 
 
+def activer_crochets(coffre: Path) -> None:
+    """Active `core.hooksPath` sur le dépôt, une fois par clone (§11).
+
+    Le contrat demande de le faire à la main ; l'installeur le fait pour qui
+    l'oublie, parce qu'un crochet non activé laisse passer ce que les gardes
+    refusent. On ne l'impose pas et on n'échoue jamais pour ça : sans dépôt git
+    sur place, ou sans `git`, on le dit et on continue.
+    """
+    if not (coffre / ".git").exists():
+        return
+    try:
+        res = subprocess.run(["git", "-C", str(coffre), "config",
+                              "core.hooksPath", ".githooks"],
+                             capture_output=True, text=True)
+    except OSError as souci:
+        print("  ! core.hooksPath non posé (%s)." % souci, file=sys.stderr)
+        return
+    if res.returncode == 0:
+        print("  ~ core.hooksPath = .githooks")
+    else:
+        print("  ! core.hooksPath non posé : %s"
+              % (res.stderr or "").strip(), file=sys.stderr)
+
+
+def designation(chemin: Path, base: Path) -> Path:
+    """Chemin affiché : relatif au dépôt s'il y est, au coffre parent sinon.
+
+    La mémoire vit à côté du dépôt (§7.1) : un lien trouvé peut être hors de
+    lui, et `relative_to` lèverait une exception au lieu de le nommer.
+    """
+    for depart in (base, base.parent):
+        try:
+            return chemin.relative_to(depart)
+        except ValueError:
+            continue
+    return chemin
+
+
 def regenerer(racine: Path) -> int:
     """Relance les générateurs puis le vérificateur, dans le coffre visé.
 
-    Un lien symbolique, où qu'il soit sous `IA/` ou `mémoire/`, arrête tout
+    Un lien symbolique, où qu'il soit sous `IA/` ou dans la mémoire, arrête tout
     net : les générateurs écriraient hors du coffre visé — les `sommaire.md`
-    dans la `mémoire/` liée, les index dans l'`IA/` lié — et le vérificateur
+    dans une mémoire liée, les index dans l'`IA/` lié — et le vérificateur
     lirait des fichiers qui ne sont pas au coffre. On le dit, on saute, et le
     code de retour reste bon : rien n'est cassé, seulement rien de régénéré.
     """
@@ -395,7 +464,7 @@ def regenerer(racine: Path) -> int:
     if lien is not None:
         print("  ! %s : un lien symbolique de la cible serait traversé par la "
               "régénération ; index et sommaires laissés en l'état."
-              % lien.relative_to(racine), file=sys.stderr)
+              % designation(lien, racine), file=sys.stderr)
         return 0
 
     for script in ("regenerate_sommaire.py", "regenerate_index.py"):
@@ -540,12 +609,12 @@ def ecrire_agents(coffre: Path) -> str:
 
 # Entrée des « Fichiers exclus » d'Obsidian : le `code/` de tout projet. Forme
 # regex entre barres obliques — la seule qui ait un sens sur le chemin complet
-# `-PROJETS/<projet>/code/<…>`. Le joker au milieu d'un chemin
-# (`-PROJETS/*/code`, essayé d'abord) n'est documenté nulle part, et la doc
+# `0-PROJETS/<projet>/code/<…>`. Le joker au milieu d'un chemin
+# (`0-PROJETS/*/code`, essayé d'abord) n'est documenté nulle part, et la doc
 # officielle d'Obsidian décrit l'effet du réglage sans en donner la syntaxe.
-MOTIF_CODE_OBSIDIAN = "/^-PROJETS\\/[^\\/]+\\/code\\//"
+MOTIF_CODE_OBSIDIAN = "/^0-PROJETS\\/[^\\/]+\\/code\\//"
 # Motif écrit par la première version, retiré à la réinstallation.
-MOTIF_CODE_OBSIDIAN_ANCIEN = "-PROJETS/*/code"
+MOTIF_CODE_OBSIDIAN_ANCIEN = "0-PROJETS/*/code"
 
 
 def exclure_code_d_obsidian(coffre: Path) -> None:
@@ -557,7 +626,7 @@ def exclure_code_d_obsidian(coffre: Path) -> None:
     suggestions de liens (§7.3) — c'est ce que promet le réglage « Fichiers
     exclus » (aide officielle Obsidian). Obsidian le range dans
     `.obsidian/app.json`, clé `userIgnoreFilters`. On ne crée rien sans coffre
-    Obsidian, on ne touche à rien si le parent ne porte pas de `-PROJETS/` (il
+    Obsidian, on ne touche à rien si le parent ne porte pas de `0-PROJETS/` (il
     n'y a alors rien à exclure), on ne suit jamais un lien symbolique, et une
     configuration illisible ou d'un format inattendu est laissée telle quelle :
     un réglage d'éditeur ne doit pas faire tomber l'installation.
@@ -577,12 +646,14 @@ def exclure_code_d_obsidian(coffre: Path) -> None:
     garde son mode s'il existait déjà.
     """
     parent = coffre.parent
-    projets = parent / "-PROJETS"
+    projets = parent / "0-PROJETS"
+    if not projets.is_dir():
+        projets = parent / "-PROJETS"           # coffre d'avant la bascule (§7.1)
     dossier = parent / ".obsidian"
     if not dossier.is_dir():
         return
     if not projets.is_dir():
-        print("pas de -PROJETS/ : exclusion Obsidian non posée, relancer "
+        print("pas de 0-PROJETS/ : exclusion Obsidian non posée, relancer "
               "l'installeur après le premier projet.")
         return
     config = dossier / "app.json"
@@ -640,9 +711,182 @@ def exclure_code_d_obsidian(coffre: Path) -> None:
     print("  + Fichiers exclus d'Obsidian : `%s` dans %s."
           % (MOTIF_CODE_OBSIDIAN, config))
     print("    Vérification manuelle à faire une fois : poser un fichier sous")
-    print("    `-PROJETS/<projet>/code/`, puis chercher son nom dans Obsidian ;")
+    print("    `0-PROJETS/<projet>/code/`, puis chercher son nom dans Obsidian ;")
     print("    s'il n'apparaît ni dans la recherche, ni dans le graphe, ni dans")
     print("    les suggestions de liens, le motif agit comme voulu.")
+
+
+# ---------------------------------------------------- dépôt de données du coffre
+
+#: Les gabarits du dépôt de données du coffre (§7.1), versionnés dans le
+#: produit : la liste blanche et les deux crochets.
+GABARITS_DEPOT = Path("IA") / "system" / "depot-de-donnees"
+#: Où le dépôt de données range ses crochets. Même nom que ceux du produit.
+CROCHETS_DEPOT = ".githooks"
+
+
+def est_un_coffre_parent(chemin: Path) -> bool:
+    """Vrai si `chemin` porte un marqueur de coffre (§7.1) — `.obsidian/`,
+    `_MAINTENANCE/`, une zone `0-…` ou son ancien nom `-…`.
+
+    La mémoire s'installe là, et nulle part ailleurs : un clone de
+    développement n'a pas de coffre parent autour de lui, et l'installeur ne
+    doit pas y faire naître un dépôt git.
+    """
+    try:
+        noms = set(os.listdir(chemin))
+    except OSError:
+        return False
+    return bool(noms & set(MOD.MARQUEURS_COFFRE))
+
+
+def _git(chemin: Path, *arguments: str) -> subprocess.CompletedProcess | None:
+    """git dans `chemin`, sans jamais lever : None si git n'est pas là."""
+    try:
+        return subprocess.run(["git", "-C", str(chemin), *arguments],
+                              capture_output=True, text=True)
+    except OSError:
+        return None
+
+
+def ecrire_liste_blanche_depot(coffre: Path, racine: Path) -> None:
+    """Pose `<coffre>/.gitignore` depuis le gabarit — sans jamais l'écraser (§7.1).
+
+    La liste blanche dit ce que le dépôt de données suit : les zones de mémoire,
+    rien d'autre. Elle est le gabarit à la lettre, et `verifier_coffre.py
+    --coffre` le vérifie. La retoucher sur la machine ferait entrer `OBSIA/` —
+    ou pire — dans l'histoire de la mémoire, sans que personne ne le voie.
+    """
+    gabarit = racine / GABARITS_DEPOT / "gitignore-coffre"
+    if not gabarit.is_file():
+        return
+    cible = coffre / ".gitignore"
+    if MOD.sous_un_lien(coffre, cible) is not None:
+        avertir_du_lien(Path(".gitignore"))
+        return
+    attendu = gabarit.read_text(encoding="utf-8")
+    if cible.is_file():
+        if cible.read_text(encoding="utf-8") != attendu:
+            print("  ! .gitignore du coffre : il diffère du gabarit "
+                  "`IA/system/depot-de-donnees/gitignore-coffre` et reste tel "
+                  "quel (§7.1).", file=sys.stderr)
+        return
+    cible.write_text(attendu, encoding="utf-8")
+    print("  + .gitignore — liste blanche du dépôt de données du coffre (§7.1)")
+
+
+def initialiser_depot_de_donnees(coffre: Path) -> None:
+    """`git init` du dépôt de données s'il manque. Ne pousse jamais (§7.1)."""
+    if (coffre / ".git").exists():
+        return
+    dedans = _git(coffre, "rev-parse", "--show-toplevel")
+    if dedans is not None and dedans.returncode == 0:
+        # Le coffre est un sous-dossier d'un autre dépôt : y faire naître un
+        # dépôt imbriqué cacherait la mémoire et rendrait le parent instable.
+        print("  ! le coffre est déjà dans le dépôt git %s ; dépôt de données "
+              "laissé non initialisé (§7.1)." % dedans.stdout.strip(), file=sys.stderr)
+        return
+    resultat = _git(coffre, "init", "--quiet")
+    if resultat is None or resultat.returncode != 0:
+        print("  ! dépôt de données non initialisé : %s"
+              % ((resultat.stderr or "").strip() if resultat else "git introuvable"),
+              file=sys.stderr)
+        return
+    print("  + dépôt de données du coffre initialisé (git init, §7.1)")
+
+
+def enregistrer_distant(coffre: Path, distant: str | None) -> None:
+    """Pose `origin` quand le profil déclare `coffre_distant` (§7.1). Ne pousse pas.
+
+    L'installeur enregistre l'adresse et s'arrête là : c'est le post-commit du
+    dépôt de données qui poussera, et pas entre deux commits.
+    """
+    if not distant or not (coffre / ".git").exists():
+        return
+    actuel = _git(coffre, "remote", "get-url", "origin")
+    if actuel is not None and actuel.returncode == 0:
+        if actuel.stdout.strip() != distant:
+            print("  ! origin déjà posé sur %s ; `coffre_distant` (%s) non appliqué."
+                  % (actuel.stdout.strip(), distant), file=sys.stderr)
+        return
+    resultat = _git(coffre, "remote", "add", "origin", distant)
+    if resultat is not None and resultat.returncode == 0:
+        print("  + origin = %s — le dépôt de données poussera là (§7.1)" % distant)
+    else:
+        print("  ! origin non posé : %s"
+              % ((resultat.stderr or "").strip() if resultat else "git introuvable"),
+              file=sys.stderr)
+
+
+def poser_crochets_depot(coffre: Path, produit: Path) -> None:
+    """Pose et active les crochets du dépôt de données (§7.1).
+
+    `@PRODUIT@` devient le nom du dossier du produit à la racine du coffre : les
+    crochets rappellent alors les scripts du produit, qui savent où ils sont.
+    Les crochets sont rafraîchis à chaque installation — eux n'appartiennent pas
+    à l'instance, contrairement à la liste blanche.
+    """
+    if not (coffre / ".git").exists():
+        return
+    dossier = coffre / CROCHETS_DEPOT
+    if MOD.sous_un_lien(coffre, dossier) is not None:
+        avertir_du_lien(Path(CROCHETS_DEPOT))
+        return
+    poses = []
+    for nom in ("pre-commit", "post-commit"):
+        gabarit = produit / GABARITS_DEPOT / nom
+        if not gabarit.is_file():
+            continue
+        cible = dossier / nom
+        if MOD.sous_un_lien(coffre, cible) is not None:
+            avertir_du_lien(Path(CROCHETS_DEPOT) / nom)
+            continue
+        dossier.mkdir(parents=True, exist_ok=True)
+        cible.write_text(gabarit.read_text(encoding="utf-8").replace("@PRODUIT@", produit.name),
+                         encoding="utf-8")
+        cible.chmod(0o755)
+        poses.append(nom)
+    if not poses:
+        return
+    resultat = _git(coffre, "config", "core.hooksPath", CROCHETS_DEPOT)
+    actives = resultat is not None and resultat.returncode == 0
+    print("  + crochets du dépôt de données : %s%s"
+          % (", ".join(poses),
+             " (core.hooksPath=%s)" % CROCHETS_DEPOT if actives else
+             " — core.hooksPath non posé"))
+
+
+def preparer_memoire_du_coffre(produit: Path) -> None:
+    """Pose la mémoire du coffre parent : `0-PERSONNELS/` et `0-MEMOIRES/` (§7.1).
+
+    `0-PERSONNELS/` reçoit le profil, `0-MEMOIRES/` son README : il explique les
+    deux mémoires qu'il porte — celle des agents, vivante, et les chantiers
+    clos, gelés. `0-MEMOIRES/préférences/` est posé même vide (§6) ;
+    `<nom-agent>/expériences/` naît à la première leçon.
+
+    Rien n'y est écrasé : un profil rempli fait refuser la pose du gabarit, et
+    le refus est dit. La migration le déplacera.
+    """
+    for refus in MOD.ecrire_memoire_du_coffre(produit.parent, produit):
+        print("  ! %s" % refus, file=sys.stderr)
+
+
+def preparer_depot_de_donnees(produit: Path, racine: Path) -> None:
+    """Outille le dépôt de données du coffre parent (§7.1).
+
+    Le coffre parent est le dossier qui contient le produit. Rien n'est outillé
+    s'il ne porte aucun marqueur de coffre — un clone de développement, un
+    dossier de travail : il n'y a pas de mémoire à ranger.
+    """
+    coffre = produit.parent
+    if not est_un_coffre_parent(coffre):
+        print("  · pas de coffre parent reconnu autour de %s : dépôt de données "
+              "laissé de côté (§7.1)." % produit.name)
+        return
+    ecrire_liste_blanche_depot(coffre, racine)
+    initialiser_depot_de_donnees(coffre)
+    enregistrer_distant(coffre, (MOD.lire_profil(produit) or {}).get("coffre_distant"))
+    poser_crochets_depot(coffre, produit)
 
 
 # ---------------------------------------------------------------------- main
@@ -752,16 +996,31 @@ def main() -> int:
             chemin.unlink()
             print("  − %s supprimé — catalogue complet" % MOD.NOM_PROFIL)
     else:
+        # `coffre_distant` est lu avant d'écrire : le réinstaller ne doit pas
+        # effacer l'adresse que l'utilisateur a décommentée à la main (§7.1).
+        ancien = MOD.lire_profil(coffre) or {}
         print("  ~ %s" % MOD.ecrire_profil(coffre, actifs, systeme, mode,
-                                           systeme.get("coffre_parent") or None))
+                                           systeme.get("coffre_parent") or None,
+                                           coffre_distant=ancien.get("coffre_distant")))
 
     code = regenerer(coffre)
+
+    # Les gardes du dépôt ne servent que si git les voit : on active le crochet
+    # une fois par clone, ici, plutôt que de compter sur la mémoire de l'agent.
+    activer_crochets(coffre)
 
     # Après `regenerer` : `ecrire_agents` refait le prompt depuis les frontmatters
     # filtrés par le profil — il n'embarque pas l'index. L'`AGENTS.md` est donc
     # écrit après coup, une fois index et sommaires à jour.
     # Sur le coffre effectif, donc en place comme en copie.
     ecrire_agents(coffre)
+
+    # Le dépôt de données du coffre parent, puis la mémoire qu'il suivra (§7.1).
+    # Dans cet ordre : le coffre est reconnu tel qu'il est, avant que
+    # `0-PERSONNELS/` et `0-MEMOIRES/` n'apparaissent sous lui. Rien n'est écrasé
+    # — la liste blanche surtout pas.
+    preparer_depot_de_donnees(coffre, racine)
+    preparer_memoire_du_coffre(coffre)
 
     # Les dépôts git des projets n'ont pas leur place dans l'index d'Obsidian.
     exclure_code_d_obsidian(coffre)

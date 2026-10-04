@@ -7,8 +7,8 @@ essentiel: false
 question: Ce dépôt est-il cloné dans un coffre Obsidian dont les agents doivent tenir les notes ?
 sondes:
   - parent:.obsidian
-  - parent:-SAVOIRS
-  - parent:-EN-VRAC
+  - parent:0-SAVOIRS
+  - parent:0-EN-VRAC
 requiert:
   - noyau
 ---
@@ -16,7 +16,7 @@ requiert:
 ## Ce que ce module apporte
 
 Le traitement des notes du coffre parent décrit au §7 du contrat : remplir une
-note d'`-EN-VRAC/`, la tagger au vocabulaire contrôlé, poser les rétroliens,
+note d'`0-EN-VRAC/`, la tagger au vocabulaire contrôlé, poser les rétroliens,
 la classer, tenir `notes_remplies.md`. Et la vue d'ensemble : concepts,
 orphelines, doublons, tags hors liste.
 

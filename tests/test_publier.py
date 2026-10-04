@@ -76,40 +76,39 @@ class TestRefusDeSynchroniser(BasePublication):
                                                  self.source / "dedans"))
 
     def test_refuse_un_coffre_vivant(self):
-        (self.cible / "-SAVOIRS").mkdir()
+        (self.cible / "0-SAVOIRS").mkdir()
         self.assertIsNotNone(PUB.raison_de_refus(self.source, self.cible))
 
     def test_refuse_un_dossier_obsidian(self):
         (self.cible / ".obsidian").mkdir()
         self.assertIsNotNone(PUB.raison_de_refus(self.source, self.cible))
 
-    def test_refuse_une_memoire_remplie(self):
-        memoire = self.cible / "mémoire"
-        memoire.mkdir()
-        (memoire / "note.md").write_text("à moi\n", encoding="utf-8")
+    def test_refuse_un_coffre_dont_la_memoire_est_pleine(self):
+        """`0-PROJETS/` rempli : c'est un coffre de travail, pas un miroir."""
+        projets = self.cible / "0-PROJETS"
+        projets.mkdir()
+        (projets / "mon-projet").mkdir()
         self.assertIsNotNone(PUB.raison_de_refus(self.source, self.cible))
 
-    def test_accepte_la_memoire_de_distribution(self):
-        """Ce qu'une publication laisse dans `mémoire/` : rien de personnel."""
-        memoire = self.cible / "mémoire"
-        memoire.mkdir()
-        for nom in PUB.MEMOIRE_DE_DISTRIBUTION:
-            (memoire / nom).write_text("---\n\nVide.\n", encoding="utf-8")
-        self.assertIsNone(PUB.raison_de_refus(self.source, self.cible))
+    def test_refuse_un_coffre_qui_garde_l_ancien_nom(self):
+        """Les deux noms du même dossier comptent, tant que la bascule dure (§7.1)."""
+        (self.cible / "-PROJETS").mkdir()
+        self.assertIsNotNone(PUB.raison_de_refus(self.source, self.cible))
+
+    def test_refuse_un_coffre_qui_a_une_archive_gelee(self):
+        (self.cible / "0-MEMOIRES").mkdir()
+        self.assertIsNotNone(PUB.raison_de_refus(self.source, self.cible))
 
     def test_accepte_une_cible_deja_publiee(self):
-        """Republier sur sa propre publication ne doit pas se refuser."""
-        memoire = self.cible / "mémoire"
-        memoire.mkdir()
-        (memoire / "README.md").write_text("# Mémoire\n", encoding="utf-8")
-        (memoire / "profil-utilisateur.md").write_text("Nom :\n",
-                                                       encoding="utf-8")
-        (memoire / "sommaire.md").write_text("# Sommaire\n", encoding="utf-8")
-        self.assertIsNone(PUB.raison_de_refus(self.source, self.cible))
+        """Republier sur sa propre publication ne doit pas se refuser.
 
-    def test_refuse_un_sous_dossier_de_memoire(self):
-        (self.cible / "mémoire" / "projets").mkdir(parents=True)
-        self.assertIsNotNone(PUB.raison_de_refus(self.source, self.cible))
+        Un miroir publié ne porte **aucune** mémoire (§7.1) : il n'y a rien à
+        lui effacer que quelqu'un regretterait.
+        """
+        (self.cible / "brouillon").mkdir()
+        (self.cible / "brouillon" / "note.md").write_text("brouillon\n",
+                                                          encoding="utf-8")
+        self.assertIsNone(PUB.raison_de_refus(self.source, self.cible))
 
     def test_refuse_la_meme_origine_que_la_source(self):
         git(self.cible, "remote", "set-url", "origin", ORIGINE_PRIVEE)
@@ -199,7 +198,7 @@ class TestRefusDeSynchroniser(BasePublication):
         self.assertIn("`.git/`", PUB.raison_de_refus(self.source, etranger))
 
     def test_le_refus_rend_le_code_1_sans_rien_effacer(self):
-        garde = self.cible / "-PROJETS"
+        garde = self.cible / "0-PROJETS"
         garde.mkdir()
         (garde / "chantier.md").write_text("en cours\n", encoding="utf-8")
 
@@ -209,7 +208,7 @@ class TestRefusDeSynchroniser(BasePublication):
             capture_output=True, text=True, check=False)
 
         self.assertEqual(resultat.returncode, 1, resultat.stdout)
-        self.assertIn("-PROJETS", resultat.stderr)
+        self.assertIn("0-PROJETS", resultat.stderr)
         self.assertEqual((garde / "chantier.md").read_text(encoding="utf-8"),
                          "en cours\n")
 
@@ -243,12 +242,12 @@ class TestVidageDeLaCible(BasePublication):
         self.assertTrue((self.cible / "IA" / "system" / "contrat.md").is_file())
 
     def test_l_apercu_liste_ce_qui_sera_supprime(self):
-        (self.cible / "-DOCUMENTS").mkdir()
+        (self.cible / "0-DOCUMENTS").mkdir()
         (self.cible / "notes.md").write_text("brouillon\n", encoding="utf-8")
 
         supprimes = PUB.chemins_a_supprimer(self.cible)
 
-        self.assertIn("-DOCUMENTS/", supprimes)
+        self.assertIn("0-DOCUMENTS/", supprimes)
         self.assertIn("notes.md", supprimes)
         self.assertIn("README.md", supprimes)
         self.assertNotIn(".git", supprimes)
@@ -538,6 +537,64 @@ class TestNomsInterdits(BaseControle):
             [("config.md", "nom interdit"), ("prose.md", "nom interdit")])
 
 
+class TestTexteDePullRequest(BaseControle):
+    """Le titre et la description d'une PR : ce que le contrôle d'arbre ne lit pas.
+
+    Une pull request paraît sur le dépôt public avant que le premier fichier de
+    l'export n'y soit — son titre reste dans la liste des PR. L'arbre ne voit
+    donc jamais ce texte : il se juge seul, et par la même règle que lui.
+    """
+
+    def juger(self, texte: str, noms_interdits=()) -> "PUB.Controle":
+        return PUB.controler_texte(texte, noms_interdits,
+                                   "titre ou description de PR")
+
+    def test_le_texte_seul_suffit_a_trouver_une_fuite(self):
+        controle = self.juger("Corrige le lien vers %s\n"
+                               % assemble("192.168.1.", "42"))
+
+        self.assertEqual([etiquette for _, _, etiquette, _ in controle.trouvailles],
+                         ["adresse IP privée"])
+        self.assertEqual(controle.trouvailles[0][0], "titre ou description de PR")
+        self.assertEqual(controle.trouvailles[0][1], 1)
+
+    def test_la_meme_regle_que_l_arbre(self):
+        """Une ligne de texte se juge comme la même ligne dans un fichier."""
+        ligne = "password: %s\n" % assemble("cheval", "-bleu-42-rapide")
+        self.ecrire("config.yml", ligne)
+
+        self.assertEqual(self.etiquettes(self.controler()),
+                         [etiquette for _, _, etiquette, _
+                          in self.juger(ligne).trouvailles])
+
+    def test_un_texte_propre_ne_dit_rien(self):
+        controle = self.juger("Décrit le chantier souveraineté des données.\n")
+
+        self.assertEqual(controle.trouvailles, [])
+        self.assertEqual(controle.relus, 1)
+
+    def test_un_texte_vide_n_a_pas_ete_relu(self):
+        """« Aucune trouvaille » ne doit pas se lire sur rien."""
+        controle = self.juger("   \n")
+
+        self.assertEqual(controle.trouvailles, [])
+        self.assertEqual(controle.relus, 0)
+
+    def test_les_adresses_du_projet_restent_publiables(self):
+        controle = self.juger("posé par noreply@github.com, relu par "
+                               "moi@example.com\n")
+
+        self.assertEqual(controle.trouvailles, [])
+
+    def test_un_nom_interdit_avertit_sans_bloquer(self):
+        controle = self.juger("lot signé par poste-atelier\n", ["poste-atelier"])
+
+        self.assertEqual(controle.trouvailles, [])
+        self.assertEqual(
+            [etiquette for _, _, etiquette, _ in controle.avertissements],
+            ["nom interdit"])
+
+
 class BasePublicationReelle(unittest.TestCase):
     """Une source committée et une cible vierge : `publier.py` pour de vrai.
 
@@ -800,6 +857,54 @@ class TestUnNomInterditAvertit(BasePublicationReelle):
         self.assertRegex(resultat.stdout,
                          r"\d+ fichier\(s\) relu\(s\), 1 non relu\(s\)")
         self.assertIn("assets/logo.png (extension binaire)", resultat.stdout)
+
+
+class TestLeTexteDeLaPREnLigneDeCommande(unittest.TestCase):
+    """`--controler-texte` : le mode CI, qui juge la PR et rien d'autre.
+
+    La vérification n'a pas d'arbre exporté sous la main — GitHub lui donne le
+    titre et la description, qu'elle passe par l'entrée standard. Le mode doit
+    donc pouvoir refuser sans `--cible`, et ne rien lire d'autre que le flux.
+    """
+
+    def lancer(self, texte: str, *arguments: str) -> "subprocess.CompletedProcess":
+        return subprocess.run(
+            [sys.executable, "-B", str(PUBLIER), "--controler-texte", *arguments],
+            input=texte, capture_output=True, text=True, check=False)
+
+    def test_le_texte_du_flux_est_juge(self):
+        resultat = self.lancer("titre anodin\n%s\n" % assemble("192.168.1.", "42"))
+
+        self.assertEqual(resultat.returncode, 1)
+        self.assertIn("adresse IP privée", resultat.stdout)
+
+    def test_un_texte_propre_passe_sans_cible(self):
+        resultat = self.lancer("Chantier souveraineté des données\n")
+
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        self.assertIn("Aucune trouvaille", resultat.stdout)
+
+    def test_une_cle_ne_se_force_pas(self):
+        resultat = self.lancer(
+            "BEGIN %s\n" % assemble("-----BEGIN ", "PRIVATE KEY-----"),
+            "--forcer")
+
+        self.assertEqual(resultat.returncode, 1)
+        self.assertIn("ne s'applique pas ici", resultat.stderr)
+
+    def test_un_texte_vide_passe(self):
+        """La description d'une PR peut être vide : ce n'est pas une fuite."""
+        resultat = self.lancer("")
+
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+
+    def test_sans_cible_le_mode_ordinaire_refuse(self):
+        resultat = subprocess.run([sys.executable, "-B", str(PUBLIER)],
+                                  input="", capture_output=True, text=True,
+                                  check=False)
+
+        self.assertEqual(resultat.returncode, 2)
+        self.assertIn("--cible est requis", resultat.stderr)
 
 
 if __name__ == "__main__":

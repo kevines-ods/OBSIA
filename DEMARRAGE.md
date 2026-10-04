@@ -25,7 +25,7 @@ de votre coffre, quel que soit son nom réel. Ouvrez ensuite Obsidian sur **le c
 entier**, pas sur `OBSIA/` seul : les rétroliens se résolvent à cette échelle.
 
 Pas encore de coffre ? Un dossier vide fait l'affaire ; les dossiers de
-connaissance (`-SAVOIRS/`, `-EN-VRAC/`…) se créent quand vous en avez besoin
+connaissance (`0-SAVOIRS/`, `0-EN-VRAC/`…) se créent quand vous en avez besoin
 (§7.1 du contrat).
 
 ## 2. Voir ce que la machine porte
@@ -51,7 +51,10 @@ L'installeur demande, module par module, ce que vous voulez garder. À la fin :
 - les index versionnés d'`IA/system/` et `IA/README.md` — inchangés, au
   catalogue complet : ils ne dépendent pas de la machine ;
 - **`Mon coffre/AGENTS.md`** — le cerveau d'OBSIA, à la racine du coffre, là
-  où les harness le cherchent. Ne l'éditez pas : il se régénère.
+  où les harness le cherchent. Ne l'éditez pas : il se régénère ;
+- **`Mon coffre/0-MEMOIRES/`** et **`Mon coffre/0-PERSONNELS/profil-utilisateur.md`**
+  — la mémoire du coffre, créée si elle manque (§6, §7.1). Jamais écrasée
+  ensuite : ce qui s'y trouve déjà reste.
 
 Changer d'avis : relancer la même commande. Tout reprendre :
 `python3 scripts/installer.py --tout --appliquer` — qui supprime le profil :
@@ -87,7 +90,7 @@ Demandez à l'agent :
 > Quels agents connais-tu, et où vivent les notes de connaissance ?
 
 Il doit citer les agents de `IA/system/agents-index.md` et le dossier
-`-SAVOIRS/`. S'il répond de façon générique, ses instructions n'ont pas été
+`0-SAVOIRS/`. S'il répond de façon générique, ses instructions n'ont pas été
 lues : vérifiez qu'`AGENTS.md` existe à la racine du coffre et que le harness a
 été lancé de là. Avec Claude Code, cherchez aussi un `CLAUDE.md` au-dessus du
 coffre (jusqu'à votre dossier personnel) : il passerait avant `AGENTS.md`.
@@ -101,7 +104,8 @@ harness se lance depuis la racine.
   régénérer `AGENTS.md` — `python3 scripts/installer.py --rejouer --appliquer`
   reprend votre profil sans reposer les questions.
 - **Avant de proposer une modification du dépôt** :
-  `python3 scripts/verifier_coffre.py`. Seul `OBSIA/` est un dépôt Git ; vos
-  notes ne le sont pas.
+  `python3 scripts/verifier_coffre.py`. L'outil (`OBSIA/`) et la mémoire (la
+  racine du coffre) sont **deux dépôts Git distincts** (§7.1) — l'un se livre
+  par pull request, l'autre se commite sur place.
 - **Aller plus loin** : `README.md` pour l'architecture, le contrat pour les
   règles, `IA/system/agents-index.md` pour savoir à quel agent parler.

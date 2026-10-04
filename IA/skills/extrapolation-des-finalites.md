@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: extrapolation-des-finalites
-description: Fixer la finalité d'un projet avec l'utilisateur et extrapoler ses finalités possibles — une question par message, trois à cinq avenirs plausibles proposés puis validés ou rejetés un par un, portes à garder ouvertes — puis écrire la note `— vision` à la racine du dossier du projet (mémoire/projets pour un projet du coffre, -PROJETS sinon). À charger au premier appel du visionnaire sur un projet, ou quand la finalité change. Ne juge aucun changement : c'est `controle-de-cap`.
+description: Fixer la finalité d'un projet avec l'utilisateur et extrapoler ses finalités possibles — une question par message, trois à cinq avenirs plausibles proposés puis validés ou rejetés un par un, portes à garder ouvertes — puis écrire la note `— vision` à la racine du dossier du projet dans le coffre parent (`Mon coffre/0-PROJETS/<projet>/`), où elle reste même après la clôture d'un chantier. À charger au premier appel du visionnaire sur un projet, ou quand la finalité change. Ne juge aucun changement : c'est `controle-de-cap`.
 module: noyau
 type: outil
 read_only: false
@@ -39,10 +39,11 @@ impossibles.
 
 ## La note — `<projet> — vision.md`
 
-Elle vit à la racine du dossier du projet : `mémoire/projets/<projet>/`
-pour un projet du coffre (versionnée, entre dans la PR), `Mon
-coffre/-PROJETS/<projet>/` pour un projet de l'utilisateur (§7.3). Un
-sous-projet n'en a pas.
+Elle vit à la racine du dossier du projet, dans le coffre parent :
+`Mon coffre/0-PROJETS/<projet>/` (§7.1), pour un projet du coffre comme pour un
+projet de l'utilisateur. La vision **ne s'archive pas** : à la clôture d'un
+chantier, seul le dossier du chantier passe dans `0-MEMOIRES/`, la vision reste
+dans `0-PROJETS/` (§6). Un chantier n'en a pas.
 
 ```markdown
 ---

@@ -41,7 +41,7 @@ nature de la question.
 
 | Type de question | Commencer par | Pourquoi |
 | --- | --- | --- |
-| « comment j'ai fait », « qu'avais-je décidé », un fait sur la machine ou l'utilisateur | le coffre — `-SAVOIRS/`, `-PERSONNELS/` | la réponse est personnelle ; aucun site ne la détient |
+| « comment j'ai fait », « qu'avais-je décidé », un fait sur la machine ou l'utilisateur | le coffre — `0-SAVOIRS/`, `0-MEMOIRES/`, `0-PERSONNELS/` | la réponse est personnelle ; aucun site ne la détient |
 | syntaxe, option, version d'un logiciel, API | le site de confiance correspondant, **pas** le coffre | le coffre ne suit pas les versions ; la documentation officielle, si |
 | actualité, comparatif, « qu'est-ce qui se fait » | le web général | ni le coffre ni les sites de confiance ne sont à jour |
 | une question déjà traitée | le coffre, par la note de projet correspondante | ne pas refaire un travail déjà fait |
@@ -57,16 +57,20 @@ Un index par dossier du coffre parent, produits par
 
 | Index | Couvre |
 | --- | --- |
-| `index-savoirs.md` | les connaissances — `Mon coffre/-SAVOIRS/` |
-| `index-personnels.md` | le contexte personnel — `Mon coffre/-PERSONNELS/` |
-| `index-projets.md` | les projets — `Mon coffre/-PROJETS/` |
-| `index-documents.md` | revues, articles, transcriptions — `Mon coffre/-DOCUMENTS/` |
-| `index-en-vrac.md` | le tampon — `Mon coffre/-EN-VRAC/`, vide en fin de session (§7.7) |
+| `index-0-savoirs.md` | les connaissances — `Mon coffre/0-SAVOIRS/` |
+| `index-0-personnels.md` | le contexte personnel — `Mon coffre/0-PERSONNELS/` |
+| `index-0-projets.md` | les projets — `Mon coffre/0-PROJETS/` |
+| `index-0-memoires.md` | préférences et leçons (vivantes), chantiers clos (gelés) — `Mon coffre/0-MEMOIRES/` |
+| `index-0-documents.md` | revues, articles, transcriptions — `Mon coffre/0-DOCUMENTS/` |
+| `index-0-en-vrac.md` | le tampon — `Mon coffre/0-EN-VRAC/`, vide en fin de session (§7.7) |
 | `index-maintenance.md` | journaux, previews, registre — `Mon coffre/_MAINTENANCE/` |
 
 Chaque ligne porte le fichier, sa `description` — ou, à défaut, son premier
 titre — son type et ses tags. Un index se lit **avant** les notes ; il suffit à
 décider quoi ouvrir.
+
+Un index de la mémoire ne l'autorise pas à écrire : un chantier gelé de
+`0-MEMOIRES/` se **lit**, il ne se modifie plus (§6).
 
 Les index vieillissent. Ce skill ne les régénère pas : il le **constate**.
 

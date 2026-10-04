@@ -222,8 +222,8 @@ donc l'installation est possible — mais **tant qu'elle n'est pas faite, tout c
 qui suit reste à prouver**.
 
 Les trois vérifications communes de `commun.md` d'abord : lister la racine du
-coffre, lire une note de `Mon coffre/-SAVOIRS/`, retrouver le registre des tags.
-⚠️ écrire `./-SAVOIRS`, jamais `-SAVOIRS` nu.
+coffre, lire une note de `Mon coffre/0-SAVOIRS/`, retrouver le registre des tags.
+⚠️ écrire `./0-SAVOIRS`, jamais `0-SAVOIRS` nu.
 
 Puis trois gestes propres à cette fiche :
 

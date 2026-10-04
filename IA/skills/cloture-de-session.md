@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: cloture-de-session
-description: Tenir le carnet d'un chantier et clore une séance — reprendre un chantier interrompu au démarrage, écrire l'étape en cours avant d'agir, mettre à jour le résumé du projet, distiller le durable vers profil/préférences/expériences, archiver les carnets d'un projet clos. À charger au démarrage pour reprendre après une coupure, et en fin de séance ou quand un lot de travail est livré.
+description: Tenir le carnet d'un chantier et clore une séance — reprendre un chantier interrompu au démarrage, écrire l'étape en cours avant d'agir, mettre à jour le résumé du projet, distiller le durable vers profil/préférences/expériences, geler un chantier clos dans `0-MEMOIRES/`. À charger au démarrage pour reprendre après une coupure, et en fin de séance ou quand un lot de travail est livré.
 module: noyau
 type: core
 read_only: false
@@ -28,23 +28,34 @@ Ne pas se fier à sa mémoire de la conversation : lire le diff.
 
 ### 2. Mettre à jour le carnet et le résumé
 
-**D'abord, où.** Le §6 et le §7.3.1 donnent deux domiciles, selon ce que
-décrit le projet :
+**D'abord, où.** La mémoire vit dans le **coffre parent**, jamais dans `OBSIA/`
+(§6) : le §7.3.1 dit ce qui est du produit et ce qui est de la mémoire.
 
 | La séance portait sur… | Carnet et résumé dans… |
 | --- | --- |
-| le coffre lui-même — un skill, un agent, une règle | `mémoire/projets/<projet>/` — versionné, entre dans la PR |
-| un projet de l'utilisateur | `Mon coffre/-PROJETS/<projet>/` — preview à la création (§7.4) |
-| rien de tout cela — dépannage, correction ponctuelle | le carnet du jour du projet de domaine (§6) : `obsia`, ou `-PROJETS/<domaine>/` |
-| une tâche terminée qui laisse un état à tenir à jour | `Mon coffre/-PERSONNELS/<sujet>.md`, avec `auteur: <nom-agent>` |
+| l'outil lui-même — un skill, un agent, un script du dépôt | `Mon coffre/0-PROJETS/obsia/<chantier>/` |
+| un autre projet — du coffre ou de l'utilisateur | `Mon coffre/0-PROJETS/<projet>/<chantier>/` |
+| rien de tout cela — dépannage, correction ponctuelle | le carnet du jour du projet de domaine (§6) : `Mon coffre/0-PROJETS/obsia/carnets/`, ou `0-PROJETS/<domaine>/carnets/` |
+| une tâche terminée qui laisse un état à tenir à jour | `Mon coffre/0-PERSONNELS/<sujet>.md`, avec `auteur: <nom-agent>` |
 
-Test : *est-ce que ça décrit le coffre ?* Si oui, `mémoire/projets/` ; si
-non, rien n'entre dans le dépôt. Dans le doute, demander plutôt que de créer
-un projet par défaut — une tâche terminée n'est pas un projet.
+Test (§7.3.1) : *est-ce que ça décrit le produit ?* Si oui, ça s'écrit dans le
+dépôt produit — `IA/`, `scripts/` — et se relit dans la PR. Sinon, c'est de
+la mémoire, et elle vit dans le coffre parent, sous `0-…`. Le carnet et le
+résumé sont **toujours** de la mémoire : coffre parent, même pour un chantier
+du dépôt. Dans le doute, demander plutôt que de créer un projet par défaut — une
+tâche terminée n'est pas un projet.
 
-**Le carnet** — `carnets/AAAA-MM-JJ-<projet>-<sujet>.md`, un par chantier.
-Il s'écrit **pendant** la séance (voir « En cours de route » plus bas) ; à
+**Le carnet** — `carnets/AAAA-MM-JJ-<projet>-<sujet>.md`, un par chantier. Il
+vit dans le `carnets/` du **dossier de son chantier** —
+`0-PROJETS/<projet>/<chantier>/carnets/`, avec le nom du chantier dans
+`projet:` ; une séance sans chantier écrit dans le `carnets/` du projet. Il
+s'écrit **pendant** la séance (voir « En cours de route » plus bas) ; à
 la clôture, on le relit, on complète, on règle `statut:`.
+
+**Un chantier est un dossier à lui** — `0-PROJETS/<projet>/<chantier>/`, avec
+ses `carnets/`, ses `documents/` et son `<chantier> — résumé.md`. Le nom du
+dossier dit le chantier, pas l'agent. Un seul niveau : pas de chantier dans un
+chantier.
 
 ```markdown
 ---
@@ -71,19 +82,32 @@ où en est le projet, ce qui a été décidé, ce qui reste. Une seule note,
 corrigée sur place. Le §8 impose d'y distinguer évidence, interprétation et
 synthèse.
 
-**Clore un projet.** Le corps du résumé n'est pas réécrit : le bilan, c'est la
-section `## État` posée par-dessus. On coiffe ainsi :
+**Clore un chantier.** Le corps du résumé n'est pas réécrit : le bilan, c'est
+la section `## État` posée par-dessus. On coiffe ainsi :
 
 | Élément | Règle |
 | --- | --- |
 | `statut:` | `clos`, dans le frontmatter |
-| bandeau | **juste sous le H1**, avant le `## État`. Sous-projet : `> Sous-projet de [[<projet> — résumé\|<projet>]], clos le <AAAA-MM-JJ>.` Projet racine : `> Clos le <AAAA-MM-JJ>.` — jamais de lien vers un parent qui n'existe pas |
+| bandeau | **juste sous le H1**, avant le `## État`. Chantier : `> Chantier de [[<projet> — résumé\|<projet>]], clos le <AAAA-MM-JJ>.` Projet racine : `> Clos le <AAAA-MM-JJ>.` — jamais de lien vers un parent qui n'existe pas |
 | bilan | un `## État` **juste après le H1** : le résultat atteint, ce qui reste, ce qui rouvrirait. Posé par-dessus le corps, sans le réécrire |
 | `description:` | réécrite pour dire l'issue (« … clos le <AAAA-MM-JJ> »), pas l'enquête |
 
-Le carnet passe `statut: clos` et rejoint `archives/` ; sa section
-`## Étape en cours` devient un avis de clôture, l'état de la séance restant
-conservé en citation.
+Puis le **dossier entier du chantier** — `0-PROJETS/<projet>/<chantier>/` —
+quitte `0-PROJETS/` pour `0-MEMOIRES/<projet>/<chantier>/` : le `— résumé` devenu
+bilan, les carnets passés `statut: clos`, les documents. Le dossier gelé ne se
+modifie plus jamais, et le durable a été distillé **avant**
+vers `0-SAVOIRS/`, `0-MEMOIRES/préférences/` ou
+`0-MEMOIRES/<nom-agent>/expériences/` (§6). La vision et le résumé du domaine,
+eux, **restent** dans `0-PROJETS/` — on n'archive pas un domaine vivant. Rouvrir
+un chantier le ramène dans `0-PROJETS/` avec `statut: en cours`, **sans copie
+laissée** dans `0-MEMOIRES/`.
+
+Le carnet, à la clôture, voit sa section `## Étape en cours` devenir un avis de
+clôture, l'état de la séance restant conservé en citation.
+
+`0-MEMOIRES/` n'est gelé **qu'à moitié** : le dossier du chantier qu'on vient d'y
+déposer ne bouge plus, mais `préférences/` et `<nom-agent>/expériences/`, qui
+vivent dans le même dossier, se corrigent sur place comme avant (§6).
 
 ### 3. Distiller — l'étape qui se saute toujours
 
@@ -93,9 +117,9 @@ que ça ne vaut que pour ce projet ?** Si non, ça remonte, selon le tableau du
 
 | Ce qu'on a appris | Destination |
 | --- | --- |
-| un fait stable sur l'utilisateur, son poste, son infrastructure | `mémoire/profil-utilisateur.md` |
-| un goût, une règle qui vaudra ailleurs | `mémoire/préférences/<sujet>.md` |
-| une leçon tirée d'un échec ou d'une réussite | `mémoire/<nom-agent>/expériences/<sujet>.md` |
+| un fait stable sur l'utilisateur, son poste, son infrastructure | `0-PERSONNELS/profil-utilisateur.md` |
+| un goût, une règle qui vaudra ailleurs | `0-MEMOIRES/préférences/<sujet>.md` |
+| une leçon tirée d'un échec ou d'une réussite | `0-MEMOIRES/<nom-agent>/expériences/<sujet>.md` |
 
 Les deux premières destinations sont **communes à tous les agents** : on y
 corrige sur place, sans patch. Seul `expériences/` appartient à l'agent.
@@ -139,14 +163,18 @@ seule. Une note qui enfle est le vrai risque de surcharge — pas l'absence de
 couche d'index.
 
 ```bash
-find mémoire -name '*.md' ! -name sommaire.md -exec wc -m {} \; | sort -rn | head -5
+principal=$(git worktree list --porcelain | sed -n '1s/^worktree //p')
+find "$principal/../0-PROJETS" "$principal/../0-MEMOIRES" "$principal/../0-SAVOIRS" \
+  -name '*.md' ! -name sommaire.md -exec wc -m {} \; | sort -rn | head -5
 ```
 
 ### 6. Pas de log de session
 
 Le carnet **est** la trace (§9). `IA/system/session-log/` est archivé : on
-n'y écrit plus. Pour un projet du coffre, carnet et résumé entrent dans la
-pull request du travail, et se relisent avec le diff.
+n'y écrit plus. Le carnet et le résumé vivent dans le **dépôt de mémoire** du
+coffre parent (§7.1) et s'y commitent à chaque étape. La **PR du produit** ne
+porte, dans sa description, que la demande et le résumé de séance — jamais un
+chemin du coffre parent ni un nom propre (§9) — et se relit avec le diff.
 
 ### 7. Régénérer et vérifier
 
@@ -159,8 +187,9 @@ python3 scripts/verifier_coffre.py
 ## Contraintes
 
 Les zones d'écriture directe et celles qui passent par patch sont définies au
-§2 de `../system/VAULT-CONTRACT.md`. La distillation écrit dans `mémoire/`
-— zone directe, sauf le dossier d'un autre agent.
+§2 de `../system/VAULT-CONTRACT.md`. La distillation écrit dans le coffre
+parent (`0-SAVOIRS/`, `0-PERSONNELS/`) — zone directe, sauf le dossier d'un
+autre agent.
 
 ## En cours de route — tenir le carnet
 
@@ -173,19 +202,21 @@ seulement à la fin : un carnet écrit après coup ne sert pas à reprendre.
   principal=$(git worktree list --porcelain | sed -n '1s/^worktree //p')
   git worktree list --porcelain | sed -n 's/^worktree //p' \
     | while IFS= read -r arbre; do
-        grep -rl --include='*.md' -e '^statut: en cours' "$arbre/mémoire/projets"
+        grep -rl --include='*.md' -e '^statut: en cours' "$arbre/mémoire/projets" 2>/dev/null
       done | xargs -r -d '\n' grep -l '^agent: <nom-agent>'
-  grep -rl --include='*.md' -e '^statut: en cours' "$principal/../-PROJETS" \
-    | xargs -r -d '\n' grep -l '^agent: <nom-agent>'
+  for nom in 0-PROJETS -PROJETS; do
+    grep -rl --include='*.md' -e '^statut: en cours' "$principal/../$nom" 2>/dev/null \
+      | xargs -r -d '\n' grep -l '^agent: <nom-agent>'
+  done
   ```
 
-  Le coffre parent s'atteint depuis l'**arbre principal**, jamais depuis
-  `..` : un worktree vit ailleurs. Si `"$principal/../-PROJETS"` n'existe
-  pas, le dire — une recherche vide n'est pas « aucun carnet ».
-  Le carnet d'un chantier du coffre vit dans le **worktree** du chantier
-  (§2.1) : chercher dans l'arbre principal seul ne le trouve pas. Et un
-  worktree peut disparaître — un dossier temporaire vidé au redémarrage — :
-  **commiter le carnet à chaque étape**, c'est ce qui le fait survivre.
+  La mémoire vit dans le coffre parent, **hors** du dépôt produit (§6) :
+  on l'atteint depuis l'**arbre principal**, jamais depuis le `..` d'un worktree
+  — un worktree vit ailleurs. Le premier bloc ne sert qu'à la bascule : il lit
+  les carnets restés sous l'ancien `mémoire/projets/` du dépôt, y compris dans
+  les worktrees. Si `"$principal/../0-PROJETS"` n'existe pas, le dire — une
+  recherche vide n'est pas « aucun carnet ». Et **commiter le carnet à chaque
+  étape**, c'est ce qui le fait survivre à la fermeture d'une séance.
 
   Pour chacun, rapprocher le carnet de l'état réel — `git status`,
   `git worktree list`, existence des fichiers et worktrees cités. Dire à

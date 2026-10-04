@@ -20,6 +20,8 @@ Chacun de ces cas sort en 1 :
   · une tâche sans section d'instruction, ou au `quand` non quoté ;
   · un chemin cité ou un lien Markdown qui ne mène nulle part ;
   · un nom de note en double dans le dépôt ;
+  · un nom de premier niveau ambigu dans `0-MEMOIRES/` — un projet qui porterait
+    `préférences` ou le nom d'un agent, à côté de la mémoire des agents (§6) ;
   · un fichier généré périmé (§11 du contrat) ;
   · une déclaration sans `module`, ou visant un module inexistant (§13) ;
   · une annexe du contrat (`IA/system/contrat/*.md`, sauf `registre.md`) au
@@ -29,13 +31,21 @@ Chacun de ces cas sort en 1 :
   · un module au frontmatter invalide : `essentiel` non booléen, module non
     essentiel sans `question`, sonde au préfixe inconnu (§13.2) ;
   · un cycle de dépendances entre modules, qui boucle l'installeur ;
-  · un chemin cité vers une zone que la publication vide (§13.5).
+  · un chemin cité vers une zone que la publication vide (§13.5) ;
+  · après le 2026-12-31, un vestige de la bascule : l'ancien `mémoire/` ou
+    `IA/system/session-log/` du dépôt, ou un dossier `-…` à la racine du coffre
+    parent (§6, transition).
 
-Ce dernier mérite son mot. `mémoire/`, `brouillon/`, `.archive/` et
+Ce dernier mérite son mot. `brouillon/`, `.archive/` et
 `IA/system/session-log/` ne franchissent pas la frontière du public : un
 fichier de `IA/` qui les cite par leur chemin casserait l'export, loin de
 l'endroit où la faute a été écrite. Nommer la note suffit. Survivent seuls
-leurs `README.md` et le gabarit `mémoire/profil-utilisateur.md`.
+leurs `README.md`. La mémoire, elle, vit hors du dépôt (§7.1). `session-log/`
+— des notes de séance, donc de la mémoire — la rejoint à la bascule
+(`0-MEMOIRES/obsia/session-log/`, gelé). L'ancien `mémoire/` et lui restent
+contrôlés le temps de la bascule — avertissement jusqu'au 2026-12-31, puis
+erreur (voir §6, transition, et §11) — pour que rien n'y pourrisse avant la
+migration, et qu'elle se finisse.
 
 CE QUE LE PROFIL D'INSTALLATION CHANGE
 --------------------------------------
@@ -85,8 +95,9 @@ dit d'ouvrir un fichier.
 
 Deux dossiers en sont exemptés, et pour la même raison :
 
-  · `mémoire/` est un récit, où une note ancienne cite légitimement un état
-    révolu ;
+  · la mémoire du coffre parent (§7.1) — elle est **hors du dépôt**, ce script
+    ne la voit pas, et c'est un récit où une note ancienne cite légitimement un
+    état révolu ;
   · `IA/system/session-log/` l'est aussi, bien qu'il vive sous `IA/` : un log
     dit ce qui a été fait ce jour-là, aux chemins de ce jour-là.
 
@@ -96,12 +107,17 @@ reprise ici.
 Usage :
     python3 scripts/verifier_coffre.py
     python3 scripts/verifier_coffre.py --silencieux   # n'affiche que les erreurs
+    python3 scripts/verifier_coffre.py --coffre <chemin> [--carnets]
+        # contrôle la mémoire de ce coffre-là en mode strict ; `--carnets`
+        # se limite à elle. C'est ce que le pre-commit du dépôt de données
+        # du coffre déclenche (§7.1).
 """
 
 import os
 import re
 import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 
 sys.dont_write_bytecode = True
@@ -109,8 +125,21 @@ SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS))
 
 from generer_prompt import RACINE_DEFAUT, fichiers_declaratifs, lire_frontmatter
+import modules as MOD
 
 RACINE = RACINE_DEFAUT
+
+#: Racine du coffre parent — là où vit la mémoire (§7.1). Le dépôt produit n'y
+#: touche pas : ce n'est plus son coffre, et un dépôt produit n'a pas à échouer
+#: parce qu'un carnet du coffre est mal formé (M5). `--coffre` la déplace pour
+#: un contrôle explicite, ou depuis le pre-commit du dépôt de données.
+COFFRE = RACINE.parent
+
+#: Les constats qui portent sur la **mémoire du coffre** ne sont des erreurs que
+#: lorsqu'on vérifie le coffre lui-même. Depuis le dépôt produit, ils
+#: avertissent : le produit n'est pas responsable de la mémoire, et un commit du
+#: produit ne doit pas être refusé pour elle (§7.1).
+MEMOIRE_STRICTE = False
 
 CHAMPS_COMMUNS = ("schema", "kind", "name", "description", "read_only")
 CHAMPS_CONTRAT = ("schema", "kind", "name", "description")   # ni read_only, ni type
@@ -160,6 +189,98 @@ def erreur(chemin, message):
 
 def avertir(chemin, message):
     avertissements.append("%s : %s" % (chemin, message))
+
+
+def signaler_memoire(chemin, message):
+    """Signale un constat de mémoire : erreur dans le coffre, avertissement ici.
+
+    La même faute — un carnet mal nommé, un `archives/` qui traîne — n'a pas le
+    même poids selon qui regarde. Dans le coffre c'est une erreur, parce que la
+    mémoire est le sujet ; depuis le dépôt produit c'est un avertissement, parce
+    qu'un commit du produit n'a pas à porter la mémoire des autres (§7.1).
+    """
+    if MEMOIRE_STRICTE:
+        erreur(chemin, message)
+    else:
+        avertir(chemin, "(mémoire du coffre) " + message)
+
+
+#: Tolérance de bascule (§11) : le chantier dont la clôture les retire, et la
+#: date écrite au plus tard de laquelle elles doivent avoir disparu. Tant qu'il
+#: dure, la mémoire vit sous deux formes à la fois et le contrôle doit rester
+#: utilisable — ses tolérances avertissent, même sur le coffre lui-même, et le
+#: message porte la date : c'est elle qui force la clôture si elle traîne.
+BASCULE = "souverainete-des-donnees"
+BASCULE_FIN = "2026-12-31"
+
+
+def signaler_bascule(chemin, message):
+    """Une tolérance de bascule (§11) : toujours un avertissement, jamais une erreur.
+
+    Le chantier est nommé et la date de fin écrite : à sa clôture — au plus tard
+    le jour dit — la tolérance tombe avec l'ancienne forme qu'elle excusait.
+    """
+    avertir(chemin, "%s (tolérance de bascule — chantier « %s », à retirer au plus "
+                    "tard le %s, §11)" % (message, BASCULE, BASCULE_FIN))
+
+
+def bascule_echue(aujourdhui=None) -> bool:
+    """La tolérance de bascule est-elle échue (§6, transition) ?
+
+    `aujourdhui` n'existe que pour le test : il permet de se placer après la
+    date sans attendre le jour dit.
+    """
+    if aujourdhui is None:
+        aujourdhui = date.today()
+    return aujourdhui > date.fromisoformat(BASCULE_FIN)
+
+
+def est_un_coffre_parent() -> bool:
+    """`COFFRE` est-il un coffre parent, ou le dossier qui contient un clone ?
+
+    Sans marqueur, ce n'est pas un coffre : rien à lui demander, et faire
+    échouer la CI au motif qu'un dossier `-…` traîne chez un inconnu serait
+    abusif. Les marqueurs de `modules.MARQUEURS_COFFRE` incluent les anciens
+    noms `-…` : un coffre qui n'a pas fini de migrer reste reconnu.
+    """
+    return COFFRE.is_dir() and any(
+        (COFFRE / marqueur).exists() for marqueur in MOD.MARQUEURS_COFFRE)
+
+
+def emplacements_anciens():
+    """Ce qui devait avoir disparu à la fin de la bascule (§6, transition).
+
+    Dans le dépôt produit : l'ancien `mémoire/`, et `IA/system/session-log/` —
+    des notes de séance, donc de la mémoire, qui rejoignent `0-MEMOIRES/obsia/
+    session-log/` (gelé) en même temps que lui. Dans le coffre parent : tout
+    dossier de premier niveau resté à la forme `-…`. Ne rend que ce qui existe.
+    """
+    anciens = []
+    for ancien in (RACINE / "mémoire", RACINE / "IA" / "system" / "session-log"):
+        if ancien.is_dir():
+            anciens.append(ancien)
+    if est_un_coffre_parent():
+        anciens += [entree for entree in sorted(COFFRE.iterdir())
+                    if entree.is_dir() and entree.name.startswith("-")]
+    return anciens
+
+
+def verifier_bascule(aujourdhui=None):
+    """§6 (transition) : passé le jour dit, l'ancienne forme devient une erreur.
+
+    Tant que la bascule dure, `signaler_bascule` avertit sans interrompre — la
+    mémoire vit sous deux formes à la fois, et exiger l'ancienne disparue
+    empêcherait de finir la migration. Une tolérance qu'on ne paie pas ne se
+    retire pas : au-delà de `BASCULE_FIN`, ce qui reste de l'ancienne forme fait
+    échouer le contrôle, et le message dit ce qu'il reste à achever.
+    """
+    if not bascule_echue(aujourdhui):
+        return
+    for ancien in emplacements_anciens():
+        erreur(designation(ancien),
+               "bascule non achevée : `%s` devait avoir disparu au plus tard le "
+               "%s (§6, transition — chantier « %s »)"
+               % (ancien.name, BASCULE_FIN, BASCULE))
 
 
 # ------------------------------------------------------------------ frontmatter
@@ -541,8 +662,12 @@ def verifier_agents_nommes(agents):
 
 
 # Un chemin cité entre accents graves, ou une cible de lien Markdown.
+# La mémoire est sortie du dépôt (§7.1) : elle ne s'y cite plus — sauf l'ancien
+# `mémoire/`, resté le temps de la bascule, dont les chemins cités restent donc
+# contrôlés. Cette ligne disparaît avec le dossier, à la fin de la migration du
+# chantier `souverainete-des-donnees`.
 CHEMIN_CITE = re.compile(
-    r"`((?:IA|scripts|mémoire|brouillon)/[^`\s]+\.(?:md|py|json|yml|sh))`")
+    r"`((?:IA|scripts|brouillon|mémoire)/[^`\s]+\.(?:md|py|json|yml|sh))`")
 # Un chemin relatif cité — `../system/VAULT-CONTRACT.md`. C'est la forme
 # employée partout dans le coffre, et celle qui casse quand un skill passe de
 # la forme plate à la forme dossier (§6) : elle se résout depuis le fichier
@@ -557,9 +682,9 @@ LIEN_MD = re.compile(r"\]\(([^)]+)\)")
 GABARIT = re.compile(r"[<>*…{]|AAAA|MM-JJ")          # chemins d'exemple, pas des cibles
 
 # Dossiers du coffre parent (§7.1) : hors du dépôt, donc invisibles d'ici.
-# Un chemin qui les vise n'est pas cassé, il désigne autre chose.
-COFFRE_PARENT = ("-SAVOIRS", "-PROJETS", "-DOCUMENTS", "-PERSONNELS",
-                 "-EN-VRAC", "_MAINTENANCE", "Mon coffre")
+# Un chemin qui les vise n'est pas cassé, il désigne autre chose. Source unique :
+# `modules.MARQUEURS_COFFRE`, partagée avec `publier.py`.
+COFFRE_PARENT = MOD.MARQUEURS_COFFRE
 
 
 def vise_le_coffre_parent(chemin: str) -> bool:
@@ -576,8 +701,9 @@ def verifier_chemins_cites():
     tâche demandait d'ouvrir au déclenchement. Rien ne le signalait.
 
     Le contrôle s'arrête à `IA/` et aux documents de la racine : là, un chemin
-    faux **agit**. `mémoire/` est un récit, où une note ancienne cite
-    légitimement un état révolu ou reproduit un extrait d'index.
+    faux **agit**. La mémoire est hors du dépôt (§7.1) : ses chemins n'y sont
+    plus cités, et un récit y cite de toute façon légitimement un état révolu
+    ou reproduit un extrait d'index.
 
     `IA/system/session-log/` est écarté pour la même raison, bien qu'il vive
     sous `IA/` : un log dit ce qui a été fait ce jour-là, aux chemins de ce
@@ -645,11 +771,11 @@ def verifier_chemins_cites():
 
 #: Ce que `publier.py` vide au passage vers le public (§13.5). Un fichier
 #: publié qui cite un chemin d'ici mènerait nulle part dans la distribution.
-ZONES_PRIVEES = ("mémoire", "brouillon", ".archive", "IA/system/session-log")
-
-#: Ce qui survit quand même : les README, qui disent à quoi la zone sert, et le
-#: gabarit de profil que l'installeur et le publieur réécrivent tous deux.
-SURVIT_A_LA_PUBLICATION = ("mémoire/profil-utilisateur.md",)
+#: La mémoire est sortie du dépôt (§7.1) : elle n'est plus citée — sauf l'ancien
+#: `mémoire/`, resté le temps de la bascule, qui reste donc dans la liste des
+#: zones qu'un fichier publié ne cite pas. Ces deux lignes disparaissent avec le
+#: dossier, à la fin de la migration du chantier `souverainete-des-donnees`.
+ZONES_PRIVEES = ("brouillon", ".archive", "IA/system/session-log", "mémoire")
 
 
 def dans_zone_privee(chemin: str) -> bool:
@@ -660,8 +786,8 @@ def dans_zone_privee(chemin: str) -> bool:
 def verifier_citations_de_memoire():
     """§13.5 : un fichier publié ne cite pas un chemin qui ne sera pas publié.
 
-    `publier.py` vide `mémoire/`, `brouillon/`, `.archive/` et
-    `IA/system/session-log/`. Un chemin qui les vise depuis `IA/` ou depuis la
+    `publier.py` vide `brouillon/`, `.archive/` et `IA/system/session-log/` au
+    passage vers le public. Un chemin qui les vise depuis `IA/` ou depuis la
     racine mène donc nulle part dans la distribution — et l'export échoue, loin
     de l'endroit où la faute a été écrite. Autant la voir ici.
 
@@ -686,7 +812,7 @@ def verifier_citations_de_memoire():
                 continue
             if not dans_zone_privee(cite):
                 continue
-            if cite.endswith("/README.md") or cite in SURVIT_A_LA_PUBLICATION:
+            if cite.endswith("/README.md"):
                 continue
             erreur(rel, "cite le chemin `%s`, qui ne sera pas publié : cette "
                         "zone est vidée à la publication. Nommer la note "
@@ -719,49 +845,90 @@ def verifier_unicite_des_noms():
 DATE_CARNET = re.compile(r"^\d{4}-\d{2}-\d{2}-")
 NOTE_DATEE_A_PLAT = re.compile(r"^\d{4}-\d{2}-\d{2}-.*\.md$")
 STATUTS_CARNET = ("en cours", "en attente", "clos")
-RESERVES_PROJET = ("carnets", "documents", "archives")
+RESERVES_PROJET = ("carnets", "documents", "code")
+
+
+def designation(chemin: Path) -> Path:
+    """Chemin affiché : relatif au dépôt produit s'il y est, relatif au coffre
+    parent sinon — la mémoire vit là (§7.1), et un rapport doit rester lisible."""
+    bases = []
+    for base in (RACINE, COFFRE, RACINE.parent):
+        if base not in bases:
+            bases.append(base)
+    for base in bases:
+        try:
+            return chemin.relative_to(base)
+        except ValueError:
+            continue
+    return chemin
+
+
+def emplacements_de_projets():
+    """Les dossiers de projets à contrôler, dans l'ordre : le coffre parent
+    (`0-PROJETS/`, et son ancien nom `-PROJETS/`), puis l'ancien
+    `mémoire/projets` du dépôt tant que la bascule dure (§6, transition).
+
+    Ne rend que ce qui existe : un clone de la CI n'a pas de coffre parent."""
+    candidats = [COFFRE / "0-PROJETS", COFFRE / "-PROJETS",
+                 RACINE / "mémoire" / "projets"]
+    return [c for c in candidats if c.is_dir()]
 
 def verifier_carnets():
-    """§6 : forme des carnets, un seul niveau de sous-projet, transition.
+    """§6 : forme des carnets, un seul niveau de chantier, transition.
 
-    - un carnet est `mémoire/projets/<projet>/carnets/AAAA-MM-JJ-<projet>-<sujet>.md`,
+    - un carnet est `0-PROJETS/<projet>/carnets/AAAA-MM-JJ-<projet>-<sujet>.md`,
       avec `agent:`, `projet:` et `statut:` — trois chaînes non vides, le
       `projet:` égal au nom du dossier, et un `statut:` dans
       `en cours | en attente | clos` ;
-    - un sous-projet a droit à un seul niveau, même structure, sans vision ;
-    - un sous-dossier dans `carnets/` est refusé : un carnet est un fichier ;
-    - `-PROJETS/` n'est pas contrôlé : le code des projets vit hors de ce dépôt
-      (un dépôt git à lui, exclu d'Obsidian) ;
-    - tant que la migration n'est pas finie (§6, transition), une note datée à
-      plat dans le dossier du projet reste tolérée : avertissement, pas erreur.
+    - un chantier est un dossier de plus, avec **ses** `carnets/`, `documents/`
+      et son résumé ; ses carnets portent son nom dans `projet:` — jamais de
+      vision, jamais de chantier dans un chantier ;
+    - les carnets du jour hors chantier restent dans `0-PROJETS/<projet>/carnets/`,
+      et s'y nomment du nom du projet ;
+    - un sous-dossier dans un `carnets/` est refusé : un carnet est un fichier ;
+    - la mémoire vit dans le coffre parent (§7.1) : on la contrôle là où elle
+      est — `0-PROJETS/` du coffre parent, son ancien nom `-PROJETS/`, et
+      l'ancien `mémoire/projets` du dépôt tant que la bascule dure. Un clone de
+      la CI n'a aucun de ces dossiers : il n'y a alors rien à contrôler ;
+    - tant que la bascule dure (§11), une note datée à plat et un dossier
+      `archives/` (au niveau du projet comme sous `carnets/`) restent tolérés :
+      avertissement, jamais erreur — même sur le coffre lui-même, sans quoi la
+      migration serait impossible à finir.
     """
-    projets = RACINE / "mémoire" / "projets"
-    if not projets.is_dir():
-        return
-    for projet in sorted(projets.iterdir()):
-        if not projet.is_dir() or projet.name.startswith("."):
-            continue
-        parcourir_projet(projet, projet.name, 0)
+    for projets in emplacements_de_projets():
+        for projet in sorted(projets.iterdir()):
+            if not projet.is_dir() or projet.name.startswith("."):
+                continue
+            parcourir_projet(projet, projet.name, 0)
 
 def parcourir_projet(dossier: Path, projet: str, niveau: int):
-    """`niveau` 0 pour un projet, 1 pour son sous-projet ; au-delà, refus (§6)."""
+    """`niveau` 0 pour un projet, 1 pour un de ses chantiers ; au-delà, refus (§6).
+
+    Au niveau 0, `carnets/` porte les carnets du jour écrits hors chantier. Au
+    niveau 1, le dossier est un **chantier** : il a ses propres `carnets/`, ses
+    `documents/`, son résumé, et rien de plus — pas de vision, et pas un
+    chantier dans un chantier.
+    """
     for entree in sorted(dossier.iterdir()):
         if entree.name in ("sommaire.md", "README.md"):
             continue
         if entree.is_file():
             if NOTE_DATEE_A_PLAT.match(entree.name):
-                avertir(entree.relative_to(RACINE),
+                signaler_bascule(designation(entree),
                         "ancienne forme : note datée à plat, à migrer vers "
-                        "`carnets/` (§6, transition)")
+                        "`carnets/` (§6)")
             continue
         if entree.name == "carnets":
             verifier_carnets_dun_projet(entree, projet)
+        elif entree.name == "archives":
+            signaler_bascule(designation(entree),
+                    "`archives/` n'existe plus : un chantier clos part, dossier "
+                    "entier, dans `0-MEMOIRES/` (§6)")
         elif entree.name in RESERVES_PROJET:
             continue
         elif niveau >= 1:
-            erreur(entree.relative_to(RACINE),
-                   "sous-projet imbriqué — un seul niveau de sous-projet est "
-                   "admis (§6)")
+            erreur(designation(entree),
+                   "chantier imbriqué — un chantier ne contient pas de chantier (§6)")
         else:
             parcourir_projet(entree, entree.name, 1)
 
@@ -770,35 +937,161 @@ def verifier_carnets_dun_projet(dossier: Path, projet: str):
         if carnet.name in ("sommaire.md", "README.md"):
             continue
         if carnet.is_dir():
-            erreur(carnet.relative_to(RACINE),
-                   "sous-dossier dans `carnets/` — un carnet est un fichier (§6)")
+            if carnet.name == "archives":
+                signaler_bascule(designation(carnet),
+                        "`carnets/archives/` n'existe plus : un chantier clos "
+                        "part dans `0-MEMOIRES/` (§6)")
+            else:
+                erreur(designation(carnet),
+                       "sous-dossier dans `carnets/` — un carnet est un fichier (§6)")
             continue
         if carnet.is_file() and carnet.name.endswith(".md"):
             verifier_carnet(carnet, projet)
 
 def verifier_carnet(chemin: Path, projet: str):
-    rel = chemin.relative_to(RACINE)
+    rel = designation(chemin)
     if not DATE_CARNET.match(chemin.name):
-        erreur(rel, "carnet mal nommé — attendu `AAAA-MM-JJ-<projet>-<sujet>.md` (§6)")
+        signaler_memoire(rel, "carnet mal nommé — attendu "
+                              "`AAAA-MM-JJ-<projet>-<sujet>.md` (§6)")
     elif not chemin.name.startswith(chemin.name[:11] + projet + "-"):
-        erreur(rel, "carnet mal nommé : `<projet>` ne correspond pas au dossier "
-                    "`%s` (§6)" % projet)
+        signaler_memoire(rel, "carnet mal nommé : `<projet>` ne correspond pas au "
+                              "dossier `%s` (§6)" % projet)
     fm = lire_frontmatter(chemin)
     if fm is None:
-        erreur(rel, "carnet sans frontmatter fermé (§6)")
+        signaler_memoire(rel, "carnet sans frontmatter fermé (§6)")
         return
     for champ in ("agent", "projet", "statut"):
         valeur = fm.get(champ)
         if not isinstance(valeur, str) or not valeur.strip():
-            erreur(rel, "carnet `%s:` vide ou absent (§6)" % champ)
+            signaler_memoire(rel, "carnet `%s:` vide ou absent (§6)" % champ)
     statut = fm.get("statut")
     if isinstance(statut, str) and statut.strip() and statut not in STATUTS_CARNET:
-        erreur(rel, "carnet `statut: %s` — attendu `en cours`, `en attente` ou "
-                    "`clos` (§6)" % statut)
+        signaler_memoire(rel, "carnet `statut: %s` — attendu `en cours`, "
+                              "`en attente` ou `clos` (§6)" % statut)
     projet_fm = fm.get("projet")
     if isinstance(projet_fm, str) and projet_fm.strip() and projet_fm != projet:
-        erreur(rel, "carnet `projet: %s` ne correspond pas au dossier `%s` (§6)"
-               % (projet_fm, projet))
+        signaler_memoire(rel, "carnet `projet: %s` ne correspond pas au dossier "
+                              "`%s` (§6)" % (projet_fm, projet))
+
+
+# --------------------------------------------------------- dépôt de données
+
+def _git_dans(chemin: Path, *arguments: str) -> subprocess.CompletedProcess:
+    return subprocess.run(["git", "-C", str(chemin), *arguments],
+                          capture_output=True, text=True)
+
+
+# ------------------------------------------------------- noms de 0-MEMOIRES
+
+MEMOIRES = "0-MEMOIRES"
+PREFERENCES = "préférences"
+LECONS = "expériences"
+
+
+def noms_d_agents_declares() -> set:
+    """Le nom de chaque agent déclaré : sous `0-MEMOIRES/`, il est réservé (§6)."""
+    dossier = RACINE / "IA" / "agents"
+    if not dossier.is_dir():
+        return set()
+    return {chemin.stem for chemin in fichiers_declaratifs(dossier)}
+
+
+def verifier_noms_de_memoire():
+    """§6 : dans `0-MEMOIRES/`, deux mémoires ne se confondent pas.
+
+    Le dossier porte la mémoire des agents — `préférences/`, vivante, et
+    `<nom-agent>/expériences/`, vivante aussi — **et** les chantiers clos, gelés.
+    Un projet qui s'appellerait `préférences` ou porterait le nom d'un agent
+    rendrait les deux indistinguables : c'est une erreur de nommage, pas un
+    détail de rangement.
+
+    Faute de lire une intention, la règle se contrôle par la **forme** :
+    `préférences/` ne contient que des notes, la mémoire d'un agent n'a qu'un
+    `expériences/` de notes, et tout autre dossier est un projet gelé — donc il
+    porte au moins un chantier. Le contrôle ne tourne que sur le coffre parent
+    (§7.1) : un clone de la CI n'a pas de `0-MEMOIRES/`.
+    """
+    racine_memoires = COFFRE / MEMOIRES
+    if not racine_memoires.is_dir():
+        return
+    reserves = {PREFERENCES} | noms_d_agents_declares()
+    for entree in sorted(racine_memoires.iterdir()):
+        if entree.name.startswith("."):
+            continue
+        if not entree.is_dir():
+            if entree.name not in ("README.md", "sommaire.md"):
+                signaler_memoire(entree, "`%s/` n'accueille que des dossiers : "
+                                         "`%s/`, la mémoire d'un agent, ou un projet gelé (§6)"
+                                 % (MEMOIRES, PREFERENCES))
+            continue
+        if entree.name == PREFERENCES:
+            for intrus in sorted(entree.iterdir()):
+                if intrus.is_dir():
+                    signaler_memoire(intrus, "`%s/%s/` est la mémoire des agents : elle ne contient "
+                                             "que des notes `<sujet>.md`. Un projet ne peut pas porter "
+                                             "ce nom (§6)" % (MEMOIRES, PREFERENCES))
+            continue
+        if entree.name in reserves:
+            lecons = entree / LECONS
+            if not lecons.is_dir():
+                signaler_memoire(entree, "`%s/%s/` est l'espace mémoire de cet agent : il ne contient "
+                                         "que `%s/`. Un projet ne peut pas porter le nom d'un agent (§6)"
+                                 % (MEMOIRES, entree.name, LECONS))
+            elif [e for e in sorted(lecons.iterdir()) if e.is_dir()]:
+                signaler_memoire(lecons, "`%s/` ne contient que des notes `<sujet>.md` (§6)"
+                                 % LECONS)
+            continue
+        if not [e for e in sorted(entree.iterdir())
+                if e.is_dir() and not e.name.startswith(".")]:
+            signaler_memoire(entree, "projet gelé sans chantier : sous `%s/`, un projet est "
+                                     "`<projet>/<chantier>/` (§6)" % MEMOIRES)
+
+
+# --------------------------------------------------------- dépôt de données
+
+def verifier_depot_de_donnees():
+    """§7.1 : la liste blanche du coffre est le gabarit, et `OBSIA/` n'y est pas suivi.
+
+    Le `.gitignore` du coffre parent n'est pas écrit à la main : c'est le gabarit
+    `IA/system/depot-de-donnees/gitignore-coffre`, posé par l'installeur et jamais
+    écrasé. Un écart veut dire que quelqu'un a retouché la liste blanche sur la
+    machine — la prochaine installation ne le verra pas, et `OBSIA/` peut se
+    retrouver versionné dans la mémoire sans que personne ne s'en aperçoive.
+
+    Ne s'exécute que sur un coffre parent désigné (`--coffre`) : un clone de la
+    CI n'en a pas.
+    """
+    gabarit = RACINE / "IA" / "system" / "depot-de-donnees" / "gitignore-coffre"
+    if not gabarit.is_file():
+        erreur(designation(gabarit),
+               "gabarit de la liste blanche du coffre absent (§7.1)")
+        return
+    gitignore = COFFRE / ".gitignore"
+    if not gitignore.is_file():
+        signaler_memoire(Path(".gitignore"),
+                         "le coffre parent n'a pas de liste blanche : le dépôt de "
+                         "données n'est pas initialisé — l'installeur la pose (§7.1)")
+        return
+    try:
+        ecrit = gitignore.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        signaler_memoire(Path(".gitignore"), "liste blanche illisible (§7.1)")
+        return
+    if ecrit != gabarit.read_text(encoding="utf-8"):
+        signaler_memoire(Path(".gitignore"),
+                         "diffère du gabarit `IA/system/depot-de-donnees/gitignore-coffre` "
+                         "— la liste blanche est le gabarit, sans retouche (§7.1)")
+    if _git_dans(COFFRE, "rev-parse", "--git-dir").returncode != 0:
+        return
+    suivis = [ligne for ligne in
+              _git_dans(COFFRE, "ls-files", "--", RACINE.name).stdout.splitlines()
+              if ligne.strip()]
+    if suivis:
+        signaler_memoire(Path(suivis[0]),
+                         "le dépôt produit est suivi par le dépôt de données du "
+                         "coffre — `%s/` n'entre jamais dans la mémoire (§7.1)"
+                         % RACINE.name)
+
 
 PREFIXES_SONDE = ("commande", "fichier", "distribution", "parent")
 
@@ -1046,8 +1339,76 @@ def verifier_derives():
 
 # ----------------------------------------------------------------------- main
 
-def main() -> int:
-    silencieux = "--silencieux" in sys.argv
+AIDE = """\
+verifier_coffre.py [--coffre <chemin>] [--carnets] [--silencieux]
+
+Sans argument, contrôle le dépôt produit (index, agents, skills, modules,
+citations) et, s'il existe, la mémoire du coffre parent — signalée sans
+interrompre. Avec `--coffre <chemin>`, la mémoire de ce coffre-là est contrôlée
+en mode strict (ses écarts deviennent des erreurs) ; `--carnets` se limite à
+elle. C'est ce que le pre-commit du dépôt de données déclenche (§7.1).
+"""
+
+
+def analyser_arguments(argv: list[str]) -> dict:
+    """`--coffre <chemin>`, `--carnets`, `--silencieux` — tout le reste est refusé."""
+    options = {"coffre": None, "carnets": False, "silencieux": False}
+    reste = []
+    index = 0
+    while index < len(argv):
+        argument = argv[index]
+        if argument == "--coffre":
+            if index + 1 >= len(argv):
+                raise ValueError("`--coffre` attend un chemin")
+            options["coffre"] = argv[index + 1]
+            index += 2
+            continue
+        if argument == "--carnets":
+            options["carnets"] = True
+        elif argument == "--silencieux":
+            options["silencieux"] = True
+        else:
+            reste.append(argument)
+        index += 1
+    if reste:
+        raise ValueError("argument inconnu : %s" % " ".join(reste))
+    return options
+
+
+def main(argv=None) -> int:
+    global COFFRE, MEMOIRE_STRICTE
+    argv = list(sys.argv[1:] if argv is None else argv)
+    try:
+        options = analyser_arguments(argv)
+    except ValueError as echec:
+        print("verifier_coffre.py : %s\n\n%s" % (echec, AIDE), file=sys.stderr)
+        return 2
+
+    silencieux = options["silencieux"]
+    if options["coffre"]:
+        COFFRE = Path(options["coffre"]).resolve()
+        MEMOIRE_STRICTE = True
+
+    if options["carnets"]:
+        verifier_carnets()
+        verifier_noms_de_memoire()
+        verifier_depot_de_donnees()
+        verifier_bascule()
+        if avertissements and not silencieux:
+            print("Avertissements (%d) :" % len(avertissements))
+            for a in avertissements:
+                print("  · %s" % a)
+        if erreurs:
+            print("\nMémoire du coffre incohérente — %d erreur(s) :" % len(erreurs),
+                  file=sys.stderr)
+            for e in erreurs:
+                print("  ✗ %s" % e, file=sys.stderr)
+            print("\nLes numéros de § renvoient à IA/system/VAULT-CONTRACT.md.",
+                  file=sys.stderr)
+            return 1
+        if not silencieux:
+            print("Mémoire du coffre cohérente.")
+        return 0
 
     dossier_agents = RACINE / "IA" / "agents"
     dossier_skills = RACINE / "IA" / "skills"
@@ -1079,6 +1440,10 @@ def main() -> int:
     verifier_citations_de_memoire()
     verifier_unicite_des_noms()
     verifier_carnets()
+    verifier_noms_de_memoire()
+    verifier_bascule()
+    if options["coffre"]:
+        verifier_depot_de_donnees()
     verifier_derives()
 
     if avertissements and not silencieux:

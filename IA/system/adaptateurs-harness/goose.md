@@ -175,15 +175,15 @@ s'arrête au répertoire de travail : c'est exactement là que
 racine du coffre, goose l'a.
 
 **Bonne nouvelle, et c'est l'inverse d'OpenCode** : goose **résout** la syntaxe
-`@`. Un `@-SAVOIRS/README.md` dans un fichier de contexte fait insérer le
+`@`. Un `@0-SAVOIRS/README.md` dans un fichier de contexte fait insérer le
 fichier dans le contexte immédiat. Le `@` de `CLAUDE.md` fonctionne donc ici tel
 quel — au point qu'on peut y renvoyer plutôt que de recopier.
 
 ## 6. Vérifier
 
 Les trois vérifications communes de `commun.md` d'abord : lister la racine du
-coffre, lire une note de `Mon coffre/-SAVOIRS/`, retrouver le registre des tags.
-⚠️ écrire `./-SAVOIRS`, jamais `-SAVOIRS` nu.
+coffre, lire une note de `Mon coffre/0-SAVOIRS/`, retrouver le registre des tags.
+⚠️ écrire `./0-SAVOIRS`, jamais `0-SAVOIRS` nu.
 
 Puis trois gestes propres à cette fiche :
 

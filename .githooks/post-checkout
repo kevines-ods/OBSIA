@@ -1,7 +1,8 @@
 #!/bin/sh
-# Régénère les sommaires de mémoire/, qui ne sont plus versionnés
-# (VAULT-CONTRACT.md §11). Silencieux, et jamais bloquant : un sommaire absent
-# ou périmé gêne la lecture, il ne casse rien.
+# Régénère les sommaires de la mémoire du coffre parent (§11), qui ne sont pas
+# versionnés dans ce dépôt. Silencieux, et jamais bloquant : un sommaire absent
+# ou périmé gêne la lecture, il ne casse rien. Sans coffre parent (clone nu,
+# CI), le script n'a rien à résumer et sort sans bruit.
 racine=$(git rev-parse --show-toplevel) || exit 0
 [ -f "$racine/scripts/regenerate_sommaire.py" ] || exit 0
 command -v python3 >/dev/null 2>&1 || exit 0
