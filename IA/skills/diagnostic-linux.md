@@ -161,7 +161,7 @@ Si une sortie de commande contient ce genre d'information, la remplacer par un
 marqueur dans le compte rendu — le coffre est versionné sur GitHub.
 
 L'inventaire des machines vit **hors dépôt**, dans le coffre parent
-(`Mon coffre/-PERSONNELS/`). Ce skill le lit, ne le recopie jamais dans
+(`Mon coffre/0-PERSONNELS/`). Ce skill le lit, ne le recopie jamais dans
 `OBSIA/`.
 
 ## Format du compte rendu

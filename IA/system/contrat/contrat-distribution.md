@@ -116,11 +116,12 @@ réellement, un agent qui les déclarerait ferait échouer le vérificateur de l
 cible. Une tâche visant un agent absent est retirée pour la même raison.
 
 Trois règles protègent le travail de qui installe, et tiennent dans les deux
-modes : l'installation **ne vide jamais** `mémoire/`, `brouillon/` ni
-`IA/system/session-log/` de la cible ; elle **n'écrase jamais** un
-`AGENTS.md` qui ne porte pas son marqueur « généré » ; elle **ne suit aucun
-lien symbolique** de la cible. `--installer` ne touche jamais à la source, et
-`--tout` veut dire catalogue complet dans les deux modes.
+modes : l'installation **ne vide jamais** la mémoire du coffre parent
+(`0-PERSONNELS/`, `0-MEMOIRES/`), `brouillon/` ni `IA/system/session-log/` de la
+cible ; elle **n'écrase jamais** un `AGENTS.md` qui ne porte pas son marqueur
+« généré » ; elle **ne suit aucun lien symbolique** de la cible. `--installer` ne
+touche jamais à la source, et `--tout` veut dire catalogue complet dans les deux
+modes.
 
 Le détail — `AGENTS.md`, dossiers de l'instance, liens, `--tout` — vit dans
 `IA/system/installation-et-publication.md`, **à lire avant de lancer
@@ -132,19 +133,29 @@ Revenir au catalogue complet : `python3 scripts/installer.py --tout --appliquer`
 
 ### 13.5 Public et privé
 
-Le dépôt de travail est **privé** : il porte la mémoire, les carnets, les anciens logs de session et
-le profil de son propriétaire. Le dépôt **public** est la distribution : le même
-coffre, moins ce qui décrit une personne ou une machine.
+Le dépôt de travail est **privé** : il porte l'outil, ses logs de session et son
+`brouillon/`. Le dépôt **public** est la distribution : le même outil, moins ce
+qui décrit une personne ou une machine. La mémoire, elle, n'est ni dans l'un ni
+dans l'autre : elle a son propre dépôt, à la racine du coffre parent (§7.1).
+
+**Les deux dépôts sont gardés, et aucun ne remplace l'autre.** Le privé n'est pas
+un brouillon qu'on jetterait après publication, et le public n'est pas « le »
+dépôt dont tout naîtrait : c'est le privé, l'atelier, où une fonctionnalité
+s'essaie d'abord. Une fois la mémoire sortie de l'outil, les deux ne diffèrent
+plus que par **ce qu'on est en train d'essayer** — jamais par des données : la
+mémoire n'étant ni dans l'un ni dans l'autre, aucun contenu personnel ne peut se
+trouver d'un côté seulement.
 
 **Le privé fait foi.** Il n'y a pas deux sources de vérité : `scripts/publier.py`
 dérive la seconde de la première, et refuse de publier ce qu'il ne sait pas
 relire. Il exporte l'arbre suivi par Git à `HEAD` — jamais le répertoire de
-travail, parce que ce qui n'est pas suivi n'a pas été relu —, vide `mémoire/`,
+travail, parce que ce qui n'est pas suivi n'a pas été relu —, vide
 `IA/system/session-log/`, `brouillon/` et `.archive/` de tout sauf leurs
-`README.md`, régénère, vérifie, passe un contrôle de fuite sur l'export final, et
-n'écrit dans la cible qu'avec `--appliquer`. Il ne pousse jamais.
+`README.md` (et, tant qu'il est là, l'ancien `mémoire/`), régénère, vérifie,
+passe un contrôle de fuite sur l'export final, et n'écrit dans la cible qu'avec
+`--appliquer`. Il ne pousse jamais.
 
-**`synchroniser` refuse cinq cibles** avant d'exporter quoi que ce soit —
+**`synchroniser` refuse quatre cibles** avant d'exporter quoi que ce soit —
 jamais la source ni ce qui la contient, jamais un coffre vivant, jamais un
 clone du privé, jamais une cible qui n'est ni vierge ni un miroir d'OBSIA. Le
 détail des refus vit dans `IA/system/installation-et-publication.md`, **à lire
@@ -174,15 +185,15 @@ public, lui, part propre par construction : `publier.py` écrit l'arbre exporté
 dans un clone neuf, sans y verser l'historique du privé.
 
 **Un fichier publié ne cite pas un chemin qui ne sera pas publié.** Les zones
-vidées — `mémoire/`, `brouillon/`, `.archive/`, `IA/system/session-log/` — ne
-se désignent pas par leur chemin depuis `IA/` ni depuis la racine : le lien
-mènerait nulle part dans la distribution, et l'export échouerait loin de
-l'endroit où la faute a été écrite. Ce n'est pas une interdiction d'y
-**renvoyer** : nommer la note suffit, et c'est déjà ce que le §7.5 demande pour
-les rétroliens — un lien par nom survit aux déplacements, un lien par chemin
-casse. Deux exceptions, parce qu'elles survivent : les `README.md` de ces
-zones, et `mémoire/profil-utilisateur.md`, que l'installeur et le publieur
-réécrivent tous deux en gabarit vide. `scripts/verifier_coffre.py` contrôle la
+vidées — `brouillon/`, `.archive/`, `IA/system/session-log/` (et, tant qu'il est
+là, l'ancien `mémoire/`) — ne se désignent pas par leur chemin depuis `IA/` ni
+depuis la racine : le lien mènerait nulle part dans la distribution, et l'export
+échouerait loin de l'endroit où la faute a été écrite. Ce n'est pas une
+interdiction d'y **renvoyer** : nommer la note suffit, et c'est déjà ce que le
+§7.5 demande pour les rétroliens — un lien par nom survit aux déplacements, un
+lien par chemin casse. Deux exceptions, parce qu'elles survivent : les
+`README.md` de ces zones, et `0-PERSONNELS/profil-utilisateur.md`, que
+l'installeur écrit en gabarit vide. `scripts/verifier_coffre.py` contrôle la
 règle dans le dépôt privé, où la faute s'écrit.
 
 Le contrôle de fuite vise des **valeurs**, jamais les mots qui les nomment :
@@ -205,3 +216,16 @@ Un agent qui reçoit cet avertissement le rapporte à l'utilisateur : il ne le
 tait pas. Liste absente = aucun nom contrôlé ; « aucune trouvaille » ne dit
 alors rien des noms nus. Les motifs exacts et leurs limites :
 `IA/system/installation-et-publication.md`.
+
+**Le titre et la description d'une pull request se contrôlent aussi.** Ils
+paraissent sur le dépôt public avant que `publier.py` n'ait vu un seul fichier de
+l'export, et le contrôle d'arbre ne les lit jamais : une pull request n'est pas
+dans l'arbre qu'il relit. La vérification continue les passe donc au même
+contrôle de fuite — `scripts/publier.py --controler-texte`, texte sur l'entrée
+standard —, avec les mêmes motifs et les mêmes refus qu'un fichier. GitHub les
+fournit par l'environnement, **jamais par la ligne de commande** : un texte de PR
+n'est pas écrit par la seule personne qui ouvre la PR, et le poser dans le script
+suffirait à y faire passer une commande. La liste locale des noms interdits peut
+être absente en CI (« aucune trouvaille » ne dit alors rien des noms nus, comme
+partout) ; les valeurs à forme reconnaissable, elles, sont refusées là comme
+ailleurs.

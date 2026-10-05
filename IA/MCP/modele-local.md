@@ -55,7 +55,7 @@ coffre.
   harness (`OBSIA_LOCAL_URL`, `OBSIA_LOCAL_MODEL`), jamais dans le dépôt : ce
   sont des valeurs de machine (§13.5).
 - Pointer uniquement vers un serveur sous le contrôle de l'utilisateur. Une
-  API tierce ferait sortir le contenu du coffre parent — `-PERSONNELS/`
+  API tierce ferait sortir le contenu du coffre parent — `0-PERSONNELS/`
   compris.
 - Aucune clé n'est prévue : un serveur local ne devrait pas en demander. S'il
   en exige une, elle passe par une variable d'environnement, jamais en clair.

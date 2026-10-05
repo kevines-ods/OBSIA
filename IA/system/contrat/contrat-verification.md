@@ -22,7 +22,7 @@ que rien ne le signale.
 
 | Fichier | Produit par | Source de vérité |
 | --- | --- | --- |
-| `mémoire/**/sommaire.md` | `scripts/regenerate_sommaire.py` — **non versionné** | le contenu des notes |
+| `0-*/**/sommaire.md` | `scripts/regenerate_sommaire.py` | le contenu des notes, dans le coffre parent |
 | `IA/system/agents-index.md` | `scripts/regenerate_index.py` | le frontmatter des agents |
 | `IA/system/skills-index.md` | `scripts/regenerate_index.py` | le frontmatter des skills |
 | `IA/system/taches-index.md` | `scripts/regenerate_index.py` | le frontmatter des tâches |
@@ -35,11 +35,12 @@ dépendent pas de la machine et ne se réduisent jamais au profil (§13). Le pro
 `AGENTS.md`. C'est ce qui rend le contrôle possible : la CI tourne **sans
 profil**, et compare donc toujours l'index au catalogue complet.
 
-Les sommaires de `mémoire/` ne sont **pas versionnés** : générés, ils étaient
-réécrits par presque chaque pull request touchant la mémoire, et mettaient en
-conflit deux travaux sans rapport menés en parallèle (§2.1). Ils se régénèrent
-localement — crochets `post-merge` et `post-checkout`, installeur, revue
-hebdomadaire — et le vérificateur ne les exige plus.
+Les sommaires **du coffre parent** ne sont pas du ressort de la CI du produit :
+un clone neuf de `OBSIA/` n'a pas de mémoire à côté, et
+`regenerate_sommaire.py` le supporte — sans dossier de mémoire, il le dit et
+sort proprement (§7.1). Ils se régénèrent là où vit la mémoire — crochets
+`post-merge` et `post-checkout`, installeur, revue hebdomadaire — et se
+versionnent avec elle, dans le dépôt de données.
 
 Corollaire : si un index et un frontmatter se contredisent, **le frontmatter a
 raison**. On corrige la source, puis on régénère — jamais l'inverse.
@@ -70,10 +71,10 @@ Trois règles, en revanche, appartiennent à ce contrat et pas au code :
   contrôle.
 - **Un contrôle qu'on croit plus large qu'il n'est vaut moins que pas de
   contrôle du tout.** Le contrôle des chemins couvre `IA/` et les documents de
-  la racine — là où un chemin faux *agit* ; `mémoire/` et
-  `IA/system/session-log/` en sont exemptés, parce qu'un récit cite
-  légitimement un état révolu, et le corriger après coup falsifierait le récit
-  pour faire taire le contrôle.
+  la racine — là où un chemin faux *agit* ; `IA/system/session-log/` en est
+  exempté, parce qu'un récit cite légitimement un état révolu, et le corriger
+  après coup falsifierait le récit pour faire taire le contrôle. Le coffre
+  parent est hors du dépôt : ses chemins ne sont pas contrôlés ici.
 
 Le vérificateur tourne en intégration continue à chaque poussée
 (`.github/workflows/verifier-coffre.yml`), et localement en crochet de
@@ -118,7 +119,10 @@ coffre ne doit dépendre d'aucune installation pour être vérifiable.
 
 ### §2 — pourquoi `.archive/` est versionné, et pourquoi l'arbre principal est commun
 
-`.archive/` est versionné : s'il était ignoré par Git, il ne survivrait pas à un clone neuf et la règle d'archivage ne promettrait rien.
+`.archive/` reste versionné : s'il était ignoré par Git, il ne survivrait pas à
+un clone neuf. Mais **ce n'est plus lui qui archive la mémoire** : elle vit dans
+le dépôt de données du coffre (§7.1), dont l'historique en tient lieu — un
+fichier de mémoire supprimé s'y retrouve, sans recopie préalable.
 
 Plusieurs agents travaillent **en même temps** sur ce dépôt, chacun dans sa
 conversation. L'arbre de travail principal est donc une ressource commune :

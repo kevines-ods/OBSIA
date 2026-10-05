@@ -1,0 +1,46 @@
+#!/bin/sh
+# Garde « mémoire hors dépôt » — VAULT-CONTRACT.md §6 et §7.1.
+#
+# Refuse un commit qui remettrait un fichier de mémoire dans le dépôt du
+# produit. La mémoire appartient à son propriétaire : elle vit dans le coffre
+# parent et se versionne dans son propre dépôt de données (cf. §7.1), pas ici.
+# Le dépôt produit ne porte que l'outil.
+#
+# Trois formes sont visées : l'ancien `mémoire/`, et les zones de coffre `0-…/`
+# avec leur ancien nom `-…/` (tolérance de bascule du chantier
+# `souverainete-des-donnees`, à retirer au plus tard le 2026-12-31 — §11). Un
+# coffre posé à la racine du dépôt produit est le symptôme : les notes n'y sont
+# plus au bon endroit.
+#
+# Seules les entrées sont contrôlées : ajout, copie, modification, renommage
+# vers l'une de ces zones. La suppression reste permise — c'est par elle que
+# passera la migration, une fois la bascule faite. `--no-renames` est explicite
+# pour qu'un renommage sortant de `mémoire/` se lise comme une suppression
+# (autorisée) plus un ajout ailleurs (hors du filtre), jamais comme un
+# renommage ambigu.
+#
+# L'ancienne archive `.archive/mémoire/` n'est pas visée : elle est figée, ne
+# reçoit plus rien, et n'a jamais été de la mémoire vivante.
+
+racine=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+cd "$racine" || exit 0
+
+# Le filtre est un motif, pas un pathspec : `-*/**` se lirait mal après `--`,
+# et on veut aussi attraper un dossier `0-…/` posé à la racine du dépôt.
+# `core.quotePath=false` : sans lui, git échappe les accents des chemins
+# (`"m\303\251moire/…"`) et le filtre ne reconnaîtrait plus `mémoire/`.
+entrees=$(git -c core.quotePath=false diff --cached --name-only --no-renames --diff-filter=ACMR)
+[ -z "$entrees" ] && exit 0
+zone=$(printf '%s\n' "$entrees" | grep -E '^(mémoire/|0-[^/]+/|-[^/]+/)')
+[ -z "$zone" ] && exit 0
+
+printf '%s\n' "$zone" >&2
+cat >&2 <<'MSG'
+
+Commit refusé : un fichier de mémoire entre dans le dépôt du produit.
+
+La mémoire ne vit plus ici — elle appartient au coffre parent et se versionne
+dans son propre dépôt de données (cf. IA/system/VAULT-CONTRACT.md §6 et §7.1).
+Écrire le fichier à son emplacement dans le coffre, puis recommencer.
+MSG
+exit 1

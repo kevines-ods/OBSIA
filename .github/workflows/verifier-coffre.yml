@@ -29,6 +29,20 @@ jobs:
       - name: Tests des scripts
         run: python3 -m unittest discover -s tests
 
+      # Le titre et la description d'une PR paraissent sur le dépôt public avant
+      # que `publier.py` n'ait vu un seul fichier de l'export : le contrôle
+      # d'arbre ne les lit donc jamais. GitHub les donne ici, et le texte passe
+      # par l'environnement — jamais par le script, où une description
+      # suffirait à s'injecter une commande.
+      - name: Le titre et la description de la PR ne fuient rien
+        if: github.event_name == 'pull_request'
+        env:
+          TITRE_DE_LA_PR: ${{ github.event.pull_request.title }}
+          DESCRIPTION_DE_LA_PR: ${{ github.event.pull_request.body }}
+        run: |
+          printf '%s\n%s\n' "$TITRE_DE_LA_PR" "$DESCRIPTION_DE_LA_PR" \
+            | python3 scripts/publier.py --controler-texte
+
       - name: Cohérence du coffre
         run: python3 scripts/verifier_coffre.py
 
@@ -38,8 +52,8 @@ jobs:
       - name: Routage des skills
         run: python3 scripts/evaluer_routage.py
 
-      # Les sommaires de mémoire/ ne sont pas versionnés (§11) : on vérifie
-      # seulement qu'ils se génèrent.
+      # Les sommaires vivent dans le coffre parent, pas dans ce dépôt (§6, §11) :
+      # un clone nu n'en a aucun, et le script sort proprement sans rien écrire.
       - name: Les sommaires se génèrent
         run: python3 scripts/regenerate_sommaire.py > /dev/null
 

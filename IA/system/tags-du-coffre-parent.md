@@ -1,8 +1,8 @@
 # Tags du coffre parent — vocabulaire contrôlé
 
-> **Statut : fait foi** pour les tags des notes du coffre parent (`-SAVOIRS/`,
-> `-EN-VRAC/`, `_MAINTENANCE/` et les notes classées vers `-PROJETS/`,
-> `-DOCUMENTS/`, `-PERSONNELS/`). Règle d'ensemble : `IA/system/VAULT-CONTRACT.md` §7.5.
+> **Statut : fait foi** pour les tags des notes du coffre parent (`0-SAVOIRS/`,
+> `0-EN-VRAC/`, `_MAINTENANCE/` et les notes classées vers `0-PROJETS/`,
+> `0-DOCUMENTS/`, `0-PERSONNELS/`). Règle d'ensemble : `IA/system/VAULT-CONTRACT.md` §7.5.
 
 ## Principe
 
@@ -25,12 +25,12 @@ fois.
 
 | Valeur | Note |
 | --- | --- |
-| `concept` | une connaissance — `-SAVOIRS/` |
-| `revue` | revue d'article, de blog, transcription — `-DOCUMENTS/` |
-| `projet` | note d'un projet — `-PROJETS/` |
-| `personnel` | contexte personnel — `-PERSONNELS/` |
+| `concept` | une connaissance — `0-SAVOIRS/` |
+| `revue` | revue d'article, de blog, transcription — `0-DOCUMENTS/` |
+| `projet` | note d'un projet — `0-PROJETS/` |
+| `personnel` | contexte personnel — `0-PERSONNELS/` |
 | `maintenance` | trace de maintenance — previews et journaux §7.4, `_MAINTENANCE/` |
-| `idée` | une idée à évaluer — `-PROJETS/Idées/documents/` |
+| `idée` | une idée à évaluer — `0-PROJETS/Idées/documents/` |
 | `note` | toute autre note classée |
 
 ## Vocabulaire — tags existants

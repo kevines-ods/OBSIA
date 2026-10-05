@@ -31,22 +31,31 @@ avertissement, fichier intact, code de retour inchangé. Ce fichier vit **hors d
 dépôt** : il n'est ni versionné, ni concerné par `publier.py`, qui n'exporte que
 l'arbre suivi.
 
-**Les trois dossiers de l'instance** — `mémoire/`, `brouillon/` et l'archive
-`IA/system/session-log/` — sont **créés s'ils manquent** dans la cible, avec le
-README de la source, mais **jamais vidés** : c'est là que vit le travail de qui
-installe, et réinstaller ne doit rien lui emporter. Si l'un d'eux porte déjà un
-contenu, il est laissé tel quel, et l'aperçu le dit (« conservé »). Leur contenu
-n'est pas copié depuis la source non plus : la mémoire et les journaux de
-l'auteur ne partent pas chez le copié.
+**Les dossiers de l'instance** — dans le dépôt, `brouillon/` et l'archive
+`IA/system/session-log/` ; dans le coffre parent, la mémoire `0-MEMOIRES/`
+(mémoire des agents et chantiers clos) et `0-PERSONNELS/`
+(profil-utilisateur) (§6, §7.1) — sont **créés s'ils manquent**
+dans la cible, avec le README ou le gabarit de la source, mais **jamais vidés** :
+c'est là que vit le travail de qui installe, et réinstaller ne doit rien lui
+emporter. Si l'un d'eux porte déjà un contenu, il est laissé tel quel, et
+l'aperçu le dit (« conservé »). Leur contenu n'est pas copié depuis la source non
+plus : la mémoire et les journaux de l'auteur ne partent pas chez le copié.
+`0-MEMOIRES/préférences/` est posé même vide — l'agent qui écrit sa première
+préférence le trouve déjà là —, et `<nom-agent>/expériences/` naît à la première
+leçon. Le coffre parent reste un dépôt
+Git **distinct** (§7.1) : l'installateur y pose la liste blanche `.gitignore`
+(§7.1) et l'initialise s'il n'est pas encore un dépôt, avec le nom du distant
+déclaré dans `obsia.local.yml` — mais il ne pousse **jamais** de lui-même :
+c'est le `post-commit` qui s'en charge (voir la section suivante).
 
 **Fichiers exclus d'Obsidian** — l'installation ajoute le motif
-`/^-PROJETS\/[^\/]+\/code\//` au réglage « Fichiers exclus » d'Obsidian
+`/^0-PROJETS\/[^\/]+\/code\//` au réglage « Fichiers exclus » d'Obsidian
 (`.obsidian/app.json`, clé `userIgnoreFilters`), pour tenir le code d'un projet
 hors de la recherche et du graphe du coffre (§7.3). Pour le retirer, ouvrir
 Obsidian → Réglages → Fichiers et liens → Fichiers exclus, et supprimer la
 ligne ; une réinstallation le repose. Le motif est écrit de façon idempotente,
-et l'ancienne forme `-PROJETS/*/code` est retirée au passage si elle traîne.
-Rien n'est écrit si le coffre parent n'a pas de `-PROJETS/`, ou si
+et l'ancienne forme `0-PROJETS/*/code` est retirée au passage si elle traîne.
+Rien n'est écrit si le coffre parent n'a pas de `0-PROJETS/`, ou si
 `userIgnoreFilters` n'est pas une liste : on ne touche pas au réglage d'un
 autre usage.
 
@@ -56,7 +65,7 @@ l'aide (masqué de la recherche, du graphe et des mentions non liées ; moins
 visible dans le sélecteur rapide et les suggestions) reste à confirmer une
 fois, à la main, sur un coffre réel :
 
-1. poser un fichier sous `-PROJETS/<projet>/code/` ;
+1. poser un fichier sous `0-PROJETS/<projet>/code/` ;
 2. chercher son nom dans Obsidian.
 
 S'il n'apparaît ni dans la recherche, ni dans le graphe, ni dans les
@@ -64,19 +73,19 @@ suggestions de liens, le motif agit. Sinon, ajuster le motif dans les Fichiers
 exclus. `installer.py` affiche cette recette après avoir posé le motif.
 
 **Aucun lien symbolique de la cible n'est suivi**, ni en lecture ni en écriture.
-Un `IA` déplacé ailleurs, une `mémoire/` partagée : l'installation écrirait
-hors du coffre qu'elle croit remplir. La zone concernée est sautée avec un
+Un `IA` déplacé ailleurs, une mémoire partagée : l'installation écrirait hors du
+coffre qu'elle croit remplir. La zone concernée est sautée avec un
 avertissement, et le reste de l'installation se poursuit — jusqu'à la réduction
 des déclarations, qui n'a pas lieu au travers d'un lien.
 
 La régénération s'arrête là aussi, et la vérification avec elle. Les deux
-générateurs écrivent sous `IA/` et `mémoire/` — les quatre index, les
-`sommaire.md` — et le vérificateur lit à travers le même lien. Un lien, **où
-qu'il soit** sous l'un de ces deux dossiers, suffit à tout arrêter : un
+générateurs écrivent sous `IA/` — les quatre index — et dans le coffre parent —
+les `sommaire.md` —, et le vérificateur lit à travers le même lien. Un lien, **où
+qu'il soit** sous l'un de ces deux emplacements, suffit à tout arrêter : un
 `IA/system` déplacé ailleurs, un `sommaire.md` de la mémoire partagé, pas
-seulement un `IA` ou une `mémoire/` entier. `installer.py` avertit alors, ne
-régénère pas, ne vérifie pas, et l'annonce à la fin : il ne peut pas laisser la
-dernière ligne dire que les index et les sommaires sont à jour après avoir
+seulement un `IA` ou un dossier de mémoire entier. `installer.py` avertit alors,
+ne régénère pas, ne vérifie pas, et l'annonce à la fin : il ne peut pas laisser
+la dernière ligne dire que les index et les sommaires sont à jour après avoir
 refusé d'y toucher.
 
 **`--tout` veut dire catalogue complet, dans les deux modes.** En place, le
@@ -111,30 +120,28 @@ régénérer l'`AGENTS.md`.
 
 ## Publication — `publier.py` (§13.5)
 
-### Les cinq refus de `synchroniser`
+### Les quatre refus de `synchroniser`
 
-**`synchroniser` refuse cinq cibles**, avant d'exporter quoi que ce soit, code
+**`synchroniser` refuse quatre cibles**, avant d'exporter quoi que ce soit, code
 1 et motif en clair : la cible est la source, la contient, ou lui est inférieure ;
-elle porte la marque d'un coffre vivant (`.obsidian`, `-SAVOIRS`, `-PROJETS`) ;
-sa `mémoire/` porte autre chose que ce que la distribution y laisse ; son
-`origin` est celui de la source — c'est alors un clone du privé, pas du public ;
-elle n'est ni un miroir d'OBSIA, ni un dépôt vierge. L'aperçu liste, une par
-une, les entrées de la cible qui seront effacées. Et un lien symbolique de la
-cible est **défait par `unlink()`**, jamais traversé : `rmtree` s'arrête sur un
-lien, et laisserait la cible à moitié vidée.
+elle porte la marque d'un coffre vivant (`0-PROJETS`, `0-MEMOIRES`, `0-SAVOIRS`,
+`0-PERSONNELS`, leurs anciens noms à tiret, `_MAINTENANCE` ou `.obsidian`) ; son
+`origin` est celui de la source — c'est alors un clone du privé, pas du public ; elle n'est ni un
+miroir d'OBSIA, ni un dépôt vierge. L'aperçu liste, une par une, les entrées de
+la cible qui seront effacées. Et un lien symbolique de la cible est **défait par
+`unlink()`**, jamais traversé : `rmtree` s'arrête sur un lien, et laisserait la
+cible à moitié vidée.
 
-Les cinq refus, dans l'ordre où ils tombent. La comparaison des `origin` porte
+Les quatre refus, dans l'ordre où ils tombent. La comparaison des `origin` porte
 sur ce qui désigne le dépôt — hôte et chemin — et non sur l'URL écrite :
 `git@hôte:propriétaire/dépôt.git` et `https://hôte/propriétaire/dépôt` sont le
 même dépôt, et comparer les chaînes brutes laisserait cloner le privé en ssh
-pour publier dessus. Ce que la distribution laisse dans `mémoire/` est exactement
-trois fichiers : son `README.md`, le `profil-utilisateur.md` que l'installeur y
-pose, et `sommaire.md`. Le sommaire y est parce que `publier.py` le régénère et
-le dépose dans l'export : une cible déjà publiée le porte, et le refuser
-interdirait de republier sur sa propre publication. Tout le reste — une note, un
-sous-dossier — n'est pas le nôtre, et « publier » l'effacerait sans retour.
+pour publier dessus. Le test « coffre vivant » a remplacé le contrôle qui portait
+sur `mémoire/` : la mémoire n'est plus dans ce dépôt, elle a son propre dépôt
+dans le coffre parent (§7.1) — mais tant que l'ancien `mémoire/` y traîne, la
+distribution le vide comme le reste du privé.
 
-Le cinquième refus est le seul qui n'énumère pas ce qu'il faut éviter mais ce
+Le quatrième refus est le seul qui n'énumère pas ce qu'il faut éviter mais ce
 qu'il faut avoir : la cible doit être vierge ou porter
 `IA/system/VAULT-CONTRACT.md`. **Vierge veut dire un dépôt qui n'a rien que son
 `.git/`** — pas un dossier vide, qui n'est pas un dépôt : `publier.py` refuse
@@ -217,3 +224,15 @@ garde de pré-commit au moment de l'écriture, puis par `publier.py` au moment d
 la publication — et c'est dans ce rapport local, et nulle part ailleurs, que
 survit le détail `fichier:ligne` : le message de commit, lui, n'en porte que le
 nombre.
+
+Le même contrôle tourne sur **le titre et la description d'une pull request**,
+par `publier.py --controler-texte` : ils paraissent sur le dépôt public alors que
+le contrôle d'arbre ne les verra jamais, puisque la pull request n'est pas dans
+l'arbre. Le texte vient de l'entrée standard ; en vérification continue, GitHub
+le fournit par des variables d'environnement, et jamais en l'écrivant dans le
+script — une description de PR qu'on croit inoffensive suffirait, sinon, à y
+faire passer une commande. Les motifs, les régimes et `--forcer` sont ceux de
+l'arbre, à une réserve près : la liste locale des noms interdits peut manquer en
+CI, et le contrôle ne porte alors que sur les valeurs à forme reconnaissable.
+`--cible` n'est pas requis dans ce mode : il n'y a rien à copier, seulement un
+texte à juger.

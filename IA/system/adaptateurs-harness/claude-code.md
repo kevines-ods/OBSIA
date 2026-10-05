@@ -112,7 +112,7 @@ claude mcp get coffre-parent
 ```
 
 Puis, en session : `/mcp` pour l'état de connexion, et un **appel réel** —
-demander la liste de la racine du coffre. Si `-SAVOIRS/` n'apparaît pas,
+demander la liste de la racine du coffre. Si `0-SAVOIRS/` n'apparaît pas,
 l'accès n'est pas donné.
 
 Vérification du cerveau : demander à l'agent d'énoncer une règle qui n'existe

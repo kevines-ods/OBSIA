@@ -33,4 +33,4 @@ Aucune sonde : qu'une machine porte `ssh` ne dit pas qu'elle administre un
 parc. C'est la question qui décide.
 
 L'inventaire de l'infrastructure n'est **pas** dans ce module : il vit dans le
-coffre parent (`Mon coffre/-PERSONNELS/`), parce qu'il décrit l'utilisateur.
+coffre parent (`Mon coffre/0-PERSONNELS/`), parce qu'il décrit l'utilisateur.

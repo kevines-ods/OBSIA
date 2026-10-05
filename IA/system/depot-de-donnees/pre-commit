@@ -1,0 +1,17 @@
+#!/bin/sh
+# Crochet d'avant-commit du **dépôt de données du coffre** (§7.1).
+#
+# Posé par `scripts/installer.py` depuis le gabarit du dépôt produit : ne pas
+# l'éditer ici, réinstaller. Deux refus, dans l'ordre :
+#
+#   1. le commit ne vient pas de la machine déclarée **écrivain** du coffre
+#      (§7.1, « un seul écrivain ») ;
+#   2. un carnet du coffre ne respecte pas le §6.
+#
+# Le produit, lui, a ses propres crochets : c'est celui-ci qui vérifie la
+# mémoire, pas l'inverse.
+set -e
+racine=$(git rev-parse --show-toplevel)
+outils="$racine/@PRODUIT@"
+exec python3 "$outils/scripts/depot_de_donnees.py" avant-commit \
+  --coffre "$racine" --produit "$outils"

@@ -69,8 +69,8 @@ chaque fiche tranche pour son harness.
 ## Vérification après branchement
 
 Une conversation de test doit pouvoir : lister la racine du coffre (`..`),
-lire une note de `Mon coffre/-SAVOIRS/`, et retrouver le registre des tags.
+lire une note de `Mon coffre/0-SAVOIRS/`, et retrouver le registre des tags.
 
-⚠️ Les dossiers du coffre commencent par `-`, donc par un caractère que les
-commandes lisent comme le début d'une **option** : écrire `../-SAVOIRS`, jamais
-`-SAVOIRS` nu (§7 du contrat).
+Les dossiers de mémoire commencent par `0-` : plus de collision avec les options
+d'une commande, un chemin s'écrit tel quel — `Mon coffre/0-SAVOIRS/`, ou
+`../0-SAVOIRS/` depuis le dépôt (§7 du contrat).

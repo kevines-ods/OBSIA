@@ -41,11 +41,12 @@ Ce qui reste autorisé, malgré la portée du serveur :
 
 | Zone | Lecture | Écriture |
 | --- | --- | --- |
-| `Mon coffre/-EN-VRAC/` | oui | oui — remplir, tagger, rétrolier |
-| `Mon coffre/-SAVOIRS/` | oui | compléter seulement, sans déplacer |
+| `Mon coffre/0-EN-VRAC/` | oui | oui — remplir, tagger, rétrolier |
+| `Mon coffre/0-SAVOIRS/` | oui | compléter seulement, sans déplacer |
 | `Mon coffre/_MAINTENANCE/` | oui | oui — previews, actions, registre |
-| `Mon coffre/-PROJETS/` | oui | le dossier `<projet>/` : résumé, vision (visionnaire seul), carnets, documents, archives (§7.3) — jamais `code/`, qui ne s'écrit que par commit dans son dépôt ; sinon classement seul |
-| `Mon coffre/-DOCUMENTS/`, `-PERSONNELS/` | oui | **classement seul** : y déposer une note venue d'`-EN-VRAC/` |
+| `Mon coffre/0-PROJETS/` | oui | le dossier `<projet>/` : résumé, vision (visionnaire seul), carnets, documents (§7.3) — jamais `code/`, qui ne s'écrit que par commit dans son dépôt ; sinon classement seul |
+| `Mon coffre/0-MEMOIRES/` | oui | `préférences/` et `<nom-agent>/expériences/` : **oui**, corrigés sur place ; les dossiers de chantiers clos : **non** — gelés ; on ne rouvre pas un dossier gelé, on rouvre le chantier dans `0-PROJETS/` (§6) |
+| `Mon coffre/0-DOCUMENTS/`, `0-PERSONNELS/` | oui | **classement seul** : y déposer une note venue d'`0-EN-VRAC/` |
 | `Mon coffre/OBSIA/` | oui | non par ce serveur — le dépôt passe par Git (§2) |
 
 Le détail fait foi au §7.3 du contrat, qui n'est pas reformulé ici.
@@ -53,15 +54,15 @@ Le détail fait foi au §7.3 du contrat, qui n'est pas reformulé ici.
 ## Règles d'usage
 
 - **Preview avant écriture** : toute action touchant plusieurs fichiers,
-  déplaçant une note ou écrivant hors d'`-EN-VRAC/` s'affiche d'abord et se
+  déplaçant une note ou écrivant hors d'`0-EN-VRAC/` s'affiche d'abord et se
   consigne, datée, dans `Mon coffre/_MAINTENANCE/` (§7.4). Sans Git, le
   preview *est* la trace.
 - **Consigner l'usage** : tout appel de ce serveur laisse une ligne dans le log
   de session (§9) — quoi, où, résultat.
 - **Ne pas recopier** : le coffre parent est privé, le dépôt se publie (§7.2).
   Rien de ce qu'on y lit ne migre dans `OBSIA/`. Dans l'autre sens, la note de
-  suivi d'un projet de l'utilisateur s'écrit **ici**, jamais dans
-  `mémoire/projets/`, réservé aux projets du coffre (§7.3.1).
+  suivi d'un projet s'écrit **ici**, sous `0-PROJETS/`, jamais dans `OBSIA/`
+  (§7.3.1).
 - **Ne pas toucher la structure** : les dossiers de premier niveau
   appartiennent à l'utilisateur (§7.1). Ce serveur pourrait en créer un ; il
   ne le fait pas.
@@ -72,9 +73,9 @@ Le détail fait foi au §7.3 du contrat, qui n'est pas reformulé ici.
   configuration du harness, hors dépôt. `mcp.example.json` ne porte qu'un
   chemin fictif.
 - Le chemin contient une espace (`Mon coffre`) : le citer dans toute commande.
-- Les dossiers commencent par `-` : dans une commande, les préfixer de `../`
-  ou `./`, sans quoi ils sont lus comme des options (§7).
-- `Mon coffre/-PERSONNELS/` porte du contenu personnel. Il se lit et se relie
+- Les dossiers de mémoire commencent par `0-` : plus de collision avec les
+  options d'une commande, un chemin s'écrit tel quel (§7).
+- `Mon coffre/0-PERSONNELS/` porte du contenu personnel. Il se lit et se relie
   (§7.3), mais son contenu ne sort pas du coffre.
 - Monter le serveur sur la racine du coffre, jamais plus haut : un serveur
   pointé sur `$HOME` donnerait accès à tout le poste.

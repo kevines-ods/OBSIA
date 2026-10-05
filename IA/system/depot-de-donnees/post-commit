@@ -1,0 +1,13 @@
+#!/bin/sh
+# Crochet d'après-commit du **dépôt de données du coffre** (§7.1).
+#
+# Pousse vers le distant en arrière-plan : il ne bloque pas le commit, il
+# n'échoue jamais à sa place, et son échec est journalisé sous `.git/`. La
+# fraîcheur de la dernière poussée réussie se lit avec
+# `scripts/depot_de_donnees.py fraicheur` — c'est ce qu'un moniteur push
+# surveille.
+racine=$(git rev-parse --show-toplevel)
+outils="$racine/@PRODUIT@"
+python3 "$outils/scripts/depot_de_donnees.py" apres-commit \
+  --coffre "$racine" >/dev/null 2>&1 &
+exit 0

@@ -7,10 +7,12 @@ de celui qui l'a précédé, ni laisser une trace derrière lui.
 """
 
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
+from datetime import date
 from io import StringIO
 from pathlib import Path
 
@@ -23,29 +25,49 @@ import verifier_coffre as VC            # noqa: E402
 DEFAUT = {"schema": "1", "read_only": "false", "module": "noyau"}
 
 
+def git(depot: Path, *arguments: str):
+    """git dans `depot` : les contrôles du dépôt de données en ont besoin."""
+    return subprocess.run(["git", "-C", str(depot), *arguments],
+                          capture_output=True, text=True, check=False)
+
+
 class BaseVerificateur(unittest.TestCase):
     """Un coffre temporaire, et l'état global du vérificateur mis de côté."""
 
     def setUp(self):
-        self.racine = Path(tempfile.mkdtemp(prefix="obsia-test-verif-"))
-        self.addCleanup(shutil.rmtree, self.racine, ignore_errors=True)
+        # Le dépôt vit **dans** un coffre parent : la mémoire est à côté de lui
+        # (§7.1), donc les carnets ne sont pas sous `self.racine`.
+        self.parent = Path(tempfile.mkdtemp(prefix="obsia-test-verif-"))
+        self.racine = self.parent / "OBSIA"
+        self.racine.mkdir()
+        self.addCleanup(shutil.rmtree, self.parent, ignore_errors=True)
 
         self._racine_avant = VC.RACINE
+        self._coffre_avant = VC.COFFRE
         self._erreurs_avant = list(VC.erreurs)
         self._avertissements_avant = list(VC.avertissements)
         self.addCleanup(self.restaurer)
 
         VC.RACINE = self.racine
+        VC.COFFRE = self.parent
         VC.erreurs.clear()
         VC.avertissements.clear()
 
     def restaurer(self):
         VC.RACINE = self._racine_avant
+        VC.COFFRE = self._coffre_avant
         VC.erreurs[:] = self._erreurs_avant
         VC.avertissements[:] = self._avertissements_avant
 
     def ecrire(self, relatif: str, contenu: str) -> Path:
         chemin = self.racine / relatif
+        chemin.parent.mkdir(parents=True, exist_ok=True)
+        chemin.write_text(contenu, encoding="utf-8")
+        return chemin
+
+    def ecrire_coffre(self, relatif: str, contenu: str) -> Path:
+        """Écrit dans le coffre parent — là où vit la mémoire (§7.1)."""
+        chemin = self.racine.parent / relatif
         chemin.parent.mkdir(parents=True, exist_ok=True)
         chemin.write_text(contenu, encoding="utf-8")
         return chemin
@@ -90,13 +112,13 @@ class BaseVerificateur(unittest.TestCase):
         return [{"name": n, "essentiel": n == "noyau",
                  "_chemin": "IA/system/modules/%s.md" % n} for n in noms]
 
-    def executer(self) -> int:
+    def executer(self, *arguments: str) -> int:
         """Lance le vérificateur entier, comme la CI : c'est lui qu'on juge."""
         avant_derives, avant_argv = VC.verifier_derives, sys.argv
         self.addCleanup(setattr, VC, "verifier_derives", avant_derives)
         self.addCleanup(setattr, sys, "argv", avant_argv)
         VC.verifier_derives = lambda: None   # pas de dépôt git dans ce coffre
-        sys.argv = ["verifier_coffre.py", "--silencieux"]
+        sys.argv = ["verifier_coffre.py", "--silencieux", *arguments]
         # Le rapport final part sur stderr, même en silencieux : le compte rendu
         # du test n'a pas à le porter, les messages sont dans `VC.erreurs`.
         with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
@@ -294,11 +316,24 @@ class TestProfilFautif(BaseVerificateur):
 
 
 class TestCarnets(BaseVerificateur):
-    """§6 : forme des carnets, un seul niveau de sous-projet, transition."""
+    """§6 : forme des carnets, un dossier par chantier, transition.
+
+    La mémoire n'est plus dans le dépôt (§7.1) : les projets s'écrivent donc
+    dans le coffre parent, à côté du dépôt, et non sous `self.racine`.
+    """
+
+    def setUp(self):
+        super().setUp()
+        # Sur le coffre lui-même, ses écarts sont des erreurs (§7.1) : c'est ce
+        # que le pre-commit du dépôt de données vérifie. Depuis le dépôt produit,
+        # les mêmes constats avertissent sans bloquer.
+        self._strict_avant = VC.MEMOIRE_STRICTE
+        self.addCleanup(setattr, VC, "MEMOIRE_STRICTE", self._strict_avant)
+        VC.MEMOIRE_STRICTE = True
 
     def carnet(self, projet: str, nom: str, frontmatter: str) -> Path:
-        return self.ecrire("mémoire/projets/%s/carnets/%s" % (projet, nom),
-                           "---\n%s\n---\n\nCorps.\n" % frontmatter)
+        return self.ecrire_coffre("0-PROJETS/%s/carnets/%s" % (projet, nom),
+                                  "---\n%s\n---\n\nCorps.\n" % frontmatter)
 
     def test_un_carnet_conforme_est_muet(self):
         self.carnet("refonte-de-la-memoire",
@@ -357,29 +392,129 @@ class TestCarnets(BaseVerificateur):
         self.assertIn("`projet: autre-projet`", self.erreurs_texte())
 
     def test_un_sous_dossier_dans_carnets_est_refuse(self):
-        self.ecrire("mémoire/projets/un-projet/carnets/archive/vieux.md", "Corps.\n")
+        self.ecrire_coffre("0-PROJETS/un-projet/carnets/archive/vieux.md", "Corps.\n")
         VC.verifier_carnets()
         self.assertIn("sous-dossier dans `carnets/`", self.erreurs_texte())
 
+    def test_les_archives_d_avant_la_cloture_avertissent(self):
+        """`archives/` n'existe plus : un chantier clos part dans `0-MEMOIRES/`.
+
+        Tant que la bascule dure, l'ancienne forme avertit sans faire échouer :
+        le contrôle des carnets doit être utilisable pendant qu'on migre.
+        """
+        self.ecrire_coffre("0-PROJETS/un-projet/carnets/archives/vieux.md", "Corps.\n")
+        self.ecrire_coffre("0-PROJETS/un-projet/archives/vieux.md", "Corps.\n")
+
+        VC.verifier_carnets()
+
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+        self.assertEqual(2, len(VC.avertissements), self.avertissements_texte())
+        self.assertIn("0-MEMOIRES", self.avertissements_texte())
+
+    def test_la_memoire_se_lit_dans_l_ancien_emplacement_aussi(self):
+        """Clause de transition : `mémoire/projets` se lit tant que la bascule dure."""
+        self.ecrire("mémoire/projets/un-projet/carnets/2026-10-02-un-projet-t1.md",
+                    "---\nagent:\nprojet: un-projet\nstatut: en cours\n---\n\nCorps.\n")
+
+        VC.verifier_carnets()
+
+        self.assertIn("`agent:` vide", self.erreurs_texte())
+
     def test_une_note_datee_a_plat_est_toleree(self):
-        self.ecrire("mémoire/projets/ancien-projet/2026-09-18-une-note.md",
-                    "---\nagent: assistant\n---\n\nCorps.\n")
+        self.ecrire_coffre("0-PROJETS/ancien-projet/2026-09-18-une-note.md",
+                           "---\nagent: assistant\n---\n\nCorps.\n")
         VC.verifier_carnets()
         self.assertEqual([], VC.erreurs)
         self.assertIn("ancienne forme", self.avertissements_texte())
 
     def test_un_sous_projet_imbrique_est_refuse(self):
-        self.ecrire("mémoire/projets/un-projet/sous/encore/fichier.md", "Corps.\n")
+        self.ecrire_coffre("0-PROJETS/un-projet/sous/encore/fichier.md", "Corps.\n")
         VC.verifier_carnets()
-        self.assertIn("un seul niveau", self.erreurs_texte())
+        self.assertIn("chantier imbriqué", self.erreurs_texte())
 
     def test_un_seul_niveau_de_sous_projet_est_admis(self):
         self.carnet("un-projet", "2026-10-02-un-projet-t1.md",
                     "agent: assistant\nprojet: un-projet\nstatut: clos\n")
-        self.ecrire("mémoire/projets/un-projet/sous/carnets/2026-10-02-sous-t1.md",
-                    "---\nagent: assistant\nprojet: sous\nstatut: clos\n---\n\nCorps.\n")
+        self.ecrire_coffre("0-PROJETS/un-projet/sous/carnets/2026-10-02-sous-t1.md",
+                           "---\nagent: assistant\nprojet: sous\nstatut: clos\n---\n\nCorps.\n")
         VC.verifier_carnets()
         self.assertEqual([], VC.erreurs)
+
+
+class TestNomsDeMemoire(BaseVerificateur):
+    """§6 : dans `0-MEMOIRES/`, deux mémoires ne se confondent pas.
+
+    Le dossier porte la mémoire **vivante** des agents — `préférences/` et
+    `<nom-agent>/expériences/` — **et** les chantiers clos, gelés. Un projet qui
+    prendrait le nom d'un agent ou celui de `préférences/` rendrait les deux
+    indistinguables : le contrôle le refuse, par la forme faute de lire une
+    intention.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self._strict_avant = VC.MEMOIRE_STRICTE
+        self.addCleanup(setattr, VC, "MEMOIRE_STRICTE", self._strict_avant)
+        VC.MEMOIRE_STRICTE = True
+        self.fiche("agent", "batisseur", {"description": "Agent de test."})
+
+    def dossier(self, relatif: str) -> Path:
+        chemin = self.racine.parent / relatif
+        chemin.mkdir(parents=True, exist_ok=True)
+        return chemin
+
+    def test_une_memoire_bien_formee_est_muette(self):
+        self.ecrire_coffre("0-MEMOIRES/préférences/langue-des-notes.md", "Corps.\n")
+        self.ecrire_coffre("0-MEMOIRES/batisseur/expériences/un-verrou-qui-tient.md",
+                           "Corps.\n")
+        self.dossier("0-MEMOIRES/obsia/souverainete-des-donnees")
+
+        VC.verifier_noms_de_memoire()
+
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+
+    def test_un_projet_ne_peut_pas_s_appeler_preferences(self):
+        """Sous `préférences/`, un dossier est un projet qui a volé le nom."""
+        self.dossier("0-MEMOIRES/préférences/un-projet")
+
+        VC.verifier_noms_de_memoire()
+
+        self.assertIn("Un projet ne peut pas porter ce nom", self.erreurs_texte())
+
+    def test_un_projet_ne_peut_pas_porter_le_nom_d_un_agent(self):
+        self.dossier("0-MEMOIRES/batisseur/chantier-gelat")
+
+        VC.verifier_noms_de_memoire()
+
+        self.assertIn("ne peut pas porter le nom d'un agent", self.erreurs_texte())
+
+    def test_un_projet_gele_sans_chantier_est_refuse(self):
+        self.dossier("0-MEMOIRES/obsia")
+
+        VC.verifier_noms_de_memoire()
+
+        self.assertIn("projet gelé sans chantier", self.erreurs_texte())
+
+    def test_un_dossier_inconnu_au_premier_niveau_est_refuse(self):
+        self.ecrire_coffre("0-MEMOIRES/une-note-egaree.md", "Corps.\n")
+
+        VC.verifier_noms_de_memoire()
+
+        self.assertIn("n'accueille que des dossiers", self.erreurs_texte())
+
+    def test_sans_coffre_parent_il_n_y_a_rien_a_controler(self):
+        """Un clone de la CI n'a pas de `0-MEMOIRES/` : le contrôle se tait."""
+        VC.verifier_noms_de_memoire()
+
+        self.assertEqual([], VC.erreurs)
+
+    def test_le_controle_tourne_dans_la_verification(self):
+        """Il part avec les autres : une mémoire mal nommée ne passe pas."""
+        self.dossier("0-MEMOIRES/préférences/un-projet")
+
+        self.executer("--coffre", str(self.racine.parent))
+
+        self.assertIn("Un projet ne peut pas porter ce nom", self.erreurs_texte())
 
 
 class TestAnnexesContrat(BaseVerificateur):
@@ -505,6 +640,197 @@ class TestAnnexesContrat(BaseVerificateur):
         self.annexe("contrat-noyau", {})
         VC.verifier_appartenance(self.modules_a_la_main("noyau"), [], [], [], [])
         self.assertIn("n'installerait rien", self.avertissements_texte())
+
+
+class TestLigneDeCommandeDuCoffre(BaseVerificateur):
+    """`--coffre <chemin>` et `--carnets` : ce que le pre-commit du dépôt de
+    données appelle (§7.1). Sur ce coffre-là, la mémoire est jugée strictement —
+    un carnet mal formé refuse le commit."""
+
+    GABARIT = "IA/system/depot-de-donnees/gitignore-coffre"
+    LISTE = "/*\n!/.gitignore\n!/0-*/\n!/_MAINTENANCE/\n"
+
+    def preparer(self):
+        """Le coffre est outillé : gabarit présent, liste blanche conforme."""
+        self.ecrire(self.GABARIT, self.LISTE)
+        (self.parent / ".gitignore").write_text(self.LISTE, encoding="utf-8")
+
+    def test_les_carnets_conformes_sortent_en_zero(self):
+        self.preparer()
+        self.ecrire_coffre("0-PROJETS/un-projet/carnets/2026-01-01-un-projet-vrille.md",
+                           "---\nagent: batisseur\nprojet: un-projet\nstatut: en cours\n"
+                           "---\n\nCorps.\n")
+        self.assertEqual(0, self.executer("--coffre", str(self.parent), "--carnets"),
+                         self.erreurs_texte())
+
+    def test_un_carnet_fautif_sort_en_un(self):
+        self.preparer()
+        self.ecrire_coffre("0-PROJETS/un-projet/carnets/carnet.md",
+                           "---\nagent: batisseur\nprojet: un-projet\nstatut: en cours\n"
+                           "---\n\nCorps.\n")
+        self.assertEqual(1, self.executer("--coffre", str(self.parent), "--carnets"))
+        self.assertIn("carnet mal nommé", self.erreurs_texte())
+
+    def test_une_liste_blanche_absente_est_une_erreur(self):
+        """Le gabarit est là, le coffre n'a pas encore sa liste blanche."""
+        self.ecrire(self.GABARIT, self.LISTE)
+        self.assertEqual(1, self.executer("--coffre", str(self.parent), "--carnets"))
+        self.assertIn("liste blanche", self.erreurs_texte())
+
+    def test_un_argument_inconnu_sort_en_deux(self):
+        self.assertEqual(2, self.executer("--gribouille"))
+
+    def test_un_coffre_non_designe_n_est_pas_juge(self):
+        """Sans `--coffre`, la mémoire du voisin avertit sans rien refuser : le
+        dépôt produit ne se met pas à refuser ses commits pour un carnet — le
+        contrôle du coffre, lui, a ses propres crochets (§7.1, M5)."""
+        VC.MEMOIRE_STRICTE = False
+        self.ecrire_coffre("0-PROJETS/un-projet/carnets/carnet.md",
+                           "---\nagent: batisseur\nprojet: un-projet\n---\n\nCorps.\n")
+        VC.verifier_carnets()
+        self.assertEqual([], VC.erreurs)
+        self.assertTrue(VC.avertissements)
+
+
+class TestDepotDeDonnees(BaseVerificateur):
+    """§7.1 : la liste blanche du coffre est le gabarit, et le dépôt produit
+    n'entre jamais dans la mémoire."""
+
+    GABARIT = "IA/system/depot-de-donnees/gitignore-coffre"
+    LISTE = "/*\n!/.gitignore\n!/0-*/\n"
+
+    def setUp(self):
+        super().setUp()
+        self._strict_avant = VC.MEMOIRE_STRICTE
+        self.addCleanup(setattr, VC, "MEMOIRE_STRICTE", self._strict_avant)
+        VC.MEMOIRE_STRICTE = True
+
+    def test_un_gabarit_absent_est_une_erreur(self):
+        VC.verifier_depot_de_donnees()
+        self.assertIn("gabarit de la liste blanche du coffre absent",
+                      self.erreurs_texte())
+
+    def test_une_liste_blanche_conforme_passe(self):
+        self.ecrire(self.GABARIT, self.LISTE)
+        (self.parent / ".gitignore").write_text(self.LISTE, encoding="utf-8")
+        VC.verifier_depot_de_donnees()
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+
+    def test_une_liste_blanche_retouchee_est_signalee(self):
+        self.ecrire(self.GABARIT, self.LISTE)
+        (self.parent / ".gitignore").write_text(self.LISTE + "!/secret/\n",
+                                                encoding="utf-8")
+        VC.verifier_depot_de_donnees()
+        self.assertIn("diffère du gabarit", self.erreurs_texte())
+
+    def test_le_depot_produit_suivi_par_la_memoire_est_signale(self):
+        self.ecrire(self.GABARIT, self.LISTE)
+        (self.parent / ".gitignore").write_text(self.LISTE, encoding="utf-8")
+        self.ecrire("IA/README.md", "# Racine\n")
+        git(self.parent, "init", "--quiet")
+        git(self.parent, "add", "-f", "OBSIA/IA/README.md")
+        VC.verifier_depot_de_donnees()
+        self.assertIn("dépôt produit est suivi", self.erreurs_texte())
+
+    def test_un_coffre_sans_depot_git_est_accepte(self):
+        """La liste blanche seule suffit : le dépôt de données viendra après."""
+        self.ecrire(self.GABARIT, self.LISTE)
+        (self.parent / ".gitignore").write_text(self.LISTE, encoding="utf-8")
+        VC.verifier_depot_de_donnees()
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+
+
+class FauxJour:
+    """Un `datetime.date` de rechange : `today()` renvoie un jour fixe.
+
+    `verifier_bascule` lit la date du jour ; sans ce bouchon, on ne pourrait
+    éprouver l'échéance qu'en attendant 2027.
+    """
+
+    def __init__(self, jour: date):
+        self.jour = jour
+
+    def today(self) -> date:
+        return self.jour
+
+    @staticmethod
+    def fromisoformat(texte: str) -> date:
+        return date.fromisoformat(texte)
+
+
+class TestBasculeDatée(BaseVerificateur):
+    """§6 (transition) : la tolérance datée — avertissement, puis erreur.
+
+    Jusqu'au 2026-12-31, l'ancienne forme de la mémoire se tolère : la
+    migration est en cours. Passé ce jour, sa survie fait échouer le contrôle —
+    une tolérance qu'on ne paie pas ne se retire pas.
+    """
+
+    GABARIT = TestDepotDeDonnees.GABARIT
+    LISTE = TestDepotDeDonnees.LISTE
+
+    def setUp(self):
+        super().setUp()
+        self._date_avant = VC.date
+        self.addCleanup(setattr, VC, "date", self._date_avant)
+
+    def coffre_prepare(self):
+        """Un coffre minimal valide : la liste blanche et son gabarit."""
+        self.ecrire(self.GABARIT, self.LISTE)
+        (self.parent / ".gitignore").write_text(self.LISTE, encoding="utf-8")
+
+    def test_avant_le_jour_dit_l_ancien_memoire_est_tolere(self):
+        self.ecrire("mémoire/projets/obsia/carnets.md", "Ancien carnet.\n")
+        VC.verifier_bascule(date(2026, 12, 31))
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+
+    def test_apres_le_jour_dit_l_ancien_memoire_est_une_erreur(self):
+        self.ecrire("mémoire/projets/obsia/carnets.md", "Ancien carnet.\n")
+        VC.verifier_bascule(date(2027, 1, 1))
+        self.assertIn("bascule non achevée", self.erreurs_texte())
+        self.assertIn("mémoire", self.erreurs_texte())
+
+    def test_avant_le_jour_dit_session_log_est_tolere(self):
+        """`session-log/` est de la mémoire : il suit `mémoire/`, sans plus."""
+        self.ecrire("IA/system/session-log/2026-09-01-seance.md", "Séance.\n")
+        VC.verifier_bascule(date(2026, 12, 31))
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+
+    def test_apres_le_jour_dit_session_log_est_une_erreur(self):
+        self.ecrire("IA/system/session-log/2026-09-01-seance.md", "Séance.\n")
+        VC.verifier_bascule(date(2027, 1, 1))
+        self.assertIn("bascule non achevée", self.erreurs_texte())
+        self.assertIn("session-log", self.erreurs_texte())
+
+    def test_apres_le_jour_dit_un_dossier_tiret_est_une_erreur(self):
+        self.coffre_prepare()
+        (self.parent / "-PROJETS").mkdir()
+        VC.verifier_bascule(date(2027, 1, 1))
+        self.assertIn("bascule non achevée", self.erreurs_texte())
+        self.assertIn("-PROJETS", self.erreurs_texte())
+
+    def test_un_coffre_migre_passe_apres_le_jour_dit(self):
+        self.coffre_prepare()
+        (self.parent / "0-PROJETS").mkdir()
+        VC.verifier_bascule(date(2027, 1, 1))
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+
+    def test_un_tiret_hors_coffre_ne_fait_pas_echouer(self):
+        """Un dossier `-…` chez un inconnu n'est pas un vestige de notre bascule."""
+        (self.parent / "-brouillons").mkdir()
+        VC.verifier_bascule(date(2027, 1, 1))
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+
+    def test_main_refuse_apres_le_jour_dit(self):
+        """L'échéance est branchée : le contrôle complet échoue, pas seulement
+        la fonction appelée seule."""
+        self.coffre_prepare()
+        (self.parent / "-PROJETS").mkdir()
+        VC.date = FauxJour(date(2027, 1, 1))
+        with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+            code = VC.main(["--carnets", "--silencieux"])
+        self.assertEqual(1, code)
+        self.assertIn("bascule non achevée", self.erreurs_texte())
 
 
 if __name__ == "__main__":

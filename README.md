@@ -2,12 +2,13 @@
 
 **English** | [Français](README.fr.md)
 
-An Obsidian vault that describes your AI agents — roles, skills, memory, rules —
-and the tasks they run.
+A repository that describes your AI agents — roles, skills, rules — and the tasks
+they run, to be cloned at the root of a note vault.
 
-Agents, their skills and their memory are Markdown files. No database, no
-proprietary format: the vault can be read and edited by hand, in Obsidian or in
-any text editor.
+Agents, their skills and their tasks are Markdown files. No database, no
+proprietary format: the repository can be read and edited by hand, in Obsidian or
+in any text editor. The **memory**, however, lives in the parent vault, not here
+(§6, §7.1).
 
 > **Language note.** The vault itself — contract, agents, skills, scripts — is
 > written in French, and agents answer in French by default. This page and
@@ -36,7 +37,7 @@ and scheduled tasks. A skill's content is read only when it becomes necessary.
 ## Layout
 
 ```
-OBSIA/                       the vault — the repository root IS the vault
+OBSIA/                       the repository — the tool, not the memory
 ├── IA/
 │   ├── agents/              agent definitions
 │   ├── skills/              reusable skills
@@ -46,15 +47,13 @@ OBSIA/                       the vault — the repository root IS the vault
 │                            modules/ (the installable catalogue),
 │                            prompt-fondateur.md (original intent),
 │                            adaptateurs-harness/ (integration templates)
-├── mémoire/                 shared → profile, preferences, projects;
-│                            per agent → lessons learned
 ├── brouillon/               free scratch area
 ├── scripts/
 │   ├── installer.py         probes the machine, keeps the useful modules
 │   ├── publier.py           derives the public mirror from this repository
 │   ├── generer_prompt.py    system prompt from the frontmatters
 │   ├── regenerate_index.py  the four indexes and IA/README.md
-│   ├── regenerate_sommaire.py  the sommaire.md files of mémoire/
+│   ├── regenerate_sommaire.py  the sommaire.md files of the parent vault
 │   └── verifier_coffre.py   vault consistency checks — run in CI
 ├── HISTORIQUE.md            what was decided, then dropped
 ├── LICENSE                  AGPL-3.0-or-later
@@ -62,10 +61,12 @@ OBSIA/                       the vault — the repository root IS the vault
 └── .gitignore
 ```
 
-There is no "vault" subfolder: the repository itself is the vault. To use it,
-clone `OBSIA/` **at the root** of your Obsidian vault, next to your knowledge
-folders, and open Obsidian on the whole vault (not on `OBSIA/` alone): that is
-what makes backlinks resolve across the vault (§7 of the contract).
+There is no "vault" subfolder: `OBSIA/` is installed **at the root** of your
+Obsidian vault, next to your knowledge folders, and Obsidian opens that whole
+vault (not `OBSIA/` alone): that is what makes backlinks resolve across the vault
+(§7). The memory — summaries, logs, knowledge, profile — lives in the `0-…`
+folders of that parent vault, under its own Git repository (§6, §7.1); `OBSIA/`
+holds none of it.
 
 The vault knows no interface and names none. It describes *what* to do; the
 harness of your choice provides *what with*. Nothing here depends on a
@@ -73,16 +74,24 @@ particular program — that is what keeps OBSIA free to move.
 
 ## The parent vault — your knowledge base
 
-OBSIA is the core; the vault around it is your knowledge base. It is written
-`Mon coffre/` throughout the repository, and the repository is cloned at its
-root, next to `_MAINTENANCE/`, `-PROJETS/` (projects), `-DOCUMENTS/`,
-`-PERSONNELS/` (personal), `-SAVOIRS/` (knowledge) and `-EN-VRAC/` (inbox).
-Only `OBSIA/` is versioned.
+OBSIA is the tool; the vault around it carries your memory. It is written
+`Mon coffre/` throughout the repository, and `OBSIA/` is installed at its root,
+next to `_MAINTENANCE/`, `0-PROJETS/` (projects),
+`0-MEMOIRES/` (agent memory, and closed work), `0-DOCUMENTS/`,
+`0-PERSONNELS/` (personal), `0-SAVOIRS/` (knowledge) and
+`0-EN-VRAC/` (inbox). Every top-level memory folder starts with `0-` (§7.1).
+
+The parent vault is **its own Git repository**: memory is versioned there, on a
+single writer, and pushed to one remote (bare, on the NAS). `OBSIA/`,
+`brouillon/`, `.obsidian/` and the rest of the tool are excluded by a
+whitelist `.gitignore`; `**/.git` stays out of Syncthing (§7). Nothing private
+leaves the tool: `OBSIA/brouillon/` and `OBSIA/IA/system/session-log/` are never
+published (§8).
 
 The top-level structure is fixed (only you change it). Agents read the whole
-parent vault, fill in the notes of `-EN-VRAC/` (body, tags, backlinks) and then
-file them, complete the notes dropped into `-SAVOIRS/`, and log previews and
-actions in `_MAINTENANCE/`. `-EN-VRAC/` is a **buffer**: a tidying session
+parent vault, fill in the notes of `0-EN-VRAC/` (body, tags, backlinks) and then
+file them, complete the notes dropped into `0-SAVOIRS/`, and log previews and
+actions in `_MAINTENANCE/`. `0-EN-VRAC/` is a **buffer**: a tidying session
 empties it entirely. The full rules are in §7 of
 `IA/system/VAULT-CONTRACT.md`.
 
@@ -245,7 +254,8 @@ generated file. It writes nothing and exits with code 1.
 The same checks run in continuous integration on every push. No dependency:
 Python standard library only.
 
-To run them automatically before each commit, once per clone:
+To run them automatically before each commit, once per clone — `installer.py
+--appliquer` arms it for you (§13):
 
 ```bash
 git config core.hooksPath .githooks
@@ -292,7 +302,7 @@ read_only: false
 Lists are written with hyphens, one entry per line. `skills: a, b` is a
 string, not a list.
 
-This frontmatter is the boundary between the vault and any program reading it.
+This frontmatter is the boundary between the tool and any program reading it.
 `schema` lets it evolve without breaking existing consumers.
 
 ## Rules
@@ -301,11 +311,13 @@ They live in `IA/system/VAULT-CONTRACT.md`, which is authoritative. In short:
 
 - The vault is read-only for agents. Changes go through Git patches submitted
   for review.
-- No deletion without prior archiving.
+- No deletion without prior archiving — and archiving is the memory repository's
+  Git history (§2).
 - A preview is mandatory before any action touching several files.
-- Generated files — `sommaire.md`, `agents-index.md`, `skills-index.md`,
-  `taches-index.md`, `IA/README.md` — are regenerated by script, never edited
-  by hand. If an index contradicts a frontmatter, the frontmatter wins.
+- Generated files — `sommaire.md` (in the parent vault), `agents-index.md`,
+  `skills-index.md`, `taches-index.md`, `IA/README.md` — are regenerated by
+  script, never edited by hand. If an index contradicts a frontmatter, the
+  frontmatter wins.
 - An agent and a skill are two distinct things. An agent decides; a skill
   describes a way of doing.
 
@@ -328,9 +340,12 @@ revoke the secret first, clean the history second.
 
 ## Public and private
 
-The working repository is **private**: it carries its owner's memory, session
-logs and profile. This public repository is its **distribution**: the same
-vault, minus whatever describes a person or a machine.
+The working repository is **private**: it carries the tool, its session logs and
+its `brouillon/`. This public repository is its **distribution**: the same tool,
+minus whatever describes a person or a machine.
+
+The **memory** is in neither: it has its own repository, at the root of the
+parent vault, pushed to the NAS (§7.1). It is not published.
 
 The private one is authoritative, and `scripts/publier.py` derives the public
 one from it. One-way flow is not just a precaution: it is what creates the
@@ -355,10 +370,11 @@ documentation: the private README announces the private address, which would
 give a public reader a 404 without telling them why.
 
 It exports the tree tracked by Git at `HEAD` — never the working directory,
-because what is not tracked has not been reviewed —, empties `mémoire/`,
+because what is not tracked has not been reviewed —, empties
 `IA/system/session-log/`, `brouillon/` and `.archive/` of everything but their
-`README.md`, runs a leak check, regenerates the indexes, checks the resulting
-vault, then writes into the target. It never pushes.
+`README.md` (during the switch-over, the old `mémoire/` too), runs a leak check,
+regenerates the indexes, checks the resulting vault, then writes into the
+target. It never pushes.
 
 The leak check looks for **values**, not the words that name them: an email
 address, a private IP, a private key block, a known token prefix, a secret

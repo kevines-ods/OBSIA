@@ -13,7 +13,7 @@ read_only: true
 ## Procédure
 
 1. **Relire la note** `<projet> — vision.md`, à la racine du dossier du
-   projet (§7.3) — celle du grand projet pour un sous-projet. Si
+   projet (§7.3) — celle du grand projet pour un chantier. Si
    elle manque, s'arrêter et charger `extrapolation-des-finalites`.
 2. **Isoler l'objet.** Demander ce qui est présenté — un plan, une stack, un
    diff, une décision — et le lire **sans** le raisonnement qui y a mené.

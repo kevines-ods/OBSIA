@@ -29,8 +29,9 @@ Mensuelle, parce qu'une leçon par mois est déjà plus que le rythme auquel le
 coffre en produit — sept en six mois. Plus fréquent, la tâche tournerait à
 vide ; plus rare, les revues échues s'empileraient.
 
-`exécutant: local` : elle lit `mémoire/` et écrit des patchs dans un clone du
-coffre. Un planificateur distant n'aurait rien sous la main.
+`exécutant: local` : elle lit les leçons du coffre parent
+(`Mon coffre/0-MEMOIRES/*/expériences/`) et écrit des patchs dans un clone du
+dépôt produit. Un planificateur distant n'aurait rien sous la main.
 
 Activée le 2026-09-26 sur décision de l'utilisateur, **avant** que le skill
 ait tourné une fois en entier sur une vraie leçon. Le premier déclenchement
@@ -39,8 +40,8 @@ procédure jamais éprouvée découvre ses défauts sans personne devant l'écra
 
 ## Instruction
 
-Place-toi à la racine du coffre OBSIA. Deux temps, dans cet ordre — les revues
-d'abord, parce qu'une modification non statuée fausse le jugement sur la
+Place-toi à la racine du dépôt produit. Deux temps, dans cet ordre — les
+revues d'abord, parce qu'une modification non statuée fausse le jugement sur la
 suivante.
 
 **1. Statuer sur les revues échues.**

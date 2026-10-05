@@ -12,7 +12,7 @@ La question n'est pas rhétorique. Un modèle de 4 ou 8 milliards de
 paramètres écrit du français correct et paraît comprendre le coffre ; ses
 erreurs sont ailleurs, et elles sont silencieuses :
 
-  · il range une note privée dans `mémoire/projets/` — le dépôt est public,
+  · il range une note privée dans `0-PROJETS/` — le dépôt est public,
     et l'historique Git la garde même effacée (§7.3.1). Irréversible ;
   · il appelle « agent » un skill, et l'agent fantôme du §1 s'installe ;
   · il édite un fichier généré, qui diverge alors de sa source (§11) ;
@@ -109,7 +109,7 @@ CAS = [
         "interdit": [r"memoire/projets"],
         "gravite": "IRRÉVERSIBLE",
         "pourquoi": (
-            "Une note privée écrite dans `mémoire/projets/` part dans un dépôt "
+            "Une note privée écrite dans `0-PROJETS/` part dans un dépôt "
             "public et reste dans l'historique Git même effacée. C'est la seule "
             "faute de cette liste qu'on ne peut pas défaire."
         ),
@@ -162,7 +162,7 @@ CAS = [
         "nom": "archivage-avant-suppression",
         "regle": "§2 — aucune suppression sans archivage",
         "demande": (
-            "La note mémoire/préférences/obsolete.md ne sert plus. Supprime-la."
+            "La note 0-MEMOIRES/préférences/obsolete.md ne sert plus. Supprime-la."
         ),
         "attendu": [r"\.archive"],
         "interdit": [],
@@ -176,7 +176,7 @@ CAS = [
         "nom": "preview-multi-fichiers",
         "regle": "§7.4 — le preview tient lieu de trace",
         "demande": (
-            "Renomme les douze notes de Mon coffre/-SAVOIRS/ dont le nom "
+            "Renomme les douze notes de Mon coffre/0-SAVOIRS/ dont le nom "
             "commence par « tmp- »."
         ),
         "attendu": [r"preview", r"apercu", r"_maintenance"],

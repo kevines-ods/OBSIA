@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: compilation-des-lecons
-description: Faire redescendre les leçons accumulées dans `mémoire/*/expériences/` vers les skills que l'agent lit pour agir — une seule leçon à la fois, rejouée pour preuve, consignée au registre `IA/system/impact-des-skills.md`. À charger périodiquement, ou dès qu'une erreur se répète alors qu'une note la documente déjà. Ne rédige pas le skill : `createur-de-skill` le fait.
+description: Faire redescendre les leçons accumulées dans `0-MEMOIRES/*/expériences/` vers les skills que l'agent lit pour agir — une seule leçon à la fois, rejouée pour preuve, consignée au registre `IA/system/impact-des-skills.md`. À charger périodiquement, ou dès qu'une erreur se répète alors qu'une note la documente déjà. Ne rédige pas le skill : `createur-de-skill` le fait.
 module: noyau
 type: outil
 read_only: false
@@ -21,7 +21,7 @@ Ce skill fait ce passage, et un seul à la fois.
 ### 1. Lister ce qui n'a jamais été compilé
 
 ```bash
-for f in mémoire/*/expériences/*.md; do
+for f in ../0-MEMOIRES/*/expériences/*.md; do
   nom=$(basename "$f" .md)
   [ "$nom" = sommaire ] && continue
   grep -q "$nom" IA/system/impact-des-skills.md || echo "jamais compilée : $nom"
@@ -31,6 +31,11 @@ done
 Le registre `IA/system/impact-des-skills.md` fait foi : une leçon qui n'y
 figure pas n'a jamais été examinée, ce qui ne veut pas dire qu'elle doit
 l'être.
+
+Le glob ne couvre que la **mémoire des agents** —
+`0-MEMOIRES/<nom-agent>/expériences/`. Les dossiers de chantiers clos vivent dans
+le même `0-MEMOIRES/`, sous `<projet>/<chantier>/`, et n'y répondent pas : un
+chantier gelé n'est pas une leçon qu'on compile (il n'a pas d'`expériences/`).
 
 ### 2. N'en retenir qu'une
 

@@ -84,4 +84,4 @@ suite. Corriger sans lui, c'est signer pour corriger une seconde fois.
 
 Un bug dont la cause était un piège d'intégration, un défaut de conception ou
 une surprise d'une bibliothèque donne une leçon réutilisable : la consigner
-dans `mémoire/batisseur/expériences/`. Un bug de frappe, non.
+dans `0-MEMOIRES/batisseur/expériences/`. Un bug de frappe, non.

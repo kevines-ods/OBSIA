@@ -221,10 +221,10 @@ def construire_prompt(racine: Path, agents: list[dict], skills: list[dict],
     a("sujets d'une autre source, y compris de ce prompt — les listes ci-dessus")
     a("ne sont que l'index paresseux que le §10 te demande d'utiliser.")
     a("")
-    a("0. Au démarrage, cherche tes carnets `statut: en cours` — dans l'arbre")
-    a("   principal **et dans chaque worktree lié** — et propose de reprendre,")
-    a("   après les avoir rapprochés de l'état réel (§6). Un agent")
-    a("   `read_only: true` n'a pas de carnet : il saute cette étape.")
+    a("0. Au démarrage, cherche tes carnets `statut: en cours` — dans l'arbre principal")
+    a("   **et dans chaque worktree lié** — rapproche-les de l'état réel (§6) et propose")
+    a("   de reprendre. Pendant la bascule, cherche aussi aux anciens emplacements")
+    a("   (§6). Un agent `read_only: true` n'a pas de carnet : il saute cette étape.")
 
     return "\n".join(lignes)
 

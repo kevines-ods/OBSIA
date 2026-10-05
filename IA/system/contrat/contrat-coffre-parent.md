@@ -2,13 +2,13 @@
 schema: 1
 kind: contract
 name: contrat-coffre-parent
-description: Détail du coffre parent : désignation, piège du tiret, zones d'écriture et leur raison, aperçu, rétroliens, accès du harness, cycle d'-EN-VRAC.
+description: Détail du coffre parent : désignation, dépôt de données, zones d'écriture et leur raison, aperçu, rétroliens, accès du harness, cycle d'0-EN-VRAC.
 module: noyau
 ---
 
 # Annexe du contrat — coffre-parent
 
-> **À lire avant d'écrire dans le coffre parent hors d'-EN-VRAC/.** Annexe du contrat (`../VAULT-CONTRACT.md`).
+> **À lire avant d'écrire dans le coffre parent hors d'0-EN-VRAC/.** Annexe du contrat (`../VAULT-CONTRACT.md`).
 > Elle précise, elle n'ajoute aucune règle : toute règle qu'on peut enfreindre
 > sans avoir rien chargé est aussi au noyau, et en cas de contradiction le
 > noyau fait foi — l'annexe est alors à corriger. La correspondance avec l'ancien
@@ -19,8 +19,9 @@ module: noyau
 Le dépôt OBSIA est cloné **à la racine du coffre parent**, côte à côte avec
 les dossiers de connaissance. Ce coffre parent est la base de connaissances
 primordiale : il se lit, s'enrichit et s'administre — par l'utilisateur, et
-par les agents qui y accèdent selon ce paragraphe. Seul `OBSIA/` est
-versionné ; les autres dossiers ne le sont pas.
+par les agents qui y accèdent selon ce paragraphe. La mémoire — les dossiers
+`0-…` et `_MAINTENANCE/` — y est versionnée dans un **dépôt de données** à part
+(§7.1) ; `OBSIA/` a le sien, et les deux ne se couplent pas.
 
 **Le coffre parent s'écrit `Mon coffre/` partout dans ce dépôt.** C'est une
 **convention d'écriture**, pas une contrainte sur le disque : le nom réel du
@@ -32,7 +33,7 @@ on le désigne :
 
 | Ce qu'on veut dire | Comment l'écrire |
 | --- | --- |
-| un dossier du coffre parent | `Mon coffre/-SAVOIRS/` — jamais `../-SAVOIRS/` |
+| un dossier du coffre parent | `Mon coffre/0-SAVOIRS/` — jamais `../0-SAVOIRS/` |
 | le dépôt lui-même | `Mon coffre/OBSIA/`, ou son chemin interne (`IA/skills/…`) |
 | un fichier du dépôt, depuis un autre fichier du dépôt | relatif au fichier qui cite — depuis cette annexe : `../VAULT-CONTRACT.md` |
 
@@ -42,28 +43,24 @@ deux choses selon la cible — relatif au fichier ici, relatif au répertoire de
 travail là — et c'est ainsi qu'un skill finit par pointer à côté.
 
 Une **commande** reste une exception assumée : lancée depuis la racine du
-dépôt, elle atteint le coffre parent par `..` (`rg "motif" ../-SAVOIRS`). C'est
+dépôt, elle atteint le coffre parent par `..` (`rg "motif" ../0-SAVOIRS`). C'est
 du shell, pas une désignation — et c'est aussi la forme qui se moque du nom
 réel du dossier, ce qui la rend préférable au chemin absolu partout où elle
 suffit. Un chemin absolu, lui, contient une espace et
-se cite : `"$HOME/Mon coffre/-SAVOIRS"`.
+se cite : `"$HOME/Mon coffre/0-SAVOIRS"`.
 
-**Le tiret initial est un piège d'exécution, pas une coquetterie.** Les
-dossiers du coffre parent commencent par `-`, et un argument qui commence par
-`-` est lu comme une **option** par la quasi-totalité des commandes Unix :
-`rg "motif" -SAVOIRS` échoue, `ls -PROJETS` aussi. D'où trois formes à
-respecter, sans exception :
+**Le tiret initial a disparu.** Les dossiers du coffre parent commençaient
+auparavant par `-`, qu'un shell lisait comme une option : `rg "motif" -SAVOIRS`
+échouait, `ls -PROJETS` aussi. Le préfixe `0-` a supprimé le piège — un chemin
+de premier niveau s'écrit désormais tel quel, sans `./` ni guillemets pour le
+désamorcer.
 
-| Cas | Ce qui casse | Ce qui marche |
-| --- | --- | --- |
-| commande depuis la racine du dépôt | `rg "x" -SAVOIRS` | `rg "x" ../-SAVOIRS` |
-| chemin absolu | — | `"$HOME/Mon coffre/-SAVOIRS"` |
-| valeur d'option | `--dossier -SAVOIRS` | `--dossier=-SAVOIRS` |
+La règle de désignation, elle, ne change pas : un chemin du coffre parent
+s'écrit `Mon coffre/…`, jamais `../…`, et une commande lancée depuis la racine
+du dépôt l'atteint par `..` (`rg "motif" ../0-SAVOIRS`). Un chemin absolu, qui
+contient une espace, se cite : `"$HOME/Mon coffre/0-SAVOIRS"`.
 
-Le préfixe `../` ou `./` suffit à désamorcer le tiret, parce que l'argument ne
-commence alors plus par lui. Un chemin nu ne s'écrit jamais dans une commande.
-
-### 7.1 La structure — fixe
+### 7.1 La structure et le dépôt de données — fixes
 
 La structure de premier niveau est **fixe**. Seul l'utilisateur crée, renomme
 ou supprime un dossier de premier niveau. Les agents ne modifient jamais cette
@@ -71,30 +68,48 @@ structure : ils travaillent dans les dossiers existants, sans y créer de
 sous-structure de premier niveau.
 
 Les dossiers de premier niveau s'écrivent **en majuscules**, tels qu'ils sont
-sur le disque : `_MAINTENANCE/`, `-PROJETS/`… Linux distingue la casse, et un
+sur le disque : `_MAINTENANCE/`, `0-PROJETS/`… Linux distingue la casse, et un
 agent qui cherche `_maintenance/` conclut à tort que le dossier manque.
 
 | Dossier | Rôle |
 | --- | --- |
-| `Mon coffre/` | la racine — le coffre Obsidian lui-même, ouvert à ce niveau |
-| `OBSIA/` | le dépôt, versionné — agents, skills, tâches, mémoire d'OBSIA |
+| `Mon coffre/` | la racine — le coffre Obsidian lui-même, ouvert à ce niveau, et la racine du dépôt de données |
+| `OBSIA/` | le dépôt produit, versionné à part — agents, skills, tâches, scripts ; **hors** du dépôt de données |
 | `_MAINTENANCE/` | journaux, astuces de débogage, previews consignés, registre des notes traitées |
-| `-PROJETS/` | les projets en cours ou à venir — notes, et le dépôt git du projet quand il en a un (7.3) |
-| `-DOCUMENTS/` | revues, articles web, transcriptions YouTube |
-| `-PERSONNELS/` | contexte personnel : configuration matérielle/logicielle, préférences, CV… |
-| `-SAVOIRS/` | les connaissances accumulées — un fichier Markdown = un concept |
-| `-EN-VRAC/` | zone de dépôt : notes brutes, parfois un simple titre à traiter |
+| `0-PROJETS/` | les projets — notes, et le dépôt git du projet quand il en a un (7.3) |
+| `0-MEMOIRES/` | la mémoire des agents — `préférences/` et `<nom-agent>/expériences/`, **vivantes** — et les chantiers clos, **gelés** (7.3) |
+| `0-DOCUMENTS/` | revues, articles web, transcriptions YouTube |
+| `0-PERSONNELS/` | contexte personnel : profil, configuration matérielle/logicielle, CV… |
+| `0-SAVOIRS/` | les connaissances accumulées — un fichier Markdown = un concept |
+| `0-EN-VRAC/` | zone de dépôt : notes brutes, parfois un simple titre à traiter |
 
-Déplacer un dossier de premier niveau (ex. `OBSIA/` dans `-PROJETS/`) est une
+**Un seul dépôt de données** versionne la mémoire, à la racine du coffre
+parent. Son `.gitignore` est une **liste blanche** : `/*` ignore tout, puis
+`!/0-*/`, `!/_MAINTENANCE/` et `!/.gitignore` ré-autorisent la mémoire, et
+`0-PROJETS/**/code/` laisse hors dépôt le dépôt git d'un projet construit ici.
+`OBSIA/`, `AGENTS.md`, `CLAUDE.md`, `opencode.json`, `.obsidian/`, `.claude/`,
+`.aionrs/` sont donc ignorés — le dépôt produit et celui des données restent
+séparés, sans gitlink.
+
+- **Un seul écrivain Git** : la machine qui porte les agents commit à chaque
+  étape, en local. La poussée vers le **distant nu du NAS** (`coffre.git`) part
+  en arrière-plan et ne bloque jamais le travail.
+- **`**/.git` est exclu de Syncthing** : un dépôt Git vivant ne se synchronise
+  pas comme des fichiers.
+- **Aucun secret dans le dépôt de données** (§4, §9), pas plus que dans le
+  dépôt produit.
+
+Déplacer un dossier de premier niveau (ex. `OBSIA/` dans `0-PROJETS/`) est une
 décision de l'utilisateur, pas des agents.
 
 ### 7.2 Lecture
 
 Les agents `read_only: false` peuvent **lire tout le coffre parent** dès que
 le harness donne accès à sa racine (7.6) : la recherche couvre
-`_MAINTENANCE/`, `-PROJETS/`, `-DOCUMENTS/`, `-PERSONNELS/`, `-SAVOIRS/` et
-`-EN-VRAC/`. Ces dossiers se désignent par leur nom complet depuis la racine
-(`Mon coffre/-SAVOIRS/`) ; dans une commande lancée depuis la racine du dépôt,
+`_MAINTENANCE/`, `0-PROJETS/`, `0-MEMOIRES/`, `0-DOCUMENTS/`, `0-PERSONNELS/`,
+`0-SAVOIRS/` et `0-EN-VRAC/`. Ces dossiers se désignent par leur nom complet
+depuis la racine
+(`Mon coffre/0-SAVOIRS/`) ; dans une commande lancée depuis la racine du dépôt,
 ils s'atteignent par `..`.
 
 Le coffre parent n'est **pas** un « dépôt extérieur » au sens du §3 : ce
@@ -106,24 +121,28 @@ aucun secret du coffre parent n'entre dans le dépôt.
 
 ### 7.3 Écriture — zones autorisées
 
-Le coffre parent n'étant pas versionné, il n'y a **pas de patch Git**
-possible. Les écritures autorisées d'un agent `read_only: false` y sont
-directes, limitées et tracées (7.4) :
+La mémoire se versionne (§7.1), mais elle ne se **patche** pas : elle est écrite
+en direct, dans des zones limitées et tracées (7.4). Un patch est un détour fait
+pour une revue ; la mémoire se relit dans l'historique du dépôt de données. Les
+écritures autorisées d'un agent `read_only: false` sont donc directes :
 
-- `-EN-VRAC/` — remplir une note, poser tags et rétroliens, préparer le
+- `0-EN-VRAC/` — remplir une note, poser tags et rétroliens, préparer le
   classement ;
-- `-SAVOIRS/` — compléter une note que l'utilisateur y a déposée (tags,
+- `0-SAVOIRS/` — compléter une note que l'utilisateur y a déposée (tags,
   rétroliens, corps manquant), sans en changer le sens ni la déplacer ;
 - `_MAINTENANCE/` — consigner previews, actions et registre des notes
   traitées ;
-- le **classement** : déplacer une note d'`-EN-VRAC/` vers sa destination
-  (`-PROJETS/`, `-DOCUMENTS/`, `-PERSONNELS/`, `-SAVOIRS/`) une fois traitée ;
-- `-PROJETS/<projet>/` — **le dossier d'un projet de l'utilisateur**, même
-  forme que `mémoire/projets/` (§6) : `<projet> — résumé.md` (la note de
+- le **classement** : déplacer une note d'`0-EN-VRAC/` vers sa destination
+  (`0-PROJETS/`, `0-DOCUMENTS/`, `0-PERSONNELS/`, `0-SAVOIRS/`) une fois traitée ;
+- `0-PROJETS/<projet>/` — **le dossier d'un projet**, même
+  forme que `0-PROJETS/` (§6) : `<projet> — résumé.md` (la note de
   suivi, créée et tenue par l'agent, **mise à jour sur place** : où en est le
-  projet, ce qui a été décidé, ce qui reste à faire), `carnets/`,
-  `documents/`, `archives/`, un seul niveau de sous-projet ;
-- `-PROJETS/<projet>/code/` — **le dépôt git d'un projet construit ici** :
+  projet, ce qui a été décidé, ce qui reste à faire), `carnets/` du jour,
+  `documents/`, et **un dossier par chantier** — `<chantier>/`, portant ses
+  `carnets/`, ses `documents/` et son `<chantier> — résumé.md` ; un seul
+  niveau. **Plus aucun `archives/`** : un
+  chantier clos part, dossier entier, dans `0-MEMOIRES/` (§6) ;
+- `0-PROJETS/<projet>/code/` — **le dépôt git d'un projet construit ici** :
   l'agent y écrit le code et ses documents, y commite. C'est un dépôt à part
   entière, versionné pour lui-même, et la seule zone du coffre parent où du
   code vit. Le §3 s'y applique intégralement : patch revu, vérifications du
@@ -143,69 +162,80 @@ directes, limitées et tracées (7.4) :
   `/<chemin>/`, constatée par l'usage, **sans savoir si l'ancre `^` correspond
   au chemin qu'Obsidian compare**. La recette qui tranche est écrite dans
   `installation-et-publication.md` et affichée par `installer.py` : poser un
-  fichier sous `-PROJETS/<projet>/code/`, puis chercher son nom dans Obsidian.
+  fichier sous `0-PROJETS/<projet>/code/`, puis chercher son nom dans Obsidian.
   L'unicité des noms de notes (§6) reste par conséquent
-  **à surveiller** : l'exclusion allège l'index, elle ne garantit pas qu'un
-  nom de note reste unique dans tout le coffre ;
-- `-PERSONNELS/` — **une note de référence dont l'agent est l'auteur**, créée
+  **à surveiller** : l'exclusion allège l'index, elle ne garantit pas l'unicité ;
+- `0-PERSONNELS/profil-utilisateur.md` et `0-MEMOIRES/préférences/` —
+  **communs**, corrigés **directement, sur place** par tout agent
+  `read_only: false`, **sans preview** (7.4) : un fait sur l'utilisateur se
+  corrige, il ne se prévisualise pas ;
+- `0-MEMOIRES/<nom-agent>/expériences/` — les leçons d'un agent sur sa propre
+  manière de travailler ; il est le seul à y écrire ;
+- `0-PERSONNELS/` — **une note de référence dont l'agent est l'auteur**, créée
   et tenue par lui, **mise à jour sur place**, et marquée `auteur: <nom-agent>`
   dans son frontmatter : l'inventaire d'une infrastructure, par exemple, qui
   décrit l'utilisateur et doit rester vivant — une machine ajoutée, une adresse
   changée. Seul l'agent nommé dans ce champ y écrit, et chaque mise à jour
   passe par le preview du 7.4 ;
-- `-PROJETS/<projet>/<projet> — vision.md` — **la vision d'un projet de
-  l'utilisateur** : finalité déclarée, finalités possibles validées ou
-  rejetées, portes à garder ouvertes. Celle d'un projet du coffre — OBSIA
-  compris — vit dans `mémoire/projets/<projet>/` et passe par PR, comme le reste de sa demande
-  (§6). Seul l'agent `visionnaire` l'écrit, **sur place**, après validation
-  de l'utilisateur. Un sous-projet n'a pas de vision : il relève de celle de
-  son projet.
+- `0-PROJETS/<projet>/<projet> — vision.md` — **la vision d'un projet** :
+  finalité déclarée, finalités possibles validées ou rejetées, portes à garder
+  ouvertes. Seul l'agent `visionnaire` l'écrit, **sur place**, après validation
+  de l'utilisateur. Un chantier n'a pas de vision : il relève de celle de
+  son projet. **Une vision ne s'archive pas** : un domaine dormant garde la
+  sienne dans `0-PROJETS/` (§6).
 
-Une **note** de `-PROJETS/` que l'agent n'a pas écrite n'est pas à lui : elle reste protégée
+Une **note** de `0-PROJETS/` que l'agent n'a pas écrite n'est pas à lui : elle reste protégée
 comme le reste. Hors des dossiers de projet ci-dessus (note de suivi, vision, carnets,
 `code/`) et des
-notes de référence ci-dessus, une écriture dans `-PROJETS/`, `-DOCUMENTS/` ou `-PERSONNELS/` se limite au
-**dépôt d'une note classée venue d'`-EN-VRAC/`**, et à rien d'autre. On n'y
+notes de référence ci-dessus, une écriture dans `0-PROJETS/`, `0-DOCUMENTS/` ou `0-PERSONNELS/` se limite au
+**dépôt d'une note classée venue d'`0-EN-VRAC/`**, et à rien d'autre. On n'y
 modifie **jamais** une note existante, même à la demande de l'utilisateur :
-une note à enrichir repasse d'abord par `-EN-VRAC/`, puis est classée. On n'y
+une note à enrichir repasse d'abord par `0-EN-VRAC/`, puis est classée. On n'y
 déplace ni n'y supprime rien.
 
-La note de suivi, la note de vision, les carnets et la note de référence sont les seules
-exceptions, et elles tiennent à la même raison : **ce sont les seules notes de ces dossiers
-dont l'agent est l'auteur.** Il les a créées, il les met à jour, personne
-d'autre n'écrit dedans. La règle générale protège les notes de l'utilisateur
-d'une réécriture silencieuse sans Git pour la rattraper ; elle ne protège de
-rien quand l'agent corrige son propre texte. Ce qui rend la distinction
-visible sans ouvrir la note, c'est le suffixe ` — résumé` ou ` — vision`, ou le
-dossier `carnets/`, pour les premières et le champ `auteur:` pour la troisième : une note qui ne
-porte rien de tout cela n'est pas à l'agent.
+La note de suivi, la note de vision, les carnets, le profil, les préférences,
+les `expériences/` de l'agent et la note de référence sont les seules
+exceptions, et elles tiennent à la même raison : **ce sont les seules notes de
+ces dossiers dont l'agent est l'auteur ou le correcteur attitré.** Il les a
+créées, il les met à jour, personne d'autre n'écrit dedans. La règle générale
+protège les notes de l'utilisateur d'une réécriture silencieuse ; elle ne
+protège de rien quand l'agent corrige son propre texte, ou un fait sur son
+utilisateur. Ce qui rend la distinction visible sans ouvrir la note, c'est le
+suffixe ` — résumé` ou ` — vision`, le dossier `carnets/`, un chemin sous
+`0-PERSONNELS/`, ou le champ `auteur:` : une note qui ne porte rien de tout cela
+n'est pas à l'agent.
 
-### 7.3.1 Où va la note d'un projet — le miroir est public
+**Dans `0-MEMOIRES/`, seule la moitié gelée fait exception à tout** : un dossier
+de chantier clos n'y est modifié **jamais** — on y entre seulement par la
+clôture (§6), et rouvrir un chantier repasse par `0-PROJETS/`. La mémoire des
+agents y vit au contraire comme partout : `0-MEMOIRES/préférences/` et
+`0-MEMOIRES/<nom-agent>/expériences/` se corrigent **sur place**. C'est la même
+zone, pas la même règle — et c'est écrit pour que personne ne les confonde.
 
-Deux endroits portent des notes de projet, et les confondre expose du privé :
+### 7.3.1 Où va la note — le seul partage est « est-ce que ça décrit le produit ? »
 
-| Le projet porte sur… | La note va dans… | Visibilité |
+Deux endroits portent des notes, et un seul test les sépare.
+
+| La note porte sur… | Elle va dans… | Visibilité |
 | --- | --- | --- |
-| le coffre lui-même — un skill, un agent, une règle | `mémoire/projets/<projet>/` | dépôt privé, versionné, relu par PR — retiré du miroir public par `publier.py` |
-| n'importe quoi d'autre — un projet de l'utilisateur | `-PROJETS/<projet>/` | privée — le coffre parent n'est pas versionné |
+| le produit — un skill, un agent, une règle, une fiche MCP, une tâche | `OBSIA/`, sous `IA/` | dépôt produit, relu par PR, miroir public dérivé par `publier.py` (§13.5) |
+| tout le reste — une personne, un savoir, un projet, un chantier | le coffre parent, sous `0-…` | privée — le coffre parent n'est jamais publié |
 
-`mémoire/` vit dans le dépôt de travail, privé, dont le miroir public est
-dérivé (§13.5). Ce qui décrit le coffre y entre, **demande et contexte
-compris**, même s'ils nomment une personne ou un besoin — mais jamais une
-**valeur** que le §9 interdit (adresse IP, nom d'hôte interne, URL interne,
-identifiant) ; en cas de doute, le §9 l'emporte : c'est la condition pour qu'ils
-passent par PR (§6). Ce qui décrit la vie de l'utilisateur n'y entre pas —
-un projet personnel pas davantage qu'un secret (§7.2) —, et `publier.py`,
-qui vide `mémoire/`, est un filet, pas une raison d'y verser. Un chantier
-sur le coffre y a sa place parce qu'il *est* le dépôt ; un projet de
-l'utilisateur, non.
+Le coffre parent et le dépôt produit ne se mélangent pas : une note qui décrit
+le produit vit dans le produit, et **tout projet du coffre passe par une PR**,
+décrite au §6 et au §9. Le reste — la vie de l'utilisateur, un savoir,
+l'histoire d'un chantier — vit dans le coffre parent, que `publier.py` n'atteint
+pas : il traite le dépôt produit, pas la mémoire. Un secret n'y entre pas
+davantage (§7.2).
 
-Le test, avant d'écrire : *est-ce que ça décrit le coffre ?* Si non, ça va dans
-`-PROJETS/`. Dans le doute, `-PROJETS/` : un contenu privé qui atterrit dans
-un dépôt public ne se rattrape pas — l'historique Git le garde même effacé.
+Le test, avant d'écrire : *est-ce que ça décrit le produit ?* Si oui, `OBSIA/`.
+Sinon, le coffre parent, sous `0-…`. **Dans le doute, le coffre parent** : une
+note qui atterrit dans le dépôt du produit se publie avec lui, et l'historique
+Git la garde même effacée.
 
-`-PERSONNELS/` porte du contenu **personnel mais non critique** : configuration
-matérielle, préférences, CV. Il **participe au graphe de liens** comme les
+`0-PERSONNELS/` porte du contenu **personnel mais non critique** : configuration
+matérielle, CV. Les préférences, elles, vivent dans `0-MEMOIRES/préférences/`,
+avec la mémoire des agents. Le dossier **participe au graphe de liens** comme les
 autres dossiers — ces notes doivent être reliées au reste, sinon elles ne
 servent à rien. Un agent le lit donc librement pour établir des rétroliens et
 pour répondre.
@@ -218,10 +248,10 @@ jeton, clé — n'a sa place ni ici ni ailleurs (§4).
 
 ### 7.4 Preview et traçabilité — `_MAINTENANCE/`
 
-Sans Git, **le preview tient lieu de trace**. Avant toute écriture dans le
-coffre parent hors d'`-EN-VRAC/` — note créée, complétée, déplacée, création du
-carnet d'un projet de l'utilisateur comprise —, et avant toute action qui
-touche plusieurs fichiers, l'agent :
+La mémoire se versionne (§7.1), mais le preview reste la trace lisible au moment
+de l'acte. Avant toute écriture dans le coffre parent hors d'`0-EN-VRAC/` — note
+créée, complétée, déplacée, création du carnet d'un projet comprise —, et avant
+toute action qui touche plusieurs fichiers, l'agent :
 
 1. affiche le preview — fichiers concernés, contenu final, destination ;
 2. en **conserve une copie datée dans `_MAINTENANCE/`** ;
@@ -235,10 +265,15 @@ carnet dont l'agent est l'auteur se met ensuite à jour sur place sans
 nouveau preview : exiger un preview à chaque étape pousserait à tout écrire
 en fin de séance, ce que le §6 interdit.
 
+**La correction du profil et des préférences ne demande aucun preview** : elle
+se fait directement, sur place (§6), et se relit dans le commit suivant du dépôt
+de données. Le preview protège une note qu'on ne possède pas ; celle-ci est faite
+pour être corrigée à mesure.
+
 Le registre des notes traitées est le fichier
 **`Mon coffre/_MAINTENANCE/notes_remplies.md`** — une note Markdown, pour
 qu'Obsidian l'indexe et la rende consultable comme le reste. Il liste les
-notes déjà remplies, surtout celles de `-SAVOIRS/` que l'utilisateur dépose
+notes déjà remplies, surtout celles de `0-SAVOIRS/` que l'utilisateur dépose
 brutes. Une note qui y figure n'est pas à revérifier ; le registre est mis à
 jour après chaque traitement.
 
@@ -257,8 +292,8 @@ restent ici, parce qu'on peut les violer sans avoir chargé quoi que ce soit :
   générés librement par une IA, sans cohérence, surchargent les recherches.
 - **Un lien ne relie que si sa cible existe.** `[[Nom]]` vers une note absente
   n'affiche qu'une « note non créée » et ne relie rien.
-- **Les noms de notes sont uniques dans tout le coffre parent** (§6) : avant de
-  créer une note ou un lien, vérifier qu'aucun nom identique n'existe ailleurs.
+- **Unicité des noms de notes (§6)** : avant de créer une note ou un lien,
+  vérifier qu'aucun nom identique n'existe ailleurs.
 
 Ces liens se résolvent à l'échelle du coffre parent, jamais de `OBSIA/` seul,
 ce qui suppose le coffre ouvert dans Obsidian **à sa racine** — c'est au
@@ -279,13 +314,13 @@ pas pour autant : un serveur de fichiers braqué sur la racine du coffre peut
 `IA/MCP/coffre-parent.md` qui porte cette limite, pas le serveur — d'où
 l'obligation de la lire avant d'appeler un de ses outils (§10.2).
 
-### 7.7 Cycle d'une note d'`-EN-VRAC/`
+### 7.7 Cycle d'une note d'`0-EN-VRAC/`
 
-`-EN-VRAC/` est un **dossier tampon**, pas une destination : il ne stocke rien
+`0-EN-VRAC/` est un **dossier tampon**, pas une destination : il ne stocke rien
 durablement. Une session de rangement le traite **en entier**, et il est vide
 quand elle se termine : c'est le critère d'achèvement, et ce qui y reste est ce
 qui n'a pas pu être tranché — le dire. Conséquence pratique : une note
-d'`-EN-VRAC/` n'est jamais une cible de rétrolien stable, puisqu'elle aura
+d'`0-EN-VRAC/` n'est jamais une cible de rétrolien stable, puisqu'elle aura
 changé de dossier avant qu'on la relise.
 
 La procédure — lire, vérifier qu'un doublon n'existe pas, remplir, tagger,

@@ -8,10 +8,14 @@ mots), où elle vit désormais. Les numéros de section ne changent pas : une
 citation « §N » reste juste.
 
 **Principe.** Le noyau se suffit à lui-même. Toute règle qu'un agent peut
-enfreindre sans avoir rien chargé y reste, **dans sa formulation d'origine**.
-Une annexe ne porte que le pourquoi, les exemples et les procédures. Elle
-n'ajoute aucune règle : si elle contredit le noyau, c'est elle qui est
-fausse.
+enfreindre sans avoir rien chargé y reste. Depuis l'allègement du 2026-10-04,
+le noyau la garde **en une phrase, sans sa justification** : le pourquoi, les
+exemples et les procédures vivent dans une annexe, qui n'ajoute aucune règle.
+Si une annexe contredit le noyau, c'est elle qui est fausse.
+
+**Non normatif.** Ce registre est un outil de traçabilité : il dit où vit chaque
+règle, il n'en porte aucune. Seuls le noyau et ses annexes font foi ; une règle
+dont la seule trace serait une ligne d'ici n'existerait pas.
 
 **Numérotation.** Les numéros de la première colonne (« 7.4 », « 2.1 »…)
 numérotent les lignes de ce registre, **pas** les sections du contrat : la
@@ -51,9 +55,9 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | # | Règle | Dest. |
 | --- | --- | --- |
 | 2.1 | Un agent `read_only: true` n'écrit nulle part. | N |
-| 2.2 | Trois zones en écriture directe : `brouillon/` ; `mémoire/` sauf le dossier d'un autre agent ; `IA/skills/` si `createur-de-skill` est déclaré. | N |
+| 2.2 | Trois zones en écriture directe : `brouillon/` ; la mémoire du coffre parent (`0-PERSONNELS/`, `0-SAVOIRS/`, le résumé et les carnets de son chantier) sauf le dossier d'un autre agent ; `IA/skills/` si `createur-de-skill` est déclaré. | N |
 | 2.3 | Tout le reste du dépôt passe par un patch Git revu. | N |
-| 2.4 | Aucune suppression sans archivage préalable dans `.archive/`, zones directes comprises. `.archive/` reste **versionné** (jamais ignoré par Git) ; rien n'y est lu ni indexé ; les dossiers commençant par un point sont écartés partout. | N |
+| 2.4 | Aucune suppression sans archivage : pour la mémoire, **l'historique Git du dépôt de données tient lieu d'archive** ; pour le reste du dépôt produit, un fichier retiré part dans `.archive/`, qui reste **versionné** (jamais ignoré par Git). Rien de `.archive/` n'est lu ni indexé ; les dossiers commençant par un point sont écartés partout. | N |
 | 2.5 | Le pourquoi de `.archive/` versionné (sinon il ne survit pas à un clone neuf). | A·verification |
 | 2.6 | Un aperçu listant les chemins, avant toute action qui touche plusieurs fichiers. | N |
 | 2.7 | Les fichiers générés ne s'éditent jamais à la main. La liste : `sommaire.md`, `agents-index.md`, `skills-index.md`, `taches-index.md`, `modules-index.md`, `IA/README.md`. | N (liste complète gardée, M10) |
@@ -100,45 +104,46 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | --- | --- | --- |
 | 6.1 | Les noms de notes sont uniques dans tout le coffre parent. | N |
 | 6.2 | Liens vers le contrat en chemin relatif, profondeur selon la forme du skill. | N (au §5, revue N2) ; le vérificateur : A·memoire |
-| 6.3 | Arborescence de `mémoire/` (profil, préférences, projets avec résumé, vision, carnets, documents, archives, un niveau de sous-projet, expériences). | N (arbre gardé) |
-| 6.4 | Tableau « où écrire selon la nature de l'information ». | N |
+| 6.3 | Arborescence de la mémoire du coffre parent (`0-PROJETS/`, `0-MEMOIRES/` — préférences et `<nom-agent>/expériences/`, **vivantes**, et chantiers clos **gelés** —, `0-PERSONNELS/` : profil ; projets avec résumé, vision, carnets du jour, documents ; **un dossier par chantier** portant ses `carnets/`, ses `documents/` et son résumé, un seul niveau ; plus de dossier `archives/`). | A·memoire (l'arbre est dans l'annexe ; le noyau garde, en une phrase, l'axe de partage de la mémoire) |
+| 6.4 | Tableau « où écrire selon la nature de l'information ». | A·memoire (le noyau renvoie à l'annexe) |
 | 6.5 | Profil, préférences et expériences ne se datent pas ; seuls les carnets portent une date. Dans le doute, on écrit dans le carnet. | N |
-| 6.6 | `mémoire/projets/` ne porte que les chantiers du coffre ; un projet de l'utilisateur va dans `-PROJETS/`. | N |
-| 6.7 | Un projet du coffre passe par une PR, demande comprise, avec la relecture à trois. | N |
-| 6.8 | Le carnet : son nom, son frontmatter (`agent`, `projet`, `statut`), son contenu, l'étape écrite **avant** d'agir, un chantier transverse dans `obsia` sauf la part personnelle. | N |
+| 6.6 | `0-PROJETS/` porte **tout** projet — du coffre comme de l'utilisateur ; `code/` y est exclu du dépôt de mémoire. | N |
+| 6.7 | Un projet du coffre passe par une PR, demande comprise : la description porte la demande et le résumé de séance, jamais la mémoire ni un chemin du coffre parent ; relecture à trois. | N |
+| 6.8 | Le carnet : son nom, son frontmatter (`agent`, `projet`, `statut`), son contenu, l'étape écrite **avant** d'agir, son dossier — celui du chantier, ou celui du projet pour une séance sans chantier —, un chantier transverse dans `obsia` sauf la part personnelle. | N |
 | 6.9 | Une séance sans chantier écrit dans le carnet du jour du projet de domaine. Un agent en lecture seule n'écrit aucun carnet. | N |
-| 6.10 | Reprise : chercher dans l'arbre principal et dans chaque worktree, par nom d'agent, rapprocher le carnet de l'état réel, laisser l'utilisateur choisir. | N |
+| 6.10 | Reprise : chercher dans l'arbre principal et dans chaque worktree lié, par nom d'agent, rapprocher le carnet de l'état réel, laisser l'utilisateur choisir ; pendant la bascule, aux anciens emplacements aussi. | N |
 | 6.11 | Le carnet se commite à chaque étape. | N |
-| 6.12 | Transition : l'ancienne forme ne veut pas dire « sans historique ». | A·memoire (transition finie : T4 a migré `mémoire/projets/`) |
-| 6.13 | Clôture : le résumé devient un bilan avec une section « État », les carnets clos vont dans `archives/`, le durable remonte. | N |
-| 6.14 | Rien de ce qui décrit l'utilisateur ne vit chez un agent ; tout agent `read_only: false` corrige profil et préférences sur place. | N |
-| 6.15 | Pourquoi un projet ne vit pas chez un agent ; agent en lecture seule sans espace mémoire. | A·memoire (règle gardée au 6.9) |
+| 6.12 | Transition : l'ancienne forme ne veut pas dire « sans historique », et pendant la bascule carnets, projets et notes personnelles se cherchent à tout emplacement qui existe, dans l'ordre — `0-PROJETS/`, l'ancien nom `-PROJETS/`, l'ancien `mémoire/projets/` du dépôt ; le profil sous `0-PERSONNELS/`, `-PERSONNELS/`, `mémoire/` ; les préférences et les expériences sous `0-MEMOIRES/`, puis `0-PERSONNELS/`, `-PERSONNELS/`, `mémoire/`. | A·memoire (l'ordre détaillé ; le noyau garde la clause datée — chantier `souverainete-des-donnees`, au plus tard le 2026-12-31 — et le renvoi) |
+| 6.13 | Clôture : le résumé devient un bilan avec une section « État », le dossier entier du chantier gèle dans `0-MEMOIRES/`, le durable remonte avant. | N |
+| 6.14 | Rien de ce qui décrit l'utilisateur ne vit chez un agent ; tout agent `read_only: false` corrige sur place le profil (`0-PERSONNELS/`) et les préférences (`0-MEMOIRES/préférences/`, dossier commun, jamais sous le nom d'un agent). | N |
+| 6.15 | Pourquoi un projet ne vit pas chez un agent ; agent en lecture seule sans espace mémoire (`0-MEMOIRES/<nom-agent>/`). | A·memoire (règle gardée au 6.9) |
 | 6.16 | Le nom d'une note dit son sujet. | N |
-| 6.17 | Noms de projets explicites ; jamais `agent 1` ni `projets 1`. | N (revue N2) |
+| 6.17 | Noms de projets explicites ; jamais `agent 1` ni `projets 1`. Un projet ne peut porter ni `préférences` ni le nom d'un agent : la collision rendrait la mémoire des agents indistinguable d'un chantier gelé, et le contrôle refuse. | N (revue N2) |
 
 ## §7 Coffre parent
 
 | # | Règle | Dest. |
 | --- | --- | --- |
-| 7.1 | Seul `OBSIA/` est versionné. Le coffre parent s'écrit `Mon coffre/`, son nom réel se lit dans `obsia.local.yml`. | N |
+| 7.1 | Le coffre parent est **son propre dépôt Git** : versionné, un seul écrivain, un unique dépôt distant nu sur le NAS, `**/.git` hors de Syncthing ; `OBSIA/` en est exclu par un `.gitignore` en liste blanche. Le coffre s'écrit `Mon coffre/`, son nom réel se lit dans `obsia.local.yml`. | N (la règle, en une phrase) ; le gabarit `.gitignore` exact : A·coffre-parent |
 | 7.2 | `../` ne sert qu'à l'intérieur du dépôt, jamais pour désigner le coffre parent. | N |
-| 7.3 | **Piège du tiret** : un chemin nu qui commence par `-` ne s'écrit jamais dans une commande ; on le préfixe de `../` ou `./`, ou on cite le chemin absolu. | N (une phrase, sans tableau) |
+| 7.3 | Les dossiers de mémoire de premier niveau commencent par `0-` : un chemin n'est plus confondu avec une option, le piège du tiret a disparu. | N (une phrase, sans tableau) |
+| 7.3.1 | Où va la note d'un projet : *est-ce que ça décrit le produit ?* Si oui, le dépôt produit (`IA/system/`, `IA/skills/`, `IA/MCP/`, `IA/tâches/`) et la PR ; sinon le coffre parent, sous `0-…`, jamais `OBSIA/` — **dans le doute, le coffre parent**. | N |
 | 7.4 | Tableau des trois formes, exemples, chemin absolu entre guillemets. | A·coffre-parent |
-| 7.5 | Structure de premier niveau fixe : seul l'utilisateur crée, renomme ou supprime un dossier de premier niveau. Les noms s'écrivent en majuscules, tels qu'ils sont sur le disque. | N |
-| 7.6 | Tableau des dossiers et de leur rôle. | N (une ligne par dossier) |
+| 7.5 | Structure de premier niveau fixe : le dépôt produit (`OBSIA/`) est exclu ; seul l'utilisateur crée, renomme ou supprime un dossier de mémoire de premier niveau. Les noms s'écrivent en majuscules, tels qu'ils sont sur le disque. | N |
+| 7.6 | Tableau des dossiers et de leur rôle, `0-MEMOIRES/` compris (la mémoire des agents y vit, les chantiers clos y sont gelés). | A·coffre-parent (le noyau garde la règle des `0-` et des trois noms) |
 | 7.7 | Un agent `read_only: false` lit tout le coffre parent. Lire n'est pas recopier : rien du coffre parent ne migre dans `OBSIA/`, aucun secret n'y entre. | N |
-| 7.8 | Zones d'écriture : `-EN-VRAC/`, compléter dans `-SAVOIRS/`, `_MAINTENANCE/`, le classement, `-PROJETS/<projet>/` (résumé, carnets, documents, archives), `code/`, la note de référence `auteur:` de `-PERSONNELS/`, la vision par le seul `visionnaire`. | N (une liste) |
-| 7.9 | On ne modifie jamais une note existante de `-PROJETS/`, `-DOCUMENTS/` ou `-PERSONNELS/` dont l'agent n'est pas l'auteur, même à la demande de l'utilisateur ; on n'y déplace ni n'y supprime rien. | N |
+| 7.8 | Zones d'écriture : `0-EN-VRAC/`, compléter dans `0-SAVOIRS/`, `_MAINTENANCE/`, le classement, `0-PROJETS/<projet>/` (résumé, carnets, documents), `code/`, la note de référence `auteur:` de `0-PERSONNELS/`, `0-MEMOIRES/préférences/` et `0-MEMOIRES/<nom-agent>/expériences/` (corrigées sur place), la vision par le seul `visionnaire` ; un dossier de chantier clos de `0-MEMOIRES/` ne s'écrit jamais (gelé). | N (une liste) |
+| 7.9 | On ne modifie jamais une note existante de `0-PROJETS/`, `0-DOCUMENTS/` ou `0-PERSONNELS/` dont l'agent n'est pas l'auteur, même à la demande de l'utilisateur ; on n'y déplace ni n'y supprime rien. | N |
 | 7.10 | Pourquoi l'auteur peut corriger son propre texte ; les marques (` — résumé`, ` — vision`, `carnets/`, `auteur:`). | A·coffre-parent (les marques restent au noyau) |
 | 7.11 | `code/` : §3 intégral ; exclusion Obsidian posée par l'installeur ; réserve sur l'effet du motif et sur l'unicité des noms. | A·coffre-parent (la phrase « §3 intégral » reste au noyau) |
-| 7.12 | Test « est-ce que ça décrit le coffre ? ». Dans le doute, `-PROJETS/`. Jamais une valeur interdite par le §9 dans `mémoire/`, et le §9 l'emporte. | N |
-| 7.13 | `-PERSONNELS/` : on y lit librement ; on n'y écrit que pour classer ou tenir sa note de référence ; son contenu ne migre jamais dans `OBSIA/`. | N |
-| 7.14 | Aperçu, copie datée dans `_MAINTENANCE/`, exécution, puis consignation, avant toute écriture hors `-EN-VRAC/` ou sur plusieurs fichiers. | N |
+| 7.12 | Jamais une valeur interdite par le §9 dans `OBSIA/` ; le §9 l'emporte sur tout. | N |
+| 7.13 | `0-PERSONNELS/` : on y lit librement ; on n'y écrit que pour classer ou tenir sa note de référence ; son contenu ne migre jamais dans `OBSIA/`. | N |
+| 7.14 | Aperçu, copie datée dans `_MAINTENANCE/`, exécution, puis consignation, avant toute écriture hors `0-EN-VRAC/` ou sur plusieurs fichiers. | N |
 | 7.15 | Une action de chantier va au carnet, une action hors chantier dans `_MAINTENANCE/`. Un carnet dont on est l'auteur se met à jour sans nouvel aperçu. | N |
 | 7.16 | Le registre `notes_remplies.md` : une note qui y figure n'est pas à revérifier, et il se met à jour après chaque traitement. | N |
 | 7.17 | Tags du vocabulaire contrôlé (`IA/system/tags-du-coffre-parent.md`), jamais hors liste. Un lien ne relie que si sa cible existe. Les noms de notes sont uniques. | N |
 | 7.18 | Accès du harness : il doit lire et écrire à la racine du coffre parent. Lire la fiche `IA/MCP/coffre-parent.md` avant d'appeler ses outils. | N |
-| 7.19 | `-EN-VRAC/` est un tampon, vidé à chaque rangement. Une note d'`-EN-VRAC/` n'est jamais une cible de rétrolien stable. | N (M : rétabli) |
+| 7.19 | `0-EN-VRAC/` est un tampon, vidé à chaque rangement. Une note d'`0-EN-VRAC/` n'est jamais une cible de rétrolien stable. | N (M : rétabli) |
 | 7.20 | Le pourquoi de chaque zone, le lien avec les skills `traitement-des-notes` et `adaptateurs-harness`. | A·coffre-parent |
 
 ## §8 Sources
@@ -151,8 +156,8 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 
 | # | Règle | Dest. |
 | --- | --- | --- |
-| 9.1 | La trace d'une séance, c'est le carnet, écrit au fil de l'eau ; pour un projet du coffre, il entre dans la PR et se relit avec le diff. Il n'y a pas d'autre journal. | N |
-| 9.2 | `IA/system/session-log/` est archivé : on n'y écrit plus, et ses notes ne se réécrivent pas. | N |
+| 9.1 | La trace d'une séance, c'est le carnet, écrit au fil de l'eau dans le dépôt du coffre parent (§7.1) ; la PR du produit ne porte que la demande et le résumé de séance, et se relit avec le diff. Il n'y a pas d'autre journal. | N |
+| 9.2 | `IA/system/session-log/` est des notes de séance — donc de la **mémoire** : on n'y écrit plus, ses notes ne se réécrivent pas, et elles quittent le dépôt à la bascule. | Hors du noyau ; `A·memoire` (transition) — destination `0-MEMOIRES/obsia/session-log/`, gelé ; `verifier_coffre.py` refuse leur survie après le 2026-12-31 (§11). |
 | 9.3 | **Tout appel de MCP, quel que soit son `permission`**, et toute correction appliquée à un système, s'inscrivent au carnet sur une ligne horodatée (quoi, où, résultat). | N (perte relevée en B1, rétablie mot pour mot) |
 | 9.4 | Première limite : le carnet n'est pas un journal d'audit infalsifiable, et celui d'un projet de l'utilisateur n'a que l'aperçu du §7.4. | N |
 | 9.4b | Seconde limite : on consigne la **nature** de l'action, pas nécessairement sa cible. Une trace qu'on ne pourrait pas publier ne s'écrit pas davantage dans le privé. | N (B1 de N0, rétablie) |
@@ -173,11 +178,11 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | # | Règle | Dest. |
 | --- | --- | --- |
 | 11.1 | Si un index et un frontmatter se contredisent, le frontmatter a raison : on corrige la source, puis on régénère. | N (A4) |
-| 11.2 | Tableau fichier → script → source ; sommaires non versionnés. | A·verification (liste des fichiers gardée au 2.7) |
+| 11.2 | Tableau fichier → script → source ; les sommaires se génèrent dans le coffre parent, pas dans ce dépôt. | A·verification (liste des fichiers gardée au 2.7) |
 | 11.3 | Un échec de routage se corrige dans la description. Une attente ne se relâche que lorsqu'elle demande l'impossible à une mesure lexicale, et cela s'écrit dans `IA/system/routage-attendu.md` avec sa raison. Les exemptions vivent dans le script, jamais dans un frontmatter. | N (A4) |
-| 11.4 | Un contrôle qu'on croit plus large qu'il n'est vaut moins que pas de contrôle ; `mémoire/` et `session-log/` sont exemptés du contrôle des chemins. | A·verification |
-| 11.5 | Avant un commit : `regenerate_sommaire`, `regenerate_index`, `verifier_coffre`, `evaluer_routage`. | N (les quatre commandes) |
-| 11.6 | Le crochet de pré-commit s'active une fois par clone : `git config core.hooksPath .githooks`. | N (M8) |
+| 11.4 | Un contrôle qu'on croit plus large qu'il n'est vaut moins que pas de contrôle ; `brouillon/`, `.archive/` et `IA/system/session-log/` sont exemptés du contrôle des chemins — la mémoire est sortie du dépôt, ses chemins ne s'y citent plus. | A·verification |
+| 11.5 | Avant un commit : `regenerate_sommaire`, `regenerate_index`, `verifier_coffre`, `evaluer_routage`. | A·verification (la séquence ; le crochet la lance, le noyau renvoie à l'annexe) |
+| 11.6 | Le crochet de pré-commit s'active une fois par clone — `installer.py --appliquer` l'arme (`git config core.hooksPath .githooks`). | A·verification (le noyau renvoie à l'annexe) |
 | 11.7 | CI, `--no-verify`, `evaluer_modele.py`, bibliothèque standard seule. | A·verification |
 
 ## §12 Tâches planifiées
@@ -198,7 +203,7 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | 13.3 | Profil `obsia.local.yml` non versionné, écrit par l'installeur ; pas de profil = catalogue complet. | N (revue N3) ; le pourquoi : A·distribution |
 | 13.4 | `installer.py` et `publier.py` n'écrivent qu'avec `--appliquer`. Lire `installation-et-publication.md` avant de les lancer avec `--appliquer`. | N |
 | 13.5 | Le privé fait foi ; la publication va à sens unique ; une correction faite sur le public se reporte à la main dans le privé. | N (A3) ; le pourquoi : A·distribution |
-| 13.6 | Un fichier publié ne cite pas un chemin non publié (`mémoire/`, `brouillon/`, `.archive/`, `session-log/`), sauf leurs `README.md` et `profil-utilisateur.md`. | N (s'enfreint en écrivant un skill) |
+| 13.6 | Un fichier publié ne cite pas un chemin non publié (`brouillon/`, `.archive/`, et l'ancien `mémoire/` pendant la bascule), sauf leurs `README.md` et `profil-utilisateur.md`. | N (s'enfreint en écrivant un skill) |
 | 13.7 | Contrôle de fuite : les valeurs à forme reconnaissable refusent la publication ; `--forcer` ne franchit jamais une clé privée ni un jeton ; les noms de la liste locale avertissent sans bloquer, et un agent rapporte l'avertissement. Liste absente = aucun nom contrôlé : « aucune trouvaille » ne dit alors rien des noms nus. | N (M7) ; motifs exacts A·distribution |
 
 ## Ce qui a été vérifié
@@ -210,6 +215,26 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
   3.5, 9.3, 9.4, 9.4b, 9.5, 10.1–10.4, 2.4, 2.7, 11.1, 7.19, 5.1 (`kind: contract`
   et exceptions). Après la relecture du registre : 5.5, 5.8, 5.9, 11.3, 11.6,
   12.1 (suspendre, instancier), 12.3, 13.5, 13.7 remontent ou sont complétés.
+- **Allègement du 2026-10-04.** Le noyau est redescendu de 574 à **450 lignes**
+  (ligne de base `main` : 442) en sortant du noyau ce qui n'y est pas une règle :
+  l'arbre de la mémoire et le tableau « où écrire » (6.3, 6.4), l'ordre détaillé
+  de la bascule (6.12), le rôle de chaque dossier et le gabarit `.gitignore`
+  exact (7.6, 7.1), l'organisation du frontmatter d'un projet (7.3.1), la
+  procédure de preview (7.4), la séquence de commandes et le crochet de
+  pré-commit (11.5, 11.6). Chaque règle est restée au noyau **en une phrase**,
+  sans sa justification ; les annexes les portaient déjà, seule leur
+  destination a changé ci-dessus.
+- **Dédoublonnage du 2026-10-04.** Après la relecture du noyau règle par règle
+  par le `contradicteur`, chaque règle citée deux fois au noyau n'y garde plus
+  qu'**une seule formulation**, l'autre devenue un renvoi : l'unicité des noms
+  reste au §6 (7.5 renvoie) ; `read_only` au §2 (5.3 renvoie) ; la règle de la PR
+  au §6, réunie en une phrase — la demande, le résumé, et « ni personne ni
+  client » (9.3 renvoie) ; le commit du carnet au §6 (9.1 renvoie) ; le preview
+  au §2 (7.4 renvoie) ; « aucun chemin du coffre parent » au §6 pour la PR et au
+  §13 pour le fichier publié ; le contrôle de collision au §6 (11.6 renvoie).
+  Les mentions de l'ancien `session-log/` quittent le noyau (9.2, 13.6) : le fait
+  vit dans `IA/README.md` et le skill `cloture-de-session`. Le noyau passe de 450
+  à **446 lignes**, 4 067 mots.
 - **Estimation du noyau** : une centaine de lignes N, à une ou deux phrases
   chacune, soit **environ 2 800 à 3 300 mots**. C'est au-dessus de la
   cible de 2 000 mots de la v1 et autour du plafond de 3 000 mots de la v2.

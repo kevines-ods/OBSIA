@@ -34,7 +34,7 @@ Tout fichier agent ou skill commence par un frontmatter YAML valide.
 | Valeur | Signification |
 | --- | --- |
 | `true` | **Lecture seule absolue** : aucune écriture nulle part (ni coffre, ni hors coffre, même via patch). |
-| `false` | **Écriture directe** dans `brouillon/`, `mémoire/` sauf le dossier d'un autre agent, et `IA/skills/` si `createur-de-skill` est déclaré (détail au §2), ainsi que dans les zones du coffre parent que le §7 ouvre (7.3) ; écriture hors coffre autorisée (§3) ; le reste du coffre passe par patch Git revu. |
+| `false` | **Écriture directe** dans `brouillon/`, dans la mémoire du coffre parent sous `0-PERSONNELS/` ou `0-SAVOIRS/` sauf le dossier d'un autre agent, et `IA/skills/` si `createur-de-skill` est déclaré (détail au §2), ainsi que dans les zones du coffre parent que le §7 ouvre (§7.3) ; écriture hors coffre autorisée (§3) ; le reste du dépôt passe par patch Git revu. |
 
 **Champs propres aux agents**
 

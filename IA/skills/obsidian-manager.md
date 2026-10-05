@@ -19,7 +19,7 @@ des index.
 ## Procédure
 
 1. Lire `../system/VAULT-CONTRACT.md`.
-2. Localiser le ou les projets concernés via `mémoire/projets/<projet>/sommaire.md`,
+2. Localiser le ou les projets concernés via `0-PROJETS/<projet>/sommaire.md`,
    le `<projet> — résumé.md` et les carnets `statut: en cours`, puis les
    rétroliens.
 3. Extraire le contexte pertinent, en citant systématiquement les chemins des
@@ -38,16 +38,16 @@ le lire d'abord, ouvrir ensuite, et seulement ce qui est nécessaire.
 
 Depuis le 2026-09-08, le **coffre parent** — `Mon coffre/` — est votre base de
 connaissances et il est lisible (§7) : la recherche couvre
-`Mon coffre/_MAINTENANCE/`, `-PROJETS/`, `-DOCUMENTS/`, `-PERSONNELS/`,
-`-SAVOIRS/` et `-EN-VRAC/`, dès que le harness donne accès à la racine du coffre
-(§7.6).
+`Mon coffre/_MAINTENANCE/`, `0-PROJETS/`, `0-MEMOIRES/`, `0-DOCUMENTS/`,
+`0-PERSONNELS/`, `0-SAVOIRS/` et `0-EN-VRAC/`, dès que le harness donne accès à la
+racine du coffre (§7.6).
 
 Le dépôt est cloné **à la racine de ce coffre** : une recherche lancée depuis
 la racine du dépôt ne voit que le dépôt. Il faut remonter d'un cran — c'est le
 seul emploi de `..` que le §7 autorise, celui d'une commande :
 
 ```bash
-rg "motif" ../-SAVOIRS --glob "*.md"
+rg "motif" ../0-SAVOIRS --glob "*.md"
 ```
 
 Deux règles du contrat s'appliquent toujours :

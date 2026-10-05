@@ -18,6 +18,7 @@ installation pour être vérifiable.
 
 import os
 import shutil
+import socket
 import sys
 from pathlib import Path
 
@@ -96,6 +97,31 @@ personne sur sa machine, pas le coffre.
 """
 
 
+GABARIT_MEMOIRES = """# 0-MEMOIRES/ — deux mémoires, une seule est gelée
+
+Ce dossier en porte deux, et il faut les distinguer :
+
+- **`préférences/` et `<nom-agent>/expériences/`** — la mémoire des agents.
+  Elle **vit** : une préférence qui change se corrige sur place, une leçon se
+  révise, comme le profil de `0-PERSONNELS/`. `préférences/` est posé par
+  l'installation, même vide ; `<nom-agent>/expériences/` naît à la première leçon.
+- **`<projet>/<chantier>/`** — les chantiers clos. À la clôture, le **dossier
+  entier** du chantier quitte `0-PROJETS/` pour venir ici, tel quel : le résumé
+  devient un bilan avec une section « État », les carnets passent
+  `statut: clos`, les documents suivent. Ces dossiers-là sont **gelés** : plus
+  rien n'y est modifié, jamais, et le durable a été distillé avant vers
+  `0-SAVOIRS/`, `0-MEMOIRES/préférences/` ou `0-MEMOIRES/<nom-agent>/expériences/`.
+  Rouvrir un chantier le ramène dans `0-PROJETS/`, sans copie laissée derrière.
+
+Un nom de premier niveau ici est donc, et rien d'autre : `préférences`, le nom
+d'un agent, ou un projet gelé. **Un projet ne peut s'appeler ni `préférences` ni
+le nom d'un agent** — la collision rendrait la mémoire des agents indistinguable
+d'un chantier gelé, et le contrôle la refuse.
+
+Les règles sont au §6 de `OBSIA/IA/system/VAULT-CONTRACT.md`, qui fait foi.
+"""
+
+
 def sous_un_lien(depart: Path, chemin: Path) -> Path | None:
     """Le premier maillon de `chemin`, sous `depart`, qui est un lien symbolique.
 
@@ -111,25 +137,114 @@ def sous_un_lien(depart: Path, chemin: Path) -> Path | None:
     return None
 
 
+def nom_machine() -> str:
+    """Le nom de cette machine, tel qu'il s'écrit dans `obsia.local.yml` (§7.1).
+
+    Écrit à l'installation, relu par le pre-commit du dépôt de données : les deux
+    passent par ici, sinon le refus « ce n'est pas l'écrivain » tomberait sur la
+    machine qui l'est.
+    """
+    return socket.gethostname() or os.environ.get("HOSTNAME", "")
+
+
+def designation(chemin: Path, base: Path) -> str:
+    """Nomme un chemin pour un humain : relatif à `base` quand il y est, absolu sinon."""
+    try:
+        return str(chemin.relative_to(base))
+    except ValueError:
+        return str(chemin)
+
+
 def ecrire_gabarits_dinstance(racine: Path) -> None:
-    """Pose les fichiers que le contrat exige et que l'instance doit remplir.
+    """Pose dans le dépôt les fichiers que le contrat exige.
 
-    `profil-utilisateur.md` est cité par le §6 : absent, il ferait échouer le
-    contrôle des chemins. Vide mais présent, il dit aussi à quoi il sert.
+    Reste ici ce qui appartient au produit : le README de `session-log/`, qui
+    dit à quoi la zone archivée sert. Le gabarit de profil n'est plus un fichier
+    du dépôt — la mémoire est sortie (§7.1) : c'est `ecrire_memoire_du_coffre`
+    qui le pose, dans le coffre parent.
 
-    Rien n'est écrasé : une réinstallation ne doit pas emporter le profil de qui
+    Rien n'est écrasé : une réinstallation ne doit pas emporter le travail de qui
     utilise déjà le coffre. C'est leur absence qui déclenche l'écriture. Rien
     n'est écrit non plus à travers un lien : le gabarit atterrirait ailleurs.
     """
-    for relatif, gabarit in (("mémoire/profil-utilisateur.md",
-                              GABARIT_PROFIL_UTILISATEUR),
-                             ("IA/system/session-log/README.md",
-                              GABARIT_SESSION_LOG)):
-        chemin = racine / relatif
-        if chemin.is_file() or sous_un_lien(racine, chemin) is not None:
+    # La bascule est faite : `session-log/` a quitté le dépôt pour
+    # `0-MEMOIRES/obsia/session-log/` (§11). Le recréer ici ferait échouer
+    # `verifier_coffre.py` passé le 2026-12-31 : il n'y a plus rien à poser.
+    return
+
+
+def ancien_profil_rempli(coffre: Path, produit: Path | None = None) -> Path | None:
+    """Un profil d'avant la migration, et **rempli**.
+
+    Deux emplacements possibles, l'un dans le dépôt produit, l'autre dans le
+    coffre sous son ancien nom à tiret. Un profil identique au gabarit vide ne
+    compte pas : il n'y a rien à préserver. Un lien symbolique est ignoré — on
+    ne lit pas au travers (§13).
+    """
+    candidats = [coffre / "-PERSONNELS/profil-utilisateur.md"]
+    if produit is not None:
+        candidats.insert(0, produit / "mémoire/profil-utilisateur.md")
+    for chemin in candidats:
+        if chemin.is_symlink() or not chemin.is_file():
             continue
-        chemin.parent.mkdir(parents=True, exist_ok=True)
-        chemin.write_text(gabarit, encoding="utf-8")
+        try:
+            texte = chemin.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            return chemin
+        if texte.strip() != GABARIT_PROFIL_UTILISATEUR.strip():
+            return chemin
+    return None
+
+
+def ecrire_memoire_du_coffre(coffre: Path, produit: Path | None = None) -> list[str]:
+    """Prépare la mémoire d'un coffre parent : `0-PERSONNELS/` et `0-MEMOIRES/`.
+
+    Un coffre tiers n'a pas forcément la structure de mémoire du §6 : l'installeur
+    la pose — le profil en gabarit, le README qui dit ce que `0-MEMOIRES/` garde,
+    et `0-MEMOIRES/préférences/`, où la première préférence viendra se ranger.
+    Comme `ecrire_gabarits_dinstance`, **rien n'est écrasé** — une réinstallation
+    ne doit pas emporter ce qui a déjà été écrit — et rien ne s'écrit à travers un
+    lien symbolique.
+
+    **Jamais de profil vide devant un ancien profil rempli.** Tant que la
+    migration n'a pas déplacé le profil d'avant (`mémoire/profil-utilisateur.md`
+    dans le dépôt produit, ou `-PERSONNELS/…` dans le coffre), poser un gabarit
+    vide à côté le masquerait : le texte rendu n'est plus lu nulle part. On
+    préfère refuser et le dire. La liste rendue porte les refus, que l'appelant
+    affiche.
+    """
+    refus = []
+    ancien = ancien_profil_rempli(coffre, produit)
+    for relatif, gabarit in (("0-PERSONNELS/profil-utilisateur.md",
+                              GABARIT_PROFIL_UTILISATEUR),
+                             ("0-MEMOIRES/README.md", GABARIT_MEMOIRES)):
+        chemin = coffre / relatif
+        if chemin.is_file() or sous_un_lien(coffre, chemin) is not None:
+            continue
+        if relatif.endswith("profil-utilisateur.md") and ancien is not None:
+            refus.append(
+                "profil non créé : un profil rempli existe déjà en %s. La migration "
+                "le déplacera vers 0-PERSONNELS/profil-utilisateur.md ; poser un "
+                "gabarit vide ici le masquerait." % designation(ancien, coffre))
+            continue
+        try:
+            chemin.parent.mkdir(parents=True, exist_ok=True)
+            chemin.write_text(gabarit, encoding="utf-8")
+        except OSError as echec:
+            # Un coffre en lecture seule n'est pas une raison d'échouer : on le
+            # dit, et l'installeur continue ce qu'il a à faire ailleurs.
+            refus.append("non écrit : %s (%s)." % (relatif, echec.strerror or echec))
+
+    # `préférences/` est vide tant que rien n'a été préféré : Git n'en gardera
+    # rien, mais l'agent qui écrit sa première préférence le trouve déjà là.
+    preferences = coffre / "0-MEMOIRES" / "préférences"
+    if not preferences.is_dir() and sous_un_lien(coffre, preferences) is None:
+        try:
+            preferences.mkdir(parents=True, exist_ok=True)
+        except OSError as echec:
+            refus.append("non créé : 0-MEMOIRES/préférences/ (%s)."
+                         % (echec.strerror or echec))
+    return refus
 
 
 # ------------------------------------------------------------ YAML minimal
@@ -313,8 +428,12 @@ def modules_actifs(racine: Path = RACINE_DEFAUT) -> set[str] | None:
 
 
 def ecrire_profil(racine: Path, actifs, systeme: dict, mode: str,
-                  coffre_parent: str | None = None) -> Path:
-    """Écrit `obsia.local.yml`. Non versionné : il décrit cette machine-ci."""
+                  coffre_parent: str | None = None,
+                  coffre_distant: str | None = None) -> Path:
+    """Écrit `obsia.local.yml`. Non versionné : il décrit cette machine-ci.
+
+    `coffre_distant`, quand il est déjà déclaré, est repris tel quel : le
+    réinstaller ne doit pas l'effacer (§7.1)."""
     modules = lire_modules(racine)
     ordre = [m["name"] for m in modules if m["name"] in actifs]
 
@@ -330,6 +449,22 @@ def ecrire_profil(racine: Path, actifs, systeme: dict, mode: str,
     ]
     if coffre_parent:
         L.append("coffre_parent: %s" % coffre_parent)
+    machine = nom_machine()
+    if machine:
+        # L'écrivain du dépôt de données du coffre (§7.1). L'installeur l'écrit
+        # ici, sur la machine concernée et hors de tout dépôt versionné : c'est
+        # ce qui autorise son pre-commit, et rien d'autre.
+        L.append("ecrivain: %s" % machine)
+    L += [""]
+    if coffre_distant:
+        L.append("coffre_distant: %s" % coffre_distant)
+    else:
+        L += [
+            "# Décommenter pour faire pousser le dépôt de données du coffre vers un",
+            "# distant (§7.1) ; l'installeur l'enregistre alors comme `origin`, et ne",
+            "# pousse jamais lui-même.",
+            "# coffre_distant: ssh://nas/volume/coffre.git",
+        ]
     for cle in ("distribution", "gestionnaire_paquets", "conteneurs", "init"):
         if systeme.get(cle):
             L.append("%s: %s" % (cle, systeme[cle]))
@@ -402,7 +537,18 @@ def sonder(module: dict, racine: Path) -> bool | None:
 GESTIONNAIRES = (("pacman", "pacman"), ("apt", "apt"), ("dnf", "dnf"),
                  ("zypper", "zypper"), ("apk", "apk"), ("emerge", "portage"))
 
-MARQUEURS_COFFRE = (".obsidian", "-SAVOIRS", "-EN-VRAC", "-PROJETS")
+#: Ce qui trahit un coffre — un coffre de travail, ou la cible d'une publication.
+#: Source **unique** : `publier.py` et `verifier_coffre.py` l'importent, si bien
+#: qu'un marqueur oublié ici ne l'est plus nulle part. Les deux noms du même
+#: dossier y sont — `0-…` depuis la bascule (§7.1), `-…` pour les coffres qui ne
+#: l'ont pas finie ; ces derniers disparaissent à la fin de la migration du
+#: chantier `souverainete-des-donnees`. `.obsidian` et `_MAINTENANCE` sont
+#: l'entourage du coffre, `Mon coffre` en est le nom d'écriture (§7.1).
+MARQUEURS_COFFRE = (".obsidian", "_MAINTENANCE", "Mon coffre",
+                    "0-SAVOIRS", "0-EN-VRAC", "0-DOCUMENTS", "0-PROJETS",
+                    "0-MEMOIRES", "0-PERSONNELS",
+                    "-SAVOIRS", "-EN-VRAC", "-DOCUMENTS", "-PROJETS",
+                    "-PERSONNELS")
 
 
 def detecter_systeme(racine: Path = RACINE_DEFAUT) -> dict:

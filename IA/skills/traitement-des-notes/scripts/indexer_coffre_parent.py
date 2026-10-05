@@ -4,7 +4,7 @@
 Génère un index par dossier du coffre parent.
 
 Pour chacun des dossiers de premier niveau de `Mon coffre/` (_MAINTENANCE,
--PROJETS, -DOCUMENTS, -PERSONNELS, -SAVOIRS, -EN-VRAC), écrit
+0-PROJETS, 0-MEMOIRES, 0-DOCUMENTS, 0-PERSONNELS, 0-SAVOIRS, 0-EN-VRAC), écrit
 `Mon coffre/_MAINTENANCE/index-<dossier>.md` : une ligne par note, avec son
 fichier, sa description, son type et ses tags.
 
@@ -13,11 +13,17 @@ qui évite de charger huit notes pour en trouver une. C'est le pendant, pour le
 coffre parent, des index de `IA/system/` : un fichier dérivé, produit par
 script, jamais saisi à la main (VAULT-CONTRACT.md §11).
 
+`0-MEMOIRES/` est indexé **en lecture seule** : l'indexeur ne fait que lire les
+notes, y compris celles d'un chantier gelé, et n'écrit que `_MAINTENANCE/`. Un
+dossier qui n'est jamais modifié se lit encore — c'est même tout l'intérêt de
+l'indexer (§6, §11).
+
 La description vient du frontmatter de la note (`description:`), et à défaut de
 son premier titre : une note sans description n'est pas une erreur, l'index la
 décrit seulement moins bien. Le passage rétroactif qui pose `type` et `tags` vit
 dans `appliquer_convention_parent.py` ; il ne pose pas de description, qui
-demande un jugement sur le contenu.
+demande un jugement sur le contenu, et **il refuse d'écrire dans un chantier
+gelé**.
 
 Sécurité : n'écrit RIEN par défaut — l'aperçu d'abord, --appliquer ensuite
 (§7.4). Les index ne portent aucune date : un fichier daté changerait à chaque
@@ -47,14 +53,16 @@ sys.dont_write_bytecode = True
 CONTRAT_REL = Path("IA") / "system" / "VAULT-CONTRACT.md"
 
 # Dossiers de premier niveau du coffre parent (§7.1), dans l'ordre d'affichage.
-DOSSIERS = ("-SAVOIRS", "-PERSONNELS", "-PROJETS", "-DOCUMENTS",
-            "-EN-VRAC", "_MAINTENANCE")
+# `0-MEMOIRES/` porte les préférences et les expériences (vivantes) **et** les
+# chantiers clos (gelés) : on les indexe, on ne les modifie jamais (§6).
+DOSSIERS = ("0-SAVOIRS", "0-PERSONNELS", "0-PROJETS", "0-MEMOIRES", "0-DOCUMENTS",
+            "0-EN-VRAC", "_MAINTENANCE")
 
 LONGUEUR_DESCRIPTION = 140
 
 
 def nom_index(dossier: str) -> str:
-    """Nom du fichier d'index d'un dossier — `index-savoirs.md`, etc."""
+    """Nom du fichier d'index d'un dossier — `index-0-savoirs.md`, etc."""
     return "index-%s.md" % dossier.lstrip("_").lower()
 
 

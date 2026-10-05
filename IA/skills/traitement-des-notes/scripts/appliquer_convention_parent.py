@@ -7,20 +7,30 @@ Lit un dossier du coffre parent et ajoute le frontmatter minimal aux notes qui
 n'en ont pas, reprend les tags inline existants, et signale les tags qui
 sortent du vocabulaire contrôlé (IA/system/tags-du-coffre-parent.md).
 
-Par dossier, le `type` posé diffère : `-SAVOIRS` → concept, `-DOCUMENTS` → revue,
-`-PROJETS` → projet, `-PERSONNELS` → personnel. Pour `-EN-VRAC`, aucun `type`
+Par dossier, le `type` posé diffère : `0-SAVOIRS` → concept, `0-DOCUMENTS` → revue,
+`0-PROJETS` → projet, `0-PERSONNELS` → personnel. Pour `0-EN-VRAC`, aucun `type`
 n'est figé : il est décidé au classement, quand la note rejoint sa destination
 (skill `traitement-des-notes`).
 
 Sécurité : ne modifie RIEN par défaut — l'aperçu d'abord, --appliquer ensuite.
 Les fichiers qui ont déjà un frontmatter partiel ne sont pas réécrits, ils sont
-signalés. Bibliothèque standard uniquement ; outil de la machine, pas de CI.
+signalés. Les fichiers `sommaire.md` et `README.md` sont écartés : ce sont des
+fichiers de dossier, pas des notes, et l'installeur les a posés.
+
+**Chantiers gelés.** Sous `0-MEMOIRES/`, la mémoire des agents
+(`0-MEMOIRES/préférences/`, `0-MEMOIRES/<nom-agent>/expériences/`) est vivante,
+mais un chantier clos ne se modifie plus jamais (VAULT-CONTRACT.md §6). Ce script
+le constate **par la forme** du chemin — sans lire la note ni deviner l'intention
+— et refuse toute écriture dans un dossier gelé, même si `--dossier` le désigne
+explicitement. Le dossier reste lisible : l'aperçu s'affiche, l'écriture non.
+
+Bibliothèque standard uniquement ; outil de la machine, pas de CI.
 
 Usage :
-    python3 appliquer_convention_parent.py                 # -SAVOIRS, aperçu
+    python3 appliquer_convention_parent.py                 # 0-SAVOIRS, aperçu
     python3 appliquer_convention_parent.py --appliquer
-    python3 appliquer_convention_parent.py --dossier=-DOCUMENTS
-    python3 appliquer_convention_parent.py --dossier=-EN-VRAC
+    python3 appliquer_convention_parent.py --dossier=0-DOCUMENTS
+    python3 appliquer_convention_parent.py --dossier=0-EN-VRAC
     python3 appliquer_convention_parent.py --racine /chemin/du/coffre
 """
 
@@ -33,10 +43,43 @@ CONTRAT_REL = Path("IA") / "system" / "VAULT-CONTRACT.md"
 REGISTRE_REL = Path("IA") / "system" / "tags-du-coffre-parent.md"
 
 TAG = re.compile(r"^[a-zà-ÿ][\wà-ÿ-]*$", re.UNICODE)
-# Dossiers de connaissance : un type est posé. -EN-VRAC en est absent : le type
+# Dossiers de connaissance : un type est posé. 0-EN-VRAC en est absent : le type
 # y est décidé au classement, pas figé d'avance.
-TYPES = {"-SAVOIRS": "concept", "-DOCUMENTS": "revue",
-         "-PROJETS": "projet", "-PERSONNELS": "personnel"}
+TYPES = {"0-SAVOIRS": "concept", "0-DOCUMENTS": "revue",
+         "0-PROJETS": "projet", "0-PERSONNELS": "personnel"}
+
+# Fichiers de dossier, jamais des notes : l'installeur les pose, on n'y touche pas.
+FICHIERS_DE_DOSSIER = ("sommaire.md", "readme.md")
+
+# La moitié vivante de 0-MEMOIRES/ (§6) : tout le reste y est gelé.
+MEMOIRES = "0-MEMOIRES"
+PREFERENCES = "préférences"
+EXPERIENCES = "expériences"
+
+
+def est_gele(chemin: Path, coffre: Path) -> bool:
+    """Vrai si `chemin` tombe dans un chantier gelé de `0-MEMOIRES/`.
+
+    `0-MEMOIRES/` porte deux mémoires, et une seule est gelée (§6) : les
+    préférences et les expériences d'un agent se corrigent sur place, un chantier
+    clos jamais. On le constate **par la forme**, sans lire la note : sous
+    `0-MEMOIRES/`, seul `préférences/` et `<nom-agent>/expériences/` sont vivants.
+    Tout ce qui est plus profond est un chantier — donc gelé, y compris ce qui ne
+    devrait pas exister (mieux vaut refuser d'écrire que de se tromper).
+    """
+    try:
+        parts = chemin.resolve().relative_to(coffre.resolve()).parts
+    except ValueError:
+        return False                      # hors du coffre : rien à geler
+    if not parts or parts[0] != MEMOIRES:
+        return False                      # pas la mémoire des chantiers
+    if len(parts) == 1 or len(parts) == 2:
+        return False                      # `0-MEMOIRES/`, `0-MEMOIRES/<projet>/`
+    if parts[1] == PREFERENCES:
+        return False                      # `0-MEMOIRES/préférences/…` : vivant
+    if parts[2] == EXPERIENCES:
+        return False                      # `0-MEMOIRES/<agent>/expériences/…` : vivant
+    return True                           # `0-MEMOIRES/<projet>/<chantier>/…` : gelé
 
 
 def trouver_racine_depot(script: Path) -> Path | None:
@@ -137,7 +180,7 @@ def tags_inline(texte: str) -> list[str]:
 
 
 def bloc_frontmatter(type_note: str | None, tags: list[str]) -> str:
-    """Bloc YAML minimal ; `type` absent si type_note est None (-EN-VRAC)."""
+    """Bloc YAML minimal ; `type` absent si type_note est None (0-EN-VRAC)."""
     lignes = ["---"]
     if type_note:
         lignes.append("type: %s" % type_note)
@@ -170,8 +213,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--appliquer", action="store_true",
                     help="écrit les notes sans frontmatter (défaut : aperçu)")
-    ap.add_argument("--dossier", default="-SAVOIRS",
-                    help="dossier du coffre parent à traiter (défaut : -SAVOIRS)")
+    ap.add_argument("--dossier", default="0-SAVOIRS",
+                    help="dossier du coffre parent à traiter (défaut : 0-SAVOIRS)")
     ap.add_argument("--racine", type=Path, default=None,
                     help="racine du coffre parent (défaut : parent du dépôt OBSIA)")
     args = ap.parse_args()
@@ -188,17 +231,20 @@ def main() -> int:
         return 1
 
     connus = lire_registre(racine_depot)
+    gele = est_gele(dossier, coffre)
     notes = sorted(p for p in dossier.glob("*.md")
-                   if p.is_file() and p.name.lower() not in ("sommaire.md",))
+                   if p.is_file() and p.name.lower() not in FICHIERS_DE_DOSSIER)
     if not notes:
         print("Aucune note Markdown dans %s" % dossier)
         return 0
 
-    type_note = TYPES.get(args.dossier.upper())   # None pour -EN-VRAC : pas de type figé
+    type_note = TYPES.get(args.dossier.upper())   # None pour 0-EN-VRAC : pas de type figé
     a_ecrire: list[tuple[Path, str]] = []
     hors_globaux: dict[str, int] = {}
 
-    print("Convention sur %s  (%d note(s))" % (dossier, len(notes)))
+    print("Convention sur %s  (%d note(s))%s"
+          % (dossier, len(notes),
+             "  — chantier gelé, lecture seule" if gele else ""))
     for n in notes:
         info = analyser(n, connus)
         for t in info["hors"]:
@@ -218,6 +264,11 @@ def main() -> int:
         print("\nTags hors vocabulaire (à ajouter au registre ou à retirer) :")
         for t, c in sorted(hors_globaux.items()):
             print("  #%s  (%d note(s))" % (t, c))
+
+    if gele:
+        print("\nChantier gelé : lecture seule. %d frontmatter restent à créer, "
+              "mais rien n'est écrit dans un dossier clos (§6)." % len(a_ecrire))
+        return 0
 
     if args.appliquer:
         for n, neuf in a_ecrire:
