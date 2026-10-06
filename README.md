@@ -249,7 +249,10 @@ library, never `pytest`.
 match the file name, a list written as a string, a description folded over
 several lines, an agent declaring a missing skill or MCP, a task without an
 instruction or with an unquoted `quand`, a duplicate note name, or a stale
-generated file. It writes nothing and exits with code 1.
+generated file. It writes nothing and exits with code 1. It warns without
+rejecting as soon as the written `AGENTS.md` nears Codex's total instruction
+ceiling (28 KiB), and rejects beyond 32 KiB: the global file and the project
+files count together, and past the ceiling the surplus is left aside.
 
 The same checks run in continuous integration on every push. No dependency:
 Python standard library only.

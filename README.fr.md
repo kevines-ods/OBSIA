@@ -244,7 +244,10 @@ c'est `unittest` de la bibliothèque standard, jamais `pytest`.
 correspond pas au nom du fichier, une liste écrite en chaîne, une description
 repliée sur plusieurs lignes, un agent déclarant un skill ou un MCP
 inexistant, une tâche sans instruction ou au `quand` non quoté, un nom de note
-en double, ou un fichier généré périmé. Il n'écrit rien et sort en code 1.
+en double, ou un fichier généré périmé. Il n'écrit rien et sort en code 1. Il
+avertit sans refuser dès que l'`AGENTS.md` écrit approche le plafond total de
+consignes de Codex (28 Kio), et refuse au-delà de 32 Kio : le fichier global et
+ceux du projet comptent ensemble, et au-delà le surplus est laissé de côté.
 
 Les mêmes contrôles tournent en intégration continue à chaque poussée. Aucune
 dépendance : bibliothèque standard de Python uniquement.

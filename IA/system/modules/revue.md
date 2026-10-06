@@ -4,7 +4,7 @@ kind: module
 name: revue
 description: Relecture adverse en lecture seule absolue — chercher ce qui cloche dans un diff, auditer la sécurité d'un projet entier, et cross-examiner une décision avant qu'elle tienne.
 essentiel: false
-question: Veux-tu un relecteur qui cherche ce qui cloche, audite la sécurité et ne corrige jamais ?
+question: Veux-tu un agent relecteur qui vérifie le travail des autres et repère les erreurs et les failles de sécurité, sans rien modifier lui-même ?
 requiert:
   - noyau
 ---

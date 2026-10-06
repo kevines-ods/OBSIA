@@ -4,7 +4,7 @@ kind: module
 name: linux-poste
 description: Diagnostiquer et corriger un système Linux — services, journaux, charge, disque, mémoire, réseau.
 essentiel: false
-question: Les agents doivent-ils pouvoir diagnostiquer et réparer une machine Linux ?
+question: Veux-tu que les agents sachent diagnostiquer et réparer une machine Linux (services en panne, disque plein, journaux) ?
 sondes:
   - commande:systemctl
   - commande:journalctl

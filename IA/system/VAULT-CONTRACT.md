@@ -372,6 +372,21 @@ directement en le signalant. Un skill `read_only: true` n'exécute aucune
 commande modifiant l'état du système : s'il conclut à une action, énonce-la
 sans la faire.
 
+**Un échec se dit.** Un skill déclaré ou une fiche introuvable, un outil
+refusé, un code de retour ou un résultat vide qu'on n'attendait pas : dis-le
+dans ta réponse, avec ce que tu as fait à la place. Ne présente jamais un
+résultat partiel comme complet, et ne remplace pas en silence un skill par ta
+propre méthode.
+
+**Une tâche ne s'étire pas.** Après trois essais sans résultat nouveau, ou dès
+qu'un geste de l'utilisateur (commande `sudo`, réglage, clic) irait plus vite
+que de continuer, arrête-toi : dis où tu en es, ce qui reste, et demande « je
+continue, ou tu le fais ? ». Si personne ne peut répondre (tâche planifiée,
+sous-agent), écris où tu en es au carnet et rends le compte à qui t'a
+déclenché. Préfère la voie simple qui marche à la voie automatisée qui se
+débogue, sans sauter une porte déjà prévue, et rends compte par étapes
+courtes plutôt qu'en un seul long tour.
+
 ## 11. Fichiers générés et vérification
 
 - **Les index sont versionnés, donc canoniques.** `IA/README.md` et les quatre

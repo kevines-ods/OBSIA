@@ -4,7 +4,7 @@ kind: module
 name: administration-homelab
 description: Administrer une infrastructure auto-hébergée — l'agent administrateur, la surveillance et les alertes, Nextcloud AIO et Home Assistant OS.
 essentiel: false
-question: Administres-tu un homelab (hyperviseur, NAS, services auto-hébergés) depuis ce coffre ?
+question: Veux-tu que les agents t'aident à administrer tes serveurs à la maison (stockage réseau NAS, services auto-hébergés, sauvegardes, surveillance) ?
 requiert:
   - noyau
   - linux-poste

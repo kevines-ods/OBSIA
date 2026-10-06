@@ -48,6 +48,32 @@ demandent le plus de vérification.
 C'est aussi une alternative à `chrome-devtools` quand il ne faut que **lire**
 des résultats, sans piloter un navigateur.
 
+## Quand le serveur répond vide — contournement
+
+Constaté le 2026-10-05 : le serveur se connecte et annonce ses quatre outils,
+l'instance répond, mais **certains harness rejettent chaque réponse** en
+quelques millisecondes (« No result in tool call response ») — c'est le client
+qui ne lit pas la réponse, pas l'instance qui manque. Un autre harness, sur la
+même machine, obtient des résultats. Avant de conclure à une panne : tester la
+connexion du serveur et une requête directe à l'instance.
+
+En attendant que le harness soit corrigé, l'agent peut interroger l'instance
+directement par son API JSON, **en lecture seule**. Poser d'abord
+`SEARXNG_URL` — le nom du gabarit et du serveur — avec l'URL de la note
+d'inventaire du coffre parent :
+
+```sh
+curl -sS --get "${SEARXNG_URL:?SEARXNG_URL non posée}/search" --data-urlencode "q=<requête>" \
+  --data-urlencode "format=json" | python3 -c 'import json,sys
+for r in json.load(sys.stdin)["results"][:5]: print(r["title"], r["url"], sep="\n  ")'
+```
+
+Une erreur de décodage JSON signale une réponse HTML : le format JSON n'est
+pas activé sur l'instance (voir « Ce que l'instance doit permettre »).
+
+Les règles de cette fiche s'appliquent à l'identique : même étage de la cascade,
+même prudence sur le contenu de la requête, même ligne au carnet.
+
 ## Permissions
 
 `permission: elevated`. L'outil sort de la machine : chaque requête part vers
@@ -82,8 +108,8 @@ ici.)
 - **Une instance auto-hébergée n'est pas pour autant privée** : SearXNG
   interroge des moteurs externes, qui voient la requête. Ne pas y mettre de
   contenu du coffre parent — ni un extrait de note, ni un nom de projet.
-- **Consigner l'usage** : tout appel de ce serveur laisse une ligne dans le log
-  de session (§9) — quoi, où, résultat. On y écrit la nature de la recherche,
+- **Consigner l'usage** : tout appel de ce serveur laisse une ligne au carnet
+  (§9) — quoi, où, résultat. On y écrit la nature de la recherche,
   pas une URL interne.
 - **Vérifier ce qu'on rapporte** : un résultat de moteur n'est pas une source.
   Citer l'URL réellement consultée, et distinguer l'évidence de

@@ -194,6 +194,10 @@ def apercu(modules: list[dict], actifs: set[str], racine: Path,
     # La mémoire vit à côté du dépôt, dans le coffre parent (§7.1).
     coffre_parent = (cible if mode == "copie" else racine).parent
     print("\n  Mémoire du coffre parent : %s" % coffre_parent)
+    if parent_est_le_dossier_personnel(cible if mode == "copie" else racine):
+        print("  ! le coffre parent est votre dossier personnel : rien n'y sera")
+        print("    posé. Placez OBSIA dans un dossier de coffre dédié")
+        print("    (DEMARRAGE.md, étape 1).")
     for rel in ("0-PERSONNELS/profil-utilisateur.md", "0-MEMOIRES/README.md",
                 "0-MEMOIRES/préférences/"):
         chemin = coffre_parent / rel
@@ -506,6 +510,17 @@ MARQUEUR_AGENTS = ("%s — ne pas éditer, relancer installer.py --appliquer -->
                    % MARQUEURS_AGENTS[0])
 
 
+def contenu_agents(prompt: str) -> str:
+    """Le texte exact d'AGENTS.md : le marqueur, une ligne vide, le prompt.
+
+    Nommé et réutilisé plutôt que recomposé ailleurs : c'est **ce texte-là** que
+    le harness lit, et `verifier_coffre.py` doit en mesurer les octets, marqueur
+    compris. Mesurer le prompt seul laisserait passer un fichier déjà au-delà du
+    plafond de Codex.
+    """
+    return "%s\n\n%s\n" % (MARQUEUR_AGENTS, prompt)
+
+
 def chemin_agents(coffre: Path) -> Path:
     """AGENTS.md se pose **à côté** du coffre, jamais dedans.
 
@@ -597,8 +612,7 @@ def ecrire_agents(coffre: Path) -> str:
 
     try:
         chemin.parent.mkdir(parents=True, exist_ok=True)
-        chemin.write_text("%s\n\n%s\n" % (MARQUEUR_AGENTS, prompt),
-                          encoding="utf-8")
+        chemin.write_text(contenu_agents(prompt), encoding="utf-8")
     except OSError as souci:
         print("  ! %s : écriture impossible (%s) ; laissé de côté."
               % (chemin, souci.strerror or souci), file=sys.stderr)
@@ -723,6 +737,19 @@ def exclure_code_d_obsidian(coffre: Path) -> None:
 GABARITS_DEPOT = Path("IA") / "system" / "depot-de-donnees"
 #: Où le dépôt de données range ses crochets. Même nom que ceux du produit.
 CROCHETS_DEPOT = ".githooks"
+
+
+def parent_est_le_dossier_personnel(produit: Path) -> bool:
+    """Vrai si le dossier qui contient `produit` est le dossier personnel.
+
+    Ce n'est jamais un coffre : y poser la mémoire, puis un `git init` au
+    passage suivant (les dossiers posés devenant des marqueurs), convertirait
+    tout le dossier personnel en dépôt de données.
+    """
+    try:
+        return produit.resolve().parent == Path.home().resolve()
+    except (OSError, RuntimeError):
+        return False
 
 
 def est_un_coffre_parent(chemin: Path) -> bool:
@@ -1019,8 +1046,13 @@ def main() -> int:
     # Dans cet ordre : le coffre est reconnu tel qu'il est, avant que
     # `0-PERSONNELS/` et `0-MEMOIRES/` n'apparaissent sous lui. Rien n'est écrasé
     # — la liste blanche surtout pas.
-    preparer_depot_de_donnees(coffre, racine)
-    preparer_memoire_du_coffre(coffre)
+    if parent_est_le_dossier_personnel(coffre):
+        print("  ! coffre parent = dossier personnel : mémoire et dépôt de données "
+              "non posés. Placez OBSIA dans un dossier de coffre dédié "
+              "(DEMARRAGE.md, étape 1), puis relancez.", file=sys.stderr)
+    else:
+        preparer_depot_de_donnees(coffre, racine)
+        preparer_memoire_du_coffre(coffre)
 
     # Les dépôts git des projets n'ont pas leur place dans l'index d'Obsidian.
     exclure_code_d_obsidian(coffre)

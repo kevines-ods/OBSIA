@@ -4,7 +4,7 @@ kind: module
 name: services-nextcloud
 description: Agenda, tâches, notes et contacts sur une instance Nextcloud auto-hébergée — consulter, planifier et noter sans dépendre d'un service tiers.
 essentiel: false
-question: As-tu une instance Nextcloud dont les agents peuvent lire et tenir l'agenda, les tâches et les notes ?
+question: Veux-tu que les agents puissent lire et tenir ton agenda, tes tâches et tes notes dans Nextcloud (déjà installé ou à installer plus tard) ?
 requiert:
   - noyau
 ---

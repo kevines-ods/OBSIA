@@ -4,7 +4,7 @@ kind: module
 name: diagrammes
 description: Rendu de diagrammes Mermaid en SVG — flux, séquences, états, classes, entités.
 essentiel: false
-question: Veux-tu pouvoir produire des diagrammes en image ?
+question: Veux-tu que les agents sachent dessiner des schémas (organigrammes, enchaînements d'étapes) en image ?
 sondes:
   - commande:docker
   - commande:podman

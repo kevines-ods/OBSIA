@@ -833,5 +833,114 @@ class TestBasculeDatée(BaseVerificateur):
         self.assertIn("bascule non achevée", self.erreurs_texte())
 
 
+class TestTailleDuFichierAgents(BaseVerificateur):
+    """L'`AGENTS.md` écrit ne doit pas approcher le plafond de consignes de Codex.
+
+    Codex ne retient en tout que 32 Kio — fichier global et fichiers du projet
+    ensemble — et au-delà, le surplus est laissé de côté sans rien dire : l'agent
+    perd des agents et des skills entiers. Le contrôle mesure le pire cas — le
+    catalogue entier, profil ignoré, comme la CI — sur le texte que l'installeur
+    écrit vraiment, marqueur compris, et avertit dès 28 Kio.
+    """
+
+    def fichier_de_taille(self, cible: int) -> int:
+        """Un coffre dont l'`AGENTS.md` écrit fait exactement `cible` octets.
+
+        La description d'un agent se retrouve telle quelle dans le fichier : on
+        la calibre, plutôt que de deviner la taille du gabarit. La cible doit
+        dépasser ce gabarit, sinon la description serait à raccourcir sous zéro.
+        """
+        import generer_prompt as GP
+        import installer
+
+        def ecrire(longueur: int) -> None:
+            self.ecrire(
+                "IA/agents/agent-gros.md",
+                "---\nschema: 1\nkind: agent\nname: agent-gros\n"
+                "description: %s\nread_only: false\nmodule: noyau\n---\n\nCorps.\n"
+                % ("x" * longueur))
+
+        def mesurer() -> int:
+            # `collecter` signale « dossier absent » pour ce coffre-ci, qui n'a ni
+            # skills, ni tâches, ni MCP : on tait ce bavardage de test.
+            with redirect_stderr(StringIO()):
+                prompt = GP.prompt_du_coffre(self.racine, sans_profil=True)
+            return len(installer.contenu_agents(prompt).encode("utf-8"))
+
+        ecrire(1)
+        gabarit = mesurer()
+        if cible < gabarit:
+            raise ValueError("la cible %d est sous le gabarit du coffre (%d)"
+                             % (cible, gabarit))
+        ecrire(1 + cible - gabarit)
+        return mesurer()
+
+    def test_les_seuils_sont_ceux_de_codex(self):
+        """28 Kio d'avance sur le plafond de 32 Kio : les nombres sont la règle."""
+        self.assertEqual(28672, VC.TAILLE_PROMPT_AVERTISSEMENT)
+        self.assertEqual(32768, VC.TAILLE_PROMPT_ERREUR)
+
+    def test_la_taille_compte_le_marqueur_que_l_installeur_ecrit(self):
+        """Le fichier écrit porte un marqueur en tête : le mesurer, c'est le lire.
+
+        Mesurer le prompt seul laisserait passer un fichier déjà au-delà du
+        plafond — l'angle mort que la relecture a relevé.
+        """
+        import generer_prompt as GP
+        import installer
+
+        taille = self.fichier_de_taille(4096)
+        with redirect_stderr(StringIO()):
+            prompt = GP.prompt_du_coffre(self.racine, sans_profil=True)
+        ecrit = installer.contenu_agents(prompt)
+
+        self.assertTrue(ecrit.startswith(installer.MARQUEUR_AGENTS))
+        # Le marqueur, sa ligne vide, puis le prompt : voilà l'écart exact.
+        self.assertEqual(
+            len(ecrit.encode("utf-8")),
+            len((prompt + "\n").encode("utf-8"))
+            + len(installer.MARQUEUR_AGENTS.encode("utf-8")) + 2)
+        self.assertEqual(4096, taille)
+
+    def test_sous_le_seuil_rien_n_est_signale(self):
+        """Sous 28 Kio, le fichier a de la marge : ni erreur ni avertissement."""
+        taille = self.fichier_de_taille(VC.TAILLE_PROMPT_AVERTISSEMENT - 1)
+
+        VC.verifier_taille_du_prompt()
+
+        self.assertEqual(VC.TAILLE_PROMPT_AVERTISSEMENT - 1, taille)
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+        self.assertEqual([], VC.avertissements, self.avertissements_texte())
+
+    def test_entre_les_deux_seuils_avertit_sans_refuser(self):
+        """Entre 28 et 32 Kio : la marge se réduit, mais le fichier passe."""
+        taille = self.fichier_de_taille(VC.TAILLE_PROMPT_AVERTISSEMENT + 1)
+
+        VC.verifier_taille_du_prompt()
+
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+        self.assertEqual(1, len(VC.avertissements), self.avertissements_texte())
+        message = VC.avertissements[0]
+        self.assertIn(str(taille), message)                          # la taille
+        self.assertIn(str(VC.TAILLE_PROMPT_AVERTISSEMENT), message)  # le seuil
+        self.assertIn("Codex", message)                              # la raison
+        self.assertIn("32 Kio", message)                             # vers quoi
+        self.assertIn("fichier global", message)                     # la marge
+
+    def test_au_dessus_du_plafond_de_codex_refuse(self):
+        """Au-delà de 32 Kio, le surplus est déjà laissé de côté : c'est une erreur."""
+        taille = self.fichier_de_taille(VC.TAILLE_PROMPT_ERREUR + 1)
+
+        VC.verifier_taille_du_prompt()
+
+        self.assertEqual(1, len(VC.erreurs), self.erreurs_texte())
+        message = VC.erreurs[0]
+        self.assertIn(str(taille), message)
+        self.assertIn(str(VC.TAILLE_PROMPT_ERREUR), message)
+        self.assertIn("Codex", message)
+        self.assertIn("laissé de côté", message)
+        self.assertEqual([], VC.avertissements, self.avertissements_texte())
+
+
 if __name__ == "__main__":
     unittest.main()

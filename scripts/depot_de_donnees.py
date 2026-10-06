@@ -11,9 +11,10 @@ n'écrit rien d'autre que ce dépôt-là et l'état de poussée qui vit dans son
     python3 scripts/depot_de_donnees.py apres-commit --coffre <coffre>
     python3 scripts/depot_de_donnees.py fraicheur    --coffre <coffre> [--heures 48]
 
-`avant-commit` refuse un commit venu d'une autre machine que l'écrivain déclaré
-(« un seul écrivain », §7.1) ; puis contrôle la mémoire du coffre avec
-`verifier_coffre.py --coffre <coffre> --carnets`.
+`avant-commit` refuse, dans l'ordre : un commit venu d'une autre machine que
+l'écrivain déclaré (« un seul écrivain », §7.1) ; une valeur à forme de secret
+que le commit ajoute à la mémoire (`garde_secrets.py`, §7.1) ; puis il contrôle
+la mémoire du coffre avec `verifier_coffre.py --coffre <coffre> --carnets`.
 
 `apres-commit` pousse vers `origin` et note l'instant du succès dans
 `<coffre>/.git/obsia-derniere-poussee`. Un échec est journalisé, jamais
@@ -32,6 +33,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import garde_secrets as GS  # noqa: E402
 import modules as MOD  # noqa: E402
 
 RACINE_DEFAUT = Path(__file__).resolve().parent.parent
@@ -127,6 +129,11 @@ def verifier_memoire(coffre: Path, produit: Path) -> int:
 
 def avant_commit(coffre: Path, produit: Path) -> int:
     code = verifier_ecrivain(produit)
+    if code != 0:
+        return code
+    # Le secret avant les carnets : on refuse d'écrire la fuite, pas seulement
+    # d'en signaler le voisinage. La raison du refus s'imprime dans le garde.
+    code = GS.verifier(coffre)
     if code != 0:
         return code
     return verifier_memoire(coffre, produit)

@@ -4,7 +4,7 @@ kind: module
 name: documents
 description: Documents bureautiques et PDF — lire, produire, convertir, extraire, remplir des formulaires, appliquer l'OCR.
 essentiel: false
-question: Traites-tu des PDF ou des documents Word, Excel, PowerPoint, OpenDocument ?
+question: Veux-tu que les agents sachent lire et produire des PDF et des documents bureautiques (Word, Excel, PowerPoint, LibreOffice) ?
 requiert:
   - noyau
 ---

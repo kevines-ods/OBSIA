@@ -4,7 +4,7 @@ kind: module
 name: construction
 description: Construire des applications, sites et outils, ou faire évoluer un projet existant — l'agent batisseur, ses portes de création et son parcours de reprise, de refactoring et de dette technique.
 essentiel: false
-question: Veux-tu construire des applications, des sites ou des outils avec ce coffre, ou faire évoluer un projet existant ?
+question: Veux-tu que les agents t'aident à construire des applications, des sites ou des outils, ou à faire évoluer un projet existant ?
 sondes:
   - commande:git
 requiert:

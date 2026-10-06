@@ -4,8 +4,8 @@
 (<https://opencode.ai/docs/rules/>) le 2026-09-30 ; le serveur
 (<https://opencode.ai/docs/server/>), les agents
 (<https://opencode.ai/docs/agents/>) et les serveurs MCP
-(<https://opencode.ai/docs/mcp-servers/>) le 2026-09-13. Jamais éprouvé sur
-machine réelle.**
+(<https://opencode.ai/docs/mcp-servers/>) le 2026-09-13. Éprouvé sur machine réelle
+(Debian 13) le 2026-10-06.**
 
 Agent en ligne de commande configuré par un fichier `opencode.json`, doublé
 d'un **mode serveur** : les sessions vivent côté serveur et se reprennent
@@ -49,6 +49,32 @@ comme l'exige la règle d'or de `README.md` et le §7.6 du contrat.
   "instructions": ["OBSIA/IA/system/VAULT-CONTRACT.md"]
 }
 ```
+
+Pour le créer sans éditeur, depuis la racine du coffre (le dossier qui contient
+`OBSIA/`) — un fichier déjà présent n'est pas écrasé :
+
+```bash
+if [ ! -d OBSIA ]; then
+  echo "OBSIA/ absent : ce n'est pas la racine du coffre, rien n'est écrit"
+elif [ -e opencode.json ]; then
+  echo "opencode.json existe déjà, rien n'est écrit"
+else
+  cat > opencode.json <<'EOF'
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["OBSIA/IA/system/VAULT-CONTRACT.md"]
+}
+EOF
+fi
+```
+
+**Les skills restent dans `OBSIA/IA/skills/`.** OpenCode a son propre dossier
+de skills (`SKILL.md`) : un agent qui y cherche d'abord ne trouve rien, et
+peut proposer de lui-même des liens symboliques ou une « installation
+complète » des skills, agents et MCP. Refuser : le prompt d'`AGENTS.md` dit où
+lire un skill, et lier ou recopier dupliquerait le catalogue (§5, une
+information vit à un seul endroit). Constaté lors du premier essai sur machine
+réelle, le 2026-10-06.
 
 **Une seule entrée, et c'est le noyau.** Les entrées de `instructions`
 *s'ajoutent* à `AGENTS.md` — la documentation le dit en toutes lettres : « All

@@ -90,6 +90,24 @@ l'agent `contradicteur`, en lecture seule, et **dans une session neuve**.
 Relire son propre diff dans la conversation qui l'a produit ne réfute rien ;
 ça valide ses propres conclusions. Proposer la relecture, ne pas la simuler.
 
+Le modèle de PR (`.github/pull_request_template.md`) garde la trace de cette
+relecture : la ligne « Relecture : », pour le lien ou le résumé des constats,
+et la case « Relu par le contradicteur ». Le contrôle
+`scripts/verifier_relecture.py`, déclenché par
+`.github/workflows/relecture-adverse.yml`, vire au rouge tant qu'elle n'est pas
+cochée — un signal, pas un verrou : la fusion reste possible, et cocher la case
+relance le contrôle.
+
+Deux limites de ce contrôle, à connaître plutôt qu'à découvrir :
+
+- Le script qui juge vient de la base de la PR, pas de sa tête, sans quoi la PR
+  relue desserrerait le contrôle qu'elle doit passer. C'est un **demi-verrou** :
+  la définition du workflow, GitHub la lit dans la tête de la PR, donc une PR
+  peut encore réécrire ces lignes-là. Seule une protection de branche fermerait
+  ce dernier pas.
+- Il ne tourne que sur le dépôt privé. Sur le miroir public, la case n'a pas à
+  être cochée : la relecture adverse est un pas interne, et le modèle le dit.
+
 ## 6. Consigner
 
 L'appel d'un MCP — la création de la PR en est un — se consigne dans le log de

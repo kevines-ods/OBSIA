@@ -4,7 +4,7 @@ kind: module
 name: poste-cachyos
 description: Optimiser un poste CachyOS — noyau et ordonnanceur, mémoire, btrfs et snapper, réseau, jeu, nettoyage.
 essentiel: false
-question: As-tu un poste sous CachyOS à optimiser ou à entretenir ?
+question: Veux-tu que les agents sachent optimiser et entretenir un ordinateur sous CachyOS ?
 sondes:
   - distribution:cachyos
 requiert:

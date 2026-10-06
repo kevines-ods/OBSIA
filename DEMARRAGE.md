@@ -24,9 +24,18 @@ Vous obtenez `<coffre>/OBSIA/` — ce guide écrit `Mon coffre/` pour la racine
 de votre coffre, quel que soit son nom réel. Ouvrez ensuite Obsidian sur **le coffre
 entier**, pas sur `OBSIA/` seul : les rétroliens se résolvent à cette échelle.
 
-Pas encore de coffre ? Un dossier vide fait l'affaire ; les dossiers de
-connaissance (`0-SAVOIRS/`, `0-EN-VRAC/`…) se créent quand vous en avez besoin
-(§7.1 du contrat).
+Pas encore de coffre ? Créez d'abord son dossier, puis clonez **dedans** —
+sans cela, le dossier qui contient `OBSIA/` (souvent votre dossier personnel)
+devient le coffre :
+
+```bash
+mkdir -p ~/"Mon coffre" && cd ~/"Mon coffre"
+git clone https://github.com/kevines-ods/OBSIA
+```
+
+Obsidian n'est pas nécessaire : un coffre est un simple dossier de fichiers
+Markdown. Les dossiers de connaissance (`0-SAVOIRS/`, `0-EN-VRAC/`…) se créent
+quand vous en avez besoin (§7.1 du contrat).
 
 ## 2. Voir ce que la machine porte
 

@@ -23,6 +23,9 @@ Chacun de ces cas sort en 1 :
   · un nom de premier niveau ambigu dans `0-MEMOIRES/` — un projet qui porterait
     `préférences` ou le nom d'un agent, à côté de la mémoire des agents (§6) ;
   · un fichier généré périmé (§11 du contrat) ;
+  · un `AGENTS.md` écrit au-delà du plafond total de Codex (32 Kio, fichier
+    global compris) : le surplus est laissé de côté, et l'agent perd des
+    déclarations entières sans que rien ne le dise ;
   · une déclaration sans `module`, ou visant un module inexistant (§13) ;
   · une annexe du contrat (`IA/system/contrat/*.md`, sauf `registre.md`) au
     frontmatter invalide — `kind` autre que `contract`, `schema` non entier,
@@ -58,7 +61,9 @@ nommé, module qu'aucune déclaration ne rejoint.
 L'intégrité du catalogue se vérifie là où le catalogue est entier — dans le
 dépôt de distribution, sans profil, et c'est sous ce régime que tourne la CI.
 Le mode « en place » n'est pas amputé : rien n'y est retiré du disque, les
-contrôles y restent complets.
+contrôles y restent complets. Le contrôle de taille du fichier `AGENTS.md` ne
+s'assouplit jamais non plus : un surplus écarté reste écarté, quelle que soit
+l'installation.
 
 CE QU'IL SIGNALE SANS REFUSER
 -----------------------------
@@ -73,6 +78,14 @@ repose sur le verbe employé, donc sur une heuristique, qui se trompe. Et
 l'absence peut être **voulue** — une frontière de périmètre plutôt qu'un
 oubli ; c'est alors au skill qui renvoie de l'énoncer, et à l'exemption
 inscrite ici de porter la raison.
+
+Un `AGENTS.md` qui approche le plafond de consignes de Codex : au-delà de
+28 Kio, la marge se réduit avant les 32 Kio où le surplus est laissé de côté —
+et c'est alors une erreur. Les 4 Kio de marge servent aussi à couvrir le fichier
+global (`~/.codex/AGENTS.md`), que ce script ne voit pas. La taille mesurée est
+celle du fichier que l'installeur écrit, marqueur compris, sur le catalogue
+entier — profil ignoré, le pire cas, celui sous lequel la CI vérifie, pour ne
+pas dépendre d'un `obsia.local.yml` qui n'est pas versionné.
 
 PORTÉE DU CONTRÔLE DES CHEMINS
 ------------------------------
@@ -113,6 +126,8 @@ Usage :
         # du coffre déclenche (§7.1).
 """
 
+import contextlib
+import io
 import os
 import re
 import subprocess
@@ -124,7 +139,9 @@ sys.dont_write_bytecode = True
 SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS))
 
-from generer_prompt import RACINE_DEFAUT, fichiers_declaratifs, lire_frontmatter
+from generer_prompt import (RACINE_DEFAUT, fichiers_declaratifs,
+                            lire_frontmatter, prompt_du_coffre)
+from installer import contenu_agents
 import modules as MOD
 
 RACINE = RACINE_DEFAUT
@@ -146,6 +163,16 @@ CHAMPS_CONTRAT = ("schema", "kind", "name", "description")   # ni read_only, ni 
 NOM_EXEMPT_CONTRAT = "registre.md"      # l'index du dossier, pas une annexe
 NOM_VALIDE = re.compile(r"^[^\W_]+(?:-[^\W_]+)*$", re.UNICODE)   # minuscules-et-tirets, accents admis
 TYPES_SKILL = ("core", "outil")
+
+# AGENTS.md est lu par Codex, qui ne retient en tout que 32 Kio de consignes :
+# le fichier global (~/.codex/AGENTS.md) et ceux du projet comptent **ensemble**.
+# Au-delà, le surplus est laissé de côté — sans erreur, sans avertissement ;
+# l'agent perd des agents et des skills entiers sans que rien ne le dise.
+# On mesure le pire cas — le catalogue entier, sans profil, comme la CI — et on
+# avertit dès 28 Kio : les 4 Kio de marge couvrent un fichier global, et
+# laissent le temps de réduire avant que le surplus ne soit écarté.
+TAILLE_PROMPT_AVERTISSEMENT = 28 * 1024     # 28 672 o
+TAILLE_PROMPT_ERREUR = 32 * 1024            # 32 768 o
 
 erreurs: list[str] = []
 avertissements: list[str] = []
@@ -1337,6 +1364,52 @@ def verifier_derives():
             erreur("scripts/%s" % script, "%s périmés — %s" % (quoi, detail))
 
 
+def verifier_taille_du_prompt():
+    """Le fichier AGENTS.md doit rester loin du plafond de consignes de Codex.
+
+    Codex ne retient en tout que 32 Kio de consignes — le fichier global
+    (~/.codex/AGENTS.md) et ceux du projet comptent ensemble. Au-delà, le
+    surplus est laissé de côté, sans erreur ni avertissement : l'agent perd des
+    agents et des skills entiers sans que rien ne le dise.
+
+    On mesure le pire cas — le catalogue entier, profil ignoré, comme la CI —
+    avec la même fonction que l'installeur (`prompt_du_coffre(sans_profil=True)`,
+    pour ne pas dépendre d'un `obsia.local.yml` qui n'est pas versionné). Et on
+    mesure ce que l'installeur écrit vraiment, marqueur compris : le prompt seul
+    laisserait passer un fichier déjà au-delà. Un avertissement dès 28 Kio laisse
+    le temps de réduire et couvre le fichier global ; au-delà de 32 Kio c'est
+    une erreur, parce que la perte est réelle et muette.
+
+    Ce contrôle ne s'assouplit pas sous `mode: copie` : un surplus écarté reste
+    écarté, quelle que soit l'installation.
+    """
+    # `collecter` commente bruyamment ce qu'il écarte — dossier absent, frontmatter
+    # illisible, description vide. Le vérificateur le dit déjà fichier par fichier,
+    # mieux et au bon endroit : on tait ce bavardage le temps de la mesure. Il est
+    # surtout gênant sous `mode: copie`, où un dossier amputé est normal.
+    with contextlib.redirect_stderr(io.StringIO()):
+        prompt = prompt_du_coffre(RACINE, sans_profil=True)
+    if prompt is None:
+        return                                   # coffre vide : rien à mesurer
+    taille = len(contenu_agents(prompt).encode("utf-8"))
+
+    if taille > TAILLE_PROMPT_ERREUR:
+        erreur("AGENTS.md",
+               "le fichier écrit (catalogue entier, sans profil, marqueur "
+               "compris) pèse %d o, au-delà du plafond total de Codex "
+               "(%d o, 32 Kio) : le surplus est laissé de côté et l'agent perd "
+               "des déclarations entières sans que rien ne le dise — réduire "
+               "le catalogue avant d'y arriver"
+               % (taille, TAILLE_PROMPT_ERREUR))
+    elif taille > TAILLE_PROMPT_AVERTISSEMENT:
+        avertir("AGENTS.md",
+                "le fichier écrit (catalogue entier, sans profil, marqueur "
+                "compris) pèse %d o ; au-delà de %d o (28 Kio) la marge se "
+                "réduit avant le plafond total de Codex (%d o, 32 Kio), que le "
+                "fichier global partage — réduire le catalogue avant d'y arriver"
+                % (taille, TAILLE_PROMPT_AVERTISSEMENT, TAILLE_PROMPT_ERREUR))
+
+
 # ----------------------------------------------------------------------- main
 
 AIDE = """\
@@ -1445,6 +1518,7 @@ def main(argv=None) -> int:
     if options["coffre"]:
         verifier_depot_de_donnees()
     verifier_derives()
+    verifier_taille_du_prompt()
 
     if avertissements and not silencieux:
         print("Avertissements (%d) :" % len(avertissements))

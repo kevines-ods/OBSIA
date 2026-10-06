@@ -189,6 +189,9 @@ def construire_prompt(racine: Path, agents: list[dict], skills: list[dict],
     if skills:
         a("## Skills disponibles")
         a("")
+        a("Un skill se lit dans `IA/skills/` du dépôt, jamais dans le dossier")
+        a("de skills du harness ; il ne se recopie ni ne se lie ailleurs.")
+        a("")
         for sk in skills:
             marque = " [lecture seule]" if sk.get("read_only") else ""
             desc = sk.get("description", "(sans description)")
@@ -247,31 +250,45 @@ def construire_config_mcp(agents: list[dict]) -> tuple[str, list[str]]:
 
 # ------------------------------------------------------- fabrique du prompt
 
-def declarations_reduites(racine: Path = RACINE_DEFAUT) -> tuple:
+def declarations_reduites(racine: Path = RACINE_DEFAUT,
+                          sans_profil: bool = False) -> tuple:
     """Les déclarations du coffre, réduites à son profil.
 
     Le point de passage unique : l'index d'un agent ne doit pas dépendre de
     qui l'a demandé. `main()` s'en sert pour la sortie standard, `installer.py`
     pour AGENTS.md.
+
+    `sans_profil=True` saute `filtrer_par_profil` et rend le catalogue entier :
+    le prompt d'un coffre sans profil, donc la taille la plus grande qu'il
+    puisse prendre. C'est le régime de la CI, que `verifier_coffre.py` mesure
+    pour alerter avant le plafond de consignes de Codex. La réduction aux
+    déclarations actives, elle, reste appliquée : c'est une correction de
+    cohérence, pas un effet de profil.
     """
     agents = collecter(racine / "IA" / "agents", "agent")
     skills = collecter(racine / "IA" / "skills", "skill")
     taches = collecter(racine / "IA" / "tâches", "tâche")
     mcp = collecter(racine / "IA" / "MCP", "mcp")
 
-    agents, skills, taches, mcp = filtrer_par_profil(racine, agents, skills,
-                                                     taches, mcp)
+    if not sans_profil:
+        agents, skills, taches, mcp = filtrer_par_profil(racine, agents, skills,
+                                                         taches, mcp)
     reduire_aux_actifs(agents, skills, {m["name"] for m in mcp})
     return agents, skills, taches, mcp
 
 
-def prompt_du_coffre(racine: Path = RACINE_DEFAUT) -> str | None:
+def prompt_du_coffre(racine: Path = RACINE_DEFAUT,
+                     sans_profil: bool = False) -> str | None:
     """Le prompt système du coffre, ou None si le coffre ne déclare rien.
 
     None n'est pas une erreur du coffre : c'est un profil qui ne retient rien
     d'utile, et l'appelant décide quoi en dire.
+
+    `sans_profil=True` mesure le catalogue entier, profil ignoré — le pire cas
+    de taille, celui sous lequel la CI vérifie (voir `declarations_reduites`).
     """
-    agents, skills, taches, _ = declarations_reduites(racine)
+    agents, skills, taches, _ = declarations_reduites(racine,
+                                                      sans_profil=sans_profil)
     if not agents and not skills:
         return None
     return construire_prompt(racine, agents, skills, taches)
