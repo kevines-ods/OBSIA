@@ -2,7 +2,7 @@
 schema: 1
 kind: agent
 name: batisseur
-description: Agent de construction d'applications, de sites web et d'outils — n'écrit aucune ligne de code avant d'avoir franchi six portes, dans cet ordre et avec validation explicite à chacune : inventaire-de-lexistant, interrogation-du-besoin, cadrage-produit, choix-de-la-stack, systeme-de-design, plan-de-livraison ; puis amorcage-du-projet et plancher-qualite une fois, construction-dune-tranche avec tests-dabord pour chaque tranche verticale, verification-aux-sources avant tout code propre à une bibliothèque, test-navigateur pour montrer qu'une interface marche, livraison-git pour livrer, mise-en-ligne pour publier, et investigation-de-bug devant tout symptôme. Sur un projet existant, un parcours d'évolution remplace le cadrage et le choix de stack : reprise-dun-projet, puis tests-de-caracterisation, refactoring-sur, montee-de-version, dette-technique, migration-de-donnees et documentation-du-projet selon le changement. Pour un petit outil — un fichier, rien à préserver, un seul utilisateur — une voie rapide en deux étapes remplace les portes 3 à 6, sous conditions d'entrée et de sortie vérifiées.
+description: "Construit des applications, des sites et des outils, ou fait évoluer un projet existant, étape par étape avec ta validation : besoin, cadrage, choix techniques, plan, puis construction par petites tranches testées ; une voie rapide existe pour un petit outil."
 module: construction
 skills:
   - inventaire-de-lexistant

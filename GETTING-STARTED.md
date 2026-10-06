@@ -2,122 +2,118 @@
 
 **English** | [Français](DEMARRAGE.md)
 
-From zero to a first exchange with an OBSIA agent, in five steps. The details
-of each rule live in `IA/system/VAULT-CONTRACT.md` (the core) and its
-annexes in `IA/system/contrat/` (in French); this guide only
-gives the order of the steps.
+From zero to a first conversation with an OBSIA agent, in five steps. All you
+need is `git` and Python 3: nothing else to install. Obsidian is handy, but not
+required.
 
-**Requirements**: `git` and Python 3 — standard library only, nothing to
-install. Obsidian is recommended, not required.
+## 1. Create your vault and put OBSIA in it
 
-## 1. Clone into your vault
+Your **vault** is the folder that will hold your notes and your memory. OBSIA
+goes **directly inside it**, not in a subfolder.
 
-OBSIA is cloned **at the root** of your Obsidian vault, next to your notes —
-nowhere else, and not in a subfolder:
-
-```bash
-cd "/path/to/your vault"   # replace with yours
-git clone https://github.com/kevines-ods/OBSIA
-```
-
-You get `<vault>/OBSIA/` — the repository writes `Mon coffre/` for the root of
-your vault, whatever its real name. Then open Obsidian on **the whole vault**,
-not on `OBSIA/` alone: backlinks resolve at that level.
-
-No vault yet? Create its folder first, then clone **inside it** — otherwise
-the folder that contains `OBSIA/` (often your home folder) becomes the vault:
+No vault yet? Create it, then put OBSIA inside:
 
 ```bash
 mkdir -p ~/"Mon coffre" && cd ~/"Mon coffre"
 git clone https://github.com/kevines-ods/OBSIA
 ```
 
-Obsidian is not required: a vault is a plain folder of Markdown files. The
-knowledge folders (`0-SAVOIRS/`, `0-EN-VRAC/`…) are created when you need them
-(§7.1 of the contract).
+Already have a vault (an Obsidian vault, for instance)? Go into it, then clone:
 
-## 2. See what the machine has
+```bash
+cd "/path/to/your vault"
+git clone https://github.com/kevines-ods/OBSIA
+```
+
+Do not clone OBSIA directly into your home folder: the installer will
+refuse, without writing anything.
+
+The rest of this guide calls this folder `Mon coffre/`, whatever its real name.
+If you use Obsidian, open it on the whole vault, not on `OBSIA/` alone. The note
+folders (`0-SAVOIRS/`, `0-EN-VRAC/`…) are created as you go.
+
+## 2. See what your machine already has
 
 ```bash
 cd OBSIA
 python3 scripts/installer.py --sonder
 ```
 
-Nothing is written. The installer detects what is installed (`docker`,
-`systemctl`, Proxmox…) and infers the modules it will offer.
+This command writes nothing. The installer looks at what is already installed
+(Docker, systemd, Proxmox…) to offer you the right choices at the next step.
 
 ## 3. Install
 
 ```bash
-python3 scripts/installer.py              # preview and questions, writes nothing
-python3 scripts/installer.py --appliquer  # apply
+python3 scripts/installer.py              # asks the questions, shows what will be done, writes nothing
+python3 scripts/installer.py --appliquer  # installs
 ```
 
-The installer asks, module by module, what you want to keep. At the end:
+The installer asks one question per module ("Veux-tu que les agents
+sachent… ?" — the questions are in French). Answer according to what you want
+the agents to be able to do, even if the tool is not installed on your machine
+yet. At the end, it has created:
 
-- `OBSIA/obsia.local.yml` — your profile, not versioned;
-- the versioned indexes in `IA/system/` and `IA/README.md` — untouched, at the
-  full catalogue: they do not depend on the machine;
-- **`Mon coffre/AGENTS.md`** — OBSIA's brain, at the vault root, where
-  harnesses look for it. Do not edit it: it is regenerated;
-- **`Mon coffre/0-MEMOIRES/`** and **`Mon coffre/0-PERSONNELS/profil-utilisateur.md`**
-  — the vault's memory, created if missing (§6, §7.1). Never overwritten
-  afterwards: whatever is already there stays.
+- **`Mon coffre/AGENTS.md`**: the instructions a harness reads at start-up, at
+  the root of the vault. Do not edit it by hand: it is rebuilt at every
+  installation;
+- **`Mon coffre/0-PERSONNELS/profil-utilisateur.md`** and
+  **`Mon coffre/0-MEMOIRES/`**: the start of your memory. Whatever is already
+  there is never overwritten;
+- **`OBSIA/obsia.local.yml`**: your answers, specific to your machine.
 
-Changed your mind: run the same command again. Start over:
-`python3 scripts/installer.py --tout --appliquer` — which deletes the profile:
-without a profile, the whole catalogue is active.
+Changed your mind? Run the same command again. To go back to the full
+catalogue: `python3 scripts/installer.py --tout --appliquer`.
 
-## 4. Launch a harness from the vault root
+## 4. Start your harness from the vault
 
-**Always from `Mon coffre/`**, never from `OBSIA/`: that is where `AGENTS.md`
-is, and where the agent reaches your notes from.
+Always start it **from `Mon coffre/`**, never from `OBSIA/`: that is where
+`AGENTS.md` sits, and from there the agents reach your notes.
 
 ```bash
-cd ..                          # from OBSIA/, go up to the vault root
+cd ..        # from OBSIA/, go back up into the vault
 ```
 
-| Harness | What it reads on its own | Worth knowing |
-| --- | --- | --- |
-| Claude Code | `CLAUDE.md` if it finds one, in the folder or **above**; otherwise `AGENTS.md` | one **or** the other, never both. To load the full contract, create `Mon coffre/CLAUDE.md` containing the line `@OBSIA/CLAUDE.md`: it will read that file **instead of** `AGENTS.md` |
-| OpenCode | `AGENTS.md` | add the contract under `instructions` — see its card |
-| Codex | `AGENTS.md` | 32 KiB cap: a full vault uses three quarters of it |
-| Goose | `AGENTS.md` | the `developer` extension must stay enabled |
-| DeepSeek Harness | `AGENTS.md` and `CLAUDE.md`, from `~/.dsh/` then from each folder down to the working directory | the `@` lines of `CLAUDE.md` arrive raw, with no effect |
-| AionUi (Aion CLI engine) | `AGENTS.md`, not `CLAUDE.md` | the assistant's rule must make it read the contract — see its card |
+| Harness | What else to do |
+| --- | --- |
+| Claude Code | create `Mon coffre/CLAUDE.md` containing the single line `@OBSIA/CLAUDE.md` (Claude Code reads this file instead of `AGENTS.md`) |
+| OpenCode | create `opencode.json`: copy-paste block in its sheet |
+| Codex | nothing. It reads `AGENTS.md` (size limit: a full catalogue uses a little over three quarters of it) |
+| Goose | keep the `developer` extension active |
+| DeepSeek Harness | nothing. It reads `AGENTS.md` |
+| AionUi | make the assistant's rule load the contract (see its sheet) |
 
-Each harness has its card in `IA/system/adaptateurs-harness/`: it says where
-to write the configuration — MCP servers, secrets, per-agent restrictions.
-That configuration lives **outside the repository**: no key ever enters
-`OBSIA/`.
+Each harness has its sheet in `IA/system/adaptateurs-harness/` (in French). It
+also explains how to plug in the tools (MCP) and where to put your keys:
+**never in `OBSIA/`**.
 
-## 5. Check that the brain is loaded
+## 5. Check that OBSIA is loaded
 
-Ask the agent:
+Ask the agent these two questions:
 
-> Which agents do you know, and where do the knowledge notes live?
+1. "Which agents do you know, and where do the knowledge notes live?"
+   It must name OBSIA's agents (assistant, administrateur, batisseur…) and the
+   `0-SAVOIRS/` folder.
+2. "What do you do if a skill you need cannot be found?"
+   It must answer that it tells you, not that it improvises. That is the
+   contract's rule "Un échec se dit" (a failure is said).
 
-It should name the agents of `IA/system/agents-index.md` and the `0-SAVOIRS/`
-folder. If it answers generically, its instructions were not read: check that
-`AGENTS.md` exists at the vault root and that the harness was launched from
-there. With Claude Code, also look for a `CLAUDE.md` above the vault (up to
-your home folder): it would take precedence over `AGENTS.md`.
-
-The agents answer in French by default; ask them to switch language if you
-prefer.
+If it answers vaguely, it has not read its instructions. Check that
+`AGENTS.md` exists in `Mon coffre/` and that you started the harness from that
+folder. With Claude Code, also check that no other `CLAUDE.md` sits in a folder
+above the vault: it would take priority.
 
 ## Next
 
-The repository scripts are run **from `OBSIA/`** (`cd OBSIA`); only the
-harness is launched from the root.
-
-- **After adding or changing a skill**: rerun the installer to regenerate
-  `AGENTS.md` — `python3 scripts/installer.py --rejouer --appliquer` reuses
-  your profile without asking the questions again.
-- **Before proposing a change to the repository**:
-  `python3 scripts/verifier_coffre.py`. The tool (`OBSIA/`) and the memory (the
-  vault root) are **two distinct Git repositories** (§7.1) — one ships by pull
-  request, the other is committed in place.
-- **Going further**: [`README.md`](README.md) for the architecture, the
-  contract for the rules, `IA/system/agents-index.md` to know which agent to
-  talk to.
+- **Talk to the `assistant` agent** to begin: it files your notes, keeps your
+  memory and points you to the right agent. The list of agents and their roles
+  is in `IA/system/agents-index.md`.
+- **After adding or changing a skill**, rebuild `AGENTS.md` without answering
+  the questions again: `python3 scripts/installer.py --rejouer --appliquer`
+  (from `OBSIA/`).
+- **To contribute to OBSIA**: `python3 scripts/verifier_coffre.py` (from
+  `OBSIA/`) before proposing a change. OBSIA and your vault each have their own Git history: a
+  change to OBSIA is proposed by pull request, your memory is committed
+  directly.
+- **To understand how it all works**: `README.md`, then the contract
+  (`IA/system/VAULT-CONTRACT.md`, in French).

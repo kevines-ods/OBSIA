@@ -195,9 +195,9 @@ def apercu(modules: list[dict], actifs: set[str], racine: Path,
     coffre_parent = (cible if mode == "copie" else racine).parent
     print("\n  Mémoire du coffre parent : %s" % coffre_parent)
     if parent_est_le_dossier_personnel(cible if mode == "copie" else racine):
-        print("  ! le coffre parent est votre dossier personnel : rien n'y sera")
-        print("    posé. Placez OBSIA dans un dossier de coffre dédié")
-        print("    (DEMARRAGE.md, étape 1).")
+        print("  ! le coffre parent est votre dossier personnel : --appliquer")
+        print("    refusera d'installer. Placez OBSIA dans un dossier de coffre")
+        print("    dédié (DEMARRAGE.md, étape 1).")
     for rel in ("0-PERSONNELS/profil-utilisateur.md", "0-MEMOIRES/README.md",
                 "0-MEMOIRES/préférences/"):
         chemin = coffre_parent / rel
@@ -747,7 +747,17 @@ def parent_est_le_dossier_personnel(produit: Path) -> bool:
     tout le dossier personnel en dépôt de données.
     """
     try:
-        return produit.resolve().parent == Path.home().resolve()
+        parent = produit.resolve().parent
+        # `HOME` vide fait rendre `/` à `Path.home()` : la base des comptes
+        # donne alors le vrai dossier personnel.
+        candidats = {Path.home().resolve()}
+        try:
+            import pwd
+            candidats.add(Path(pwd.getpwuid(os.getuid()).pw_dir).resolve())
+        except (ImportError, KeyError, AttributeError):
+            pass
+        candidats.discard(Path("/"))
+        return parent in candidats
     except (OSError, RuntimeError):
         return False
 
@@ -963,6 +973,24 @@ def main() -> int:
     mode = "copie" if args.installer else "en-place"
     cible = args.installer.resolve() if args.installer else None
 
+    # Refus franc, avant les questions et avant toute écriture : le dossier
+    # personnel n'est jamais un coffre. Y poser `AGENTS.md`, le profil ou la
+    # mémoire le ferait lire par tout harness lancé depuis là, et un second
+    # passage y ferait un `git init`. L'aperçu, lui, se contente d'avertir.
+    if args.appliquer and parent_est_le_dossier_personnel(
+            cible if mode == "copie" else racine):
+        if mode == "copie":
+            conseil = ("Visez une cible dans un dossier de coffre, par exemple :\n"
+                       "  --installer ~/\"Mon coffre\"/OBSIA")
+        else:
+            conseil = ("Créez un dossier de coffre et placez-y OBSIA, par exemple :\n"
+                       "  mkdir -p ~/\"Mon coffre\" && mv %s ~/\"Mon coffre\"/"
+                       % racine)
+        print("Refusé : le dossier qui contiendrait OBSIA est votre dossier "
+              "personnel, et ce n'est pas un coffre. Rien n'a été écrit.\n"
+              "%s\n(DEMARRAGE.md, étape 1)." % conseil, file=sys.stderr)
+        return 1
+
     if args.tout:
         actifs = {m["name"] for m in modules}
         # En copie, le profil dont on parle est celui de la cible : la source,
@@ -1046,13 +1074,8 @@ def main() -> int:
     # Dans cet ordre : le coffre est reconnu tel qu'il est, avant que
     # `0-PERSONNELS/` et `0-MEMOIRES/` n'apparaissent sous lui. Rien n'est écrasé
     # — la liste blanche surtout pas.
-    if parent_est_le_dossier_personnel(coffre):
-        print("  ! coffre parent = dossier personnel : mémoire et dépôt de données "
-              "non posés. Placez OBSIA dans un dossier de coffre dédié "
-              "(DEMARRAGE.md, étape 1), puis relancez.", file=sys.stderr)
-    else:
-        preparer_depot_de_donnees(coffre, racine)
-        preparer_memoire_du_coffre(coffre)
+    preparer_depot_de_donnees(coffre, racine)
+    preparer_memoire_du_coffre(coffre)
 
     # Les dépôts git des projets n'ont pas leur place dans l'index d'Obsidian.
     exclure_code_d_obsidian(coffre)

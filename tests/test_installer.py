@@ -1164,15 +1164,29 @@ if __name__ == "__main__":
 class TestDossierPersonnel(BaseInstalleur):
     """Un clone posé directement dans le dossier personnel n'en fait pas un coffre."""
 
-    def test_memoire_et_depot_non_poses(self):
+    def test_refus_sans_rien_ecrire(self):
         env = dict(os.environ, HOME=str(self.parent))
         resultat = subprocess.run(
             [sys.executable, "-B", str(INSTALLATEUR), "--racine", str(self.racine),
              "--appliquer", "--tout"],
             capture_output=True, text=True, check=False, env=env)
-        self.assertIn("dossier personnel", resultat.stdout + resultat.stderr)
-        for nom in ("0-PERSONNELS", "0-MEMOIRES", ".git"):
+        self.assertEqual(1, resultat.returncode, resultat.stdout)
+        self.assertIn("Rien n'a été écrit", resultat.stderr)
+        for nom in ("0-PERSONNELS", "0-MEMOIRES", ".git", "AGENTS.md"):
             self.assertFalse((self.parent / nom).exists(), nom)
+        self.assertFalse((self.racine / "obsia.local.yml").exists())
+
+    def test_refus_en_copie_sans_creer_la_cible(self):
+        env = dict(os.environ, HOME=str(self.parent))
+        cible = self.parent / "OBSIA-copie"
+        resultat = subprocess.run(
+            [sys.executable, "-B", str(INSTALLATEUR), "--racine", str(self.racine),
+             "--installer", str(cible), "--appliquer", "--tout"],
+            capture_output=True, text=True, check=False, env=env)
+        self.assertEqual(1, resultat.returncode, resultat.stdout)
+        self.assertIn("--installer", resultat.stderr)
+        self.assertFalse(cible.exists())
+        self.assertFalse((self.parent / "AGENTS.md").exists())
 
     def test_detection(self):
         ancien = os.environ.get("HOME")

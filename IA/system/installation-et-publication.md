@@ -19,6 +19,13 @@ exemple — est toujours celui du coffre **effectif**, donc de la cible. Sans
 cette règle, `--tout --installer CIBLE` effaçait le profil de la source : elle
 perdait son mode, un `--rejouer` y échouait ensuite, et rien ne l'avait annoncé.
 
+**Le dossier personnel n'est jamais un coffre.** Si le dossier qui contiendrait
+`OBSIA/` (en place, ou la cible en copie) est le dossier personnel,
+`--appliquer` refuse avant toute écriture, code 1 : ni `AGENTS.md`, ni profil,
+ni mémoire. Sans ce refus, `AGENTS.md` y serait lu par tout harness lancé depuis
+le dossier personnel, et un second passage, les dossiers de mémoire devenus
+marqueurs, y ferait un `git init`. L'aperçu l'annonce.
+
 **`AGENTS.md`** — l'installation écrit également, à côté de leur coffre effectif,
 le fichier que les harness lisent d'eux-mêmes : `<dossier parent>/AGENTS.md`.
 Autrement dit, la cible d'installation désigne le dossier `OBSIA/` : `AGENTS.md`

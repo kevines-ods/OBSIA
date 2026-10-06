@@ -2,230 +2,179 @@
 
 [English](README.md) | **Français**
 
-Un dépôt qui décrit vos agents IA — rôles, compétences, règles — et les tâches
-qu'ils exécutent, à cloner à la racine d'un coffre de notes.
+OBSIA donne à ton assistant IA une équipe d'agents spécialisés — un pour
+ranger tes notes, un pour administrer tes serveurs, un pour construire des
+applications, un pour relire — et une mémoire qui dure d'une conversation à
+l'autre.
 
-Les agents, leurs compétences et leurs tâches sont des fichiers Markdown. Pas de
-base de données, pas de format propriétaire : le dépôt se lit et s'édite à la
-main, dans Obsidian ou dans n'importe quel éditeur de texte. La **mémoire**, elle,
-vit dans le coffre parent, pas ici (§6, §7.1).
+Tout est écrit en simples fichiers texte (Markdown) : pas de base de données,
+pas de format fermé. Tu peux tout lire et tout modifier avec n'importe quel
+éditeur, ou avec Obsidian si tu l'utilises.
 
-## Principe
+OBSIA s'installe dans un dossier de notes, ton **coffre**. Ta mémoire (tes
+notes, tes projets, ce que les agents apprennent) y reste, à côté de l'outil,
+et ne part jamais avec lui.
 
-Un **agent** est un fichier qui décrit un interlocuteur : son rôle, les skills
-qu'il mobilise, les serveurs MCP dont il dépend.
+## Comment ça marche
 
-Un **skill** est un fichier qui décrit une manière de faire : une procédure, des
-commandes, des pièges à éviter.
+OBSIA repose sur trois sortes de fichiers :
 
-Une **tâche** est un fichier qui décrit une action planifiée : quand la
-déclencher, pour quel agent, avec quelle instruction.
+- un **agent** est un interlocuteur spécialisé : son rôle, ce qu'il sait
+  faire, ce qu'il a le droit de toucher ;
+- un **skill** est une compétence, une procédure écrite pas à pas
+  (diagnostiquer une machine, ranger une note, préparer une livraison…) ;
+- une **tâche** est une action à lancer toute seule à heure fixe (par exemple
+  ranger tes notes chaque matin).
 
-Un **harness** — Claude Code, OpenCode, Codex, Goose, ou l'interface de ton
-choix — lit ces fichiers et exécute. Le coffre décrit *quoi* faire ; le harness
-fournit *avec quoi*.
+OBSIA ne fait rien tout seul : il faut un outil d'IA qui lit ces fichiers et
+agit, ce qu'on appelle un **harness** (Claude Code, OpenCode, Codex, Goose…).
+OBSIA dit *quoi* faire, le harness fournit *avec quoi*. Tu peux changer de
+harness sans rien perdre.
 
-Le chargement est paresseux : le prompt système ne contient que l'index des
-agents, des skills et des tâches planifiées. Le contenu d'un skill n'est lu que
-lorsqu'il devient nécessaire.
+L'IA ne lit pas tout d'un coup : elle voit d'abord la liste des agents et des
+skills, puis n'ouvre un skill que lorsqu'elle en a besoin. Elle reste ainsi
+rapide, même avec beaucoup de compétences.
+
+## Démarrage
+
+Le guide pas à pas est dans `DEMARRAGE.md`. En bref :
+
+```bash
+mkdir -p ~/"Mon coffre" && cd ~/"Mon coffre"   # ou ton coffre existant
+git clone https://github.com/kevines-ods/OBSIA
+cd OBSIA
+python3 scripts/installer.py --sonder     # regarde ta machine, n'écrit rien
+python3 scripts/installer.py              # te pose les questions, montre ce qui sera fait
+python3 scripts/installer.py --appliquer  # installe
+```
+
+Il te faut seulement `git` et Python 3 : rien d'autre à installer.
+
+Ensuite, lance ton harness **depuis le dossier du coffre** (`~/Mon coffre`),
+pas depuis `OBSIA/`. L'installeur y a posé un fichier `AGENTS.md` que la
+plupart des harness lisent tout seuls. Pour le brancher, suis la fiche de ton
+harness dans `IA/system/adaptateurs-harness/`.
+
+Si ton harness ne lit pas `AGENTS.md`, tu obtiens le même texte avec
+`python3 scripts/generer_prompt.py -o prompt-systeme.md --mcp` (depuis
+`OBSIA/`), à lui donner comme instructions de départ. `--mcp` y ajoute un
+modèle de configuration des outils branchés (MCP) que tes agents utilisent :
+sans lui, ces outils ne seront pas disponibles.
 
 ## Structure
 
 ```
-OBSIA/                       le dépôt — l'outil, pas la mémoire
+OBSIA/                       l'outil (ta mémoire est à côté, pas ici)
 ├── IA/
-│   ├── agents/              définition des agents
-│   ├── skills/              compétences réutilisables
-│   ├── MCP/                 outils structurés
-│   ├── tâches/              registre des tâches planifiées
-│   └── system/              VAULT-CONTRACT.md (les règles), index,
-│                            modules/ (le catalogue installable),
-│                            prompt-fondateur.md (intention d'origine),
-│                            adaptateurs-harness/ (gabarits d'intégration)
-├── brouillon/               zone de travail libre
-├── scripts/
-│   ├── installer.py         sonde la machine, retient les modules utiles
-│   ├── publier.py           dérive le miroir public de ce dépôt
-│   ├── generer_prompt.py    prompt système depuis les frontmatters
-│   ├── regenerate_index.py  les quatre index et IA/README.md
-│   ├── regenerate_sommaire.py  les sommaire.md du coffre parent
-│   └── verifier_coffre.py   cohérence du coffre — utilisé en CI
-├── HISTORIQUE.md            ce qui a été décidé puis écarté
+│   ├── agents/              les agents
+│   ├── skills/              les compétences
+│   ├── MCP/                 les outils branchés (GitHub, navigateur, messagerie…)
+│   ├── tâches/              les actions planifiées
+│   └── system/              les règles (VAULT-CONTRACT.md), les index,
+│                            le catalogue des modules à installer,
+│                            les fiches pour brancher chaque harness
+├── brouillon/               brouillons libres
+├── scripts/                 installer, vérifier, publier (Python, sans dépendance)
+├── HISTORIQUE.md            ce qui a été essayé puis abandonné
 ├── LICENSE                  AGPL-3.0-or-later
-├── README.md
-└── .gitignore
+└── README.md
 ```
 
-Il n'y a pas de sous-dossier « coffre » : `OBSIA/` s'installe **à la racine** de
-votre coffre Obsidian, côte à côte avec vos dossiers de connaissance, et Obsidian
-s'ouvre sur ce coffre entier (et non sur `OBSIA/` seul) : c'est la condition pour
-que les rétroliens se résolvent à l'échelle du coffre (§7). La mémoire — résumés,
-carnets, savoirs, profil — vit dans les dossiers `0-…` de ce coffre parent, sous
-son propre dépôt Git (§6, §7.1) ; `OBSIA/` n'en contient aucun.
+OBSIA se place **directement dans ton coffre**, à côté de tes dossiers de
+notes, et pas dans un sous-dossier. Si tu utilises Obsidian, ouvre-le sur le
+coffre entier, pas sur `OBSIA/` seul : c'est ce qui permet aux liens entre
+notes de fonctionner partout.
 
-Le coffre ne connaît aucune interface et n'en nomme aucune. Il décrit *quoi*
-faire ; le harness de ton choix fournit *avec quoi*. Rien ici ne dépend d'un
-programme particulier — c'est la condition pour qu'OBSIA reste libre de ses
-mouvements.
+Ta mémoire (résumés de projets, carnets de travail, savoirs, profil) vit dans
+les dossiers `0-…` du coffre, avec son propre historique Git. `OBSIA/` n'en
+contient aucune : tu peux mettre l'outil à jour ou le réinstaller sans jamais
+toucher à tes notes.
 
-## Le coffre parent — votre mémoire
+## Ton coffre — ta mémoire
 
-OBSIA est l'outil ; le coffre qui l'entoure porte votre mémoire. Il s'appelle
-`Mon coffre/`, et `OBSIA/` s'installe à sa racine, à côté de `_MAINTENANCE/`,
-`0-PROJETS/` (projets), `0-MEMOIRES/` (mémoire des agents, et chantiers clos),
-`0-DOCUMENTS/`, `0-PERSONNELS/` (personnel), `0-SAVOIRS/` (connaissances) et
-`0-EN-VRAC/` (à trier). Les dossiers de mémoire de premier niveau commencent tous
-par `0-` (§7.1).
+OBSIA est l'outil ; le coffre qui l'entoure porte ta mémoire. Il est organisé
+en quelques dossiers fixes :
 
-Le coffre parent est **son propre dépôt Git** : la mémoire y est versionnée, sur
-un seul écrivain, et poussée vers un unique dépôt distant (nu, sur le NAS).
-`OBSIA/`, `brouillon/`, `.obsidian/` et le reste de l'outil en sont exclus par un
-`.gitignore` en liste blanche ; `**/.git` reste hors de Syncthing (§7). Rien de
-privé ne sort de l'outil : `OBSIA/brouillon/` et `OBSIA/IA/system/session-log/`
-ne sont jamais publiés (§8).
+| Dossier | Ce qu'il contient |
+| --- | --- |
+| `0-EN-VRAC/` | ce que tu déposes en vrac ; les agents le complètent puis le rangent |
+| `0-SAVOIRS/` | tes connaissances : fiches, notes de référence |
+| `0-PROJETS/` | tes projets en cours, avec leurs résumés et carnets de travail |
+| `0-MEMOIRES/` | ce que les agents ont appris, et les projets terminés |
+| `0-DOCUMENTS/` | tes documents |
+| `0-PERSONNELS/` | ce qui te concerne : ton profil, tes préférences |
+| `_MAINTENANCE/` | la trace de ce que les agents ont fait |
 
-La structure de premier niveau est fixe (seul vous la modifiez). Les agents
-lisent tout le coffre parent, remplissent les notes d'`0-EN-VRAC/` (corps, tags,
-rétroliens) puis les classent, complètent les notes déposées dans `0-SAVOIRS/`,
-et consignent previews et actions dans `_MAINTENANCE/`. `0-EN-VRAC/` est un
-**tampon** : une session de rangement le vide entièrement. Les règles complètes
-sont au §7 de `IA/system/VAULT-CONTRACT.md`.
+Toi seul crées ou renommes ces dossiers. Les agents lisent tout le coffre,
+mais n'écrivent qu'à des endroits précis, et ils te montrent ce qu'ils vont
+modifier avant de le faire.
 
-Pour que les agents atteignent le coffre parent, le harness doit avoir accès à
-sa racine — pas seulement à `OBSIA/` : dossier de travail ouvert sur le coffre,
-ou serveur MCP « fichiers » (fiche `IA/MCP/coffre-parent.md`, gabarit
-`IA/MCP/mcp.example.json`). La configuration réelle vit hors dépôt.
+Le coffre a **son propre historique Git**, séparé de celui d'OBSIA : chaque
+modification d'un agent y est enregistrée, et tu peux toujours revenir en
+arrière. Tu peux l'envoyer vers le serveur de ton choix pour le sauvegarder.
 
-Les **gabarits d'intégration par harness** — Claude Code, OpenCode, OpenClaw,
-DeepSeek Harness, AionUi/ObsiaUi, LibreChat — vivent dans
-`IA/system/adaptateurs-harness/`.
+Pour que les agents atteignent tes notes, ton harness doit être lancé
+**depuis la racine du coffre**, et pas depuis `OBSIA/`. Les fiches de
+`IA/system/adaptateurs-harness/` expliquent comment brancher chaque harness
+(Claude Code, OpenCode, AionUi…).
 
-## Tâches planifiées
+## Tâches automatiques
 
-Une tâche récurrente est déclarée dans `IA/tâches/<nom>.md` : quand, pour quel
-agent, et l'instruction exacte à lui envoyer. Ce fichier fait foi.
+Une tâche est une action que les agents lancent tout seuls à heure fixe :
+ranger tes notes chaque matin, vérifier le coffre chaque lundi… Chacune est
+décrite dans un fichier de `IA/tâches/` : quand la lancer, pour quel agent, et
+quoi lui demander.
 
-Le timer systemd, le planificateur du harness ou le cron de la machine ne sont
-que des **instances** de cette déclaration : nommées `obsia-<nom>`, jetables,
-recréables depuis le registre. Changer de harness ou de machine ne perd donc
-plus rien — on relit le registre et on ré-instancie.
-
-```yaml
----
-schema: 1
-kind: tâche
-name: revue-hebdomadaire-du-coffre
-description: Une ligne — quoi, et à quel rythme.
-mode: agent              # agent | commande
-quand: "0 9 * * 1"       # cron à 5 champs, entre guillemets
-fuseau: Europe/Paris
-exécutant: local         # local | harness — qui a le droit de déclencher
-agent: assistant
-actif: true
----
-```
-
-Le corps porte l'instruction — auto-suffisante, puisqu'au déclenchement il n'y
-a plus de conversation. Règles au §12 de `VAULT-CONTRACT.md`, procédure dans le
-skill `cron`.
-
-Une tâche = **au plus une instance vivante**, tous exécutants confondus. C'est
-à ça que sert `exécutant` : planifier la même chose côté harness *et* côté
-machine la déclencherait deux fois, sans qu'aucune erreur ne le signale.
-
-Le passage du registre aux timers systemd est outillé. La séquence complète,
-une fois par machine :
+Les tâches ne s'activent **pas** toutes seules à l'installation : c'est toi qui
+décides lesquelles tournent sur ta machine. Pour les activer (timers systemd) :
 
 ```bash
 mkdir -p ~/.config/obsia
 python3 IA/skills/cron/scripts/appliquer_taches.py --config > ~/.config/obsia/appliquer.conf
-$EDITOR ~/.config/obsia/appliquer.conf                          # renseigner commande_agent
-python3 IA/skills/cron/scripts/appliquer_taches.py              # aperçu, n'écrit rien
-python3 IA/skills/cron/scripts/appliquer_taches.py --appliquer  # exécute
+$EDITOR ~/.config/obsia/appliquer.conf                          # indiquer la commande qui lance ton harness
+python3 IA/skills/cron/scripts/appliquer_taches.py              # montre ce qui va changer, n'écrit rien
+python3 IA/skills/cron/scripts/appliquer_taches.py --appliquer  # active
 ```
 
-`--config` **n'écrit rien** : il affiche un gabarit, à rediriger soi-même. Ce
-fichier n'est pas versionné, et c'est délibéré — il nomme le harness qui lance
-un agent, ce que le coffre ne fait jamais (§3 de `VAULT-CONTRACT.md`). Tant que
-`commande_agent` est vide, une tâche `mode: agent` est **refusée** plutôt
-qu'instanciée inerte. Une tâche `mode: commande` n'a besoin d'aucune de ces
-deux premières lignes.
+Si tu changes de machine ou de harness, rien n'est perdu : on relance ces
+commandes et les tâches sont recréées depuis leurs fichiers. Le détail (format
+d'une tâche, règles, cas particuliers) est dans le skill `cron`.
 
-Le script compare ensuite le registre aux unités `obsia-*` présentes, affiche
-le tableau des écarts, et n'écrit qu'avec `--appliquer`. C'est le seul script
-du dépôt qui dépende d'un exécutant — il vit donc dans le skill qui s'en sert,
-pas dans `scripts/`, qui reste utilisable sans rien installer.
+---
 
-`IA/system/taches-index.md`, généré comme les autres index, met le registre en
-contexte permanent : un harness neuf sait que ces tâches existent. Il ne les
-crée pas pour autant sur la machine — l'instanciation reste un geste explicite.
+# Pour aller plus loin
 
-## Démarrage
+## Choisir ce que tu installes
 
-Le guide pas à pas est dans `DEMARRAGE.md` : cloner dans son coffre,
-installer, lancer un harness, vérifier que le cerveau est chargé. En bref :
+OBSIA est un **catalogue** : tu ne gardes que ce qui te sert. Inutile de
+charger les compétences Docker si tu n'as pas de conteneurs : elles
+prendraient de la place et se proposeraient au mauvais moment.
+
+Les compétences sont regroupées en **modules** (`IA/system/modules/`), par
+exemple « conteneurs », « documents » ou « construction ». À l'installation :
+
+1. l'installeur **regarde ta machine** (Docker est-il là ? Proxmox ?
+   CachyOS ?) et en déduit une réponse par défaut ;
+2. il te **pose une question par module**, et c'est ta réponse qui décide ;
+3. il retient tes choix dans un fichier `obsia.local.yml`, propre à ta
+   machine et jamais partagé.
+
+Il ne lance aucun programme et n'accède pas au réseau pour regarder ta
+machine : il vérifie seulement si certains programmes ou fichiers sont
+présents.
 
 ```bash
-cd "/chemin/de/votre coffre"
-git clone https://github.com/kevines-ods/OBSIA
-cd OBSIA
-python3 scripts/installer.py --sonder     # ce que la machine porte, n'écrit rien
-python3 scripts/installer.py --appliquer  # retient les modules, écrit ../AGENTS.md
+python3 scripts/installer.py --sonder             # ce qui a été détecté
+python3 scripts/installer.py                      # les questions, et ce qui sera fait
+python3 scripts/installer.py --appliquer          # applique tes choix
+python3 scripts/installer.py --tout --appliquer   # revient au catalogue complet
 ```
 
-Puis lancer le harness **depuis la racine du coffre**, où l'installeur a posé
-`AGENTS.md`. Pour un harness qui ne lit pas ce fichier, le même texte
-s'obtient, depuis `OBSIA/`, par `python3 scripts/generer_prompt.py -o prompt-systeme.md --mcp`,
-à donner comme prompt système ; `--mcp` y ajoute un squelette de configuration
-des serveurs MCP.
+Changer d'avis plus tard : relance l'installeur, il repose les questions. Le
+détail (mode copie, sondes, ce qui est réduit ou non) est dans
+`IA/system/installation-et-publication.md`.
 
-## Installation modulaire
-
-Le coffre est un **catalogue**, pas une livraison. Tout y est déclaré ; rien
-n'oblige à tout retenir. Un poste sans Docker n'a que faire des skills qui
-pilotent des conteneurs : ils occuperaient le contexte, se proposeraient au
-mauvais moment, et échoueraient là où il aurait fallu qu'ils se taisent.
-
-Un **module** (`IA/system/modules/<nom>.md`) regroupe ce qui n'a de sens
-qu'ensemble, et chaque agent, skill, MCP et tâche déclare le sien. L'index
-généré `IA/system/modules-index.md` les liste tous — y compris ceux qu'on n'a
-pas retenus, parce qu'un catalogue dont on ignore les entrées absentes n'est
-plus un catalogue.
-
-```bash
-python3 scripts/installer.py --sonder              # détection, verdict des sondes
-python3 scripts/installer.py                       # aperçu, n'écrit rien
-python3 scripts/installer.py --appliquer           # écrit le profil, en place
-python3 scripts/installer.py --installer ~/coffre/OBSIA --appliquer
-python3 scripts/installer.py --tout --appliquer    # revient au catalogue complet
-```
-
-L'installeur **sonde puis demande** : il constate que `docker` est installé, il
-ne sait pas si vous voulez gérer des conteneurs. La sonde propose un défaut, la
-question tranche. Quatre formes de sonde seulement — `commande:`, `fichier:`,
-`distribution:`, `parent:` — et aucune qui exécute une commande arbitraire ou
-ouvre le réseau.
-
-Deux modes :
-
-- **en place** — rien n'est déplacé ni supprimé, seuls les fichiers **non
-  versionnés** sont réduits au profil (le prompt système et l'`AGENTS.md`). Les
-  index, versionnés, restent au catalogue complet ;
-- **copie** (`--installer CIBLE`) — seuls les fichiers retenus atterrissent
-  dans la cible, et les déclarations d'agents y sont réduites pour rester
-  cohérentes.
-
-Revenir du profil au catalogue complet : `python3 scripts/installer.py --tout
---appliquer`.
-
-Le profil vit dans `obsia.local.yml`, à la racine, **non versionné** : il
-décrit cette machine, pas le coffre. Sans profil, tout le catalogue est actif —
-c'est l'état du dépôt de distribution et celui sous lequel la CI vérifie. Il ne
-réduit que ce qui n'est pas versionné (prompt système, `AGENTS.md`) : les index
-versionnés montrent toujours le catalogue entier, sinon la CI verrait un index
-périmé. Règles complètes au §13 de `IA/system/VAULT-CONTRACT.md`.
-
-## Vérifier le coffre
+## Pour contribuer : vérifier avant un commit
 
 Avant de committer :
 
@@ -253,7 +202,7 @@ Les mêmes contrôles tournent en intégration continue à chaque poussée. Aucu
 dépendance : bibliothèque standard de Python uniquement.
 
 Pour les lancer automatiquement avant chaque commit, une fois par clone — c'est
-`installer.py --appliquer` qui l'arme (§13) :
+`installer.py --appliquer` qui l'arme (§11) :
 
 ```bash
 git config core.hooksPath .githooks
@@ -272,11 +221,12 @@ Tout fichier agent ou skill commence par un frontmatter YAML strict.
 ```yaml
 ---
 schema: 1
-kind: skill              # agent | skill | mcp | tâche | contract
+kind: skill              # agent | skill | mcp | tâche | module | contract
 name: nom-du-skill       # minuscules, tirets, identique au nom du fichier
 description: Une ligne — quoi et quand.
 type: core               # skills uniquement : core | outil
 read_only: true
+module: noyau            # obligatoire : le module du catalogue (IA/system/modules/)
 ---
 ```
 
@@ -294,6 +244,7 @@ skills:
 mcp:
   - nom-du-serveur
 read_only: false
+module: noyau
 ---
 ```
 
@@ -309,12 +260,14 @@ Elles vivent dans `IA/system/VAULT-CONTRACT.md` — le noyau, toujours chargé �
 et ses annexes `IA/system/contrat/` ; le noyau fait foi. En
 résumé :
 
-- Le coffre est en lecture seule pour les agents. Les modifications passent par
-  des patches Git soumis à revue.
-- Aucune suppression sans archivage préalable.
+- Les agents écrivent directement dans ta mémoire, mais seulement aux
+  endroits prévus, et en te montrant d'abord ce qu'ils vont faire. Toute
+  modification de l'outil lui-même (agents, règles) passe par une proposition
+  Git que tu relis.
+- Rien ne se perd : l'historique Git du coffre garde chaque version.
 - Aperçu obligatoire avant toute action touchant plusieurs fichiers.
 - Les fichiers générés — `sommaire.md` (dans le coffre parent), `agents-index.md`,
-  `skills-index.md`, `taches-index.md`, `IA/README.md` — sont régénérés par
+  `skills-index.md`, `taches-index.md`, `modules-index.md`, `IA/README.md` — sont régénérés par
   script, jamais édités à la main. Si un index contredit un frontmatter, le
   frontmatter a raison.
 - Un agent et un skill sont deux choses distinctes. Un agent décide ; un skill
@@ -322,20 +275,20 @@ résumé :
 
 ## Secrets
 
-Le dépôt est public. Ne doivent jamais y entrer : clés, jetons, mots de passe,
+Tout ce qui entre ici se retrouve dans la distribution publique. Ne doivent jamais y entrer : clés, jetons, mots de passe,
 adresses IP privées, noms d'hôtes internes.
 
 Les inventaires réels (machines, instances LLM) vivent hors du dépôt. Seuls des
-gabarits `*.example.yml` sont versionnés.
+gabarits sont versionnés, comme `IA/MCP/mcp.example.json`.
 
-Vérifier avant de pousser :
+Vérifie avant de pousser :
 
 ```bash
 git diff --cached | grep -iE "password|token|api[_-]key|BEGIN.*PRIVATE KEY"
 ```
 
 Un secret poussé puis effacé reste dans l'historique Git. Si cela arrive :
-révoquer le secret d'abord, nettoyer l'historique ensuite.
+révoque le secret d'abord, nettoie l'historique ensuite.
 
 ## Public et privé
 
@@ -344,7 +297,7 @@ Le dépôt de travail est **privé** : il porte l'outil, ses logs de session et 
 moins ce qui décrit une personne ou une machine.
 
 La **mémoire** n'est ni dans l'un ni dans l'autre : elle a son propre dépôt, à la
-racine du coffre parent, poussé vers le NAS (§7.1). Elle ne se publie pas.
+racine du coffre, que tu peux sauvegarder où tu veux. Elle ne se publie pas.
 
 Le privé fait foi, et `scripts/publier.py` en dérive le public. Le sens unique
 n'est pas qu'une précaution : c'est ce qui crée la **fenêtre de validation**.
@@ -357,6 +310,7 @@ son passé**, qui reste chez qui l'a cloné. Le dépôt public, lui, part propre
 `publier.py` écrit dans un clone neuf, sans y verser l'historique du privé.
 
 ```bash
+git clone https://github.com/kevines-ods/OBSIA ~/OBSIA-public      # une fois
 python3 scripts/publier.py --cible ~/OBSIA-public              # aperçu
 python3 scripts/publier.py --cible ~/OBSIA-public --appliquer
 python3 scripts/publier.py --cible ~/OBSIA-public --appliquer \
@@ -387,6 +341,6 @@ dernier filet.
 Le copyleft est délibéré : un dérivé d'OBSIA reste libre, y compris s'il n'est
 jamais distribué mais seulement exposé à travers un réseau (§13 de la licence).
 
-Outils libres exclusivement. Vérifier la licence de tout skill importé d'une
+Outils libres exclusivement. Vérifie la licence de tout skill importé d'une
 autre source avant de l'intégrer : certains catalogues publient sous licence
 restrictive, et une licence incompatible avec l'AGPL ne peut pas entrer ici.

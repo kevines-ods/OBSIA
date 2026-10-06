@@ -2,13 +2,17 @@
 
 **English** | [Français](README.fr.md)
 
-A repository that describes your AI agents — roles, skills, rules — and the tasks
-they run, to be cloned at the root of a note vault.
+OBSIA gives your AI assistant a team of specialised agents — one to tidy your
+notes, one to run your servers, one to build applications, one to review — and
+a memory that lasts from one conversation to the next.
 
-Agents, their skills and their tasks are Markdown files. No database, no
-proprietary format: the repository can be read and edited by hand, in Obsidian or
-in any text editor. The **memory**, however, lives in the parent vault, not here
-(§6, §7.1).
+Everything is written as plain text files (Markdown): no database, no closed
+format. You can read and edit everything with any editor, or with Obsidian if
+you use it.
+
+OBSIA is installed inside a folder of notes, your **vault**. Your memory (your
+notes, your projects, what the agents learn) stays there, next to the tool, and
+never leaves with it.
 
 > **Language note.** The vault itself — contract, agents, skills, scripts — is
 > written in French, and agents answer in French by default. This page and
@@ -16,221 +20,162 @@ in any text editor. The **memory**, however, lives in the parent vault, not here
 > Folder names, frontmatter keys and file names stay in French: the scripts
 > read them literally.
 
-## Principle
+## How it works
 
-An **agent** is a file describing a conversational partner: its role, the
-skills it uses, the MCP servers it depends on.
+OBSIA rests on three kinds of files:
 
-A **skill** is a file describing a way of doing something: a procedure,
-commands, pitfalls to avoid.
+- an **agent** is a specialised conversation partner: its role, what it can
+  do, what it is allowed to touch;
+- a **skill** is a competence, a step-by-step procedure (diagnose a machine,
+  file a note, prepare a delivery…);
+- a **task** is an action launched on its own at a fixed time (for example
+  tidying your notes every morning).
 
-A **task** (`tâche`) is a file describing a scheduled action: when to trigger
-it, for which agent, with which instruction.
+OBSIA does nothing on its own: it needs an AI tool that reads these files and
+acts, called a **harness** (Claude Code, OpenCode, Codex, Goose…). OBSIA says
+*what* to do, the harness provides *what with*. You can switch harness without
+losing anything.
 
-A **harness** — Claude Code, OpenCode, Codex, Goose, or the interface of your
-choice — reads these files and executes. The vault describes *what* to do; the
-harness provides *what with*.
+The AI does not read everything at once: it first sees the list of agents and
+skills, then opens a skill only when it needs it. It stays fast, even with many
+skills.
 
-Loading is lazy: the system prompt only contains the index of agents, skills
-and scheduled tasks. A skill's content is read only when it becomes necessary.
+## Getting started
+
+The step-by-step guide is in [`GETTING-STARTED.md`](GETTING-STARTED.md). In short:
+
+```bash
+mkdir -p ~/"Mon coffre" && cd ~/"Mon coffre"   # or your existing vault
+git clone https://github.com/kevines-ods/OBSIA
+cd OBSIA
+python3 scripts/installer.py --sonder     # looks at your machine, writes nothing
+python3 scripts/installer.py              # asks the questions, shows what will be done
+python3 scripts/installer.py --appliquer  # installs
+```
+
+All you need is `git` and Python 3: nothing else to install.
+
+Then start your harness **from the vault folder** (`~/Mon coffre`), not from
+`OBSIA/`. The installer has placed an `AGENTS.md` file there, which most
+harnesses read on their own. To plug yours in, follow its sheet in
+`IA/system/adaptateurs-harness/`.
+
+If your harness does not read `AGENTS.md`, you get the same text with
+`python3 scripts/generer_prompt.py -o prompt-systeme.md --mcp` (from
+`OBSIA/`), to give it as starting instructions. `--mcp` adds a configuration
+template for the plugged-in tools (MCP) your agents use: without it, those
+tools will not be available.
 
 ## Layout
 
 ```
-OBSIA/                       the repository — the tool, not the memory
+OBSIA/                       the tool (your memory sits next to it, not here)
 ├── IA/
-│   ├── agents/              agent definitions
-│   ├── skills/              reusable skills
-│   ├── MCP/                 structured tools
-│   ├── tâches/              scheduled task registry
-│   └── system/              VAULT-CONTRACT.md (the rules), indexes,
-│                            modules/ (the installable catalogue),
-│                            prompt-fondateur.md (original intent),
-│                            adaptateurs-harness/ (integration templates)
-├── brouillon/               free scratch area
-├── scripts/
-│   ├── installer.py         probes the machine, keeps the useful modules
-│   ├── publier.py           derives the public mirror from this repository
-│   ├── generer_prompt.py    system prompt from the frontmatters
-│   ├── regenerate_index.py  the four indexes and IA/README.md
-│   ├── regenerate_sommaire.py  the sommaire.md files of the parent vault
-│   └── verifier_coffre.py   vault consistency checks — run in CI
-├── HISTORIQUE.md            what was decided, then dropped
+│   ├── agents/              the agents
+│   ├── skills/              the skills
+│   ├── MCP/                 plugged-in tools (GitHub, browser, mail…)
+│   ├── tâches/              the scheduled tasks
+│   └── system/              the rules (VAULT-CONTRACT.md), the indexes,
+│                            the catalogue of installable modules,
+│                            the sheets to plug in each harness
+├── brouillon/               free drafts
+├── scripts/                 install, check, publish (Python, no dependency)
+├── HISTORIQUE.md            what was tried then dropped
 ├── LICENSE                  AGPL-3.0-or-later
-├── README.md
-└── .gitignore
+└── README.md
 ```
 
-There is no "vault" subfolder: `OBSIA/` is installed **at the root** of your
-Obsidian vault, next to your knowledge folders, and Obsidian opens that whole
-vault (not `OBSIA/` alone): that is what makes backlinks resolve across the vault
-(§7). The memory — summaries, logs, knowledge, profile — lives in the `0-…`
-folders of that parent vault, under its own Git repository (§6, §7.1); `OBSIA/`
-holds none of it.
+OBSIA goes **directly into your vault**, next to your note folders, not in a
+subfolder. If you use Obsidian, open it on the whole vault, not on `OBSIA/`
+alone: that is what lets links between notes work everywhere.
 
-The vault knows no interface and names none. It describes *what* to do; the
-harness of your choice provides *what with*. Nothing here depends on a
-particular program — that is what keeps OBSIA free to move.
+Your memory (project summaries, work logs, knowledge, profile) lives in the
+vault's `0-…` folders, with its own Git history. `OBSIA/` holds none of it: you
+can update or reinstall the tool without ever touching your notes.
 
-## The parent vault — your knowledge base
+## Your vault — your memory
 
-OBSIA is the tool; the vault around it carries your memory. It is written
-`Mon coffre/` throughout the repository, and `OBSIA/` is installed at its root,
-next to `_MAINTENANCE/`, `0-PROJETS/` (projects),
-`0-MEMOIRES/` (agent memory, and closed work), `0-DOCUMENTS/`,
-`0-PERSONNELS/` (personal), `0-SAVOIRS/` (knowledge) and
-`0-EN-VRAC/` (inbox). Every top-level memory folder starts with `0-` (§7.1).
+OBSIA is the tool; the vault around it holds your memory. It is organised in a
+few fixed folders:
 
-The parent vault is **its own Git repository**: memory is versioned there, on a
-single writer, and pushed to one remote (bare, on the NAS). `OBSIA/`,
-`brouillon/`, `.obsidian/` and the rest of the tool are excluded by a
-whitelist `.gitignore`; `**/.git` stays out of Syncthing (§7). Nothing private
-leaves the tool: `OBSIA/brouillon/` and `OBSIA/IA/system/session-log/` are never
-published (§8).
+| Folder | What it holds |
+| --- | --- |
+| `0-EN-VRAC/` | what you drop in loose; the agents complete it, then file it |
+| `0-SAVOIRS/` | your knowledge: reference notes |
+| `0-PROJETS/` | your current projects, with their summaries and work logs |
+| `0-MEMOIRES/` | what the agents have learnt, and finished projects |
+| `0-DOCUMENTS/` | your documents |
+| `0-PERSONNELS/` | what concerns you: your profile, your preferences |
+| `_MAINTENANCE/` | the trace of what the agents did |
 
-The top-level structure is fixed (only you change it). Agents read the whole
-parent vault, fill in the notes of `0-EN-VRAC/` (body, tags, backlinks) and then
-file them, complete the notes dropped into `0-SAVOIRS/`, and log previews and
-actions in `_MAINTENANCE/`. `0-EN-VRAC/` is a **buffer**: a tidying session
-empties it entirely. The full rules are in §7 of
-`IA/system/VAULT-CONTRACT.md`.
+Only you create or rename these folders. The agents read the whole vault, but
+write only in specific places, and they show you what they are about to change
+before doing it.
 
-For agents to reach the parent vault, the harness needs access to its root —
-not just to `OBSIA/`: a working directory opened on the vault, or a "files" MCP
-server (card `IA/MCP/coffre-parent.md`, template `IA/MCP/mcp.example.json`).
-The actual configuration lives outside the repository.
+The vault has **its own Git history**, separate from OBSIA's: every change an
+agent makes is recorded, and you can always go back. You can push it to the
+server of your choice to back it up.
 
-**Per-harness integration templates** — Claude Code, OpenCode, OpenClaw,
-DeepSeek Harness, AionUi/ObsiaUi, LibreChat — live in
-`IA/system/adaptateurs-harness/`.
+For the agents to reach your notes, your harness must be started **from the
+root of the vault**, not from `OBSIA/`. The sheets in
+`IA/system/adaptateurs-harness/` explain how to plug in each harness (Claude
+Code, OpenCode, AionUi…).
 
 ## Scheduled tasks
 
-A recurring task is declared in `IA/tâches/<name>.md`: when, for which agent,
-and the exact instruction to send it. That file is the source of truth.
+A task is an action the agents launch on their own at a fixed time: tidy your
+notes every morning, check the vault every Monday… Each one is described in a
+file of `IA/tâches/`: when to launch it, for which agent, and what to ask.
 
-The systemd timer, the harness scheduler or the machine's cron are only
-**instances** of that declaration: named `obsia-<name>`, disposable, rebuilt
-from the registry. Changing harness or machine therefore loses nothing — read
-the registry again and re-instantiate.
-
-```yaml
----
-schema: 1
-kind: tâche
-name: revue-hebdomadaire-du-coffre
-description: One line — what, and how often.
-mode: agent              # agent | commande
-quand: "0 9 * * 1"       # 5-field cron, quoted
-fuseau: Europe/Paris     # time zone
-exécutant: local         # local | harness — who is allowed to trigger it
-agent: assistant
-actif: true
----
-```
-
-The body carries the instruction — self-contained, since there is no
-conversation left at trigger time. Rules in §12 of `VAULT-CONTRACT.md`,
-procedure in the `cron` skill.
-
-One task = **at most one live instance**, across all executors. That is what
-`exécutant` is for: scheduling the same thing on the harness side *and* on the
-machine would trigger it twice, with no error to tell you.
-
-Turning the registry into systemd timers is tooled. The full sequence, once
-per machine:
+Tasks are **not** activated by installation: you decide which ones run on your
+machine. To activate them (systemd timers):
 
 ```bash
 mkdir -p ~/.config/obsia
 python3 IA/skills/cron/scripts/appliquer_taches.py --config > ~/.config/obsia/appliquer.conf
-$EDITOR ~/.config/obsia/appliquer.conf                          # fill in commande_agent
-python3 IA/skills/cron/scripts/appliquer_taches.py              # preview, writes nothing
-python3 IA/skills/cron/scripts/appliquer_taches.py --appliquer  # apply
+$EDITOR ~/.config/obsia/appliquer.conf                          # set the command that starts your harness
+python3 IA/skills/cron/scripts/appliquer_taches.py              # shows what will change, writes nothing
+python3 IA/skills/cron/scripts/appliquer_taches.py --appliquer  # activates
 ```
 
-`--config` **writes nothing**: it prints a template that you redirect
-yourself. That file is not versioned, on purpose — it names the harness that
-launches an agent, which the vault never does (§3 of `VAULT-CONTRACT.md`). As
-long as `commande_agent` is empty, a `mode: agent` task is **refused** rather
-than instantiated inert. A `mode: commande` task needs neither of the first
-two lines.
+If you change machine or harness, nothing is lost: run these commands again and
+the tasks are recreated from their files. The details (task format, rules,
+special cases) are in the `cron` skill.
 
-The script then compares the registry with the `obsia-*` units present, shows
-the table of differences, and only writes with `--appliquer`. It is the only
-script in the repository that depends on an executor — so it lives in the
-skill that uses it, not in `scripts/`, which stays usable with nothing
-installed.
+---
 
-`IA/system/taches-index.md`, generated like the other indexes, keeps the
-registry permanently in context: a fresh harness knows these tasks exist. It
-does not create them on the machine — instantiation remains an explicit step.
+# Going further
 
-## Getting started
+## Choosing what you install
 
-The step-by-step guide is in [`GETTING-STARTED.md`](GETTING-STARTED.md): clone
-into your vault, install, launch a harness, check that the brain is loaded. In
-short:
+OBSIA is a **catalogue**: you keep only what serves you. No point loading the
+Docker skills if you have no containers: they would take up room and offer
+themselves at the wrong moment.
+
+Skills are grouped in **modules** (`IA/system/modules/`), for example
+"conteneurs", "documents" or "construction". At installation:
+
+1. the installer **looks at your machine** (is Docker there? Proxmox?
+   CachyOS?) and derives a default answer;
+2. it **asks one question per module**, and your answer decides;
+3. it records your choices in an `obsia.local.yml` file, specific to your
+   machine and never shared.
+
+It runs no program and makes no network access to look at your machine: it
+only checks whether certain programs or files are present.
 
 ```bash
-cd "/path/to/your vault"
-git clone https://github.com/kevines-ods/OBSIA
-cd OBSIA
-python3 scripts/installer.py --sonder     # what the machine has, writes nothing
-python3 scripts/installer.py --appliquer  # keeps the modules, writes ../AGENTS.md
+python3 scripts/installer.py --sonder             # what was detected
+python3 scripts/installer.py                      # the questions, and what will be done
+python3 scripts/installer.py --appliquer          # applies your choices
+python3 scripts/installer.py --tout --appliquer   # back to the full catalogue
 ```
 
-Then launch the harness **from the vault root**, where the installer put
-`AGENTS.md`. For a harness that does not read that file, the same text is
-produced, from `OBSIA/`, by
-`python3 scripts/generer_prompt.py -o prompt-systeme.md --mcp`, to be given as
-the system prompt; `--mcp` adds a skeleton MCP server configuration.
+Change your mind later: run the installer again, it asks the questions again.
+Details (copy mode, probes, what is reduced or not) are in
+`IA/system/installation-et-publication.md`.
 
-## Modular installation
-
-The vault is a **catalogue**, not a delivery. Everything is declared; nothing
-forces you to keep it all. A machine without Docker has no use for the skills
-that drive containers: they would take up context, offer themselves at the
-wrong moment, and fail where they should have stayed silent.
-
-A **module** (`IA/system/modules/<name>.md`) groups what only makes sense
-together, and every agent, skill, MCP and task declares its own. The generated
-index `IA/system/modules-index.md` lists them all — including the ones you did
-not keep, because a catalogue that hides its missing entries is no longer a
-catalogue.
-
-```bash
-python3 scripts/installer.py --sonder              # detection, probe verdicts
-python3 scripts/installer.py                       # preview, writes nothing
-python3 scripts/installer.py --appliquer           # writes the profile, in place
-python3 scripts/installer.py --installer ~/vault/OBSIA --appliquer
-python3 scripts/installer.py --tout --appliquer    # back to the full catalogue
-```
-
-The installer **probes, then asks**: it sees that `docker` is installed, it
-does not know whether you want to manage containers. The probe suggests a
-default, the question decides. Only four probe forms — `commande:`,
-`fichier:`, `distribution:`, `parent:` — and none that runs an arbitrary
-command or opens the network.
-
-Two modes:
-
-- **in place** — nothing is moved or deleted, only the **non-versioned** files
-  are reduced to the profile (the system prompt and `AGENTS.md`). The indexes
-  are versioned and stay at the full catalogue;
-- **copy** (`--installer TARGET`) — only the kept files land in the target, and
-  agent declarations are trimmed there to stay consistent.
-
-Back from a profile to the full catalogue: `python3 scripts/installer.py --tout
---appliquer`.
-
-The profile lives in `obsia.local.yml`, at the root, **not versioned**: it
-describes this machine, not the vault. Without a profile, the whole catalogue
-is active — that is the state of the distribution repository and the one CI
-checks against. It only reduces what is not versioned (system prompt,
-`AGENTS.md`): versioned indexes always show the whole catalogue, otherwise CI
-would see a stale index. Full rules in §13 of `IA/system/VAULT-CONTRACT.md`.
-
-## Checking the vault
+## Contributing: check before a commit
 
 Before committing:
 
@@ -258,7 +203,7 @@ The same checks run in continuous integration on every push. No dependency:
 Python standard library only.
 
 To run them automatically before each commit, once per clone — `installer.py
---appliquer` arms it for you (§13):
+--appliquer` arms it for you (§11):
 
 ```bash
 git config core.hooksPath .githooks
@@ -277,11 +222,12 @@ Every agent or skill file starts with a strict YAML frontmatter.
 ```yaml
 ---
 schema: 1
-kind: skill              # agent | skill | mcp | tâche | contract
+kind: skill              # agent | skill | mcp | tâche | module | contract
 name: skill-name         # lowercase, hyphens, same as the file name
 description: One line — what and when.
 type: core               # skills only: core | outil
 read_only: true
+module: noyau            # required: the catalogue module (IA/system/modules/)
 ---
 ```
 
@@ -299,6 +245,7 @@ skills:
 mcp:
   - server-name
 read_only: false
+module: noyau
 ---
 ```
 
@@ -310,15 +257,16 @@ This frontmatter is the boundary between the tool and any program reading it.
 
 ## Rules
 
-They live in `IA/system/VAULT-CONTRACT.md`, which is authoritative. In short:
+They live in `IA/system/VAULT-CONTRACT.md` — the core, always loaded — and its
+annexes in `IA/system/contrat/`; the core is authoritative. In short:
 
-- The vault is read-only for agents. Changes go through Git patches submitted
-  for review.
-- No deletion without prior archiving — and archiving is the memory repository's
-  Git history (§2).
+- The agents write directly into your memory, but only in the places provided,
+  and showing you first what they are about to do. Any change to the tool
+  itself (agents, rules) goes through a Git proposal that you review.
+- Nothing is lost: the vault's Git history keeps every version.
 - A preview is mandatory before any action touching several files.
 - Generated files — `sommaire.md` (in the parent vault), `agents-index.md`,
-  `skills-index.md`, `taches-index.md`, `IA/README.md` — are regenerated by
+  `skills-index.md`, `taches-index.md`, `modules-index.md`, `IA/README.md` — are regenerated by
   script, never edited by hand. If an index contradicts a frontmatter, the
   frontmatter wins.
 - An agent and a skill are two distinct things. An agent decides; a skill
@@ -326,11 +274,11 @@ They live in `IA/system/VAULT-CONTRACT.md`, which is authoritative. In short:
 
 ## Secrets
 
-The repository is public. Never let in: keys, tokens, passwords, private IP
+Everything that enters here ends up in the public distribution. Never let in: keys, tokens, passwords, private IP
 addresses, internal host names.
 
 Real inventories (machines, LLM instances) live outside the repository. Only
-`*.example.yml` templates are versioned.
+templates are versioned, such as `IA/MCP/mcp.example.json`.
 
 Check before pushing:
 
@@ -348,7 +296,7 @@ its `brouillon/`. This public repository is its **distribution**: the same tool,
 minus whatever describes a person or a machine.
 
 The **memory** is in neither: it has its own repository, at the root of the
-parent vault, pushed to the NAS (§7.1). It is not published.
+vault, which you can back up wherever you like. It is not published.
 
 The private one is authoritative, and `scripts/publier.py` derives the public
 one from it. One-way flow is not just a precaution: it is what creates the
@@ -362,6 +310,7 @@ repository, on the other hand, starts clean — `publier.py` writes into a fresh
 clone, without pouring in the private history.
 
 ```bash
+git clone https://github.com/kevines-ods/OBSIA ~/OBSIA-public     # once
 python3 scripts/publier.py --cible ~/OBSIA-public              # preview
 python3 scripts/publier.py --cible ~/OBSIA-public --appliquer
 python3 scripts/publier.py --cible ~/OBSIA-public --appliquer \

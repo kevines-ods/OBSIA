@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: extrapolation-des-finalites
-description: Fixer la finalité d'un projet avec l'utilisateur et extrapoler ses finalités possibles — une question par message, trois à cinq avenirs plausibles proposés puis validés ou rejetés un par un, portes à garder ouvertes — puis écrire la note `— vision` à la racine du dossier du projet dans le coffre parent (`Mon coffre/0-PROJETS/<projet>/`), où elle reste même après la clôture d'un chantier. À charger au premier appel du visionnaire sur un projet, ou quand la finalité change. Ne juge aucun changement : c'est `controle-de-cap`.
+description: Fixer avec l'utilisateur la finalité d'un projet et où il pourrait aller — une question par message, trois à cinq avenirs possibles validés ou rejetés un par un, portes à garder ouvertes — puis écrire la note `— vision` du projet, qui reste même après la clôture d'un chantier. À charger au premier appel du visionnaire sur un projet, ou quand la finalité change. Ne juge aucun changement : c'est `controle-de-cap`.
 module: noyau
 type: outil
 read_only: false

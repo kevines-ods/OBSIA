@@ -2,7 +2,7 @@
 schema: 1
 kind: agent
 name: assistant
-description: Agent de base du coffre OBSIA — orchestre la mémoire, range et relie les notes du coffre parent, crée des skills, traite les documents bureautiques et PDF, et prépare les patches soumis à revue.
+description: "Ton interlocuteur par défaut : il range et relie tes notes, tient ta mémoire, traite tes documents (Word, Excel, PDF), crée de nouvelles compétences, et t'oriente vers le bon agent."
 module: noyau
 skills:
   - createur-de-skill
