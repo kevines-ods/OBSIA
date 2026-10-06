@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: mise-en-ligne
-description: Empaqueter une application et la déployer derrière le reverse proxy — image et compose, réseau partagé, labels de routage, secrets par variables d'environnement hors dépôt, sauvegarde des volumes vérifiée avant la première mise en ligne, retour arrière écrit d'avance, puis vérification réelle de l'URL. À charger pour déployer ou publier une application neuve, ou en livrer une nouvelle version. Pour réparer un service déjà en ligne, charger `conteneurs-docker` ou `traefik`.
+description: Déployer une application et la rendre joignable par son nom de domaine — conteneur et compose, routage par le reverse proxy, secrets hors du dépôt, sauvegarde vérifiée avant la première mise en ligne, retour arrière prévu d'avance, puis vérification que l'adresse répond vraiment. À charger pour publier une application neuve ou en livrer une nouvelle version. Pour réparer un service déjà en ligne : `conteneurs-docker` ou `traefik`.
 module: deploiement
 type: outil
 read_only: false

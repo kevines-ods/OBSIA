@@ -2,119 +2,118 @@
 
 [English](GETTING-STARTED.md) | **Français**
 
-De zéro à un premier échange avec un agent d'OBSIA, en cinq étapes. Le détail
-de chaque règle vit dans `IA/system/VAULT-CONTRACT.md` (le noyau) et ses
-annexes `IA/system/contrat/` ; ce guide ne dit que
-l'ordre des gestes.
+De zéro à une première conversation avec un agent d'OBSIA, en cinq étapes.
+Il te faut seulement `git` et Python 3 : rien d'autre à installer. Obsidian est
+pratique, mais pas obligatoire.
 
-**Prérequis** : `git` et Python 3 — bibliothèque standard seule, rien à
-installer. Obsidian est conseillé, pas obligatoire.
+## 1. Créer ton coffre et y placer OBSIA
 
-## 1. Cloner dans votre coffre
+Ton **coffre** est le dossier qui contiendra tes notes et ta mémoire. OBSIA se
+place **directement dedans**, pas dans un sous-dossier.
 
-OBSIA se clone **à la racine** de votre coffre Obsidian, à côté de vos
-notes — pas ailleurs, et pas dans un sous-dossier :
-
-```bash
-cd "/chemin/de/votre coffre"   # à remplacer par le vôtre
-git clone https://github.com/kevines-ods/OBSIA
-```
-
-Vous obtenez `<coffre>/OBSIA/` — ce guide écrit `Mon coffre/` pour la racine
-de votre coffre, quel que soit son nom réel. Ouvrez ensuite Obsidian sur **le coffre
-entier**, pas sur `OBSIA/` seul : les rétroliens se résolvent à cette échelle.
-
-Pas encore de coffre ? Créez d'abord son dossier, puis clonez **dedans** —
-sans cela, le dossier qui contient `OBSIA/` (souvent votre dossier personnel)
-devient le coffre :
+Pas encore de coffre ? Crée-le, puis place OBSIA dedans :
 
 ```bash
 mkdir -p ~/"Mon coffre" && cd ~/"Mon coffre"
 git clone https://github.com/kevines-ods/OBSIA
 ```
 
-Obsidian n'est pas nécessaire : un coffre est un simple dossier de fichiers
-Markdown. Les dossiers de connaissance (`0-SAVOIRS/`, `0-EN-VRAC/`…) se créent
-quand vous en avez besoin (§7.1 du contrat).
+Tu as déjà un coffre (par exemple un coffre Obsidian) ? Va dedans, puis clone :
 
-## 2. Voir ce que la machine porte
+```bash
+cd "/chemin/de/ton coffre"
+git clone https://github.com/kevines-ods/OBSIA
+```
+
+Ne clone pas OBSIA directement dans ton dossier personnel : l'installeur
+refusera, sans rien écrire.
+
+La suite de ce guide appelle ce dossier `Mon coffre/`, quel que soit son vrai
+nom. Si tu utilises Obsidian, ouvre-le sur le coffre entier, pas sur `OBSIA/`
+seul. Les dossiers de notes (`0-SAVOIRS/`, `0-EN-VRAC/`…) se créent au fur et
+à mesure.
+
+## 2. Voir ce que ta machine a déjà
 
 ```bash
 cd OBSIA
 python3 scripts/installer.py --sonder
 ```
 
-Rien n'est écrit. L'installeur constate ce qui est installé (`docker`,
-`systemctl`, Proxmox…) et en déduit les modules qu'il proposera.
+Cette commande n'écrit rien. L'installeur regarde ce qui est déjà installé
+(Docker, systemd, Proxmox…) pour te proposer les bons choix à l'étape suivante.
 
 ## 3. Installer
 
 ```bash
-python3 scripts/installer.py              # aperçu et questions, n'écrit rien
-python3 scripts/installer.py --appliquer  # exécute
+python3 scripts/installer.py              # pose les questions, montre ce qui sera fait, n'écrit rien
+python3 scripts/installer.py --appliquer  # installe
 ```
 
-L'installeur demande, module par module, ce que vous voulez garder. À la fin :
+L'installeur te pose une question par module (« Veux-tu que les agents
+sachent… ? »). Réponds selon ce que tu veux qu'ils sachent faire, même si
+l'outil n'est pas encore installé chez toi. À la fin, il a créé :
 
-- `OBSIA/obsia.local.yml` — votre profil, non versionné ;
-- les index versionnés d'`IA/system/` et `IA/README.md` — inchangés, au
-  catalogue complet : ils ne dépendent pas de la machine ;
-- **`Mon coffre/AGENTS.md`** — le cerveau d'OBSIA, à la racine du coffre, là
-  où les harness le cherchent. Ne l'éditez pas : il se régénère ;
-- **`Mon coffre/0-MEMOIRES/`** et **`Mon coffre/0-PERSONNELS/profil-utilisateur.md`**
-  — la mémoire du coffre, créée si elle manque (§6, §7.1). Jamais écrasée
-  ensuite : ce qui s'y trouve déjà reste.
+- **`Mon coffre/AGENTS.md`** : les instructions qu'un harness lit au
+  démarrage, à la racine du coffre. Ne le modifie pas à la main : il est refait
+  à chaque installation ;
+- **`Mon coffre/0-PERSONNELS/profil-utilisateur.md`** et
+  **`Mon coffre/0-MEMOIRES/`** : le début de ta mémoire. Ce qui s'y trouve déjà
+  n'est jamais écrasé ;
+- **`OBSIA/obsia.local.yml`** : tes réponses, propres à ta machine.
 
-Changer d'avis : relancer la même commande. Tout reprendre :
-`python3 scripts/installer.py --tout --appliquer` — qui supprime le profil :
-sans profil, tout le catalogue est actif.
+Tu changes d'avis ? Relance la même commande. Pour revenir à tout le
+catalogue : `python3 scripts/installer.py --tout --appliquer`.
 
-## 4. Lancer un harness depuis la racine du coffre
+## 4. Lancer ton harness depuis le coffre
 
-**Toujours depuis `Mon coffre/`**, jamais depuis `OBSIA/` : c'est là qu'est
-`AGENTS.md`, et c'est de là que l'agent atteint vos notes.
+Lance-le **toujours depuis `Mon coffre/`**, jamais depuis `OBSIA/` : c'est là
+que se trouve `AGENTS.md`, et c'est de là que les agents atteignent tes notes.
 
 ```bash
-cd ..                          # depuis OBSIA/, remonter à la racine du coffre
+cd ..        # depuis OBSIA/, remonter dans le coffre
 ```
 
-| Harness | Ce qu'il lit tout seul | À savoir |
-| --- | --- | --- |
-| Claude Code | `CLAUDE.md` s'il en trouve un, dans le dossier ou **au-dessus** ; sinon `AGENTS.md` | l'un **ou** l'autre, jamais les deux. Pour qu'il charge le contrat entier, créer `Mon coffre/CLAUDE.md` contenant la ligne `@OBSIA/CLAUDE.md` : il lira ce fichier **à la place** d'`AGENTS.md` |
-| OpenCode | `AGENTS.md` | ajouter le contrat en `instructions` — voir sa fiche |
-| Codex | `AGENTS.md` | plafond de 32 Kio : un coffre complet en occupe les trois quarts |
-| Goose | `AGENTS.md` | l'extension `developer` doit rester active |
-| DeepSeek Harness | `AGENTS.md` et `CLAUDE.md`, de `~/.dsh/` puis de chaque dossier jusqu'au dossier de travail | les lignes `@` de `CLAUDE.md` arrivent brutes, sans effet |
-| AionUi (moteur Aion CLI) | `AGENTS.md`, pas `CLAUDE.md` | la règle de l'assistant doit faire lire le contrat — voir sa fiche |
+| Harness | Ce qu'il faut faire en plus |
+| --- | --- |
+| Claude Code | créer `Mon coffre/CLAUDE.md` avec la seule ligne `@OBSIA/CLAUDE.md` (Claude Code lit ce fichier à la place d'`AGENTS.md`) |
+| OpenCode | créer `opencode.json` : bloc à copier-coller dans sa fiche |
+| Codex | rien. Il lit `AGENTS.md` (limite de taille : un catalogue complet en utilise un peu plus des trois quarts) |
+| Goose | garder l'extension `developer` active |
+| DeepSeek Harness | rien. Il lit `AGENTS.md` |
+| AionUi | faire lire le contrat par la règle de l'assistant (voir sa fiche) |
 
-Chaque harness a sa fiche dans `IA/system/adaptateurs-harness/` : elle dit
-où écrire la configuration — serveurs MCP, secrets, restriction par agent.
-Cette configuration, elle, vit **hors du dépôt** : aucune clé n'entre jamais
-dans `OBSIA/`.
+Chaque harness a sa fiche dans `IA/system/adaptateurs-harness/`. Elle explique
+aussi comment brancher les outils (MCP) et où mettre tes clés : **jamais dans
+`OBSIA/`**.
 
-## 5. Vérifier que le cerveau est chargé
+## 5. Vérifier qu'OBSIA est bien chargé
 
-Demandez à l'agent :
+Pose ces deux questions à l'agent :
 
-> Quels agents connais-tu, et où vivent les notes de connaissance ?
+1. « Quels agents connais-tu, et où vivent les notes de connaissance ? »
+   Il doit citer les agents d'OBSIA (assistant, administrateur, batisseur…)
+   et le dossier `0-SAVOIRS/`.
+2. « Que fais-tu si un skill dont tu as besoin est introuvable ? »
+   Il doit répondre qu'il te le dit, et non qu'il improvise. C'est la règle
+   « Un échec se dit » du contrat.
 
-Il doit citer les agents de `IA/system/agents-index.md` et le dossier
-`0-SAVOIRS/`. S'il répond de façon générique, ses instructions n'ont pas été
-lues : vérifiez qu'`AGENTS.md` existe à la racine du coffre et que le harness a
-été lancé de là. Avec Claude Code, cherchez aussi un `CLAUDE.md` au-dessus du
-coffre (jusqu'à votre dossier personnel) : il passerait avant `AGENTS.md`.
+S'il répond de façon vague, il n'a pas lu ses instructions. Vérifie
+qu'`AGENTS.md` existe dans `Mon coffre/` et que tu as bien lancé le harness
+depuis ce dossier. Avec Claude Code, vérifie aussi qu'aucun autre `CLAUDE.md`
+ne traîne dans un dossier au-dessus du coffre : il passerait en priorité.
 
 ## Ensuite
 
-Les scripts du dépôt se lancent **depuis `OBSIA/`** (`cd OBSIA`) ; seul le
-harness se lance depuis la racine.
-
-- **Après avoir ajouté ou modifié un skill** : relancer l'installeur pour
-  régénérer `AGENTS.md` — `python3 scripts/installer.py --rejouer --appliquer`
-  reprend votre profil sans reposer les questions.
-- **Avant de proposer une modification du dépôt** :
-  `python3 scripts/verifier_coffre.py`. L'outil (`OBSIA/`) et la mémoire (la
-  racine du coffre) sont **deux dépôts Git distincts** (§7.1) — l'un se livre
-  par pull request, l'autre se commite sur place.
-- **Aller plus loin** : `README.md` pour l'architecture, le contrat pour les
-  règles, `IA/system/agents-index.md` pour savoir à quel agent parler.
+- **Parle à l'agent `assistant`** pour commencer : il range tes notes, tient
+  ta mémoire et te dirige vers le bon agent. La liste des agents et leur rôle
+  est dans `IA/system/agents-index.md`.
+- **Après avoir ajouté ou modifié un skill**, refais `AGENTS.md` sans repasser
+  les questions : `python3 scripts/installer.py --rejouer --appliquer` (depuis
+  `OBSIA/`).
+- **Pour contribuer à OBSIA** : `python3 scripts/verifier_coffre.py` (depuis
+  `OBSIA/`) avant de proposer une modification. OBSIA et ton coffre ont chacun leur propre
+  historique Git : une modification d'OBSIA se propose par pull request, ta
+  mémoire s'enregistre directement.
+- **Pour comprendre comment tout fonctionne** : `README.md`, puis le contrat
+  (`IA/system/VAULT-CONTRACT.md`).

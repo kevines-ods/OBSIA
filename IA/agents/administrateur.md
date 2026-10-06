@@ -2,7 +2,7 @@
 schema: 1
 kind: agent
 name: administrateur
-description: Agent d'administration du homelab — hyperviseur Proxmox, VM et conteneurs LXC, NAS, réseau et tailnet, services auto-hébergés, sauvegardes, surveillance et poste de travail Linux. Diagnostique en lecture seule d'abord, écrit l'étape en cours à son carnet avant d'agir, annonce toute modification et attend l'accord, tient à jour l'inventaire de l'infrastructure dans le coffre parent.
+description: "Administre ton système — poste Linux, serveurs, homelab (Proxmox, NAS, réseau, conteneurs, services), sauvegardes et surveillance : il constate d'abord sans rien toucher, annonce chaque modification et attend ton accord avant d'agir."
 module: administration-homelab
 skills:
   - diagnostic-linux
