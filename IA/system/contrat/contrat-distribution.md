@@ -222,7 +222,10 @@ paraissent sur le dépôt public avant que `publier.py` n'ait vu un seul fichier
 l'export, et le contrôle d'arbre ne les lit jamais : une pull request n'est pas
 dans l'arbre qu'il relit. La vérification continue les passe donc au même
 contrôle de fuite — `scripts/publier.py --controler-texte`, texte sur l'entrée
-standard —, avec les mêmes motifs et les mêmes refus qu'un fichier. GitHub les
+standard —, avec les mêmes motifs et les mêmes refus qu'un fichier, **à chaque
+ouverture, modification, poussée ou réouverture de la pull request** : une
+description se corrige sans pousser de commit, et c'est le texte corrigé qui
+paraît. GitHub les
 fournit par l'environnement, **jamais par la ligne de commande** : un texte de PR
 n'est pas écrit par la seule personne qui ouvre la PR, et le poser dans le script
 suffirait à y faire passer une commande. La liste locale des noms interdits peut

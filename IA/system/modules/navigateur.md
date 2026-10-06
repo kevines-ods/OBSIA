@@ -4,7 +4,7 @@ kind: module
 name: navigateur
 description: Vérifier une interface dans un vrai navigateur — DOM rendu, erreurs de console, requêtes réseau, capture d'écran, arbre d'accessibilité.
 essentiel: false
-question: Veux-tu que les agents puissent piloter un navigateur pour vérifier une interface ?
+question: Veux-tu que les agents puissent ouvrir un navigateur (Chrome) pour vérifier qu'un site ou une application s'affiche et fonctionne ?
 sondes:
   - commande:chromium
   - commande:google-chrome

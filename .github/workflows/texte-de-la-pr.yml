@@ -1,0 +1,46 @@
+name: Texte de la pull request
+
+# Le titre et la description d'une PR paraissent sur le dépôt public avant que
+# `publier.py` n'ait vu un seul fichier de l'export : le contrôle d'arbre ne les
+# lit donc jamais. GitHub les donne ici.
+#
+# Ce contrôle vit seul, dans son propre workflow, pour une raison précise :
+# `edited`. Une description se corrige sans pousser de commit, et c'est ce
+# texte-là qui paraît. Rangé dans `verifier-coffre.yml`, il aurait fallu y
+# ajouter `edited` — et la suite entière des tests aurait repassé à chaque
+# retouche de texte.
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  texte:
+    runs-on: ubuntu-latest
+    steps:
+      # `publier.py` est pris dans la tête de la PR, et c'est une décision, pas
+      # un oubli — le frère de ce workflow, lui, prend son script sur la base.
+      # Ici ce script *est* la règle : une règle neuve doit s'appliquer à la PR
+      # qui l'ajoute. Lire l'outil sur la base ferait juger cette PR-là par
+      # l'ancienne liste, celle où le nom qu'elle vient d'interdire ne figure
+      # pas encore — le contrôle passerait juste à côté de ce qu'il doit voir.
+      #
+      # Le desserrement, lui, ne se fait pas ici : toucher aux motifs, c'est
+      # toucher à `scripts/publier.py`, et les tests de ce script tournent sur
+      # chaque poussée dans `verifier-coffre.yml`. Retirer un motif demande donc
+      # de modifier des tests, ce qui se voit dans le diff.
+      - uses: actions/checkout@v7
+
+      # Le texte passe par l'environnement, jamais par la ligne de commande :
+      # GitHub y substitue la description telle quelle, et une description
+      # suffirait sinon à s'injecter une commande dans le script.
+      - name: Le titre et la description de la PR ne fuient rien
+        env:
+          TITRE_DE_LA_PR: ${{ github.event.pull_request.title }}
+          DESCRIPTION_DE_LA_PR: ${{ github.event.pull_request.body }}
+        run: |
+          printf '%s\n%s\n' "$TITRE_DE_LA_PR" "$DESCRIPTION_DE_LA_PR" \
+            | python3 scripts/publier.py --controler-texte

@@ -4,7 +4,7 @@ kind: module
 name: modeles-locaux
 description: Délégation de tâches simples à un modèle local servi par une API compatible OpenAI, sans lui transmettre le contexte du coffre.
 essentiel: false
-question: Disposes-tu d'un modèle local (llama-server, llama-swap, Ollama) auquel l'agent peut confier des tâches simples ?
+question: Veux-tu que les agents confient des tâches simples (résumer, traduire, trier) à une IA qui tourne sur ta machine, comme Ollama (déjà installée ou à installer plus tard) ?
 sondes:
   - commande:llama-server
   - commande:llama-swap

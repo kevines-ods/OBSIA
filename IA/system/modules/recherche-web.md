@@ -4,7 +4,7 @@ kind: module
 name: recherche-web
 description: Recherche web par un méta-moteur auto-hébergé — SearXNG, sans compte ni traçage.
 essentiel: false
-question: Disposes-tu d'une instance SearXNG que les agents peuvent interroger ?
+question: Veux-tu que les agents puissent chercher sur le web avec un moteur SearXNG (déjà installé ou à installer plus tard) ?
 requiert:
   - noyau
 ---

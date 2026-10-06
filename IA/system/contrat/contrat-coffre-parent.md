@@ -97,7 +97,22 @@ séparés, sans gitlink.
 - **`**/.git` est exclu de Syncthing** : un dépôt Git vivant ne se synchronise
   pas comme des fichiers.
 - **Aucun secret dans le dépôt de données** (§4, §9), pas plus que dans le
-  dépôt produit.
+  dépôt produit. Cette règle a un garde dans le crochet d'avant-commit du dépôt
+  de données : il refuse toute valeur à forme de secret que le commit **ajoute**.
+  Il reprend les motifs de **secret** de `publier.BLOQUANTS` — une seule source,
+  pas de copie — et refuse en plus un fichier dont **tout le contenu** est un
+  jeton sans espace à forte entropie : le mot de passe collé seul, qu'aucun motif
+  nommé ne voit. La valeur d'un « secret affecté » doit avoir forme de secret :
+  ne se refusent pas un gabarit jugé **en tête** (`yourpassword`,
+  `change-root-password`), un chemin jugé **en tête** (`/`, `~/`, `./`, `../`) ni
+  une prose **non guillemetée** ; une phrase **entre guillemets** en est un, sauf
+  ligne de commande recopiée — admise seulement si elle porte **à la fois** une
+  espace et un marqueur shell (`;`, `|`, accent grave, `$(`) ; la ponctuation
+  ordinaire n'exempte rien. Cette règle de forme ne vaut que pour ce motif-là.
+  Les motifs qui gardent la frontière *publique* (courriel, adresse IP privée,
+  nom d'hôte interne) ne s'appliquent pas ici : le coffre privé les porte
+  légitimement.
+  Mécanique et limites : `IA/system/depot-de-donnees/README.md`.
 
 Déplacer un dossier de premier niveau (ex. `OBSIA/` dans `0-PROJETS/`) est une
 décision de l'utilisateur, pas des agents.

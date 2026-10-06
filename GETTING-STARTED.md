@@ -24,8 +24,17 @@ You get `<vault>/OBSIA/` — the repository writes `Mon coffre/` for the root of
 your vault, whatever its real name. Then open Obsidian on **the whole vault**,
 not on `OBSIA/` alone: backlinks resolve at that level.
 
-No vault yet? An empty folder will do; the knowledge folders (`0-SAVOIRS/`,
-`0-EN-VRAC/`…) are created when you need them (§7.1 of the contract).
+No vault yet? Create its folder first, then clone **inside it** — otherwise
+the folder that contains `OBSIA/` (often your home folder) becomes the vault:
+
+```bash
+mkdir -p ~/"Mon coffre" && cd ~/"Mon coffre"
+git clone https://github.com/kevines-ods/OBSIA
+```
+
+Obsidian is not required: a vault is a plain folder of Markdown files. The
+knowledge folders (`0-SAVOIRS/`, `0-EN-VRAC/`…) are created when you need them
+(§7.1 of the contract).
 
 ## 2. See what the machine has
 

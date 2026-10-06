@@ -3,6 +3,11 @@ name: Vérifier le coffre
 # Le contrat pose des règles que rien ne contrôlait. Ce workflow les fait
 # respecter : frontmatters valides, références d'agents existantes, index et
 # sommaires à jour vis-à-vis des fichiers dont ils dérivent.
+#
+# Le contrôle de fuites du texte d'une PR ne vit pas ici mais dans
+# `texte-de-la-pr.yml` : il doit repasser quand la description change, et
+# l'ajouter à ce workflow-ci y relancerait toute la suite de tests sur une
+# simple retouche de texte.
 
 on:
   push:
@@ -28,20 +33,6 @@ jobs:
       # jamais pytest, qui n'est pas installé).
       - name: Tests des scripts
         run: python3 -m unittest discover -s tests
-
-      # Le titre et la description d'une PR paraissent sur le dépôt public avant
-      # que `publier.py` n'ait vu un seul fichier de l'export : le contrôle
-      # d'arbre ne les lit donc jamais. GitHub les donne ici, et le texte passe
-      # par l'environnement — jamais par le script, où une description
-      # suffirait à s'injecter une commande.
-      - name: Le titre et la description de la PR ne fuient rien
-        if: github.event_name == 'pull_request'
-        env:
-          TITRE_DE_LA_PR: ${{ github.event.pull_request.title }}
-          DESCRIPTION_DE_LA_PR: ${{ github.event.pull_request.body }}
-        run: |
-          printf '%s\n%s\n' "$TITRE_DE_LA_PR" "$DESCRIPTION_DE_LA_PR" \
-            | python3 scripts/publier.py --controler-texte
 
       - name: Cohérence du coffre
         run: python3 scripts/verifier_coffre.py

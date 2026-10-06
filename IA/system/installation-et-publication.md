@@ -225,8 +225,10 @@ la publication — et c'est dans ce rapport local, et nulle part ailleurs, que
 survit le détail `fichier:ligne` : le message de commit, lui, n'en porte que le
 nombre.
 
-Le même contrôle tourne sur **le titre et la description d'une pull request**,
-par `publier.py --controler-texte` : ils paraissent sur le dépôt public alors que
+Le même contrôle tourne sur **le titre et la description d'une pull request** —
+à chaque ouverture, modification, poussée ou réouverture : une description se
+corrige sans pousser de commit, et c'est le texte corrigé qui paraît —, par
+`publier.py --controler-texte` : ils paraissent sur le dépôt public alors que
 le contrôle d'arbre ne les verra jamais, puisque la pull request n'est pas dans
 l'arbre. Le texte vient de l'entrée standard ; en vérification continue, GitHub
 le fournit par des variables d'environnement, et jamais en l'écrivant dans le

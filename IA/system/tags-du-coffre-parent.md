@@ -45,7 +45,7 @@ groupement.
 | Domotique | `home-assistant` |
 | IA | `ia`, `memory`, `transcription` |
 | Logiciel | `software` |
-| Personnel | `personnel`, `partage`, `préférence` |
+| Personnel | `personnel`, `partage`, `préférence`, `gaming` |
 
 ## Tags candidats — **pas encore utilisables**
 

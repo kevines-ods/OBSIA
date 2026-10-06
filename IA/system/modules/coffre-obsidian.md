@@ -4,7 +4,7 @@ kind: module
 name: coffre-obsidian
 description: Travailler dans un coffre Obsidian parent — remplir et classer les notes brutes, cartographier les connaissances, tenir le registre des tags.
 essentiel: false
-question: Ce dépôt est-il cloné dans un coffre Obsidian dont les agents doivent tenir les notes ?
+question: Veux-tu que les agents rangent, relient et complètent tes notes dans un coffre de notes (Obsidian ou simple dossier) ?
 sondes:
   - parent:.obsidian
   - parent:0-SAVOIRS

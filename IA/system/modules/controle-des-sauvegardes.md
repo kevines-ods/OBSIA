@@ -4,7 +4,7 @@ kind: module
 name: controle-des-sauvegardes
 description: Vérifier que les sauvegardes existent, sont récentes, respectent la règle 3-2-1, et se restaurent réellement.
 essentiel: false
-question: Veux-tu que les agents vérifient tes sauvegardes avant toute action destructrice ?
+question: Veux-tu que les agents vérifient que tes sauvegardes existent et se restaurent, avant toute action qui pourrait effacer des données ?
 requiert:
   - noyau
 ---

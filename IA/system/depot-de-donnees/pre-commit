@@ -2,11 +2,13 @@
 # Crochet d'avant-commit du **dépôt de données du coffre** (§7.1).
 #
 # Posé par `scripts/installer.py` depuis le gabarit du dépôt produit : ne pas
-# l'éditer ici, réinstaller. Deux refus, dans l'ordre :
+# l'éditer ici, réinstaller. Trois refus, dans l'ordre :
 #
 #   1. le commit ne vient pas de la machine déclarée **écrivain** du coffre
 #      (§7.1, « un seul écrivain ») ;
-#   2. un carnet du coffre ne respecte pas le §6.
+#   2. une valeur à forme de secret entre dans la mémoire du coffre
+#      (`scripts/garde_secrets.py` : motifs de `publier.py` plus le jeton isolé) ;
+#   3. un carnet du coffre ne respecte pas le §6.
 #
 # Le produit, lui, a ses propres crochets : c'est celui-ci qui vérifie la
 # mémoire, pas l'inverse.

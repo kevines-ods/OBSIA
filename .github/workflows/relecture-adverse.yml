@@ -1,0 +1,72 @@
+name: Relecture adverse
+
+# Le §5 de IA/skills/livraison-git.md veut qu'un diff soit relu par l'agent
+# `contradicteur`, en session neuve, et que la PR en porte la trace. Ce workflow
+# lit le modèle de PR et vire au rouge tant que la case de relecture n'est pas
+# cochée. Un signal, pas un verrou : rien ici n'empêche la fusion, et rien ne
+# remplace la revue humaine.
+#
+# `edited` est le geste qui éteint le voyant — cocher la case modifie la
+# description. Ce type est propre à ce workflow : l'ajouter à celui de
+# vérification y relancerait toute la suite des tests sur une simple retouche
+# de description.
+#
+# Le contrôle ne vaut que pour le dépôt privé : sur le miroir public, la case ne
+# veut rien dire et le voyant resterait rouge sur chaque PR venue de
+# l'extérieur. La condition dit « dépôt privé » et non le nom du dépôt, parce que
+# ce fichier part dans l'export : le nom du dépôt privé est un des noms de la
+# liste locale, que `publier.py` signale en avertissement — ça n'arrête pas la
+# publication, mais ça dit assez que le nom n'a rien à faire là.
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+# `contents: read` suffit : le corps de la PR arrive dans la charge utile de
+# l'événement, et rien ici n'interroge l'API — ni le script, qui ne lit que son
+# entrée standard.
+permissions:
+  contents: read
+
+jobs:
+  relecture:
+    # Un champ du dépôt, toujours présent dans un événement de dépôt : rien à
+    # configurer, et rien à oublier côté public comme côté privé.
+    if: github.event.repository.private == true
+    runs-on: ubuntu-latest
+    steps:
+      # L'outil vient de la base de la PR, pas de sa tête : la description est
+      # la donnée lue, le script qui la juge doit être celui sur lequel la PR se
+      # pose. Sans ça, la PR relue desserrerait le contrôle qu'elle doit passer.
+      #
+      # C'est un demi-verrou, et il faut le savoir : la *définition* de ce
+      # workflow, GitHub la lit dans la tête de la PR — une PR peut donc encore
+      # réécrire ces lignes-ci. Seule une protection de branche fermerait ce
+      # dernier pas ; ce dépôt privé ne l'autorise pas.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+
+      # Le script n'existe qu'à partir de la fusion qui l'introduit : la première
+      # PR ne peut pas être jugée par lui. On ne la rattrape pas par un repli sur
+      # le script de la PR — ce repli serait un chemin de contournement
+      # permanent, et il ne s'emprunte qu'une fois. Le contrôle dit donc ce qui
+      # se passe au lieu de tomber sur un « fichier introuvable » obscur.
+      - name: La base porte-t-elle le contrôle ?
+        run: |
+          if [ ! -f scripts/verifier_relecture.py ]; then
+            echo "::error title=Contrôle non exécuté::La base de cette PR ne porte pas encore scripts/verifier_relecture.py : c'est la PR qui l'introduit. Le contrôle s'activera à sa fusion ; d'ici là, ce voyant ne dit rien de la relecture."
+            exit 1
+          fi
+
+      # `python3` est fourni par le runner, et le script n'utilise que la
+      # bibliothèque standard : rien d'autre à installer.
+      #
+      # La description passe par l'environnement, jamais par la ligne de
+      # commande : une description suffirait à s'y injecter une commande.
+      - name: La case de relecture est-elle cochée ?
+        env:
+          DESCRIPTION_DE_LA_PR: ${{ github.event.pull_request.body }}
+        run: |
+          printf '%s\n' "$DESCRIPTION_DE_LA_PR" \
+            | python3 scripts/verifier_relecture.py

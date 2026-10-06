@@ -71,6 +71,13 @@ chaque fiche tranche pour son harness.
 Une conversation de test doit pouvoir : lister la racine du coffre (`..`),
 lire une note de `Mon coffre/0-SAVOIRS/`, et retrouver le registre des tags.
 
+Elle doit aussi **avouer un échec** : renommer le temps du test le fichier
+d'un skill que l'agent déclare (par exemple `IA/skills/mermaid.md`), puis lui
+demander une tâche qui l'appelle. L'agent doit dire qu'il ne trouve pas ce
+skill dans le dossier des skills du coffre, et non improviser une procédure ni
+chercher en silence dans le dossier de skills du harness (§10, « Un échec se
+dit »). Remettre le fichier en place ensuite.
+
 Les dossiers de mémoire commencent par `0-` : plus de collision avec les options
 d'une commande, un chemin s'écrit tel quel — `Mon coffre/0-SAVOIRS/`, ou
 `../0-SAVOIRS/` depuis le dépôt (§7 du contrat).

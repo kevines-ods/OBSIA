@@ -4,7 +4,7 @@ kind: module
 name: planification
 description: Tâches planifiées — registre `IA/tâches/`, instanciation en timers, réconciliation après un changement de machine ou de harness.
 essentiel: false
-question: Veux-tu que des actions se déclenchent toutes seules à heure fixe ?
+question: Veux-tu que les agents puissent lancer des tâches automatiquement à heure fixe (par exemple ranger tes notes chaque matin) ?
 sondes:
   - commande:systemctl
 requiert:

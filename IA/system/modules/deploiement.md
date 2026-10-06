@@ -4,7 +4,7 @@ kind: module
 name: deploiement
 description: Empaqueter une application et la mettre en ligne derrière un reverse proxy — image, compose, labels de routage, secrets hors dépôt, retour arrière écrit d'avance.
 essentiel: false
-question: Veux-tu pouvoir mettre en ligne les applications que tu construis ?
+question: Veux-tu que les agents sachent mettre en ligne les applications que tu construis ?
 requiert:
   - noyau
   - construction

@@ -4,7 +4,7 @@ kind: module
 name: virtualisation
 description: Inspecter un hôte Proxmox en lecture seule — VM, conteneurs LXC, stockage, ressources — puis y agir sous annonce — créer des machines, régler le démarrage, poser des hookscripts.
 essentiel: false
-question: Administres-tu un hôte Proxmox ?
+question: Veux-tu que les agents sachent administrer un serveur Proxmox (machines virtuelles et conteneurs LXC) ?
 sondes:
   - commande:pvesh
   - fichier:/etc/pve

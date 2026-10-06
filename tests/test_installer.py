@@ -1074,6 +1074,20 @@ class TestDepotDeDonnees(BaseInstalleur):
         self.assertEqual(".githooks",
                          git(self.parent, "config", "core.hooksPath").stdout.strip())
 
+    def test_le_crochet_arme_le_garde_de_secrets(self):
+        """Le crochet posé mène à `avant-commit`, qui porte le refus de secret.
+
+        Le gabarit est posé par l'installeur : c'est lui qui arme le garde. Le
+        corps du garde vit dans le dépôt produit et suit ses mises à jour.
+        """
+        self.marquer_le_coffre()
+        self.outiller_le_produit()
+        self.profil()
+        self.lancer("--appliquer")
+        texte = (self.parent / ".githooks" / "pre-commit").read_text(encoding="utf-8")
+        self.assertIn("avant-commit", texte)
+        self.assertIn("forme de secret", texte)
+
     def test_le_distant_declare_devient_origin_sans_jamais_pousser(self):
         self.marquer_le_coffre()
         self.outiller_le_produit()
@@ -1145,3 +1159,25 @@ class TestDepotDeDonnees(BaseInstalleur):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestDossierPersonnel(BaseInstalleur):
+    """Un clone posé directement dans le dossier personnel n'en fait pas un coffre."""
+
+    def test_memoire_et_depot_non_poses(self):
+        env = dict(os.environ, HOME=str(self.parent))
+        resultat = subprocess.run(
+            [sys.executable, "-B", str(INSTALLATEUR), "--racine", str(self.racine),
+             "--appliquer", "--tout"],
+            capture_output=True, text=True, check=False, env=env)
+        self.assertIn("dossier personnel", resultat.stdout + resultat.stderr)
+        for nom in ("0-PERSONNELS", "0-MEMOIRES", ".git"):
+            self.assertFalse((self.parent / nom).exists(), nom)
+
+    def test_detection(self):
+        ancien = os.environ.get("HOME")
+        self.addCleanup(os.environ.__setitem__, "HOME", ancien or "")
+        os.environ["HOME"] = str(self.parent)
+        self.assertTrue(INS.parent_est_le_dossier_personnel(self.racine))
+        os.environ["HOME"] = str(self.racine)
+        self.assertFalse(INS.parent_est_le_dossier_personnel(self.racine))

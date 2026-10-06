@@ -4,7 +4,7 @@ kind: module
 name: conteneurs
 description: Conteneurs et reverse proxy — état, journaux, volumes, réseaux, compose, labels de routage, certificats TLS.
 essentiel: false
-question: Héberges-tu des services en conteneurs, éventuellement derrière un reverse proxy ?
+question: Veux-tu que les agents sachent administrer des conteneurs Docker ?
 sondes:
   - commande:docker
   - commande:podman
