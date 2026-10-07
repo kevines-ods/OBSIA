@@ -128,8 +128,9 @@ class TestIndexeurCouvreLaMemoire(CoffreTemporaire):
 
 class TestChantierGele(CoffreTemporaire):
 
-    def test_le_gele_est_reconnu_par_la_forme_du_chemin(self):
+    def test_le_gele_est_reconnu_par_le_chemin_et_la_liste_des_agents(self):
         m = self.coffre / "0-MEMOIRES"
+        agents = CONVENTION.liste_des_agents(RACINE)
         attendu = {
             self.coffre / "0-MEMOIRES": False,
             m / "README.md": False,
@@ -141,11 +142,15 @@ class TestChantierGele(CoffreTemporaire):
             m / "obsia": False,
             m / "obsia" / "souverainete": True,
             m / "obsia" / "souverainete" / "bilan.md": True,
+            # N1 : `expériences/` ne suffit pas — `<obsia>` n'est pas un agent, ce
+            # dossier est un chantier, pas la mémoire vivante d'un agent.
+            m / "obsia" / "expériences": True,
+            m / "obsia" / "expériences" / "lecon.md": True,
             self.coffre / "0-SAVOIRS": False,
         }
         for chemin, gele in attendu.items():
-            self.assertEqual(CONVENTION.est_gele(chemin, self.coffre), gele,
-                             "mauvais verdict pour %s" % chemin)
+            self.assertEqual(CONVENTION.est_gele(chemin, self.coffre, agents),
+                             gele, "mauvais verdict pour %s" % chemin)
 
     def test_la_convention_refuse_d_ecrire_dans_un_chantier_gele(self):
         avant = self.etat()
@@ -172,6 +177,9 @@ class TestChantierGele(CoffreTemporaire):
         apres = self.etat()["0-MEMOIRES/préférences/syntaxe.md"]
         self.assertTrue(apres.startswith(b"---"),
                         "une préférence est vivante : elle se corrige sur place")
+        self.assertIn(b"type: note", apres,
+                      "un frontmatter sans type resterait « partiel » à jamais : "
+                      "0-MEMOIRES prend le type attrape-tout du registre")
         self.assertIn(b"Pas de tabulations", apres)
 
     def test_le_readme_du_dossier_n_est_pas_une_note(self):

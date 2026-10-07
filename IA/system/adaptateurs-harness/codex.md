@@ -13,8 +13,8 @@ fichier que `python3 scripts/installer.py --appliquer` pose à la racine du
 coffre est exactement là où il regarde.
 
 Une limite chiffrée se paie comptant : Codex **coupe** ses instructions à
-32 Kio par défaut, sans le dire. Le coffre mesuré le 2026-09-30 produit un
-`AGENTS.md` de 24 939 octets, soit 76 % du plafond — la marge existe, elle
+32 Kio par défaut, sans le dire. Le coffre mesuré le 2026-10-07 produit un
+`AGENTS.md` de 26 080 octets, soit 79,6 % du plafond — la marge existe, elle
 n'est pas confortable. Le §5 dit quoi mesurer, et quoi faire quand ça déborde.
 
 ---
@@ -164,19 +164,30 @@ adding files » : le surplus n'est pas coupé au milieu d'un fichier, il est
 laissé de côté. Un `AGENTS.md` amputé reste un `AGENTS.md` valide — il décrit
 simplement un coffre plus petit qu'il ne l'est.
 
-Projection au 2026-09-30 (une fois `installer.py` passé), sur ce coffre, sans
-profil :
+Projection au 2026-10-07, mesurée sur la racine `Mon coffre/OBSIA` :
 
 ```bash
 cd "$HOME/Mon coffre/OBSIA"
-python3 scripts/generer_prompt.py -o /tmp/agents-corps.md
-wc -c /tmp/agents-corps.md     # 24 833 octets de corps
-wc -c ../AGENTS.md             # 24 939 une fois installer.py passé
+python3 scripts/generer_prompt.py --sans-profil -o /tmp/agents-corps.md
+wc -c /tmp/agents-corps.md     # 25 975 : le corps, plus le saut de ligne final
+                               #   que la commande ajoute — l'installeur, lui,
+                               #   n'en ajoute pas
+wc -c ../AGENTS.md             # 25 589 : le fichier écrit au profil courant
 ```
 
-Soit **76 % du plafond**. La marge se réduit à chaque agent, skill ou tâche
-ajouté : un profil (`obsia.local.yml`) ne fait que raccourcir le prompt, mais
-sans profil c'est le catalogue entier qui part.
+Le corps de l'`AGENTS.md` engendré au catalogue entier pèse donc 25 974 octets ;
+l'installeur y ajoute un marqueur de 106 octets, soit **26 080 octets, 79,6 % du
+plafond**. C'est le pire cas — le catalogue entier, celui que la CI et
+`verifier_coffre.py` mesurent — et aucun `obsia.local.yml` ne peut y masquer un
+dépassement : un profil ne fait que raccourcir le catalogue. Les 25 589 octets
+du `AGENTS.md` installé à la racine du coffre parent sont ce que Codex lit
+réellement ici, soit **78 %**.
+
+Deux choses font bouger le chiffre : le catalogue, qui grandit, et le chemin de
+la racine, que le prompt cite en tête — quelques octets de plus ou de moins
+selon la machine. La marge se réduit à chaque agent, skill ou tâche ajouté : un
+profil (`obsia.local.yml`) ne fait que raccourcir le prompt, mais sans profil
+c'est le catalogue entier qui part.
 
 **Quand ça débordera, deux réponses, dans cet ordre :**
 
@@ -229,8 +240,10 @@ journal de session est activé.
 
 - **Rien n'a tourné.** Le statut en tête est « vérifié sur documentation », et
   cela ne se déduit pas d'un branchement qui a l'air de marcher.
-- **La mesure de taille est datée.** 24 939 octets le 2026-09-30, sur un coffre
-  sans profil. Elle vieillira : la refaire avant de conclure.
+- **La mesure de taille est datée.** 26 080 octets le 2026-10-07, sur la racine
+  `Mon coffre/OBSIA`, catalogue entier (25 589 octets pour le fichier réellement
+  lu, profil appliqué). Elle vieillira, et son chemin la fait bouger de quelques
+  octets : la refaire avant de conclure.
 - **Le format des agents personnalisés est assumé comme mouvant** par la
   documentation elle-même (« the format may evolve »). Le §4 est exact
   aujourd'hui ; ce n'est pas une promesse de stabilité.

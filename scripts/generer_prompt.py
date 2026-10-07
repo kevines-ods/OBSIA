@@ -6,6 +6,7 @@ Usage :
     ./generer_prompt.py                          # affiche sur la sortie standard
     ./generer_prompt.py -o prompt-systeme.md     # écrit dans un fichier
     ./generer_prompt.py --mcp                    # affiche aussi la config MCP à faire
+    ./generer_prompt.py --sans-profil            # ignore obsia.local.yml (pire cas)
     ./generer_prompt.py --racine /chemin/OBSIA
 
 Aucune dépendance externe : le frontmatter est lu par un analyseur minimal,
@@ -304,6 +305,9 @@ def main() -> int:
                     help="fichier de sortie (défaut : sortie standard)")
     ap.add_argument("--mcp", action="store_true",
                     help="affiche aussi la configuration MCP à faire côté harness")
+    ap.add_argument("--sans-profil", action="store_true",
+                    help="ignore obsia.local.yml : le catalogue entier, le pire "
+                         "cas que mesure verifier_coffre.py et la CI")
     args = ap.parse_args()
 
     racine = args.racine.resolve()
@@ -311,7 +315,8 @@ def main() -> int:
         print(f"Racine introuvable : {racine}", file=sys.stderr)
         return 1
 
-    agents, skills, taches, _ = declarations_reduites(racine)
+    agents, skills, taches, _ = declarations_reduites(racine,
+                                                      sans_profil=args.sans_profil)
     if not agents and not skills:
         print("Aucun agent ni skill trouvé. Vérifie --racine.", file=sys.stderr)
         return 1

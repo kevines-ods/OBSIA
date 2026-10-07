@@ -310,7 +310,7 @@ repository, on the other hand, starts clean — `publier.py` writes into a fresh
 clone, without pouring in the private history.
 
 ```bash
-git clone https://github.com/kevines-ods/OBSIA ~/OBSIA-public     # once
+git clone https://github.com/my-account/OBSIA ~/OBSIA-public     # once
 python3 scripts/publier.py --cible ~/OBSIA-public              # preview
 python3 scripts/publier.py --cible ~/OBSIA-public --appliquer
 python3 scripts/publier.py --cible ~/OBSIA-public --appliquer \

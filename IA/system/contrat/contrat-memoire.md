@@ -124,12 +124,15 @@ module: noyau
   touche la base.
 
 - **Le carnet.** Un carnet par chantier, nommé
-  `AAAA-MM-JJ-<projet>-<sujet>.md` — le nom du projet le rend unique dans le
-  coffre parent (§7.5) —, frontmatter `agent:`, `projet:` et
-  `statut: en cours | en attente | clos`. Il vit dans le `carnets/` du **dossier
-  de son chantier** — `0-PROJETS/<projet>/<chantier>/carnets/`, avec le nom du
-  chantier dans `projet:` ; une séance sans chantier écrit dans le `carnets/` du
-  projet. Il porte la demande, le plan,
+  `AAAA-MM-JJ-<chantier>-<sujet>.md` : `<chantier>` est le nom du dossier qui
+  porte le `carnets/` — le chantier, ou le projet pour une séance sans
+  chantier — et c'est ce nom, le même que celui du frontmatter `projet:`, qui
+  doit rester unique dans tout le coffre parent (§6, §7.5) : deux chantiers
+  homonymes sous deux projets feraient deux carnets homonymes. Frontmatter
+  `agent:`, `projet:` et `statut: en cours | en attente | clos`. Il vit dans le
+  `carnets/` du **dossier de son chantier** —
+  `0-PROJETS/<projet>/<chantier>/carnets/` ; une séance sans chantier écrit dans
+  le `carnets/` du projet. Il porte la demande, le plan,
   l'**étape en cours écrite avant d'agir**, les actions horodatées — effets
   externes compris (§9) —, les worktrees et branches ouverts, les questions
   en attente. Un carnet écrit après coup ne sert pas à reprendre : entre la

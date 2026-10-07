@@ -391,6 +391,22 @@ class TestCarnets(BaseVerificateur):
         VC.verifier_carnets()
         self.assertIn("`projet: autre-projet`", self.erreurs_texte())
 
+    def test_le_projet_d_un_carnet_de_chantier_est_le_chantier(self):
+        """Niveau 1 : `projet:` porte le nom du **chantier**, pas du projet racine.
+
+        C'est la règle que le gabarit du skill `cloture-de-session` doit écrire :
+        le gabarit et le garde ont divergé, et les carnets de chantier étaient
+        refusés.
+        """
+        self.ecrire_coffre(
+            "0-PROJETS/obsia/refonte/carnets/2026-10-02-refonte-t1.md",
+            "---\nagent: assistant\nprojet: obsia\nstatut: en cours\n---\n\nCorps.\n")
+
+        VC.verifier_carnets()
+
+        self.assertIn("`projet: obsia` ne correspond pas au dossier `refonte`",
+                      self.erreurs_texte())
+
     def test_un_sous_dossier_dans_carnets_est_refuse(self):
         self.ecrire_coffre("0-PROJETS/un-projet/carnets/archive/vieux.md", "Corps.\n")
         VC.verifier_carnets()
@@ -439,6 +455,27 @@ class TestCarnets(BaseVerificateur):
                            "---\nagent: assistant\nprojet: sous\nstatut: clos\n---\n\nCorps.\n")
         VC.verifier_carnets()
         self.assertEqual([], VC.erreurs)
+
+
+class TestGabaritDuCarnet(unittest.TestCase):
+    """Le gabarit du carnet nomme le dossier porteur (§6).
+
+    Ce test fige le **texte du skill** `cloture-de-session` : le gabarit se lit
+    et se recopie, il n'est pas vérifié par le garde — c'est le carnet écrit
+    d'après lui qui l'est, dans `TestCarnets`. Échouer ici signale donc au
+    rédacteur du skill qu'il s'écarte de la règle du garde.
+    """
+
+    def setUp(self):
+        depot = Path(__file__).resolve().parents[1]
+        self.gabarit = (depot / "IA" / "skills" / "cloture-de-session.md").read_text(
+            encoding="utf-8")
+
+    def test_le_nom_du_carnet_porte_le_chantier(self):
+        self.assertIn("AAAA-MM-JJ-<chantier>-<sujet>.md", self.gabarit)
+
+    def test_le_champ_projet_du_gabarit_porte_le_chantier(self):
+        self.assertIn("projet: <chantier>", self.gabarit)
 
 
 class TestNomsDeMemoire(BaseVerificateur):
@@ -877,8 +914,76 @@ class TestTailleDuFichierAgents(BaseVerificateur):
 
     def test_les_seuils_sont_ceux_de_codex(self):
         """28 Kio d'avance sur le plafond de 32 Kio : les nombres sont la règle."""
-        self.assertEqual(28672, VC.TAILLE_PROMPT_AVERTISSEMENT)
-        self.assertEqual(32768, VC.TAILLE_PROMPT_ERREUR)
+        self.assertEqual(28672, VC.TAILLE_FICHIER_AGENTS_AVERTISSEMENT)
+        self.assertEqual(32768, VC.TAILLE_FICHIER_AGENTS_ERREUR)
+
+    def test_l_avertissement_laisse_une_marge_avant_le_plafond(self):
+        """Alerter collé au plafond ne laisserait rien à faire quand il sonne.
+
+        Les 4 Kio de marge servent deux fois : le temps de réduire le catalogue,
+        et le fichier global de Codex, qui partage le budget.
+        """
+        self.assertLess(VC.TAILLE_FICHIER_AGENTS_AVERTISSEMENT, VC.TAILLE_FICHIER_AGENTS_ERREUR)
+        self.assertEqual(4 * 1024,
+                         VC.TAILLE_FICHIER_AGENTS_ERREUR - VC.TAILLE_FICHIER_AGENTS_AVERTISSEMENT)
+        self.assertEqual(32 * 1024, VC.TAILLE_FICHIER_AGENTS_ERREUR)   # le plafond de Codex
+
+    def test_un_profil_local_ne_rapetissit_pas_la_mesure(self):
+        """On mesure le catalogue entier — pas le rendu au profil courant.
+
+        C'est le pire cas, celui de la CI, où `obsia.local.yml` n'est pas
+        versionné et n'existe donc pas. Se caler sur le rendu du profil
+        laisserait passer, sur toute machine dotée d'un profil, un dépassement
+        que la CI refuse. Le coffre est calé pour que le profil écarte juste
+        assez — son rendu tombe à un octet sous le seuil, le catalogue le
+        dépasse de plus de deux Kio — : seul le catalogue entier avertit.
+        """
+        import generer_prompt as GP
+        import installer
+        import modules
+
+        self.ecrire("IA/system/modules/noyau.md",
+                    "---\nschema: 1\nkind: module\nname: noyau\n"
+                    "description: Le socle.\nessentiel: true\n---\n")
+        self.ecrire("IA/system/modules/gros.md",
+                    "---\nschema: 1\nkind: module\nname: gros\n"
+                    "description: Un module qu'un profil peut écarter.\n"
+                    "essentiel: false\n---\n")
+        self.ecrire("obsia.local.yml", "schema: 1\nmodules:\n  - noyau\n")
+        self.assertEqual(["noyau"], sorted(modules.modules_actifs(self.racine)))
+
+        def ecrire_agent(nom: str, module: str, longueur: int) -> None:
+            """Sa description règle la taille, octet pour octet."""
+            self.ecrire(
+                "IA/agents/agent-%s.md" % nom,
+                "---\nschema: 1\nkind: agent\nname: agent-%s\n"
+                "description: %s\nread_only: false\nmodule: %s\n---\n\nCorps.\n"
+                % (nom, "x" * longueur, module))
+
+        def mesurer(sans_profil: bool) -> int:
+            with redirect_stderr(StringIO()):
+                prompt = GP.prompt_du_coffre(self.racine, sans_profil=sans_profil)
+            return len(installer.contenu_agents(prompt).encode("utf-8"))
+
+        # L'agent retenu porte la taille ; l'écarté ne s'ajoute qu'au catalogue.
+        seuil = VC.TAILLE_FICHIER_AGENTS_AVERTISSEMENT
+        ecrire_agent("noyau", "noyau", 1)
+        ecrire_agent("gros", "gros", 2 * 1024)
+        ecrire_agent("noyau", "noyau",
+                     1 + (seuil - 1) - mesurer(sans_profil=False))
+
+        rendu = mesurer(sans_profil=False)
+        entier = mesurer(sans_profil=True)
+
+        self.assertEqual(seuil - 1, rendu)               # le profil passe dessous
+        self.assertGreater(entier - seuil, 2 * 1024)     # le catalogue, non
+        self.assertLessEqual(entier, VC.TAILLE_FICHIER_AGENTS_ERREUR)
+
+        VC.verifier_taille_du_fichier_agents()
+
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+        self.assertEqual(1, len(VC.avertissements), self.avertissements_texte())
+        self.assertIn(str(entier), VC.avertissements[0])
 
     def test_la_taille_compte_le_marqueur_que_l_installeur_ecrit(self):
         """Le fichier écrit porte un marqueur en tête : le mesurer, c'est le lire.
@@ -904,39 +1009,39 @@ class TestTailleDuFichierAgents(BaseVerificateur):
 
     def test_sous_le_seuil_rien_n_est_signale(self):
         """Sous 28 Kio, le fichier a de la marge : ni erreur ni avertissement."""
-        taille = self.fichier_de_taille(VC.TAILLE_PROMPT_AVERTISSEMENT - 1)
+        taille = self.fichier_de_taille(VC.TAILLE_FICHIER_AGENTS_AVERTISSEMENT - 1)
 
-        VC.verifier_taille_du_prompt()
+        VC.verifier_taille_du_fichier_agents()
 
-        self.assertEqual(VC.TAILLE_PROMPT_AVERTISSEMENT - 1, taille)
+        self.assertEqual(VC.TAILLE_FICHIER_AGENTS_AVERTISSEMENT - 1, taille)
         self.assertEqual([], VC.erreurs, self.erreurs_texte())
         self.assertEqual([], VC.avertissements, self.avertissements_texte())
 
     def test_entre_les_deux_seuils_avertit_sans_refuser(self):
         """Entre 28 et 32 Kio : la marge se réduit, mais le fichier passe."""
-        taille = self.fichier_de_taille(VC.TAILLE_PROMPT_AVERTISSEMENT + 1)
+        taille = self.fichier_de_taille(VC.TAILLE_FICHIER_AGENTS_AVERTISSEMENT + 1)
 
-        VC.verifier_taille_du_prompt()
+        VC.verifier_taille_du_fichier_agents()
 
         self.assertEqual([], VC.erreurs, self.erreurs_texte())
         self.assertEqual(1, len(VC.avertissements), self.avertissements_texte())
         message = VC.avertissements[0]
         self.assertIn(str(taille), message)                          # la taille
-        self.assertIn(str(VC.TAILLE_PROMPT_AVERTISSEMENT), message)  # le seuil
+        self.assertIn(str(VC.TAILLE_FICHIER_AGENTS_AVERTISSEMENT), message)  # le seuil
         self.assertIn("Codex", message)                              # la raison
         self.assertIn("32 Kio", message)                             # vers quoi
         self.assertIn("fichier global", message)                     # la marge
 
     def test_au_dessus_du_plafond_de_codex_refuse(self):
         """Au-delà de 32 Kio, le surplus est déjà laissé de côté : c'est une erreur."""
-        taille = self.fichier_de_taille(VC.TAILLE_PROMPT_ERREUR + 1)
+        taille = self.fichier_de_taille(VC.TAILLE_FICHIER_AGENTS_ERREUR + 1)
 
-        VC.verifier_taille_du_prompt()
+        VC.verifier_taille_du_fichier_agents()
 
         self.assertEqual(1, len(VC.erreurs), self.erreurs_texte())
         message = VC.erreurs[0]
         self.assertIn(str(taille), message)
-        self.assertIn(str(VC.TAILLE_PROMPT_ERREUR), message)
+        self.assertIn(str(VC.TAILLE_FICHIER_AGENTS_ERREUR), message)
         self.assertIn("Codex", message)
         self.assertIn("laissé de côté", message)
         self.assertEqual([], VC.avertissements, self.avertissements_texte())
