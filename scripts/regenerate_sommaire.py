@@ -194,6 +194,39 @@ def racines_de_memoire():
     return sorted(racines)
 
 
+#: Dossiers où l'on n'écrit jamais de sommaire, et dans lesquels on ne descend
+#: pas : le `code/` d'un projet est un dépôt Git distinct (§7.3 du contrat),
+#: `node_modules/` n'est pas de la mémoire. Même règle que
+#: `appliquer_convention_parent.py` (PR #128) — la liste de noms reste un filet
+#: sous la règle du `.git`.
+DOSSIERS_HORS_MEMOIRE = ("node_modules", "code")
+
+
+def est_depot_imbrique(dossier: str) -> bool:
+    """Vrai si `dossier` porte son propre dépôt Git — un dépôt imbriqué.
+
+    `.git` peut être un dossier (dépôt courant) ou un fichier (sous-module,
+    arbre de travail lié) : on teste l'existence, jamais le type.
+    """
+    return os.path.exists(os.path.join(dossier, ".git"))
+
+
+def dossier_hors_memoire(dossier: str) -> bool:
+    """Vrai si l'on ne doit ni résumer `dossier`, ni descendre dedans.
+
+    Un dossier technique (`code/`, `node_modules/`), ou tout dossier portant un
+    `.git` quel que soit son nom : on ne pose jamais de sommaire dans un autre
+    dépôt.
+
+    Ne s'applique qu'aux dossiers **rencontrés sous** une racine de mémoire. La
+    racine du parcours, elle, n'est jamais filtrée : on résume toujours le
+    dossier par lequel on entre — sans quoi le coffre, qui est lui-même un dépôt,
+    n'aurait aucun sommaire.
+    """
+    return (os.path.basename(dossier.rstrip(os.sep)) in DOSSIERS_HORS_MEMOIRE
+            or est_depot_imbrique(dossier))
+
+
 def notes_de(dossier: str):
     return sorted(f for f in os.listdir(dossier)
                   if f.endswith(".md") and f != "sommaire.md"
@@ -202,7 +235,8 @@ def notes_de(dossier: str):
 
 def sous_dossiers_de(dossier: str):
     return sorted(d for d in os.listdir(dossier)
-                  if not d.startswith(".") and os.path.isdir(os.path.join(dossier, d)))
+                  if not d.startswith(".") and os.path.isdir(os.path.join(dossier, d))
+                  and not dossier_hors_memoire(os.path.join(dossier, d)))
 
 
 def agreger(dossier: str, cumul: dict) -> dict:
@@ -299,7 +333,9 @@ def main() -> int:
     dossiers = []
     for racine_memoire in racines:
         for chemin, sous, _ in os.walk(racine_memoire):
-            sous[:] = [d for d in sous if not d.startswith(".")]
+            sous[:] = [d for d in sous
+                       if not d.startswith(".")
+                       and not dossier_hors_memoire(os.path.join(chemin, d))]
             dossiers.append(chemin)
     dossiers.sort(key=lambda p: p.count(os.sep), reverse=True)
 

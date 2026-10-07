@@ -8,8 +8,12 @@ from pathlib import Path
 sys.dont_write_bytecode = True          # ne pas semer de __pycache__ dans le dépôt
 SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 sys.path.insert(0, str(SCRIPTS))        # `scripts/` n'est pas un paquet
+CONVENTION = (Path(__file__).resolve().parent.parent
+              / "IA" / "skills" / "traitement-des-notes" / "scripts")
+sys.path.insert(0, str(CONVENTION))     # ni le dossier d'un skill
 
-import regenerate_sommaire as RS        # noqa: E402
+import regenerate_sommaire as RS                    # noqa: E402
+import appliquer_convention_parent as AC            # noqa: E402
 
 
 class TestFrontmatter(unittest.TestCase):
@@ -83,6 +87,84 @@ class TestZonesDEcriture(unittest.TestCase):
         """`-PROJETS` n'a jamais porté de sommaire : la bascule n'en sème pas."""
         self.dossier("-PROJETS/obsia/allegement")
         self.assertEqual([], RS.racines_de_memoire())
+
+    def test_le_code_d_un_projet_ne_recoit_pas_de_sommaire(self):
+        """Le `code/` d'un projet est un dépôt Git distinct (§7.3) : hors mémoire."""
+        projet = self.dossier("0-PROJETS/monprojet")
+        (projet / "2026-10-01-monprojet-note.md").write_text(
+            "# Note\n\nLe chapeau du projet.\n", encoding="utf-8")
+        code = projet / "code"
+        (code / ".git").mkdir(parents=True)
+        (code / "README.md").write_text("# Code\n\nUn dépôt.\n", encoding="utf-8")
+
+        RS.main()
+
+        sommaire = (projet / "sommaire.md").read_text(encoding="utf-8")
+        self.assertNotIn("code/", sommaire)          # ni sommaire, ni mention
+        self.assertFalse((code / "sommaire.md").exists())
+
+    def test_un_depot_git_imbrique_ne_recoit_pas_de_sommaire(self):
+        """Tout dossier portant un `.git` (dossier ou fichier) est hors mémoire."""
+        gel = self.dossier("0-MEMOIRES/assistant")
+        (gel / "2026-10-01-assistant-note.md").write_text(
+            "# Note\n\nLe chapeau du chantier.\n", encoding="utf-8")
+        imbrique = gel / "outil"
+        (imbrique / ".git").mkdir(parents=True)
+        (imbrique / "note.md").write_text("# Note\n\nDans le dépôt.\n", encoding="utf-8")
+        fichier = gel / "sous-module"                # `.git` en fichier : worktree
+        fichier.mkdir()
+        (fichier / ".git").write_text("gitdir: ailleurs\n", encoding="utf-8")
+        (fichier / "note.md").write_text("# Note\n\nAussi dans un dépôt.\n", encoding="utf-8")
+
+        RS.main()
+
+        self.assertTrue((gel / "sommaire.md").is_file())
+        self.assertFalse((imbrique / "sommaire.md").exists())
+        self.assertFalse((fichier / "sommaire.md").exists())
+
+    def test_la_racine_du_parcours_n_est_jamais_filtree(self):
+        """Une racine de mémoire est résumée même si elle porte un `.git`.
+
+        La règle du dépôt imbriqué s'arrête aux dossiers **rencontrés sous** une
+        racine : on résume toujours le dossier par lequel on entre — sans quoi
+        le coffre, qui est lui-même un dépôt, n'aurait aucun sommaire.
+        """
+        memoire = self.dossier("0-MEMOIRES")
+        (memoire / ".git").write_text("gitdir: ailleurs\n", encoding="utf-8")
+        (memoire / "2026-10-02-agent-note.md").write_text(
+            "# Note\n\nLe chapeau de la note.\n", encoding="utf-8")
+
+        RS.main()
+
+        self.assertTrue((memoire / "sommaire.md").is_file())
+
+
+class TestExclusionsPartagees(unittest.TestCase):
+    """Les deux marcheurs écartent la même chose, sans module partagé.
+
+    `appliquer_convention_parent.py` (skill `traitement-des-notes`) et
+    `regenerate_sommaire.py` appliquent la même règle : ne jamais écrire dans un
+    dossier technique, ni dans un autre dépôt. Tant qu'ils ne partagent pas de
+    module, ce test empêche les deux de diverger en silence.
+    """
+
+    def test_la_meme_liste_de_dossiers_hors_memoire(self):
+        self.assertEqual(set(AC.DOSSIERS_HORS_MEMOIRE),
+                         set(RS.DOSSIERS_HORS_MEMOIRE))
+
+    def test_les_deux_reconnaissent_un_depot_imbrique(self):
+        """Le marqueur `.git` compte en dossier (dépôt) comme en fichier."""
+        for forme in ("dossier", "fichier"):
+            with tempfile.TemporaryDirectory() as d:
+                racine = Path(d)
+                marque = racine / ".git"
+                if forme == "dossier":
+                    marque.mkdir()
+                else:
+                    marque.write_text("gitdir: ailleurs\n", encoding="utf-8")
+                self.assertTrue(AC.est_depot_imbrique(racine), forme)
+                self.assertTrue(RS.est_depot_imbrique(racine), forme)
+
 
 
 if __name__ == "__main__":

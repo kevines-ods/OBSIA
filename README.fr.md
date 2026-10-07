@@ -310,7 +310,7 @@ son passé**, qui reste chez qui l'a cloné. Le dépôt public, lui, part propre
 `publier.py` écrit dans un clone neuf, sans y verser l'historique du privé.
 
 ```bash
-git clone https://github.com/kevines-ods/OBSIA ~/OBSIA-public      # une fois
+git clone https://github.com/mon-compte/OBSIA ~/OBSIA-public      # une fois
 python3 scripts/publier.py --cible ~/OBSIA-public              # aperçu
 python3 scripts/publier.py --cible ~/OBSIA-public --appliquer
 python3 scripts/publier.py --cible ~/OBSIA-public --appliquer \

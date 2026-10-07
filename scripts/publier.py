@@ -128,7 +128,16 @@ BLOQUANTS = (
 #: personne. Le domaine se compare **en entier** — `exemple.fr.attaquant.net`
 #: n'est pas `exemple.fr`, et rien n'empêche d'enregistrer le second.
 BOITES_ADMISES = ("noreply", "utilisateur")
-DOMAINES_ADMIS = ("example.com", "exemple.fr")
+DOMAINES_ADMIS = ("exemple.fr",)
+
+#: Domaines que la RFC 2606 réserve à la documentation. Personne ne peut les
+#: enregistrer : une adresse qui les porte ne désigne aucun correspondant réel.
+#: Un sous-domaine d'un domaine réservé l'est aussi — `mail.example.com`.
+DOMAINES_RESERVES = ("example.com", "example.net", "example.org")
+#: Domaines de premier niveau que la RFC 6761 réserve de la même façon. Le
+#: suffixe se compare **avec son point**, sans quoi on admettrait
+#: `quelqu'un@mon-test` par simple terminaison de chaîne.
+TLD_RESERVES = (".test", ".example", ".invalid")
 
 #: Les étiquettes qu'un `--forcer` ne publie jamais — les valeurs à forme
 #: reconnaissable. Une clé privée ne se révoque pas — elle se remplace. Un jeton
@@ -167,11 +176,21 @@ BINAIRES = (".png", ".jpg", ".jpeg", ".gif", ".pdf", ".zip", ".woff",
 
 
 def courriel_admis(adresse: str) -> bool:
-    """Vrai pour une adresse de projet : boîte générique, ou domaine réservé."""
+    """Vrai pour une adresse de projet : boîte générique, ou domaine réservé.
+
+    Un vrai domaine reste bloqué : seul ce que la RFC 2606/6761 réserve à la
+    documentation est admis, parce que rien ne peut y être enregistré. Le
+    réservé couvre ses sous-domaines, dans les deux formes — `mail.example.com`
+    comme `mail.exemple.test`.
+    """
     boite, _, domaine = adresse.partition("@")
     if boite.lower() in BOITES_ADMISES:
         return True
-    return domaine.lower() in DOMAINES_ADMIS
+    domaine = domaine.lower()
+    if domaine in DOMAINES_ADMIS or domaine.endswith(TLD_RESERVES):
+        return True
+    return any(domaine == reserve or domaine.endswith("." + reserve)
+               for reserve in DOMAINES_RESERVES)
 
 
 def charger_noms_interdits(chemin: Path = None) -> tuple[list, list]:

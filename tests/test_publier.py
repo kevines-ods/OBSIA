@@ -332,6 +332,48 @@ class TestCeQuiNEstPasRelu(BaseControle):
 
         self.assertEqual(self.etiquettes(self.controler()), [])
 
+    def test_les_domaines_reserves_ne_sont_pas_des_fuites(self):
+        """RFC 2606/6761 : ces domaines ne peuvent désigner personne.
+
+        `example.com/net/org` et les domaines de premier niveau `.test`,
+        `.example`, `.invalid` sont réservés : rien ne s'y enregistre, donc une
+        adresse qui les porte ne dit rien d'un vrai correspondant.
+        """
+        self.ecrire("notes.md", "écrire à %s, ou à %s, ou à %s, ou à %s, "
+                                "ou à %s, ou à %s\n" % (
+            assemble("un@example", ".com"),
+            assemble("deux@example", ".net"),
+            assemble("trois@example", ".org"),
+            assemble("quatre@exemple", ".invalid"),
+            assemble("cinq@exemple", ".example"),
+            assemble("six@exemple", ".test")))
+
+        self.assertEqual(self.etiquettes(self.controler()), [])
+
+    def test_un_sous_domaine_d_un_domaine_reserve_est_admis(self):
+        """Le réservé couvre ses sous-domaines : `mail.example.com` comme
+        `mail.exemple.test` — sinon la documentation ne pourrait pas citer
+        l'adresse d'un service sur un domaine réservé."""
+        self.ecrire("notes.md", "écrire à %s, ou à %s\n" % (
+            assemble("un@mail.example", ".com"),
+            assemble("deux@mail.exemple", ".test")))
+
+        self.assertEqual(self.etiquettes(self.controler()), [])
+
+    def test_un_vrai_domaine_reste_bloque(self):
+        """Le réservé s'arrête au réservé : un domaine réel reste une fuite."""
+        self.ecrire("notes.md",
+                    "écrire à %s\n" % assemble("six@monentreprise", ".fr"))
+
+        self.assertIn("adresse de courriel", self.etiquettes(self.controler()))
+
+    def test_le_sous_domaine_d_un_domaine_de_projet_n_est_pas_admis(self):
+        """`exemple.fr` est admis **en entier** : son sous-domaine ne l'est pas."""
+        self.ecrire("notes.md",
+                    "écrire à %s\n" % assemble("sept@mail.exemple", ".fr"))
+
+        self.assertIn("adresse de courriel", self.etiquettes(self.controler()))
+
 
 class TestCeQuiFuitEncore(BaseControle):
     """Les faux négatifs mesurés par l'audit : ce que le contrôle laissait passer.

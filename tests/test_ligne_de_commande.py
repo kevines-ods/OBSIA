@@ -182,6 +182,53 @@ class TestProfilDeBoutEnBout(BaseLigneDeCommande):
         self.assertEqual(ligne.strip(), "(skills : s-construction ; MCP : bruno)")
 
 
+class TestSansProfil(BaseLigneDeCommande):
+    """`--sans-profil` : produire le catalogue entier, comme le fait la garde.
+
+    `verifier_coffre.py` mesure le pire cas — catalogue entier, profil ignoré —
+    pour qu'aucun `obsia.local.yml` local ne masque un dépassement du plafond de
+    Codex. La projection de `codex.md` annonce ce même chiffre : sans ce
+    drapeau, la recette documentée mesurait le profil courant sous l'étiquette
+    « sans profil ».
+    """
+
+    PROFIL = "schema: 1\nmodules:\n  - construction\n"
+
+    def test_sans_drapeau_le_profil_est_applique(self):
+        self.ecrire("obsia.local.yml", self.PROFIL)
+
+        resultat = self.lancer()
+
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        self.assertNotIn("a-administration", resultat.stdout)
+
+    def test_le_drapeau_rend_le_catalogue_entier(self):
+        self.ecrire("obsia.local.yml", self.PROFIL)
+
+        resultat = self.lancer("--sans-profil")
+
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        self.assertIn("a-administration", resultat.stdout)
+        self.assertIn("s-conteneurs", resultat.stdout)
+        self.assertNotIn("Modules inconnus", resultat.stderr)
+
+    def test_le_catalogue_entier_n_est_jamais_le_plus_petit(self):
+        """Le pire cas est bien celui-là : un profil ne fait que retirer."""
+        self.ecrire("obsia.local.yml", self.PROFIL)
+
+        avec_profil = self.lancer()
+        sans_profil = self.lancer("--sans-profil")
+
+        self.assertGreater(len(sans_profil.stdout.encode("utf-8")),
+                           len(avec_profil.stdout.encode("utf-8")))
+
+    def test_l_aide_nomme_le_drapeau(self):
+        resultat = self.lancer("--help")
+
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        self.assertIn("--sans-profil", resultat.stdout)
+
+
 class TestProfilFautif(BaseLigneDeCommande):
     """§13 : un profil qui nomme un module du catalogue doit le signaler.
 

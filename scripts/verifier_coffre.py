@@ -171,8 +171,8 @@ TYPES_SKILL = ("core", "outil")
 # On mesure le pire cas — le catalogue entier, sans profil, comme la CI — et on
 # avertit dès 28 Kio : les 4 Kio de marge couvrent un fichier global, et
 # laissent le temps de réduire avant que le surplus ne soit écarté.
-TAILLE_PROMPT_AVERTISSEMENT = 28 * 1024     # 28 672 o
-TAILLE_PROMPT_ERREUR = 32 * 1024            # 32 768 o
+TAILLE_FICHIER_AGENTS_AVERTISSEMENT = 28 * 1024     # 28 672 o
+TAILLE_FICHIER_AGENTS_ERREUR = 32 * 1024            # 32 768 o
 
 erreurs: list[str] = []
 avertissements: list[str] = []
@@ -1364,7 +1364,7 @@ def verifier_derives():
             erreur("scripts/%s" % script, "%s périmés — %s" % (quoi, detail))
 
 
-def verifier_taille_du_prompt():
+def verifier_taille_du_fichier_agents():
     """Le fichier AGENTS.md doit rester loin du plafond de consignes de Codex.
 
     Codex ne retient en tout que 32 Kio de consignes — le fichier global
@@ -1393,21 +1393,22 @@ def verifier_taille_du_prompt():
         return                                   # coffre vide : rien à mesurer
     taille = len(contenu_agents(prompt).encode("utf-8"))
 
-    if taille > TAILLE_PROMPT_ERREUR:
+    if taille > TAILLE_FICHIER_AGENTS_ERREUR:
         erreur("AGENTS.md",
                "le fichier écrit (catalogue entier, sans profil, marqueur "
                "compris) pèse %d o, au-delà du plafond total de Codex "
                "(%d o, 32 Kio) : le surplus est laissé de côté et l'agent perd "
                "des déclarations entières sans que rien ne le dise — réduire "
                "le catalogue avant d'y arriver"
-               % (taille, TAILLE_PROMPT_ERREUR))
-    elif taille > TAILLE_PROMPT_AVERTISSEMENT:
+               % (taille, TAILLE_FICHIER_AGENTS_ERREUR))
+    elif taille > TAILLE_FICHIER_AGENTS_AVERTISSEMENT:
         avertir("AGENTS.md",
                 "le fichier écrit (catalogue entier, sans profil, marqueur "
                 "compris) pèse %d o ; au-delà de %d o (28 Kio) la marge se "
                 "réduit avant le plafond total de Codex (%d o, 32 Kio), que le "
                 "fichier global partage — réduire le catalogue avant d'y arriver"
-                % (taille, TAILLE_PROMPT_AVERTISSEMENT, TAILLE_PROMPT_ERREUR))
+                % (taille,
+                   TAILLE_FICHIER_AGENTS_AVERTISSEMENT, TAILLE_FICHIER_AGENTS_ERREUR))
 
 
 # ----------------------------------------------------------------------- main
@@ -1518,7 +1519,7 @@ def main(argv=None) -> int:
     if options["coffre"]:
         verifier_depot_de_donnees()
     verifier_derives()
-    verifier_taille_du_prompt()
+    verifier_taille_du_fichier_agents()
 
     if avertissements and not silencieux:
         print("Avertissements (%d) :" % len(avertissements))

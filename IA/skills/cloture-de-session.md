@@ -45,12 +45,14 @@ résumé sont **toujours** de la mémoire : coffre parent, même pour un chantie
 du dépôt. Dans le doute, demander plutôt que de créer un projet par défaut — une
 tâche terminée n'est pas un projet.
 
-**Le carnet** — `carnets/AAAA-MM-JJ-<projet>-<sujet>.md`, un par chantier. Il
+**Le carnet** — `carnets/AAAA-MM-JJ-<chantier>-<sujet>.md`, un par chantier. Il
 vit dans le `carnets/` du **dossier de son chantier** —
-`0-PROJETS/<projet>/<chantier>/carnets/`, avec le nom du chantier dans
-`projet:` ; une séance sans chantier écrit dans le `carnets/` du projet. Il
-s'écrit **pendant** la séance (voir « En cours de route » plus bas) ; à
-la clôture, on le relit, on complète, on règle `statut:`.
+`0-PROJETS/<projet>/<chantier>/carnets/`. Le garde (§6, `verifier_carnet`)
+exige que le nom du fichier et le champ `projet:` portent tous deux le nom de
+**ce dossier** : le chantier ici, et le projet pour une séance sans chantier,
+écrite dans le `carnets/` du projet. Il s'écrit **pendant** la séance (voir
+« En cours de route » plus bas) ; à la clôture, on le relit, on complète, on
+règle `statut:`.
 
 **Un chantier est un dossier à lui** — `0-PROJETS/<projet>/<chantier>/`, avec
 ses `carnets/`, ses `documents/` et son `<chantier> — résumé.md`. Le nom du
@@ -60,7 +62,7 @@ chantier.
 ```markdown
 ---
 agent: <nom-agent>
-projet: <projet>
+projet: <chantier>
 statut: en cours | en attente | clos
 ---
 
@@ -89,8 +91,22 @@ la section `## État` posée par-dessus. On coiffe ainsi :
 | --- | --- |
 | `statut:` | `clos`, dans le frontmatter |
 | bandeau | **juste sous le H1**, avant le `## État`. Chantier : `> Chantier de [[<projet> — résumé\|<projet>]], clos le <AAAA-MM-JJ>.` Projet racine : `> Clos le <AAAA-MM-JJ>.` — jamais de lien vers un parent qui n'existe pas |
-| bilan | un `## État` **juste après le H1** : le résultat atteint, ce qui reste, ce qui rouvrirait. Posé par-dessus le corps, sans le réécrire |
+| bilan | un `## État` **juste après le bandeau**, sous le H1 : le résultat atteint, ce qui reste, ce qui rouvrirait. Posé par-dessus le corps, sans le réécrire |
 | `description:` | réécrite pour dire l'issue (« … clos le <AAAA-MM-JJ> »), pas l'enquête |
+
+**Avant de geler, router les listes de travail du dossier.** Le résumé comme les
+carnets peuvent porter des cases non terminées — un `## Prioritaires` du résumé,
+un `## Reste à faire` d'un carnet. La clôture ne termine pas ces lignes : le
+bilan dit ce qui reste, cette étape dit **où ça va**. Une case gelée en silence
+quitte la vue de travail sans que rien ne dise qu'elle était ouverte — c'est
+ainsi qu'un travail non fait passe pour du travail fini. Chaque case reçoit donc
+une destination **vivante** : **piste du résumé du projet** (une ligne, avec son
+contexte, à côté des autres), **chantier à part** si elle a sa propre fin, ou
+**abandon annoncé à l'utilisateur** — dit dans le bilan et dans le compte rendu,
+sans exiger son accord préalable. Un résumé de domaine dormant n'est pas un
+destinataire : personne ne le rouvrira. Une case restée sans destination oblige à
+reprendre le `## État` : c'est le signe qu'un arbitrage manque, pas une raison de
+geler.
 
 Puis le **dossier entier du chantier** — `0-PROJETS/<projet>/<chantier>/` —
 quitte `0-PROJETS/` pour `0-MEMOIRES/<projet>/<chantier>/` : le `— résumé` devenu
