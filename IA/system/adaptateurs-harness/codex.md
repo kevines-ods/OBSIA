@@ -14,7 +14,7 @@ coffre est exactement là où il regarde.
 
 Une limite chiffrée se paie comptant : Codex **coupe** ses instructions à
 32 Kio par défaut, sans le dire. Le coffre mesuré le 2026-10-08 produit un
-`AGENTS.md` de 26 277 octets, soit 80,2 % du plafond — la marge existe, elle
+`AGENTS.md` de 26 628 octets, soit 81,3 % du plafond — la marge existe, elle
 n'est pas confortable. Le §5 dit quoi mesurer, et quoi faire quand ça déborde.
 
 ---
@@ -170,22 +170,25 @@ Projection au 2026-10-08, mesurée sur la racine d'un coffre :
 COFFRE=/chemin/vers/le/coffre          # la racine du coffre, quel que soit son nom
 cd "$COFFRE/OBSIA"
 python3 scripts/generer_prompt.py --sans-profil -o /tmp/agents-corps.md
-wc -c /tmp/agents-corps.md     # 26 172 : le corps, plus le saut de ligne final
+wc -c /tmp/agents-corps.md     # 26 523 : le corps, plus le saut de ligne final
                                #   que la commande ajoute — l'installeur, lui,
                                #   n'en ajoute pas
-wc -c "$COFFRE/AGENTS.md"      # 25 786 : le fichier écrit au profil courant
+wc -c "$COFFRE/AGENTS.md"      # 26 137 : le fichier écrit au profil courant
 ```
 
-Le corps de l'`AGENTS.md` engendré au catalogue entier pèse donc 26 171 octets ;
-l'installeur y ajoute un marqueur de 106 octets, soit **26 277 octets, 80,2 % du
+Le corps de l'`AGENTS.md` engendré au catalogue entier pèse donc 26 522 octets ;
+l'installeur y ajoute un marqueur de 106 octets, soit **26 628 octets, 81,3 % du
 plafond**. C'est le pire cas — le catalogue entier, celui que la CI et
 `verifier_coffre.py` mesurent — et aucun `obsia.local.yml` ne peut y masquer un
-dépassement : un profil ne fait que raccourcir le catalogue. Les 25 786 octets
+dépassement : un profil ne fait que raccourcir le catalogue. Les 26 137 octets
 du `AGENTS.md` installé à la racine du coffre parent sont ce que Codex lit
-réellement ici, soit **78,7 %**.
+réellement ici, soit **79,8 %**.
 
-**Une seule chose fait bouger le chiffre : le catalogue**, qui grandit. Le texte
-engendré ne porte plus aucun chemin absolu — les deux racines y sont désignées
+Le chiffre bouge pour **deux** raisons : le catalogue, qui grandit, et la règle
+des secrets du §4, reprise mot pour mot en tête du prompt (331 octets) — elle se
+lit dans le contrat, elle n'est pas écrite dans le générateur, donc elle grandit
+si le contrat grandit, et un test la tient courte. Pour le reste, le texte
+engendré ne porte aucun chemin absolu — les deux racines y sont désignées
 sans chemin, par le sous-dossier `OBSIA/` (§7.1) — donc deux postes, même à des
 chemins et sous des noms différents, obtiennent des `AGENTS.md` de taille
 **identique** : c'est ce qu'exige un fichier synchronisé entre eux. La marge se
@@ -244,11 +247,10 @@ journal de session est activé.
 
 - **Rien n'a tourné.** Le statut en tête est « vérifié sur documentation », et
   cela ne se déduit pas d'un branchement qui a l'air de marcher.
-- **La mesure de taille est datée.** 26 277 octets le 2026-10-08, catalogue entier
-  (25 786 octets pour le fichier réellement lu, profil appliqué). Elle ne dépend
-  plus que du catalogue : le texte engendré ne porte aucun chemin absolu, deux
-  postes obtiennent donc la même taille. Elle vieillira quand même — la refaire
-  avant de conclure.
+- **La mesure de taille est datée.** 26 628 octets le 2026-10-08, catalogue entier
+  (26 137 octets pour le fichier réellement lu, profil appliqué). Elle ne dépend
+  ni du poste ni du chemin — le texte engendré n'en porte aucun — mais elle
+  vieillira quand même : la refaire avant de conclure.
 - **Le format des agents personnalisés est assumé comme mouvant** par la
   documentation elle-même (« the format may evolve »). Le §4 est exact
   aujourd'hui ; ce n'est pas une promesse de stabilité.

@@ -29,9 +29,10 @@ SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 import installer as INS                 # noqa: E402
-#: Le motif vit dans le générateur, pas ici : `verifier_coffre.py` s'en sert pour
-#: contrôler le prompt réel du catalogue, et deux copies finiraient par diverger.
-from generer_prompt import chemins_absolus   # noqa: E402
+#: Le motif et le repère du §4 vivent dans le générateur, pas ici :
+#: `verifier_coffre.py` s'en sert pour contrôler le prompt réel du catalogue, et
+#: deux copies finiraient par diverger.
+from generer_prompt import chemins_absolus, regle_des_secrets   # noqa: E402
 
 GENERATEUR = SCRIPTS / "generer_prompt.py"
 INSTALLATEUR = SCRIPTS / "installer.py"
@@ -258,9 +259,11 @@ class TestEcritureAgentsMd(BaseInstalleur):
         self.assertIn("`IA/system/contrat/`", methode)
         self.assertIn("avant l'acte", methode)
 
-        # Le prompt cite les fichiers, il n'en recopie aucune ligne — sauf
-        # l'étape 0 du §10, copiée exprès (le test voisin la tient égale). Ce
-        # qui entrerait par une annexe entrerait sans qu'on le voie.
+        # Le prompt cite les fichiers, il n'en recopie aucune ligne — sauf ses
+        # deux copies volontaires : l'étape 0 du §10 et la règle des secrets du
+        # §4, toutes deux reprises mot pour mot (les deux tests voisins tiennent
+        # chacune égale à sa source). Ce qui entrerait par une annexe entrerait
+        # sans qu'on le voie.
         racine = SCRIPTS.parent / "IA" / "system"
         dossier = racine / "contrat"
         annexes = sorted(a for a in dossier.glob("*.md")
@@ -268,7 +271,7 @@ class TestEcritureAgentsMd(BaseInstalleur):
         self.assertTrue(annexes, "aucune annexe trouvée : rien n'est prouvé")
         self.assertEqual(len(annexes), 6, "le nombre d'annexes a changé")
 
-        def sans_etape_0(texte):
+        def sans_les_copies(texte):
             coupe, n = re.subn(r"^0\. Au démarrage.*?(?=\n1\. |\n## |\Z)", "",
                                texte, flags=re.MULTILINE | re.DOTALL)
             self.assertEqual(n, 1, "étape 0 du §10 introuvable")
@@ -278,10 +281,14 @@ class TestEcritureAgentsMd(BaseInstalleur):
             # n'emporte pas une section entière avec elle.
             self.assertLess(len(texte) - len(coupe), 800,
                             "la coupe de l'étape 0 a emporté trop de texte")
-            return coupe
+            regle = regle_des_secrets(SCRIPTS.parent)
+            self.assertTrue(regle.strip(),
+                            "la règle des secrets du §4 n'est plus repérable : "
+                            "le test voisin dit pourquoi cela compte")
+            return coupe.replace(regle, "")
 
-        sources = [sans_etape_0((racine / "VAULT-CONTRACT.md")
-                                .read_text(encoding="utf-8")),
+        sources = [sans_les_copies((racine / "VAULT-CONTRACT.md")
+                                   .read_text(encoding="utf-8")),
                    *(annexe.read_text(encoding="utf-8") for annexe in annexes)]
         recopiees = [ligne.strip()
                      for source in sources
@@ -295,6 +302,52 @@ class TestEcritureAgentsMd(BaseInstalleur):
         self.lancer("--appliquer")
 
         self.assertTrue(self.agents_md().read_text(encoding="utf-8").endswith("\n"))
+
+    def test_l_agents_md_pose_porte_la_regle_des_secrets_du_contrat(self):
+        """Le constat de la phase 2 : l'agent n'ouvre pas le contrat pour ce cas,
+        donc la règle du §4 doit être **dans** l'`AGENTS.md`. Elle en vient : le
+        générateur l'extrait entre ses repères, il ne la recopie pas en dur (§5).
+        Le repère est un commentaire du contrat : il ne se pose pas, et le
+        contrat lui-même ne se recopie pas autour.
+        """
+        self.ecrire("IA/system/VAULT-CONTRACT.md",
+                    "## 4. Exécution de code\n\n"
+                    "<!-- regle-secrets: debut -->\n"
+                    "- Les secrets ne sortent jamais du coffre.\n"
+                    "- Un secret ne se recopie jamais : on le désigne par son nom.\n"
+                    "<!-- regle-secrets: fin -->\n")
+        self.profil()
+
+        self.lancer("--appliquer")
+
+        texte = self.agents_md().read_text(encoding="utf-8")
+        self.assertIn("- Les secrets ne sortent jamais du coffre.", texte)
+        self.assertIn("- Un secret ne se recopie jamais : on le désigne par son nom.",
+                      texte)
+        self.assertNotIn("regle-secrets", texte, "le repère ne se pose pas")
+        self.assertNotIn("## 4. Exécution de code", texte,
+                         "seule la règle se pose, pas le contrat autour")
+        self.assertEqual([], chemins_absolus(texte))
+
+    def test_le_vrai_contrat_arme_le_repere_et_la_regle_reste_courte(self):
+        """Sans le repère dans le §4 du vrai contrat, la règle disparaîtrait de
+        tous les `AGENTS.md` engendrés sans que rien ne le dise. Et l'`AGENTS.md`
+        est déjà à 80 % du plafond Codex : la règle doit rester courte.
+
+        La règle se mesure par `regle_des_secrets`, seule qui connaisse le repère
+        : le générateur et `sans_les_copies` l'appellent aussi, donc une seule
+        tolérance sur la forme du repère — pas de seconde expression qui
+        accepterait ce que la première refuse.
+        """
+        regle = regle_des_secrets(SCRIPTS.parent)
+
+        # La fonction rend "" quand les repères disparaissent du §4 : sans ce
+        # garde, la règle quitterait tous les prompts sans qu'aucun test ne le dise.
+        self.assertTrue(regle.strip(), "le §4 du contrat ne porte plus ses repères")
+        self.assertIn("Un secret ne se recopie", regle)
+        self.assertEqual([], chemins_absolus(regle))
+        self.assertLess(len(regle.encode()), 600,
+                        "la règle s'allonge : l'AGENTS.md approche du plafond Codex")
 
 
 class TestApercuSansAppliquer(BaseInstalleur):
