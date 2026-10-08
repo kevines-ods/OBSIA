@@ -23,6 +23,12 @@ SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 GENERATEUR = SCRIPTS / "generer_prompt.py"
 INSTALLATEUR = SCRIPTS / "installer.py"
 
+sys.path.insert(0, str(SCRIPTS))
+#: Le motif vit dans le générateur, pas ici : `verifier_coffre.py` s'en sert pour
+#: contrôler le prompt réel du catalogue, et deux copies du même motif finiraient
+#: par ne plus dire la même chose. `tests/test_detection_de_chemin.py` le sonde.
+from generer_prompt import chemins_absolus               # noqa: E402
+
 PREMIERE_LIGNE = "Tu opères sur le coffre OBSIA."
 
 
@@ -143,6 +149,112 @@ class TestSortie(BaseLigneDeCommande):
 
         self.assertEqual(resultat.returncode, 1)
         self.assertIn("Aucun agent ni skill trouvé", resultat.stderr)
+
+
+class TestEnTeteDeuxRacines(BaseLigneDeCommande):
+    """L'en-tête nomme **deux** racines distinctes, sans chemin absolu (§7.1).
+
+    Le fichier se pose chez le parent du dépôt (`installer.chemin_agents`) : le
+    coffre où vit la mémoire, c'est le dossier qui porte le sous-dossier `OBSIA/`,
+    et `racine` n'est que le dépôt de l'outil. Annoncer le dépôt comme « racine du
+    coffre » a fait écrire un `0-SAVOIRS/` dans le dépôt de code, sous Goose et
+    DeepSeek Harness.
+
+    Les deux racines sont désignées **sans aucun chemin** : l'`AGENTS.md` est
+    synchronisé entre des postes où le coffre n'a ni le même chemin ni le même nom,
+    et un chemin absolu y serait faux partout sauf là où il fut écrit.
+
+    Le repère n'est pas « le dossier qui contient ce fichier » : le texte se pose
+    aussi ailleurs qu'à la racine du coffre — un harness sans fichier à lire
+    l'annexe (`.pi/APPEND_SYSTEM.md`, espace de travail). Le sous-dossier `OBSIA/`
+    est le repère qui tient partout.
+    """
+
+    MEMOIRE = "La mémoire s'écrit dans le coffre, jamais dans le dépôt OBSIA."
+    COFFRE = ("Coffre (la mémoire) : le dossier qui contient le sous-dossier "
+              "OBSIA/ — celui de l'AGENTS.md d'OBSIA.")
+    DEPOT = "Dépôt OBSIA (agents, skills, contrat) : son sous-dossier OBSIA/."
+
+    def test_l_en_tete_nomme_le_coffre_puis_le_depot(self):
+        resultat = self.lancer()
+
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        self.assertEqual(
+            [PREMIERE_LIGNE, self.COFFRE, self.DEPOT, self.MEMOIRE],
+            resultat.stdout.splitlines()[:4])
+
+    def test_le_prompt_ne_porte_aucun_chemin_absolu(self):
+        """Le fichier voyage : un chemin de machine y serait faux ailleurs."""
+        resultat = self.lancer()
+
+        trouves = chemins_absolus(resultat.stdout)
+        self.assertEqual([], trouves, "chemins absolus dans le prompt : %s" % trouves)
+
+    def test_le_repere_tient_meme_hors_de_la_racine_du_coffre(self):
+        """Le texte se pose aussi ailleurs qu'à la racine (relecture M1).
+
+        `.pi/APPEND_SYSTEM.md`, un espace de travail OpenClaw : là, « le dossier
+        qui contient ce fichier » désignerait le dossier d'accueil de la copie,
+        pas le coffre. Le repère est le sous-dossier `OBSIA/`.
+        """
+        resultat = self.lancer()
+
+        self.assertNotIn("contient ce fichier", resultat.stdout)
+        self.assertIn("contient le sous-dossier OBSIA/", resultat.stdout)
+
+    def test_l_ancienne_formule_qui_prenait_le_depot_pour_le_coffre_a_disparu(self):
+        """« Racine du coffre : <le dépôt> » faisait du dépôt la racine du coffre."""
+        resultat = self.lancer()
+
+        self.assertNotIn("Racine du coffre", resultat.stdout)
+
+
+class TestPromptIndependantDeLEmplacement(unittest.TestCase):
+    """Deux coffres au même contenu, à des chemins différents : même texte.
+
+    C'est la garantie qui compte pour un `AGENTS.md` synchronisé (Syncthing)
+    entre deux postes : rien dans le prompt engendré ne doit dépendre de
+    l'endroit où le coffre se trouve, ni du nom qu'il porte.
+    """
+
+    def setUp(self):
+        self.brut = Path(tempfile.mkdtemp(prefix="obsia-test-ou-"))
+        self.addCleanup(shutil.rmtree, self.brut, ignore_errors=True)
+
+    def batir(self, racine: Path) -> Path:
+        """Un coffre minimal — toujours le même contenu — à l'endroit demandé."""
+        (racine / "IA/system/modules").mkdir(parents=True)
+        (racine / "IA/agents").mkdir(parents=True)
+        (racine / "IA/skills/s-un").mkdir(parents=True)
+        (racine / "IA/system/modules/noyau.md").write_text(
+            "---\nschema: 1\nkind: module\nname: noyau\n"
+            "description: Le socle.\nessentiel: true\n---\n", encoding="utf-8")
+        (racine / "IA/agents/agent-un.md").write_text(
+            "---\nschema: 1\nkind: agent\nname: agent-un\n"
+            "description: Un agent.\nread_only: false\nmodule: noyau\n---\n\n"
+            "Corps.\n", encoding="utf-8")
+        (racine / "IA/skills/s-un/skill.md").write_text(
+            "---\nschema: 1\nkind: skill\nname: s-un\ndescription: Un skill.\n"
+            "module: noyau\n---\n\nCorps.\n", encoding="utf-8")
+        (racine / "obsia.local.yml").write_text(
+            "schema: 1\nmodules:\n  - noyau\n", encoding="utf-8")
+        return racine
+
+    def prompt_de(self, racine: Path) -> str:
+        resultat = subprocess.run(
+            [sys.executable, str(GENERATEUR), "--racine", str(racine)],
+            capture_output=True, text=True)
+
+        self.assertEqual(0, resultat.returncode, resultat.stderr)
+        return resultat.stdout
+
+    def test_le_meme_coffre_ailleurs_donne_le_meme_prompt(self):
+        # Des noms et des longueurs de chemin franchement différents : un chemin
+        # absolu glissé dans le texte les ferait diverger.
+        haut = self.batir(self.brut / "un-coffre-au-nom-tres-long" / "OBSIA")
+        bas = self.batir(self.brut / "x" / "OBSIA")
+
+        self.assertEqual(self.prompt_de(haut), self.prompt_de(bas))
 
 
 class TestProfilDeBoutEnBout(BaseLigneDeCommande):

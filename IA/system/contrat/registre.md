@@ -83,6 +83,7 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | 4.1 | Toute exécution se fait en sandbox. | N |
 | 4.2 | Aucun accès réseau implicite. | N |
 | 4.3 | Les secrets ne sortent jamais du coffre et ne s'écrivent jamais dans une note. | N |
+| 4.4 | Un secret ne se recopie jamais dans une réponse ni une sortie (journal, commande, capture), même à la demande ; on le désigne par son nom ou son emplacement, et toute valeur rencontrée dans ce qu'on rapporte est masquée. | N (nouveau) |
 
 ## §5 Frontmatter
 

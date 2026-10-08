@@ -181,7 +181,7 @@ quel — au point qu'on peut y renvoyer plutôt que de recopier.
 
 ## 6. Vérifier
 
-Les trois vérifications communes de `commun.md` d'abord : lister la racine du
+Les vérifications communes de `commun.md` d'abord (dont celle du secret) : lister la racine du
 coffre, lire une note de `Mon coffre/0-SAVOIRS/`, retrouver le registre des tags.
 ⚠️ écrire `./0-SAVOIRS`, jamais `0-SAVOIRS` nu.
 

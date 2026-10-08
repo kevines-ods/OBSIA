@@ -174,12 +174,18 @@ writer.set_need_appearances_writer(True)
 ## Chiffrement
 
 ```bash
-qpdf --decrypt --password=MOTDEPASSE chiffre.pdf clair.pdf
+# le mot de passe est la première ligne d'un fichier hors du coffre, en 0600
+qpdf --decrypt --password-file=/chemin/hors-du-coffre/motdepasse.txt chiffre.pdf clair.pdf
 ```
 
-> Ne jamais écrire un mot de passe dans un fichier du coffre. Le passer en
-> argument au moment de l'exécution, et vérifier qu'il ne finit pas dans
-> l'historique du shell.
+> Ne jamais écrire un mot de passe dans un fichier du coffre, ni le faire
+> apparaître dans une commande, une réponse ou une capture (§4). `--password-file`
+> lit la **première ligne** d'un fichier — à garder **hors du coffre**, en
+> `chmod 600` — là où `--password=…` laisse la valeur dans l'historique du shell
+> et dans la trace de l'appel. Éviter `--password-file=-` (entrée standard) : la
+> documentation officielle prévient que le mot de passe est alors recopié à
+> l'écran et qu'aucune invite ne le masque. Options vérifiées à la documentation
+> officielle de qpdf : <https://qpdf.readthedocs.io/en/stable/cli.html>.
 
 ## Pièges courants
 

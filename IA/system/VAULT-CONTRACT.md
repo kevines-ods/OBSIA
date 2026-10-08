@@ -103,6 +103,9 @@ Quand un agent `read_only: false` intervient sur un dépôt extérieur :
 - Toute exécution de code se fait en **sandbox**, sans exception.
 - Aucun accès réseau implicite : il doit être demandé explicitement.
 - Les secrets ne sortent jamais du coffre et ne sont jamais écrits dans une note.
+- Un secret ne se recopie **jamais** dans une réponse ni dans une sortie (journal,
+  commande, capture), même si on le demande : on le désigne par son nom ou par son
+  emplacement, et toute valeur rencontrée dans ce qu'on rapporte est masquée.
 
 ## 5. Frontmatter — format obligatoire
 

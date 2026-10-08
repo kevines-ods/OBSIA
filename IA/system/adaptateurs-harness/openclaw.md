@@ -89,12 +89,30 @@ politique ». Le filtre s'ajoute à la politique d'outils, il ne la remplace pas
 
 ## 5. Charger le cerveau
 
-Le harness lit ses instructions dans son espace de travail, pas dans le dépôt.
-Deux voies :
+Le harness lit ses instructions dans son espace de travail, pas dans le dépôt. Le
+plus sûr est de **pointer `agents.defaults.workspace` sur la racine du coffre** —
+le dossier qui porte le sous-dossier `OBSIA/`. L'`AGENTS.md` engendré y est déjà,
+l'agent trouve le coffre, et l'en-tête du prompt se résout tout seul.
 
-- pointer `agents.defaults.workspace` sur un dossier qui contient le cerveau
-  généré (`python3 scripts/generer_prompt.py -o prompt-systeme.md`) ;
-- ou reprendre le contenu dans `SOUL.md` / `AGENTS.md` de l'espace de travail.
+```yaml
+# configuration OpenClaw, hors dépôt
+agents:
+  defaults:
+    workspace: /chemin/vers/le/coffre    # la racine du coffre, quel que soit son nom
+```
+
+Si l'espace de travail doit vivre ailleurs, **donner la racine explicitement** :
+l'en-tête engendré désigne le coffre par son sous-dossier `OBSIA/`, que cet
+espace-là ne porte pas. Ajouter alors une ligne en tête du prompt, avant le
+contenu repris de `python3 scripts/generer_prompt.py -o prompt-systeme.md` :
+
+```
+Coffre (la mémoire) : /chemin/vers/le/coffre
+```
+
+Sans elle, l'agent cherche un `OBSIA/` qu'il ne trouvera pas, et écrit dans son
+espace de travail ce qui devait aller au coffre. Même contenu dans `SOUL.md` ou
+l'`AGENTS.md` de l'espace de travail : la ligne de racine en tête.
 
 ⚠️ **Ne pas dupliquer les skills OBSIA dans les skills du harness.** Le coffre
 reste la source de vérité (§5) ; deux exemplaires divergent à la première

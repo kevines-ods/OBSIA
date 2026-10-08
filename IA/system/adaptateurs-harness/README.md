@@ -79,14 +79,15 @@ section par section.
 | `aionui-obsiaui.md` | AionUi / ObsiaUi | `mcpServers`, saisi dans l'interface | **non** — jeton en clair | vérifié 2026-09-14 |
 | `deepseek-harness.md` | DeepSeek Harness (DSH) | **aucune** — une ligne de greffon par serveur | oui — `!!js process.env.X` | vérifié 2026-09-30, **sauf le §4** |
 | `pi.md` | Pi | **aucune** — pas de MCP intégré | sans objet — variables d'environnement | vérifié 2026-09-16 |
+| `vibe-work.md` | Vibe Work (Mistral, hébergé) | **aucune** — connecteurs posés par l'administrateur de l'espace | sans objet — OAuth côté plateforme (la doc cite aussi « aucun », « Bearer », « Basic ») | constat direct, 2026-10-07 |
 
 Trois choses que ce tableau rend visibles d'un coup d'œil, et qui décident du
 branchement :
 
-- **`mcpServers` n'est pas une norme.** Trois harness sur neuf l'utilisent ;
-  quatre attendent une autre clé, un n'en a aucune, et DSH n'empile pas de clé
-  du tout — une ligne de greffon par serveur. Recopier le bloc de `commun.md`
-  sans lire la fiche échoue en silence.
+- **`mcpServers` n'est pas une norme.** Trois harness sur dix l'utilisent ;
+  quatre attendent une autre clé, deux n'en ont aucune, et DSH n'empile pas de
+  clé du tout — une ligne de greffon par serveur. Recopier le bloc de
+  `commun.md` sans lire la fiche échoue en silence.
 - **Deux fiches ne peuvent pas porter un jeton.** Sur AionUi la documentation
   écrit le secret en clair, ce que le §4 interdit ; sur OpenClaw
   l'interpolation n'est pas documentée. Les serveurs authentifiés s'y déclarent
@@ -94,12 +95,20 @@ branchement :
   interpolation : des champs ou une expression qui **nomment** la variable sans
   porter sa valeur (`env_vars`, `bearer_token_env_var`, `env_keys`,
   `!!js process.env.X`).
-- **Une fiche reste sans MCP, et le dit.** Pi n'a pas de MCP intégré : sa fiche
-  le dit à la place de la clé, et l'agent s'arrête au lieu d'écrire au hasard.
-  DSH n'était qu'un trou de documentation le 2026-09-14 — sa fiche est remplie
-  depuis le 2026-09-30, le §4 excepté.
+- **Deux fiches restent sans MCP, et le disent.** Pi n'a pas de MCP intégré ;
+  Vibe Work, hébergé, n'expose aucun bloc configurable — l'utilisateur n'y
+  pose pas de connecteur, l'administrateur de l'espace les fixe — et il ne
+  peut pas non plus être lancé depuis la racine du coffre. Sa fiche décrit
+  trois ponts vers le coffre parent (Google Drive, GitHub, prompt transposé)
+  et dit ce qu'il ne faut pas lui demander : le pont GitHub ne porte que le
+  dépôt `OBSIA/`, ni les notes du coffre ni l'`AGENTS.md`. L'agent s'arrête au
+  lieu d'écrire au hasard. DSH n'était qu'un trou de documentation le
+  2026-09-14 — sa fiche est remplie depuis le 2026-09-30, le §4 excepté.
 
-Un statut « vérifié » signifie **vérifié sur documentation**, avec sa date et
-sa source dans la fiche. Aucune n'a été éprouvée sur machine réelle ; c'est
-écrit en tête de chacune, et ça ne se déduit pas d'un branchement qui a l'air
-de marcher.
+Un statut dit **d'où vient l'information**, selon l'échelle de `commun.md` :
+**vérifié sur documentation**, avec sa date et sa source dans la fiche ;
+**constat direct**, écrit depuis le harness lui-même par le compte qui
+l'utilise, ce que la documentation ne dit pas étant déclaré comme tel dans la
+fiche ; **non vérifié**, quand la documentation publique ne donne pas ce qui
+manque. Aucune n'a été éprouvée sur machine réelle ; c'est écrit en tête de
+chacune, et ça ne se déduit pas d'un branchement qui a l'air de marcher.

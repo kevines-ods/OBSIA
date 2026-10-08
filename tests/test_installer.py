@@ -29,6 +29,9 @@ SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 import installer as INS                 # noqa: E402
+#: Le motif vit dans le générateur, pas ici : `verifier_coffre.py` s'en sert pour
+#: contrôler le prompt réel du catalogue, et deux copies finiraient par diverger.
+from generer_prompt import chemins_absolus   # noqa: E402
 
 GENERATEUR = SCRIPTS / "generer_prompt.py"
 INSTALLATEUR = SCRIPTS / "installer.py"
@@ -96,6 +99,57 @@ class BaseInstalleur(unittest.TestCase):
         """L'AGENTS.md sans sa première ligne de marqueur ni la ligne vide."""
         lignes = chemin.read_text(encoding="utf-8").splitlines(keepends=True)
         return "".join(lignes[2:])
+
+
+class TestEnTeteNommeLeCoffrePasLeDepot(BaseInstalleur):
+    """Le fichier posé chez le parent annonce le coffre, pas le dépôt (§7.1).
+
+    L'`AGENTS.md` vit à la racine du coffre parent, côte à côte avec la mémoire ;
+    le dépôt OBSIA n'est que l'outil. Un en-tête qui donnait le dépôt comme
+    « racine du coffre » a fait écrire `0-SAVOIRS/` dedans, sous Goose et
+    DeepSeek Harness.
+
+    Les deux racines sont désignées **sans aucun chemin** : il est synchronisé
+    (Syncthing) entre des postes où le coffre n'a ni le même chemin ni le même
+    nom. Un chemin absolu y serait faux partout ailleurs.
+
+    Le repère est le sous-dossier `OBSIA/`, pas « le dossier qui contient ce
+    fichier » : le texte se pose aussi ailleurs qu'à la racine du coffre, chez un
+    harness qui l'annexe faute de fichier à lire.
+    """
+
+    def test_le_fichier_pose_nomme_le_coffre_et_le_depot(self):
+        self.profil()
+
+        resultat = self.lancer("--appliquer")
+
+        self.assertEqual(0, resultat.returncode, resultat.stderr)
+        contenu = self.agents_md().read_text(encoding="utf-8")
+        self.assertIn("Coffre (la mémoire) : le dossier qui contient le "
+                      "sous-dossier OBSIA/ — celui de l'AGENTS.md d'OBSIA.\n",
+                      contenu)
+        self.assertIn("Dépôt OBSIA (agents, skills, contrat) : "
+                      "son sous-dossier OBSIA/.\n", contenu)
+
+    def test_le_fichier_pose_ne_porte_aucun_chemin_absolu(self):
+        """Ni le chemin du coffre, ni celui du dépôt, ni aucun autre."""
+        self.profil()
+
+        self.lancer("--appliquer")
+
+        contenu = self.agents_md().read_text(encoding="utf-8")
+        trouves = chemins_absolus(contenu)
+        self.assertEqual([], trouves, "chemins absolus dans le fichier : %s" % trouves)
+        self.assertNotIn(str(self.parent), contenu)
+        self.assertNotIn(str(self.racine), contenu)
+
+    def test_le_depot_n_est_pas_annonce_comme_le_coffre(self):
+        self.profil()
+
+        self.lancer("--appliquer")
+
+        self.assertNotIn("Racine du coffre",
+                         self.agents_md().read_text(encoding="utf-8"))
 
 
 class TestEcritureAgentsMd(BaseInstalleur):
