@@ -21,6 +21,44 @@ from pathlib import Path
 
 RACINE_DEFAUT = Path(__file__).resolve().parent.parent
 
+#: Le noyau du coffre : le contrat, seule source des règles. Le prompt engendré
+#: n'en garde aucune copie à rafraîchir (§5) — il extrait ce qu'il lui faut au
+#: moment de le poser.
+NOYAU = Path("IA") / "system" / "VAULT-CONTRACT.md"
+
+#: Le repère du §4 autour de la règle des secrets. Le commentaire HTML est muet :
+#: il ne se rend nulle part, et le prompt ne reçoit que ce qui est **entre** les
+#: deux. La règle n'existe donc qu'ici, et l'`AGENTS.md` l'obtient sans qu'on la
+#: recopie — deux copies finiraient par diverger.
+#:
+#: Le haut et le bas sont distincts : un motif unique se reconnaîtrait deux fois.
+REPERE_SECRETS_DEBUT = re.compile(r"^<!--\s*regle-secrets\s*:\s*debut\s*-->\s*$",
+                                  re.MULTILINE)
+REPERE_SECRETS_FIN = re.compile(r"^<!--\s*regle-secrets\s*:\s*fin\s*-->\s*$",
+                                re.MULTILINE)
+
+
+def regle_des_secrets(racine: Path = RACINE_DEFAUT) -> str:
+    """La règle des secrets du §4 du contrat, entre ses repères, telle quelle.
+
+    Rendue ligne pour ligne, sans remise en forme : c'est ce qui la tient égale
+    au contrat, et ce qu'un test vérifie ligne à ligne.
+
+    Rend "" quand le coffre n'a pas de noyau — les coffres des tests n'en ont pas
+    — ou quand les repères ont disparu. Ce second cas n'est pas avalé : un test
+    tient le vrai contrat pour armé, sinon la règle quitterait tous les
+    `AGENTS.md` engendrés sans que rien ne le dise.
+    """
+    try:
+        contrat = (Path(racine) / NOYAU).read_text(encoding="utf-8")
+    except OSError:
+        return ""
+    debut = REPERE_SECRETS_DEBUT.search(contrat)
+    fin = REPERE_SECRETS_FIN.search(contrat)
+    if debut is None or fin is None or fin.start() < debut.end():
+        return ""
+    return contrat[debut.end():fin.start()].strip("\n")
+
 #: Ce qui introduit un chemin dans une phrase : le début de la ligne, ou un
 #: séparateur. Un `/` collé à autre chose est le plus souvent du texte : `>` d'un
 #: espace réservé (``0-PROJETS/<projet>/code/``), lettre d'un chemin relatif
@@ -199,7 +237,7 @@ def reduire_aux_actifs(agents: list[dict], skills: list[dict],
 # --------------------------------------------------------------------- rendu
 
 def construire_prompt(agents: list[dict], skills: list[dict],
-                      taches: list[dict] | None = None) -> str:
+                      taches: list[dict] | None = None, regle: str = "") -> str:
     lignes: list[str] = []
     a = lignes.append
 
@@ -210,8 +248,10 @@ def construire_prompt(agents: list[dict], skills: list[dict],
     #
     # Les nommer sans aucun chemin absolu : l'AGENTS.md est synchronisé
     # (Syncthing) entre des postes où le coffre n'a ni le même chemin ni le même
-    # nom. Un chemin de machine y serait faux partout ailleurs. D'où l'absence de
-    # `racine` dans cette fonction : le texte ne dépend que des déclarations.
+    # nom. Un chemin de machine y serait faux partout ailleurs. D'où la `racine`
+    # absente de cette fonction : le texte ne dépend que des déclarations — et de
+    # la règle des secrets, reçue toute faite, qui ne porte pas de chemin non
+    # plus (`regle_des_secrets` la lit dans le noyau, §4).
     #
     # Pas « le dossier qui contient ce fichier » pour autant : relecture faite, le
     # texte se pose ailleurs qu'à la racine du coffre — une copie annexée par un
@@ -226,6 +266,18 @@ def construire_prompt(agents: list[dict], skills: list[dict],
     a("Dépôt OBSIA (agents, skills, contrat) : son sous-dossier OBSIA/.")
     a("La mémoire s'écrit dans le coffre, jamais dans le dépôt OBSIA.")
     a("")
+
+    # §4 : la règle des secrets se pose ici, en tête et hors de l'index, près de
+    # l'en-tête des deux racines. Constat de la phase 2 (trois harness, deux
+    # modèles, cinq cellules) : le test « secret » échouait partout — la règle est
+    # au contrat, mais aucun agent n'ouvre le contrat pour ce cas. Elle vient du
+    # contrat (`regle_des_secrets`), elle n'est pas écrite ici : une information
+    # vit à un seul endroit (§5).
+    if regle:
+        a("## Secrets (§4)")
+        a("")
+        a(regle)
+        a("")
 
     if agents:
         a("## Agents disponibles")
@@ -348,7 +400,7 @@ def prompt_du_coffre(racine: Path = RACINE_DEFAUT,
                                                       sans_profil=sans_profil)
     if not agents and not skills:
         return None
-    return construire_prompt(agents, skills, taches)
+    return construire_prompt(agents, skills, taches, regle_des_secrets(racine))
 
 
 # ---------------------------------------------------------------------- main
@@ -377,7 +429,7 @@ def main() -> int:
         print("Aucun agent ni skill trouvé. Vérifie --racine.", file=sys.stderr)
         return 1
 
-    prompt = construire_prompt(agents, skills, taches)
+    prompt = construire_prompt(agents, skills, taches, regle_des_secrets(racine))
     if args.sortie:
         args.sortie.write_text(prompt + "\n", encoding="utf-8")
         print(f"Écrit : {args.sortie}", file=sys.stderr)

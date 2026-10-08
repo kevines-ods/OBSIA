@@ -85,6 +85,24 @@ class BaseLigneDeCommande(unittest.TestCase):
              *arguments],
             capture_output=True, text=True, check=False)
 
+    #: La règle des secrets du §4, telle qu'un coffre de test l'arme. Un profil
+    #: écarte des modules, jamais cette règle : elle se pose hors de l'index. Le
+    #: texte vit ici, une seule fois, pour les tests qui la posent.
+    REGLE = ("- Les secrets ne sortent jamais du coffre et ne sont jamais écrits "
+             "dans une note.\n"
+             "- Un secret ne se recopie **jamais** dans une réponse ni dans une "
+             "sortie : on le désigne par son nom ou par son emplacement.")
+
+    def contrat(self, interieur: str | None = None) -> None:
+        """Le noyau du coffre de test. Sans `interieur`, pas de repères du tout."""
+        if interieur is None:
+            corps = "- Les secrets ne sortent jamais du coffre.\n"
+        else:
+            corps = ("<!-- regle-secrets: debut -->\n" + interieur
+                     + "\n<!-- regle-secrets: fin -->\n")
+        self.ecrire("IA/system/VAULT-CONTRACT.md",
+                    "## 4. Exécution de code\n\n" + corps)
+
 
 class TestSortie(BaseLigneDeCommande):
     def test_sortie_standard_par_defaut(self):
@@ -209,6 +227,53 @@ class TestEnTeteDeuxRacines(BaseLigneDeCommande):
         self.assertNotIn("Racine du coffre", resultat.stdout)
 
 
+class TestLaRegleDesSecretsEnTete(BaseLigneDeCommande):
+    """La règle des secrets du §4 se pose en tête de l'`AGENTS.md` engendré.
+
+    Constat de la phase 2 (passage croisé, trois harness, deux modèles) : le test
+    « secret » échouait partout. La règle est au contrat, mais aucun agent
+    n'ouvre le contrat pour ce cas, et l'`AGENTS.md` ne la portait pas.
+
+    Le générateur l'**extrait** du contrat entre ses repères : le contrat reste
+    la seule source, l'`AGENTS.md` n'en garde aucune copie à rafraîchir (§5).
+    Elle se pose juste après l'en-tête des deux racines, avant l'index.
+    """
+
+    def test_la_regle_du_contrat_se_pose_avant_l_index(self):
+        self.contrat(self.REGLE)
+
+        resultat = self.lancer()
+
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        self.assertIn(self.REGLE, resultat.stdout)
+        self.assertLess(resultat.stdout.index(self.REGLE),
+                        resultat.stdout.index("## Agents disponibles"))
+
+    def test_la_regle_se_pose_telle_quelle(self):
+        """Un extrait remis en forme divergerait du contrat sans que rien ne le dise."""
+        self.contrat(self.REGLE)
+
+        resultat = self.lancer()
+
+        self.assertIn(self.REGLE + "\n", resultat.stdout)
+
+    def test_sans_reperes_rien_ne_se_pose(self):
+        """Ce qui n'est pas repéré n'entre pas : aucune règle n'est inventée."""
+        self.contrat()
+
+        resultat = self.lancer()
+
+        self.assertNotIn("Les secrets ne sortent jamais", resultat.stdout)
+        self.assertNotIn("## Secrets", resultat.stdout)
+
+    def test_un_coffre_sans_contrat_ne_se_plaint_pas(self):
+        """Le générateur sert aussi des coffres de test, sans noyau ni contrat."""
+        resultat = self.lancer()
+
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        self.assertNotIn("## Secrets", resultat.stdout)
+
+
 class TestPromptIndependantDeLEmplacement(unittest.TestCase):
     """Deux coffres au même contenu, à des chemins différents : même texte.
 
@@ -272,6 +337,7 @@ class TestProfilDeBoutEnBout(BaseLigneDeCommande):
         self.assertIn("MCP : bruno", resultat.stdout)
 
     def test_avec_profil_les_modules_ecartes_disparaissent(self):
+        self.contrat(self.REGLE)
         self.ecrire("obsia.local.yml", "schema: 1\nmodules:\n  - construction\n")
 
         resultat = self.lancer()
@@ -283,6 +349,9 @@ class TestProfilDeBoutEnBout(BaseLigneDeCommande):
         self.assertNotIn("s-conteneurs", resultat.stdout)
         # bruno reste déclaré : c'est un MCP, pas un module.
         self.assertIn("MCP : bruno", resultat.stdout)
+        # Le profil écarte des modules, jamais la règle des secrets du §4 : elle
+        # se pose en tête, hors de l'index filtré (cf. §4 du vrai contrat).
+        self.assertIn(self.REGLE, resultat.stdout)
 
     def test_avec_profil_le_skill_ecarte_ne_reste_pas_cite_par_lagent(self):
         self.ecrire("obsia.local.yml", "schema: 1\nmodules:\n  - construction\n")

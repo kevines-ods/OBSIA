@@ -31,11 +31,20 @@ le fichier que les harness lisent d'eux-mêmes : `<dossier parent>/AGENTS.md`.
 Autrement dit, la cible d'installation désigne le dossier `OBSIA/` : `AGENTS.md`
 atterrit un cran au-dessus, à la racine du coffre que l'agent ouvre. Les deux
 modes l'écrivent, chacun pour le coffre effectif — celui des deux qui reçoit
-l'installation. Son contenu est celui de `scripts/generer_prompt.py` : index,
-méthode, profil retenu. Il s'ouvre sur les **deux racines**, nommées : le coffre
-(parent du dépôt, là où vit la mémoire) et le dépôt `OBSIA/` (agents, skills,
-contrat). Un en-tête qui donnait le dépôt pour la racine du coffre a fait écrire
-un `0-SAVOIRS/` dans le dépôt de code, sous Goose et DeepSeek Harness.
+l'installation. Son contenu est celui de `scripts/generer_prompt.py` : en-tête des
+deux racines, règle des secrets, index, méthode, profil retenu. Il s'ouvre sur les
+**deux racines**, nommées : le coffre (parent du dépôt, là où vit la mémoire) et le
+dépôt `OBSIA/` (agents, skills, contrat). Un en-tête qui donnait le dépôt pour la
+racine du coffre a fait écrire un `0-SAVOIRS/` dans le dépôt de code, sous Goose
+et DeepSeek Harness.
+
+Juste après cet en-tête vient la **règle des secrets du §4**, reprise mot pour mot
+depuis le contrat entre ses deux repères (`<!-- regle-secrets: debut -->` et
+`<!-- regle-secrets: fin -->`, que `generer_prompt.regle_des_secrets` lit). Elle se
+pose là parce qu'un agent n'ouvre pas le contrat pour ce cas : sans elle,
+l'`AGENTS.md` ne disait rien des secrets. Le contrat reste la seule source —
+l'`AGENTS.md` n'en garde aucune copie à rafraîchir (§5) — et un test tient la
+reprise égale au contrat, ligne à ligne.
 
 Les deux racines y sont désignées **sans aucun chemin** : le coffre est « le
 dossier qui contient le sous-dossier `OBSIA/` », et le dépôt « son sous-dossier
