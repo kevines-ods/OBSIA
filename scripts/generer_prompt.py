@@ -15,10 +15,46 @@ suffisant pour le format strict défini dans VAULT-CONTRACT.md.
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
 RACINE_DEFAUT = Path(__file__).resolve().parent.parent
+
+#: Ce qui introduit un chemin dans une phrase : le début de la ligne, ou un
+#: séparateur. Un `/` collé à autre chose est le plus souvent du texte : `>` d'un
+#: espace réservé (``0-PROJETS/<projet>/code/``), lettre d'un chemin relatif
+#: (`IA/skills/`), barre d'une adresse (`https://…`).
+_INTRODUCTEUR = r"(?:^|(?<=[\s(\[{`'\"=:,]))"
+
+#: Un `/` qui ouvre un chemin ne doit pas être suivi d'un blanc ni d'un `/` : cela
+#: écarte le `/` isolé de la prose (« et/ou », « 1/2 ») et le second d'une adresse.
+_RACINE = r"/(?![\s/])"
+
+#: Un chemin absolu de machine, sous les trois formes qu'il prend ici : racine
+#: POSIX (`/srv`, `/home/moi/coffre/OBSIA`), relatif au foyer (`~/coffre`),
+#: lecteur Windows (`C:\coffre`, `C:/coffre`).
+#:
+#: Le texte engendré ne doit en porter **aucun** : l'AGENTS.md est synchronisé
+#: entre des postes où le coffre n'a ni le même chemin ni le même nom, et un
+#: chemin de machine y serait faux partout ailleurs. Le repère qui tient partout
+#: est le sous-dossier `OBSIA/`, pas un chemin.
+#:
+#: Un segment à espaces (`/home/moi/Mon coffre/OBSIA`) se reconnaît à son début.
+CHEMIN_ABSOLU = re.compile(
+    _INTRODUCTEUR + _RACINE                                  # /srv, /home/moi/…
+    + r"|" + _INTRODUCTEUR + r"~/(?![\s/])"                  # ~/coffre
+    + r"|(?<![\w])[A-Za-z]:[\\/]"                            # C:\coffre, C:/coffre
+)
+
+
+def chemins_absolus(texte: str) -> list[str]:
+    """Les lignes du texte qui portent un chemin absolu, dans l'ordre.
+
+    Rend la liste des lignes fautives, pas un booléen : qui constate veut voir
+    laquelle, sinon il relit tout le fichier à la main.
+    """
+    return [ligne for ligne in texte.splitlines() if CHEMIN_ABSOLU.search(ligne)]
 
 
 # ---------------------------------------------------------------- frontmatter
@@ -162,13 +198,33 @@ def reduire_aux_actifs(agents: list[dict], skills: list[dict],
 
 # --------------------------------------------------------------------- rendu
 
-def construire_prompt(racine: Path, agents: list[dict], skills: list[dict],
+def construire_prompt(agents: list[dict], skills: list[dict],
                       taches: list[dict] | None = None) -> str:
     lignes: list[str] = []
     a = lignes.append
 
+    # §7.1 : deux racines distinctes — le coffre, où vit la mémoire, et le dépôt
+    # OBSIA, où vivent les agents, les skills et le contrat. Les nommer toutes les
+    # deux : un en-tête qui donnait le dépôt pour « racine du coffre » a fait
+    # écrire un `0-SAVOIRS/` dans le dépôt de code, sous Goose et DeepSeek Harness.
+    #
+    # Les nommer sans aucun chemin absolu : l'AGENTS.md est synchronisé
+    # (Syncthing) entre des postes où le coffre n'a ni le même chemin ni le même
+    # nom. Un chemin de machine y serait faux partout ailleurs. D'où l'absence de
+    # `racine` dans cette fonction : le texte ne dépend que des déclarations.
+    #
+    # Pas « le dossier qui contient ce fichier » pour autant : relecture faite, le
+    # texte se pose ailleurs qu'à la racine du coffre — une copie annexée par un
+    # harness qui n'a pas de fichier à lire (`.pi/APPEND_SYSTEM.md`, espace de
+    # travail OpenClaw). Là, « ce fichier » désignerait le dossier d'accueil de la
+    # copie. Le repère qui tient partout est le **sous-dossier `OBSIA/`**, que
+    # seule la racine du coffre porte, et c'est là aussi que l'AGENTS.md est
+    # engendré (`installer.chemin_agents`).
     a("Tu opères sur le coffre OBSIA.")
-    a(f"Racine du coffre : {racine}")
+    a("Coffre (la mémoire) : le dossier qui contient le sous-dossier OBSIA/ — "
+      "celui de l'AGENTS.md d'OBSIA.")
+    a("Dépôt OBSIA (agents, skills, contrat) : son sous-dossier OBSIA/.")
+    a("La mémoire s'écrit dans le coffre, jamais dans le dépôt OBSIA.")
     a("")
 
     if agents:
@@ -292,7 +348,7 @@ def prompt_du_coffre(racine: Path = RACINE_DEFAUT,
                                                       sans_profil=sans_profil)
     if not agents and not skills:
         return None
-    return construire_prompt(racine, agents, skills, taches)
+    return construire_prompt(agents, skills, taches)
 
 
 # ---------------------------------------------------------------------- main
@@ -321,7 +377,7 @@ def main() -> int:
         print("Aucun agent ni skill trouvé. Vérifie --racine.", file=sys.stderr)
         return 1
 
-    prompt = construire_prompt(racine, agents, skills, taches)
+    prompt = construire_prompt(agents, skills, taches)
     if args.sortie:
         args.sortie.write_text(prompt + "\n", encoding="utf-8")
         print(f"Écrit : {args.sortie}", file=sys.stderr)

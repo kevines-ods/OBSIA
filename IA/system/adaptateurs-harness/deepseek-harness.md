@@ -221,15 +221,16 @@ second **ne disparaîtra pas** par déduplication. Projection :
 donc l'installation est possible — mais **tant qu'elle n'est pas faite, tout ce
 qui suit reste à prouver**.
 
-Les trois vérifications communes de `commun.md` d'abord : lister la racine du
+Les vérifications communes de `commun.md` d'abord (dont celle du secret) : lister la racine du
 coffre, lire une note de `Mon coffre/0-SAVOIRS/`, retrouver le registre des tags.
 ⚠️ écrire `./0-SAVOIRS`, jamais `0-SAVOIRS` nu.
 
 Puis trois gestes propres à cette fiche :
 
 ```bash
+COFFRE=/chemin/vers/le/coffre          # la racine du coffre, quel que soit son nom
 dsh --profile <nom>          # lancer, puis lui demander de citer une règle du contrat
-wc -c ../AGENTS.md           # une fois installé ; le budget de l'avis éventuel
+wc -c "$COFFRE/AGENTS.md"    # une fois installé ; le budget de l'avis éventuel
 ```
 
 1. lancé de la racine du coffre, DSH doit **citer les règles du coffre** — pas

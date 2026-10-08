@@ -355,8 +355,8 @@ class TestCeQuiNEstPasRelu(BaseControle):
         `mail.exemple.test` — sinon la documentation ne pourrait pas citer
         l'adresse d'un service sur un domaine réservé."""
         self.ecrire("notes.md", "écrire à %s, ou à %s\n" % (
-            assemble("un@mail.example", ".com"),
-            assemble("deux@mail.exemple", ".test")))
+            assemble("un@mail", ".example.com"),
+            assemble("deux@mail", ".exemple.test")))
 
         self.assertEqual(self.etiquettes(self.controler()), [])
 
@@ -370,7 +370,7 @@ class TestCeQuiNEstPasRelu(BaseControle):
     def test_le_sous_domaine_d_un_domaine_de_projet_n_est_pas_admis(self):
         """`exemple.fr` est admis **en entier** : son sous-domaine ne l'est pas."""
         self.ecrire("notes.md",
-                    "écrire à %s\n" % assemble("sept@mail.exemple", ".fr"))
+                    "écrire à %s\n" % assemble("sept@mail", ".exemple.fr"))
 
         self.assertIn("adresse de courriel", self.etiquettes(self.controler()))
 
@@ -452,6 +452,40 @@ class TestCeQuiFuitEncore(BaseControle):
                     % assemble("--pass", "word=MOTDEPASSE"))
 
         self.assertEqual(self.etiquettes(self.controler()), [])
+
+    def test_une_option_qui_recoit_un_chemin_de_fichier(self):
+        """`--password-file=…` porte un chemin, pas le mot de passe.
+
+        C'est la forme que conseille `IA/skills/pdf.md` — la fiche qui l'enseigne
+        se signalait comme une fuite. Les deux écritures, `=` et espace.
+        """
+        self.ecrire("fiche.md",
+                    "qpdf --decrypt --password-file=/chemin/hors-du-coffre/"
+                    "motdepasse.txt chiffre.pdf clair.pdf\n"
+                    "qpdf --decrypt --password-file /chemin/hors-du-coffre/"
+                    "motdepasse.txt chiffre.pdf clair.pdf\n")
+
+        self.assertEqual(self.etiquettes(self.controler()), [])
+
+    def test_un_mot_de_passe_en_argument_reste_bloque(self):
+        """L'exception vaut pour l'option de **fichier**, pas pour la valeur."""
+        self.ecrire("fiche.md",
+                    "qpdf --decrypt %s chiffre.pdf clair.pdf\n"
+                    % assemble("--password=", "cheval-de-course-du-gard"))
+
+        self.assertEqual(self.etiquettes(self.controler()), ["secret affecté"])
+
+    def test_une_variable_de_fichier_reste_bloquee(self):
+        """Sans tiret, rien ne dit que la valeur est un chemin : c'est un nom.
+
+        Une option de commande est un répertoire connu (`--password-file`) ; une
+        variable peut porter n'importe quoi, y compris le mot de passe lui-même.
+        """
+        self.ecrire("config.yml",
+                    "%s = %s\n" % (assemble("password_", "file"),
+                                   assemble("/chemin/vers/motdepasse", ".txt")))
+
+        self.assertEqual(self.etiquettes(self.controler()), ["secret affecté"])
 
     def test_une_cle_secrete_aws_nue(self):
         """Sans préfixe `AKIA`, la clé secrète AWS seule passait inaperçue.
@@ -637,6 +671,219 @@ class TestTexteDePullRequest(BaseControle):
             ["nom interdit"])
 
 
+class TestLeDepotReel(BasePublication):
+    """Le coffre est celui de la machine, pas le dossier d'où l'on parle.
+
+    Un worktree vit ailleurs — `~/obsia-worktrees/<nom-agent>-<sujet>` — et son
+    dossier parent n'est pas le coffre : c'est le hangar à worktrees, dont le nom
+    se lit dans la documentation du dépôt. Prendre le parent pour le coffre ferait
+    signaler cette documentation à chaque aperçu lancé depuis un worktree, et la
+    publication y resterait bloquée : un chemin de machine ne se force pas.
+    """
+
+    def test_le_clone_principal_se_designe_lui_meme(self):
+        self.assertEqual(self.source.resolve(), PUB.depot_reel(self.source))
+
+    def test_un_worktree_designe_le_clone_principal(self):
+        autre = self.parent / "worktrees" / "batisseur-sujet"
+        autre.parent.mkdir()
+        git(self.source, "worktree", "add", "--detach", str(autre))
+
+        self.assertEqual(self.source.resolve(), PUB.depot_reel(autre))
+
+
+class TestLeCheminDeLaMachine(BaseControle):
+    """Le chemin réel de la machine qui publie ne franchit pas la frontière (§13).
+
+    Un chemin absolu nomme une arborescence privée — et il est faux partout
+    ailleurs, puisque le coffre change de place et de nom d'un poste à l'autre.
+    Les motifs de `BLOQUANTS` ne peuvent pas le reconnaître : il dépend de la
+    machine. Le contrôle le reçoit donc de la source.
+
+    La racine ci-dessous est une **fixture** : elle a la forme d'un coffre, et
+    n'est le coffre de personne. Le vrai chemin ne s'écrit pas ici — il serait
+    lui-même la fuite que ce contrôle existe pour arrêter.
+    """
+
+    COFFRE = Path("/srv/coffre-de-test")
+    DEPOT = COFFRE / "OBSIA"
+
+    def controler(self):
+        return PUB.controler_fuites(self.racine,
+                                    machine=PUB.Path(str(self.DEPOT)))
+
+    def test_le_chemin_du_coffre_parent_est_bloque(self):
+        self.ecrire("notes.md",
+                    "Le coffre vit dans %s, son dépôt juste en dessous.\n"
+                    % self.COFFRE)
+
+        self.assertEqual(self.etiquettes(self.controler()), ["chemin du coffre"])
+
+    def test_le_chemin_du_depot_est_bloque(self):
+        self.ecrire("notes.md", "cd %s\n" % self.DEPOT)
+
+        self.assertEqual(self.etiquettes(self.controler()), ["chemin du dépôt"])
+
+    def test_les_deux_chemins_dans_la_meme_ligne_ne_comptent_qu_une_fois(self):
+        """Le dépôt est sous le coffre : le rapport dit lequel, pas les deux."""
+        self.ecrire("notes.md", "Le dépôt %s porte l'AGENTS.md de %s\n"
+                    % (self.DEPOT, self.COFFRE))
+
+        self.assertEqual(self.etiquettes(self.controler()), ["chemin du dépôt"])
+
+    def test_un_chemin_voisin_n_est_pas_la_machine(self):
+        """`…-notes` n'est pas le coffre, `…/OBSIA-tests` n'est pas le dépôt."""
+        self.ecrire("notes.md", "voir %s-notes et %s-tests/OBSIA\n"
+                    % (self.COFFRE, self.COFFRE))
+
+        self.assertEqual(self.etiquettes(self.controler()), [])
+
+    def test_un_chemin_colle_a_un_echappement_est_vu(self):
+        """Dans un test, le chemin s'écrit `"…\\n/srv/…"` — et il est bien là.
+
+        Sans le desserrage, le `/` suivrait un `n` et passerait pour la suite
+        d'un mot : le fichier partirait avec le chemin dedans.
+        """
+        self.ecrire("fixture.py",
+                    'texte = "Une ligne.\\n%s\\nEt une autre.\\n"\n' % self.COFFRE)
+
+        self.assertEqual(self.etiquettes(self.controler()), ["chemin du coffre"])
+
+    def test_un_chemin_precede_d_une_barre_est_vu(self):
+        """`file://`, `//…`, `…/montage/…` : la barre ne fait pas un mot.
+
+        Le premier motif refusait un chemin collé à une barre oblique — c'est
+        pourtant la forme que prennent une URL `file://` et un chemin recomposé
+        sous un point de montage. Il ne protégeait que du bruit, et laissait
+        passer la fuite entière.
+
+        Le préfixe du troisième cas est fictif à dessein : un chemin d'exemple
+        ici se signalerait sur la machine qui l'a pour racine.
+        """
+        self.ecrire("fiche.md",
+                    "voir file://%s/assets\n"
+                    "puis //%s\n"
+                    "et /un/montage%s\n" % (self.DEPOT, self.COFFRE, self.COFFRE))
+
+        self.assertEqual(self.etiquettes(self.controler()),
+                         ["chemin du dépôt", "chemin du coffre", "chemin du coffre"])
+
+    def test_un_chemin_dans_une_url_web_est_muet(self):
+        """Le chemin d'une URL http(s) n'est pas une arborescence locale."""
+        self.ecrire("fiche.md",
+                    "voir https://exemple.fr%s et http://exemple.fr%s/x\n"
+                    % (self.COFFRE, self.DEPOT))
+
+        self.assertEqual(self.etiquettes(self.controler()), [])
+
+    def test_une_url_ne_cache_que_son_propre_chemin(self):
+        """Le silence vaut pour l'URL, pas pour la ligne qui la porte."""
+        self.ecrire("fiche.md",
+                    "voir https://exemple.fr/a, puis %s\n" % self.COFFRE)
+
+        self.assertEqual(self.etiquettes(self.controler()), ["chemin du coffre"])
+
+    def test_une_url_ne_pardonne_pas_la_seconde_occurrence(self):
+        """Le silence vaut par occurrence, pas par ligne.
+
+        Examinée une seule fois, la ligne s'arrêtait à la première : le chemin
+        de l'URL — muet, à juste titre — blanchissait celui qui le suivait, écrit
+        en `file://`, qui est pourtant la fuite.
+        """
+        self.ecrire("fiche.md",
+                    "https://exemple.fr%s/depot puis file://%s/depot/y\n"
+                    % (self.DEPOT, self.DEPOT))
+
+        self.assertEqual(self.etiquettes(self.controler()), ["chemin du dépôt"])
+
+    def test_les_formes_generiques_restent_publiables(self):
+        """La documentation doit pouvoir montrer des chemins d'exemple."""
+        self.ecrire("fiche.md",
+                    "COFFRE=/chemin/vers/le/coffre\n"
+                    "cd /home/moi/coffre\n"
+                    "cd ~/coffre et C:\\coffre\n"
+                    "voir `IA/skills/` et son sous-dossier OBSIA/\n")
+
+        self.assertEqual(self.etiquettes(self.controler()), [])
+
+    def test_sans_machine_le_controle_ne_depend_pas_du_poste(self):
+        """Par défaut, rien n'est contrôlé : un test passe ici et partout."""
+        self.ecrire("notes.md", "Le coffre vit dans %s\n" % self.COFFRE)
+
+        self.assertEqual(self.etiquettes(PUB.controler_fuites(self.racine)), [])
+
+    def test_un_chemin_ne_se_force_pas(self):
+        """Publier malgré tout publierait l'arborescence privée."""
+        self.assertIn("chemin du coffre", PUB.SANS_FORCAGE)
+        self.assertIn("chemin du dépôt", PUB.SANS_FORCAGE)
+
+
+class TestLaFormeTilde(BaseControle):
+    """`~/coffre` et `/home/moi/coffre` désignent la même arborescence.
+
+    Une note du coffre — et plus encore une commande recopiée — écrit souvent
+    le chemin en `~`. Les deux formes fuient autant l'une que l'autre.
+
+    Le home est passé à la main : `Path.home()` serait celui de la machine qui
+    lance le test, et le test dépendrait d'elle.
+    """
+
+    MAISON = Path("/home/moi")
+    COFFRE = MAISON / "coffre-de-test"
+    DEPOT = COFFRE / "OBSIA"
+
+    def controler(self, machine=None, maison=None) -> "PUB.Controle":
+        return PUB.controler_fuites(self.racine,
+                                    machine=machine or self.DEPOT,
+                                    maison=maison or self.MAISON)
+
+    def test_la_forme_tilde_est_vue_comme_le_chemin(self):
+        self.ecrire("notes.md",
+                    "cd ~/coffre-de-test/OBSIA puis ~/coffre-de-test\n")
+
+        self.assertEqual(self.etiquettes(self.controler()), ["chemin du dépôt"])
+
+    def test_une_forme_tilde_sans_rapport_reste_muette(self):
+        """`~/coffre` n'est pas `/srv/coffre-de-test` : ne pas confondre."""
+        self.ecrire("notes.md", "cd ~/coffre-de-test puis ~/autre\n")
+
+        controle = self.controler(machine=Path("/srv/coffre-de-test/OBSIA"))
+
+        self.assertEqual(self.etiquettes(controle), [])
+
+    def test_le_home_lui_meme_ne_se_pose_pas(self):
+        """Un coffre qui *est* le home ne fait pas de `~` tout court un motif."""
+        self.ecrire("notes.md", "cd ~ puis ls\n")
+
+        controle = self.controler(machine=Path("/home/moi/OBSIA"))
+
+        self.assertEqual(self.etiquettes(controle), [])
+
+
+class TestLaRacineCourte(BaseControle):
+    """Une installation dans un dossier de premier niveau, le dépôt dans `/srv`.
+
+    Le coffre y tient dans `/srv` tout court, et ce motif-là se signalerait dans
+    la moitié des textes qui parlent d'un serveur ou d'un montage. Un contrôle qui
+    crie à tort est un contrôle qu'on force sans le lire. Le dépôt, lui, garde
+    son motif : le dossier du dépôt désigne bien quelque chose.
+
+    Le chemin est recollé à l'exécution, comme les valeurs d'essai : une
+    installation réelle au même endroit serait bloquée par ce fichier même.
+    """
+
+    DEPOT = Path("/srv") / "OBSIA"
+
+    def controler(self) -> "PUB.Controle":
+        return PUB.controler_fuites(self.racine, machine=self.DEPOT)
+
+    def test_le_parent_de_premier_niveau_ne_signe_personne(self):
+        """`/srv` seul n'est pas une fuite ; le dépôt juste en dessous, si."""
+        self.ecrire("fiche.md", "Tout vit dans /srv\net cd %s\n" % self.DEPOT)
+
+        self.assertEqual(self.etiquettes(self.controler()), ["chemin du dépôt"])
+
+
 class BasePublicationReelle(unittest.TestCase):
     """Une source committée et une cible vierge : `publier.py` pour de vrai.
 
@@ -798,6 +1045,25 @@ class TestCeQuiNeSeForcePas(BasePublicationReelle):
             capture_output=True, text=True, check=True).stdout
         self.assertIn("--forcer", message)
         self.assertIn("adresse IP privée", message)
+
+
+    def test_un_chemin_de_machine_ne_se_force_pas(self):
+        """De bout en bout : le chemin de la source arrête la publication.
+
+        La source des tests est un dossier temporaire ; c'est **ce** chemin-là qui
+        tient le rôle de la machine qui publie, et il ne s'écrit nulle part
+        ailleurs qu'ici — le chemin réel d'un poste n'a rien à faire dans un
+        fichier publié, pas même dans un test qui parle de lui.
+        """
+        self.ecrire("notes.md", "Le dépôt vit dans %s\n" % self.source.resolve())
+        self.committer()
+
+        resultat = self.lancer("--appliquer", "--forcer")
+
+        self.assertEqual(resultat.returncode, 1, resultat.stdout + resultat.stderr)
+        self.assertIn("chemin du dépôt", resultat.stdout + resultat.stderr)
+        self.assertEqual(self.publies(), set(),
+                         "rien ne doit être écrit dans la cible")
 
 
 class TestUnNomInterditAvertit(BasePublicationReelle):

@@ -201,14 +201,37 @@ une adresse de courriel, une adresse IP privée, un bloc de clé privée, un
 préfixe de jeton connu, un secret affecté à une variable, un nom d'hôte
 interne — et tout nom de la **liste locale des noms interdits**, tenue hors du
 dépôt, seul moyen d'attraper un nom de machine qui n'a pas de forme de
-domaine. Il passe sur l'export final, après régénération, et dit ce qu'il n'a
-pas pu relire. Deux régimes, deux traitements : les valeurs à **forme
-reconnaissable** (clé privée, jeton, IP privée, courriel, nom d'hôte à
-domaine) refusent la publication. `--forcer` en publie malgré tout, sauf deux
-qu'il ne franchit **jamais** : une clé privée, qui ne se révoque pas mais se
-remplace, et un jeton connu, qui se révoque — encore faut-il le faire avant
-qu'il ait servi. Pour les autres catégories, il publie et écrit la dérogation
-dans le message de commit. Un nom de la **liste locale** n'a pas de forme : la
+domaine. S'y ajoutent les **chemins de la machine qui publie**, seule catégorie
+qui ne soit pas une valeur : ce qui fuit alors, c'est le chemin absolu d'un
+poste, que le §13 interdit dans un fichier publié. Il passe sur l'export final,
+après régénération, et dit ce qu'il n'a pas pu relire. Deux régimes, deux
+traitements : les valeurs à **forme reconnaissable** (clé privée, jeton, IP
+privée, courriel, nom d'hôte à
+domaine) refusent la publication. `--forcer` en publie malgré tout, sauf
+**quatre** qu'il ne franchit **jamais** : une clé privée, qui ne se révoque pas
+mais se remplace ; un jeton connu, qui se révoque — encore faut-il le faire
+avant qu'il ait servi ; et les deux **chemins de la machine**, la racine du
+coffre parent et celle du dépôt, qui ne sont pas des valeurs : un chemin ne se
+révoque pas, il se retire du fichier. Ces deux motifs-là ne s'écrivent pas dans
+le code comme les autres : ils naissent de la machine qui publie, et
+`publier.py` les construit à partir de la racine qu'on lui donne — le dépôt
+publié, et le dossier qui le contient. Ils sont donc absents quand aucune racine
+n'est fournie, et aucun test ne dépend du poste. Le dépôt dont on parle est le
+**clone principal** : lancé depuis un worktree, `publier.py` le retrouve par
+`git`, parce que le dossier qui contient un worktree n'est pas le coffre.
+
+Le chemin se cherche **sans regarder ce qui le précède** : `file:///…`, `//…`,
+`…/montage/<racine>` sont des façons de l'écrire, pas des raisons de le laisser
+passer — le silence porte sur le **chemin d'une URL http(s)**, qui n'est pas une
+arborescence locale, et sur un **dossier de premier niveau**, qui ne désigne
+personne (le `/srv` d'un dépôt posé directement dedans). Ce silence vaut par
+**occurrence**, pas par ligne : ailleurs sur la ligne, le chemin est regardé. Quand
+la racine est sous le home, `~/…` est reconnu comme le chemin absolu : les deux
+formes fuient autant.
+Pour les autres catégories, il
+publie et écrit la dérogation dans le message de commit.
+
+Un nom de la **liste locale** n'a pas de forme : la
 liste retient des identités, mais frappe des mots, et un avertissement n'a pas
 besoin de converger. Il est donc **signalé ligne par ligne en avertissement,
 sans bloquer**, et `--forcer` ne sert pas contre lui — il n'y a rien à forcer.
@@ -225,10 +248,13 @@ contrôle de fuite — `scripts/publier.py --controler-texte`, texte sur l'entr�
 standard —, avec les mêmes motifs et les mêmes refus qu'un fichier, **à chaque
 ouverture, modification, poussée ou réouverture de la pull request** : une
 description se corrige sans pousser de commit, et c'est le texte corrigé qui
-paraît. GitHub les
-fournit par l'environnement, **jamais par la ligne de commande** : un texte de PR
+paraît. GitHub les fournit par l'environnement, **jamais par la ligne de
+commande** : un texte de PR
 n'est pas écrit par la seule personne qui ouvre la PR, et le poser dans le script
 suffirait à y faire passer une commande. La liste locale des noms interdits peut
 être absente en CI (« aucune trouvaille » ne dit alors rien des noms nus, comme
 partout) ; les valeurs à forme reconnaissable, elles, sont refusées là comme
-ailleurs.
+ailleurs. Une seule catégorie manque dans ce mode : les **chemins de la
+machine**, qui naissent de la racine publiée — une racine que ce mode ne reçoit
+pas. Un chemin absolu écrit dans une description de PR n'y est donc pas vu :
+c'est la réserve à connaître avant de s'y fier.

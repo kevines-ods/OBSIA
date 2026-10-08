@@ -132,7 +132,10 @@ paragraphe vise des bases de code, pas des notes.
 
 Lire n'est pas recopier : le coffre parent est privé, le dépôt se publie
 (§13.5). Rien du coffre parent ne migre dans `OBSIA/` au fil des réponses, et
-aucun secret du coffre parent n'entre dans le dépôt.
+aucun secret du coffre parent n'entre dans le dépôt. Un secret ne se recopie pas
+davantage dans une réponse ou une sortie, même si on le demande : on le désigne
+par son nom ou par son emplacement, et toute valeur rencontrée dans ce qu'on
+rapporte est masquée (§4).
 
 ### 7.3 Écriture — zones autorisées
 

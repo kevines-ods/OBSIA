@@ -13,8 +13,8 @@ fichier que `python3 scripts/installer.py --appliquer` pose à la racine du
 coffre est exactement là où il regarde.
 
 Une limite chiffrée se paie comptant : Codex **coupe** ses instructions à
-32 Kio par défaut, sans le dire. Le coffre mesuré le 2026-10-07 produit un
-`AGENTS.md` de 26 080 octets, soit 79,6 % du plafond — la marge existe, elle
+32 Kio par défaut, sans le dire. Le coffre mesuré le 2026-10-08 produit un
+`AGENTS.md` de 26 277 octets, soit 80,2 % du plafond — la marge existe, elle
 n'est pas confortable. Le §5 dit quoi mesurer, et quoi faire quand ça déborde.
 
 ---
@@ -164,30 +164,33 @@ adding files » : le surplus n'est pas coupé au milieu d'un fichier, il est
 laissé de côté. Un `AGENTS.md` amputé reste un `AGENTS.md` valide — il décrit
 simplement un coffre plus petit qu'il ne l'est.
 
-Projection au 2026-10-07, mesurée sur la racine `Mon coffre/OBSIA` :
+Projection au 2026-10-08, mesurée sur la racine d'un coffre :
 
 ```bash
-cd "$HOME/Mon coffre/OBSIA"
+COFFRE=/chemin/vers/le/coffre          # la racine du coffre, quel que soit son nom
+cd "$COFFRE/OBSIA"
 python3 scripts/generer_prompt.py --sans-profil -o /tmp/agents-corps.md
-wc -c /tmp/agents-corps.md     # 25 975 : le corps, plus le saut de ligne final
+wc -c /tmp/agents-corps.md     # 26 172 : le corps, plus le saut de ligne final
                                #   que la commande ajoute — l'installeur, lui,
                                #   n'en ajoute pas
-wc -c ../AGENTS.md             # 25 589 : le fichier écrit au profil courant
+wc -c "$COFFRE/AGENTS.md"      # 25 786 : le fichier écrit au profil courant
 ```
 
-Le corps de l'`AGENTS.md` engendré au catalogue entier pèse donc 25 974 octets ;
-l'installeur y ajoute un marqueur de 106 octets, soit **26 080 octets, 79,6 % du
+Le corps de l'`AGENTS.md` engendré au catalogue entier pèse donc 26 171 octets ;
+l'installeur y ajoute un marqueur de 106 octets, soit **26 277 octets, 80,2 % du
 plafond**. C'est le pire cas — le catalogue entier, celui que la CI et
 `verifier_coffre.py` mesurent — et aucun `obsia.local.yml` ne peut y masquer un
-dépassement : un profil ne fait que raccourcir le catalogue. Les 25 589 octets
+dépassement : un profil ne fait que raccourcir le catalogue. Les 25 786 octets
 du `AGENTS.md` installé à la racine du coffre parent sont ce que Codex lit
-réellement ici, soit **78 %**.
+réellement ici, soit **78,7 %**.
 
-Deux choses font bouger le chiffre : le catalogue, qui grandit, et le chemin de
-la racine, que le prompt cite en tête — quelques octets de plus ou de moins
-selon la machine. La marge se réduit à chaque agent, skill ou tâche ajouté : un
-profil (`obsia.local.yml`) ne fait que raccourcir le prompt, mais sans profil
-c'est le catalogue entier qui part.
+**Une seule chose fait bouger le chiffre : le catalogue**, qui grandit. Le texte
+engendré ne porte plus aucun chemin absolu — les deux racines y sont désignées
+sans chemin, par le sous-dossier `OBSIA/` (§7.1) — donc deux postes, même à des
+chemins et sous des noms différents, obtiennent des `AGENTS.md` de taille
+**identique** : c'est ce qu'exige un fichier synchronisé entre eux. La marge se
+réduit à chaque agent, skill ou tâche ajouté : un profil (`obsia.local.yml`) ne
+fait que raccourcir le prompt, mais sans profil c'est le catalogue entier qui part.
 
 **Quand ça débordera, deux réponses, dans cet ordre :**
 
@@ -208,17 +211,18 @@ autrement et lu à la demande n'y est pas soumis.
 
 ## 6. Vérifier
 
-Les trois vérifications communes de `commun.md` d'abord : lister la racine du
+Les vérifications communes de `commun.md` d'abord (dont celle du secret) : lister la racine du
 coffre, lire une note de `Mon coffre/0-SAVOIRS/`, retrouver le registre des tags.
 ⚠️ écrire `./0-SAVOIRS`, jamais `0-SAVOIRS` nu.
 
 Puis trois gestes propres à cette fiche, chacun prouvant une chose différente :
 
 ```bash
-cd "$HOME/Mon coffre"
+COFFRE=/chemin/vers/le/coffre          # la racine du coffre, quel que soit son nom
+cd "$COFFRE"
 codex --ask-for-approval never "Résume les instructions que tu as chargées."
 codex mcp list
-wc -c AGENTS.md
+wc -c "$COFFRE/AGENTS.md"
 ```
 
 1. Codex doit **citer les règles du coffre**. S'il répond à côté, l'`AGENTS.md`
@@ -240,10 +244,11 @@ journal de session est activé.
 
 - **Rien n'a tourné.** Le statut en tête est « vérifié sur documentation », et
   cela ne se déduit pas d'un branchement qui a l'air de marcher.
-- **La mesure de taille est datée.** 26 080 octets le 2026-10-07, sur la racine
-  `Mon coffre/OBSIA`, catalogue entier (25 589 octets pour le fichier réellement
-  lu, profil appliqué). Elle vieillira, et son chemin la fait bouger de quelques
-  octets : la refaire avant de conclure.
+- **La mesure de taille est datée.** 26 277 octets le 2026-10-08, catalogue entier
+  (25 786 octets pour le fichier réellement lu, profil appliqué). Elle ne dépend
+  plus que du catalogue : le texte engendré ne porte aucun chemin absolu, deux
+  postes obtiennent donc la même taille. Elle vieillira quand même — la refaire
+  avant de conclure.
 - **Le format des agents personnalisés est assumé comme mouvant** par la
   documentation elle-même (« the format may evolve »). Le §4 est exact
   aujourd'hui ; ce n'est pas une promesse de stabilité.

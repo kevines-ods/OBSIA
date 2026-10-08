@@ -291,8 +291,12 @@ class TestOctets(BaseDepot):
         self.assertEqual(0, code)
 
     def test_un_fichier_latin1_garde_le_secret(self):
+        # Recollée à l'exécution : la ligne du test ne doit pas porter elle-même
+        # un secret affecté, sinon l'aperçu de publication la signale.
         self.poser_octets("0-PROJETS/note.md",
-                          b"caf\xe9\nmot de passe : " + JETON.encode("ascii") + b"\n")
+                          b"caf\xe9\n"
+                          + assemble("mot de passe", " : ", JETON).encode("ascii")
+                          + b"\n")
         code, _ = self.juger()
         self.assertEqual(1, code)
 
@@ -322,7 +326,7 @@ class TestSurUnDepot(BaseDepot):
             "MYSQL_ROOT_PASSWORD: change-root-password",
             "MYSQL_PASSWORD: change-user-password",
             "DB_PASSWORD=yourpassword",
-            "- Mot de passe : **`/root/.restic-exemple.pw`** (600)",
+            "- Mot de passe : **`%s`** (600)" % assemble("/root/.restic-", "exemple.pw"),
             "export RESTIC_PASSWORD_FILE=/root/.restic-exemple.pw",
         ]) + "\n"
         self.poser("0-PROJETS/labo.md", contenu)

@@ -32,7 +32,38 @@ Autrement dit, la cible d'installation désigne le dossier `OBSIA/` : `AGENTS.md
 atterrit un cran au-dessus, à la racine du coffre que l'agent ouvre. Les deux
 modes l'écrivent, chacun pour le coffre effectif — celui des deux qui reçoit
 l'installation. Son contenu est celui de `scripts/generer_prompt.py` : index,
-méthode, profil retenu. Il est précédé d'un marqueur « généré — ne pas éditer »,
+méthode, profil retenu. Il s'ouvre sur les **deux racines**, nommées : le coffre
+(parent du dépôt, là où vit la mémoire) et le dépôt `OBSIA/` (agents, skills,
+contrat). Un en-tête qui donnait le dépôt pour la racine du coffre a fait écrire
+un `0-SAVOIRS/` dans le dépôt de code, sous Goose et DeepSeek Harness.
+
+Les deux racines y sont désignées **sans aucun chemin** : le coffre est « le
+dossier qui contient le sous-dossier `OBSIA/` », et le dépôt « son sous-dossier
+`OBSIA/` ». Le texte engendré ne porte **aucun chemin absolu**, parce que
+l'`AGENTS.md` est synchronisé entre des postes où le coffre n'a ni le même chemin
+ni le même nom : un chemin de machine y serait faux partout ailleurs. Deux postes
+engendrent donc le même fichier, à l'octet près.
+
+Le repère n'est pas « le dossier qui contient ce fichier » : le texte se pose
+aussi **ailleurs** qu'à la racine du coffre — une copie annexée par un harness qui
+n'a pas de fichier à lire (`.pi/APPEND_SYSTEM.md`, espace de travail d'OpenClaw).
+Là, « ce fichier » désignerait le dossier d'accueil de la copie. Le sous-dossier
+`OBSIA/` est le repère qui tient partout.
+
+**Ce qui n'a pas de fichier doit recevoir la racine par l'appelant.** Pour un
+harness qui lit un répertoire de travail (Pi à la racine du coffre, OpenClaw dont
+`agents.defaults.workspace` pointe la racine), rien à faire : le repère se résout
+sur place. Pour un harness qui **colle** le prompt dans une fenêtre (LibreChat,
+DeepSeek Harness), la racine n'est plus dans le texte : elle s'écrit **une ligne,
+en tête des instructions du preset**, avant le texte engendré —
+`Coffre (la mémoire) : /chemin/vers/le/coffre` — ou l'agent passe par le serveur
+`coffre-parent` (`IA/MCP/coffre-parent.md`), monté sur la racine et qui la nomme
+lui-même dans la configuration du harness. Cette ligne vit hors du texte
+engendré, donc hors de la portée de sa relecture : c'est là qu'un chemin a sa
+place. Et aucun drapeau nouveau : `generer_prompt.py` n'a pas d'option pour
+inscrire un chemin, et il ne doit pas en avoir.
+
+Ce fichier est précédé d'un marqueur « généré — ne pas éditer »,
 et un `AGENTS.md` qui ne porte pas ce marqueur n'est **jamais** écrasé :
 avertissement, fichier intact, code de retour inchangé. Ce fichier vit **hors du
 dépôt** : il n'est ni versionné, ni concerné par `publier.py`, qui n'exporte que
@@ -177,6 +208,45 @@ pas de préfixe reconnaissable puisque c'est justement pourquoi elle se recopie
 telle quelle, et un nom d'hôte interne — `.lan`, `.local`, `.internal`,
 `.home.arpa`, `.ts.net`.
 
+Le contrôle ne regarde pas que des valeurs : il refuse aussi l'écriture d'un
+**chemin de la machine** — la racine du coffre parent et celle du dépôt, que le
+§13 interdit dans un fichier publié. Ces deux motifs ne s'écrivent pas dans la
+table des motifs : ils se construisent à la publication depuis la racine passée
+à `publier.py`, le dépôt publié et le dossier qui le contient. Ils ne portent
+donc que sur la machine qui publie, et disparaissent quand aucune racine n'est
+donnée — c'est ce qui permet de tester le contrôle sans dépendre du poste. Le
+dépôt dont il s'agit est le **clone principal**, retrouvé par `git` : lancé
+depuis un worktree, `publier.py` ne prendrait sinon pour coffre le dossier qui
+range les worktrees, et signalerait la documentation qui décrit ce rangement.
+
+Le chemin se reconnaît **écrit de toutes les façons**, parce que c'est écrit qui
+le fait fuir, pas la façon : `file:///…` — une URL de fichier, la forme que
+prend un chemin recopié d'un navigateur —, `//…`, et un chemin recomposé sous
+un point de montage, `…/montage/<racine>`. Le motif ne regarde donc pas ce qui
+précède. Deux exceptions, et deux seulement :
+
+- le **chemin d'une URL http(s)** reste muet : `https://exemple.fr/<racine>`
+  porte un chemin d'URL, pas une arborescence locale, et l'égalité serait une
+  coïncidence. Le silence vaut par **occurrence**, pas par ligne : partout
+  ailleurs sur la même ligne, le chemin est regardé — et c'est souvent là qu'il
+  fuit, écrit en `file://` ;
+- un **dossier de premier niveau** ne se pose pas comme motif. `/srv`, `/opt`,
+  `/mnt` : une installation y tient avec le dépôt posé directement dedans, et le
+  motif `/srv` se signalerait dans la moitié des textes qui parlent d'un serveur
+  ou d'un montage. Un contrôle qui crie à tort est un contrôle qu'on force sans
+  le lire — plutôt que de crier, il se taît. Le dépôt, lui, garde le sien : le
+  nom du dépôt dans `/srv` désigne bien quelque chose.
+
+C'est pour cette raison qu'aucun exemple de ce document n'écrit un chemin
+complet et vraisemblable : une installation réelle à cet endroit serait bloquée
+par le document qui explique la règle.
+
+La même machine s'écrit aussi en `~` : quand la racine est sous le home de qui
+publie, `~/…` est reconnu comme le chemin absolu. Un coffre qui *est* le home ne
+fait pas de `~` tout court un motif, et `~/autre` n'est pas le coffre. Un chemin
+**voisin** reste dehors : `…/coffre-notes`, `…-tests/OBSIA` ne sont pas la
+machine, le motif exige que le chemin s'arrête, pas qu'il commence pareil.
+
 Un **nom d'hôte nu** — un nom de machine sans domaine, le nom du dépôt privé —
 n'a aucune forme qui le trahisse : seul l'utilisateur sait que c'en est un. Il
 se déclare donc dans une **liste locale**, `~/.config/obsia/noms-interdits` (ou
@@ -218,9 +288,15 @@ régénération**, sur l'export final : les générateurs réécrivent les index
 sommaires, et c'est cet arbre-là qui partira — contrôler avant reviendrait à
 relire un état qui n'existe plus.
 
-`--forcer` passe outre les trouvailles, sauf deux : une clé privée, qui ne se
-révoque pas mais se remplace, et un jeton connu, qui se révoque — encore
-faut-il le faire avant qu'il ait servi. Pour les autres catégories, il publie,
+`--forcer` passe outre les trouvailles, sauf **quatre** : une clé privée, qui ne
+se révoque pas mais se remplace ; un jeton connu, qui se révoque — encore
+faut-il le faire avant qu'il ait servi ; et les deux **chemins de la machine**,
+la racine du coffre parent et celle du dépôt, qui ne sont pas des valeurs : un
+chemin ne se révoque pas, il se retire du fichier. Ces deux motifs ne sont pas
+écrits dans la table des motifs — ils naissent de la racine passée à la
+publication, le dépôt publié et le dossier qui le contient, et n'existent donc
+que sur la machine qui publie : absents quand aucune racine n'est donnée, ils ne
+font dépendre aucun test du poste. Pour les autres catégories, il publie,
 et **écrit la dérogation et ses catégories dans le message de commit** : une
 publication forcée qui ne laisse aucune trace est indiscernable d'une
 publication propre. S'en servir sans avoir lu la trouvaille, c'est se priver du
@@ -241,7 +317,10 @@ l'arbre. Le texte vient de l'entrée standard ; en vérification continue, GitHu
 le fournit par des variables d'environnement, et jamais en l'écrivant dans le
 script — une description de PR qu'on croit inoffensive suffirait, sinon, à y
 faire passer une commande. Les motifs, les régimes et `--forcer` sont ceux de
-l'arbre, à une réserve près : la liste locale des noms interdits peut manquer en
-CI, et le contrôle ne porte alors que sur les valeurs à forme reconnaissable.
+l'arbre, à deux réserves près : la liste locale des noms interdits peut manquer
+en CI, et le contrôle ne porte alors que sur les valeurs à forme
+reconnaissable ; et les **chemins de la machine**, construits depuis la racine
+publiée, n'y sont pas contrôlés du tout — un chemin absolu écrit dans une
+description de PR passe donc ce mode sans être vu.
 `--cible` n'est pas requis dans ce mode : il n'y a rien à copier, seulement un
 texte à juger.

@@ -153,25 +153,27 @@ dessous.
 Deux voies, selon le répertoire de lancement.
 
 **Voie A — lancer à la racine du coffre.** C'est la voie 1 du §7.6, celle qui
-rend le serveur `coffre-parent` inutile. Le cerveau se pose explicitement :
+rend le serveur `coffre-parent` inutile. L'`AGENTS.md` engendré se pose **à la
+racine du coffre** (`installer.chemin_agents` ; c'est `installer.py --appliquer`
+qui l'écrit, voir `IA/system/installation-et-publication.md`), et Pi charge celui
+du répertoire courant : il n'y a donc rien à annexer.
 
 ```bash
-cd "$HOME/Mon coffre/OBSIA"
-mkdir -p ../.pi
-python3 scripts/generer_prompt.py -o ../.pi/APPEND_SYSTEM.md
-cd ..
+cd "$HOME/Mon coffre"        # la racine du coffre — pas le dépôt, qui est en dessous
 pi
 ```
 
-Deux précisions qui décident du résultat :
+⚠️ **Ne pas annexer de seconde copie.** Un `generer_prompt.py -o
+.pi/APPEND_SYSTEM.md` ferait arriver le cerveau **deux fois**, et une copie
+oubliée par une installation précédente garde la parole en plus du vrai fichier.
+Après la bascule vers un en-tête sans chemin, supprimer le
+`.pi/APPEND_SYSTEM.md` resté en place. Si un jour il faut vraiment annexer — un
+harness qui ne lit aucun `AGENTS.md` — préférer `APPEND_SYSTEM.md`, qui
+**ajoute** au prompt par défaut ; `SYSTEM.md` le **remplace**, et remplacer
+supprime au passage ce que le harness dit à son modèle sur ses propres outils.
 
-- `APPEND_SYSTEM.md` **ajoute** au prompt par défaut ; `SYSTEM.md` le
-  **remplace**, et remplacer supprime au passage ce que le harness dit à son
-  modèle sur ses propres outils. Préférer la première forme, sauf raison
-  explicite ;
-- ces fichiers sont des ressources `.pi/` : ils dépendent de la confiance du
-  §1. `/trust` une fois en interactif, `--approve` dans tout lancement
-  automatisé.
+Ces fichiers restent des ressources `.pi/` : ils dépendent de la confiance du §1.
+`/trust` une fois en interactif, `--approve` dans tout lancement automatisé.
 
 **Voie B — lancer depuis le dépôt.**
 
@@ -197,7 +199,7 @@ généré une fois décrit le coffre tel qu'il était (§11).
 
 ## 6. Vérifier
 
-Les trois vérifications communes de `commun.md` d'abord : lister la racine du
+Les vérifications communes de `commun.md` d'abord (dont celle du secret) : lister la racine du
 coffre, lire une note de `Mon coffre/0-SAVOIRS/`, retrouver le registre des
 tags. ⚠️ écrire `./0-SAVOIRS`, jamais `0-SAVOIRS` nu.
 

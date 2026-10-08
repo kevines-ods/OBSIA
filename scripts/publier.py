@@ -149,7 +149,13 @@ TLD_RESERVES = (".test", ".example", ".invalid")
 #: reconnaissable, c'est une liste personnelle qui frappe des mots. Il est
 #: signalé en avertissement, pas bloqué — un avertissement n'a pas besoin de
 #: converger, un faux positif se corrige à la main sans perdre la publication.
-SANS_FORCAGE = ("clé privée", "jeton d'API")
+#:
+#: Le **chemin de la machine qui publie** en fait partie sans être une valeur :
+#: rien ne le révoque, et le publier nomme une arborescence privée (§13). Le
+#: corriger n'est pas un jugement à porter, c'est une évidence : sa place n'est
+#: pas dans l'export, donc il n'y a rien à forcer.
+SANS_FORCAGE = ("clé privée", "jeton d'API",
+                "chemin du coffre", "chemin du dépôt")
 
 #: La liste locale des noms interdits — noms d'hôtes, nom du dépôt privé, tout
 #: ce qui désigne l'infrastructure sans avoir de forme reconnaissable. Elle vit
@@ -193,6 +199,23 @@ def courriel_admis(adresse: str) -> bool:
                for reserve in DOMAINES_RESERVES)
 
 
+#: Une option qui reçoit un **chemin** de fichier de mot de passe, pas le mot de
+#: passe lui-même : `--password-file=/chemin/vers/motdepasse.txt`, ou la même
+#: forme séparée par une espace. Le nom de l'option le dit — `file`, `fichier`,
+#: `path` — et il commence par un tiret : c'est une option de commande, pas une
+#: variable qui porterait le secret. La documentation conseille cette forme ;
+#: sans l'exception, toute fiche qui la montre se signale comme une fuite, et un
+#: contrôle qui crie à tort finit par être forcé sans être lu.
+MOTIF_OPTION_DE_FICHIER = re.compile(
+    r"(?i)^--?[\w-]*(?:file|fichier|path)[\w-]*$")
+
+
+def option_de_fichier(extrait: str) -> bool:
+    """`--password-file=…` désigne un fichier, pas un mot de passe."""
+    nom = re.split(r"[=:]|\s", extrait.strip(), maxsplit=1)[0]
+    return bool(MOTIF_OPTION_DE_FICHIER.match(nom))
+
+
 def charger_noms_interdits(chemin: Path = None) -> tuple[list, list]:
     """Rend (noms retenus, noms écartés car trop courts). Sans fichier : rien."""
     chemin = chemin or NOMS_INTERDITS
@@ -218,6 +241,97 @@ def motif_des_noms(noms) -> "re.Pattern | None":
     return re.compile(r"(?i)(?<![\w-])(?:%s)(?![\w-])" % alternance)
 
 
+#: Les échappements d'un littéral collent un mot devant le chemin : dans un test,
+#: le chemin s'écrit `"…\n/home/moi/coffre\n…"`, et le `/` y suit alors un
+#: `n`. Le motif aurait beau jeu d'écarter les sous-chaînes : ce chemin-là est
+#: bel et bien dans le fichier, et c'est lui qu'on cherche. On desserre avant de
+#: chercher.
+ECHAPPEMENTS = re.compile(r"\\[nrtvfb'\"\\]")
+
+
+def desserrer(ligne: str) -> str:
+    """Remplace un échappement de littéral par une espace, pour la recherche."""
+    return ECHAPPEMENTS.sub(" ", ligne)
+
+
+#: Les deux schémas dont le chemin n'est pas une arborescence locale.
+SCHEMES_WEB = ("http://", "https://")
+
+
+def dans_une_url_web(ligne: str, position: int) -> bool:
+    """Vrai si le chemin qui commence à `position` est celui d'une URL http(s).
+
+    `https://exemple.fr/srv/…` porte un chemin d'URL, pas un chemin de fichier :
+    l'égalité avec la racine de la machine serait une coïncidence, et refuser une
+    URL écrite à la main n'apprendrait rien à personne. Le silence vaut par
+    **occurrence**, pas par ligne : une seconde plus loin, hors de l'URL, le
+    chemin est de nouveau regardé — et c'est souvent celle-là qui fuit.
+
+    `file://` n'est pas dans la liste, et c'est voulu : une URL de fichier
+    désigne bien une arborescence locale — c'est même la forme la plus probable
+    d'une fuite recopiée depuis un navigateur.
+    """
+    avant = ligne[:position]
+    debut = max(avant.rfind(schema) for schema in SCHEMES_WEB)
+    if debut < 0:
+        return False
+    return not re.search(r"\s", avant[debut:])
+
+
+def formes_du_chemin(chemin: Path, maison: Path) -> list:
+    """Les écritures équivalentes d'un chemin : absolue, et `~/…` sous le home.
+
+    Un dossier de premier niveau ne désigne personne. `/srv`, `/opt`, `/mnt` :
+    une installation y tient avec le dépôt posé directement dedans, et le motif
+    `/srv` se signalerait dans la moitié des textes qui parlent d'un serveur ou
+    d'un montage. Un contrôle qui crie à tort est un contrôle qu'on force sans le
+    lire : plutôt que de crier, on se taît.
+
+    Le home est un paramètre, pas `Path.home()` : les deux formes dépendent de la
+    machine, et un test doit pouvoir les poser à la main.
+    """
+    if len(chemin.parts) <= 2:          # `/` et `/srv` : rien à reconnaître
+        return []
+    formes = [str(chemin).rstrip("/")]
+    if chemin != maison and maison in chemin.parents:
+        relatif = chemin.relative_to(maison).as_posix()
+        if relatif:                     # le home lui-même ne fait pas `~`
+            formes.append("~/" + relatif)
+    return formes
+
+
+def motifs_de_machine(source: Path, maison: Path = None) -> list:
+    """Les chemins absolus de la machine qui publie : le dépôt, et son coffre.
+
+    Un chemin de machine dans un fichier exporté nomme une arborescence privée —
+    et il est faux partout ailleurs (§13). Les motifs de `BLOQUANTS` ne peuvent
+    pas le reconnaître : il dépend de la machine. D'où ce second motif, construit
+    à partir de la source, et **vide** quand on ne la lui donne pas : le contrôle
+    ne doit pas dépendre de la machine qui le lance, sans quoi un test passerait
+    ici et échouerait là.
+
+    Le chemin se compare **entier** : `/home/moi/coffre-notes` n'est pas le coffre,
+    et `/home/moi/coffre/OBSIA-tests` n'est pas le dépôt. Il se compare aussi
+    **sans regarder ce qui le précède** : `file://`, `//…`, `…/backup/…` sont des
+    façons de l'écrire, pas des raisons de le laisser passer. Le coffre parent
+    vient en second, et la comparaison s'arrête à la première : une ligne qui
+    porte le dépôt porte aussi son préfixe, et le rapport doit dire lequel des
+    deux c'est.
+    """
+    racine = Path(source).resolve()
+    maison = Path(maison) if maison is not None else Path.home()
+    motifs = []
+    for etiquette, chemin in (("chemin du dépôt", racine),
+                              ("chemin du coffre", racine.parent)):
+        formes = formes_du_chemin(chemin, maison)
+        if not formes:
+            continue
+        motif = re.compile(r"(?:%s)(?![\w-])"
+                           % "|".join(re.escape(forme) for forme in formes))
+        motifs.append((etiquette, motif))
+    return motifs
+
+
 class Controle(NamedTuple):
     """Ce que le contrôle a vu — et ce qu'il n'a pas pu relire.
 
@@ -238,13 +352,17 @@ class Controle(NamedTuple):
     avertissements: list
 
 
-def _balayer(lignes, chemin, trouvailles, avertissements, motif_noms=None) -> None:
+def _balayer(lignes, chemin, trouvailles, avertissements, motif_noms=None,
+             motifs_machine=()) -> None:
     """Passe des lignes au crible des motifs, et verse ce qu'il y voit.
 
     Partagé par `controler_fuites` (un arbre de fichiers) et `controler_texte`
     (le titre et la description d'une pull request) : la règle qui décide ce qui
     fuit ne doit exister qu'une fois. `chemin` est ce qui s'imprime à gauche de
     `:ligne` — un chemin relatif, ou le nom de la source textuelle.
+
+    `motifs_machine` est vide par défaut : ces motifs-là dépendent de la machine
+    (`motifs_de_machine`), et le contrôle de texte libre n'a pas à les recevoir.
     """
     for numero, ligne in enumerate(lignes, 1):
         for etiquette, motif in BLOQUANTS:
@@ -254,7 +372,21 @@ def _balayer(lignes, chemin, trouvailles, avertissements, motif_noms=None) -> No
             extrait = trouve.group(0)
             if etiquette == "adresse de courriel" and courriel_admis(extrait):
                 continue
+            if etiquette == "secret affecté" and option_de_fichier(extrait):
+                continue
             trouvailles.append((chemin, numero, etiquette, ligne.strip()[:110]))
+        if motifs_machine:
+            # Desserrée une fois, et cherchée telle quelle : la position rendue
+            # sert à regarder ce qui précède, et ne doit pas se décaler.
+            # Chaque occurrence est jugée : une première dans le chemin d'une URL
+            # muette ne doit pas blanchir la seconde, écrite en `file://`.
+            desseree = desserrer(ligne)
+            for etiquette, motif in motifs_machine:
+                if all(dans_une_url_web(desseree, trouve.start())
+                       for trouve in motif.finditer(desseree)):
+                    continue
+                trouvailles.append((chemin, numero, etiquette, ligne.strip()[:110]))
+                break
         if motif_noms:
             trouve = motif_noms.search(ligne)
             if trouve:
@@ -277,14 +409,44 @@ def controler_texte(texte: str, noms_interdits=(), etiquette="texte") -> Control
     return Controle(trouvailles, [], 1 if texte.strip() else 0, avertissements)
 
 
-def controler_fuites(racine: Path, noms_interdits=()) -> Controle:
+def depot_reel(source: Path) -> Path:
+    """Le clone principal du dépôt, même quand on lance depuis un worktree.
+
+    Les motifs de machine nomment le coffre **de cette machine** : c'est le clone
+    principal qu'il faut lire, pas le dossier d'où l'on parle. Un worktree vit
+    ailleurs — `~/obsia-worktrees/<nom-agent>-<sujet>` — et son dossier parent
+    n'est pas le coffre : c'est un hangar à worktrees, dont le nom se lit dans la
+    documentation du dépôt. Prendre ce parent pour le coffre ferait signaler
+    cette documentation à chaque aperçu lancé depuis un worktree, et la
+    publication y resterait bloquée — un chemin de machine ne se force pas.
+    """
+    commun = Path(git(source, "rev-parse", "--git-common-dir").strip())
+    if not commun.is_absolute():
+        commun = source / commun
+    return commun.resolve().parent
+
+
+def controler_fuites(racine: Path, noms_interdits=(), machine: Path = None,
+                     maison: Path = None) -> Controle:
     """Relit tout l'arbre exporté, et dit aussi ce qu'il n'a pas pu relire.
 
     `noms_interdits` vient de la liste locale (`charger_noms_interdits`) ; par
     défaut vide, pour que le contrôle ne dépende pas de la machine qui le lance.
+
+    `machine` est la racine du dépôt **de la machine qui publie** — le clone
+    principal, que `depot_reel` retrouve même depuis un worktree : le contrôle en
+    déduit ses deux chemins absolus — le dépôt, et son parent, le coffre — et
+    refuse de les publier (§13). Absent, ces deux chemins ne sont pas contrôlés,
+    par la même règle que `noms_interdits` : un contrôle qui dépendrait de la
+    machine qui le lance passerait ici et échouerait là.
+
+    `maison` est le home de cette machine, et ne sert qu'à une chose : reconnaître
+    la forme `~/…` du même chemin. Absent, `Path.home()` — ce qui suffit à la
+    publication, mais rendrait un test dépendant du poste, d'où le paramètre.
     """
     trouvailles, avertissements, non_relus, relus = [], [], [], 0
     motif_noms = motif_des_noms(noms_interdits)
+    motifs_machine = motifs_de_machine(machine, maison) if machine else ()
     for chemin in sorted(racine.rglob("*")):
         if not chemin.is_file() or chemin.is_symlink():
             continue
@@ -304,7 +466,7 @@ def controler_fuites(racine: Path, noms_interdits=()) -> Controle:
             continue
         relus += 1
         _balayer(texte.splitlines(), str(rel), trouvailles, avertissements,
-                 motif_noms)
+                 motif_noms, motifs_machine)
     return Controle(trouvailles, non_relus, relus, avertissements)
 
 
@@ -511,7 +673,9 @@ def controler_le_texte(forcer: bool = False) -> int:
     paraissent sur le dépôt public avant que `publier.py` n'ait vu un seul
     fichier de l'export, et le contrôle d'arbre ne les lit donc jamais. Le même
     sens de `--forcer` s'applique — une clé privée se remplace, un jeton connu se
-    révoque, aucun des deux ne se force.
+    révoque, aucun des deux ne se force. Les chemins de la machine, eux, ne
+    peuvent pas se signaler ici : aucune racine n'est donnée, donc aucun chemin
+    n'est connu de ce mode.
     """
     texte = sys.stdin.read()
     noms, _ = charger_noms_interdits()
@@ -560,8 +724,8 @@ def main() -> int:
                          "documentation vers ce dépôt")
     ap.add_argument("--forcer", action="store_true",
                     help="publie malgré les trouvailles du contrôle de fuite — "
-                         "sauf une clé privée ou un jeton connu, qui ne se "
-                         "forcent pas")
+                         "sauf une clé privée, un jeton connu, ou un chemin de "
+                         "la machine : ceux-là ne se forcent pas")
     ap.add_argument("--autoriser-modifications", action="store_true",
                     help="publie depuis un arbre de travail sale (HEAD reste la source)")
     args = ap.parse_args()
@@ -626,7 +790,7 @@ def main() -> int:
         print("  Liste locale des noms interdits : %s"
               % ("%d nom(s)" % len(noms) if noms else "absente ou vide — "
                  "noms d'hôtes nus non contrôlés (%s)" % NOMS_INTERDITS))
-        controle = controler_fuites(export, noms)
+        controle = controler_fuites(export, noms, depot_reel(source))
         if controle.avertissements:
             for rel, numero, etiquette, ligne in controle.avertissements:
                 print("  ⚠ %s:%d  [%s]" % (rel, numero, etiquette))
@@ -661,8 +825,9 @@ def main() -> int:
             if interdites:
                 print("  --forcer ne s'applique pas ici : %s."
                       % ", ".join(interdites), file=sys.stderr)
-                print("  Une clé privée se remplace, un jeton connu se révoque — "
-                      "avant de publier, pas après.", file=sys.stderr)
+                print("  Une clé privée se remplace, un jeton connu se révoque, un "
+                      "chemin de machine se retire — avant de publier, pas après.",
+                      file=sys.stderr)
                 return 1
             if not args.forcer:
                 print("  Corriger la source, ou passer --forcer si c'est un "

@@ -524,6 +524,10 @@ def contenu_agents(prompt: str) -> str:
 def chemin_agents(coffre: Path) -> Path:
     """AGENTS.md se pose **à côté** du coffre, jamais dedans.
 
+    Le paramètre porte le dépôt `OBSIA/` ; le coffre, lui, est son **parent**
+    (§7.1) — c'est là que vit la mémoire, et l'en-tête du prompt les nomme tous
+    les deux. Les deux racines ne sont pas interchangeables.
+
     Les harness lisent le fichier de consignes du dépôt dans lequel ils
     s'ouvrent — une fiche par harness dans `IA/system/adaptateurs-harness/` — et
     ce dépôt n'est pas le coffre : OBSIA est un catalogue qu'on lit, pas un

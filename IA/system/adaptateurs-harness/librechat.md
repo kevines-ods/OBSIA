@@ -85,6 +85,27 @@ Générer le prompt et le donner comme instructions du preset ou de l'agent :
 python3 scripts/generer_prompt.py -o prompt-systeme.md
 ```
 
+Le texte engendré ne porte **aucun chemin absolu** : il est synchronisé entre des
+postes où le coffre n'a ni le même chemin ni le même nom, et il désigne la racine
+par son sous-dossier `OBSIA/`. Ici, rien n'est lu dans un répertoire de travail :
+**c'est donc à l'appelant de nommer la racine.** Une ligne, en tête des
+instructions du preset, avant le texte engendré :
+
+```
+Coffre (la mémoire) : /chemin/vers/le/coffre
+```
+
+Elle vit hors du texte engendré, donc hors de la portée de la relecture de
+l'`AGENTS.md` : c'est précisément là qu'un chemin a sa place. Pas d'option
+nouvelle pour autant — `generer_prompt.py` n'a pas de drapeau pour cela, et il ne
+doit pas en avoir : un chemin écrit à l'engendrement serait faux sur le poste
+voisin.
+
+L'autre voie, sans aucun chemin dans le prompt : brancher le serveur
+**`coffre-parent`** (§3), monté sur la racine du coffre. Il la nomme lui-même
+dans la configuration du harness — le chemin fictif de `IA/MCP/mcp.example.json`
+y est remplacé par le chemin réel — et l'agent n'a plus à la deviner.
+
 ## 6. Vérifier
 
 Les serveurs sont initialisés **au démarrage de l'application** : un

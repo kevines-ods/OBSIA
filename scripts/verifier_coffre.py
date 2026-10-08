@@ -26,6 +26,10 @@ Chacun de ces cas sort en 1 :
   · un `AGENTS.md` écrit au-delà du plafond total de Codex (32 Kio, fichier
     global compris) : le surplus est laissé de côté, et l'agent perd des
     déclarations entières sans que rien ne le dise ;
+  · un `AGENTS.md` engendré qui porterait un chemin absolu de machine : le fichier
+    est synchronisé entre des postes où le coffre n'a ni le même chemin ni le même
+    nom, et un `/srv/…` y est faux « partout ailleurs » — la racine se désigne par
+    son sous-dossier `OBSIA/`, jamais par un chemin ;
   · une déclaration sans `module`, ou visant un module inexistant (§13) ;
   · une annexe du contrat (`IA/system/contrat/*.md`, sauf `registre.md`) au
     frontmatter invalide — `kind` autre que `contract`, `schema` non entier,
@@ -139,8 +143,9 @@ sys.dont_write_bytecode = True
 SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS))
 
-from generer_prompt import (RACINE_DEFAUT, fichiers_declaratifs,
-                            lire_frontmatter, prompt_du_coffre)
+from generer_prompt import (RACINE_DEFAUT, chemins_absolus,
+                            fichiers_declaratifs, lire_frontmatter,
+                            prompt_du_coffre)
 from installer import contenu_agents
 import modules as MOD
 
@@ -1411,6 +1416,37 @@ def verifier_taille_du_fichier_agents():
                    TAILLE_FICHIER_AGENTS_AVERTISSEMENT, TAILLE_FICHIER_AGENTS_ERREUR))
 
 
+def verifier_chemins_du_prompt():
+    """Le prompt engendré ne doit porter aucun chemin absolu de machine.
+
+    L'`AGENTS.md` est synchronisé (Syncthing) entre des postes où le coffre n'a ni
+    le même chemin ni le même nom : un `/srv/…` écrit ici est faux là-bas, et rien
+    ne le dit — l'agent cherche un dossier qui n'existe pas. Le fichier posé est
+    engendré du catalogue : un chemin peut donc entrer par la description d'un
+    agent, d'un skill ou d'une tâche, et pas seulement par l'en-tête. On contrôle
+    le prompt réel du catalogue, celui que la CI engendre et que l'installeur
+    écrit, marqueur compris.
+
+    Le motif vient du générateur (`generer_prompt.chemins_absolus`) : c'est lui qui
+    promet ce texte, et deux copies du motif finiraient par diverger.
+    """
+    with contextlib.redirect_stderr(io.StringIO()):
+        prompt = prompt_du_coffre(RACINE, sans_profil=True)
+    if prompt is None:
+        return                                   # coffre vide : rien à contrôler
+    fautives = chemins_absolus(contenu_agents(prompt))
+    if not fautives:
+        return
+    montre = " | ".join(ligne.strip()[:120] for ligne in fautives[:5])
+    suite = "" if len(fautives) <= 5 else " (+%d autre(s))" % (len(fautives) - 5)
+    erreur("AGENTS.md",
+           "le prompt engendré porte %d chemin(s) absolu(s) de machine%s : %s — "
+           "le fichier est synchronisé entre des postes où le coffre n'a ni le "
+           "même chemin ni le même nom ; désigner la racine par son sous-dossier "
+           "OBSIA/, ou par le dossier qui le contient"
+           % (len(fautives), suite, montre))
+
+
 # ----------------------------------------------------------------------- main
 
 AIDE = """\
@@ -1520,6 +1556,7 @@ def main(argv=None) -> int:
         verifier_depot_de_donnees()
     verifier_derives()
     verifier_taille_du_fichier_agents()
+    verifier_chemins_du_prompt()
 
     if avertissements and not silencieux:
         print("Avertissements (%d) :" % len(avertissements))
