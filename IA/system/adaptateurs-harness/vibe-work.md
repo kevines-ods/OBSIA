@@ -41,11 +41,8 @@ possible. Le skill `configuration-mcp`
 (`../../skills/configuration-mcp.md`) doit s'arrêter ici : pas de bloc stdio,
 pas de bloc HTTP, pas de chemin à remplir.
 
-> **Vibe Code CLI n'est pas couvert ici.** C'est un autre produit : un agent
-> en ligne de commande, avec un dossier de travail — il lit donc `AGENTS.md`,
-> et déclare ses serveurs MCP dans un `config.toml` (`[[mcp_servers]]`). Voir
-> la documentation officielle : <https://docs.mistral.ai/vibe/code/cli/agents>
-> et <https://docs.mistral.ai/vibe/code/cli/mcp-servers>. Fiche à venir.
+> **Vibe Code CLI n'est pas couvert ici** : autre produit, autre fiche —
+> [`vibe-code-cli.md`](vibe-code-cli.md).
 
 Ce qui remplace le bloc, c'est le support du coffre parent. Trois ponts, du
 plus automatisé au plus simple :

@@ -1,10 +1,17 @@
 #!/bin/sh
 # Régénère les sommaires de la mémoire du coffre parent (§11), qui ne sont pas
-# versionnés dans ce dépôt. Silencieux, et jamais bloquant : un sommaire absent
-# ou périmé gêne la lecture, il ne casse rien. Sans coffre parent (clone nu,
-# CI), le script n'a rien à résumer et sort sans bruit.
+# versionnés dans ce dépôt. Jamais bloquant, et muet quand tout va bien : un
+# sommaire absent ou périmé gêne la lecture, il ne casse rien. Sans coffre parent
+# (clone nu, CI), le script n'a rien à résumer et sort sans bruit.
+#
+# L'AGENTS.md du coffre parent n'est PAS rafraîchi ici : ce crochet passe aussi
+# en changeant pour une branche non fusionnée, et l'agrément écrit dans l'arbre
+# principal partagé serait alors celui d'un travail en cours. Seule une fusion
+# fait autorité — c'est `post-merge` qui s'en charge.
 racine=$(git rev-parse --show-toplevel) || exit 0
 [ -f "$racine/scripts/regenerate_sommaire.py" ] || exit 0
 command -v python3 >/dev/null 2>&1 || exit 0
-( cd "$racine" && python3 scripts/regenerate_sommaire.py >/dev/null 2>&1 ) || true
+if ! ( cd "$racine" && python3 scripts/regenerate_sommaire.py >/dev/null ); then
+    echo "post-checkout : les sommaires du coffre n'ont pas pu être régénérés" >&2
+fi
 exit 0

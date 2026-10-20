@@ -2,17 +2,39 @@
 schema: 1
 kind: contract
 name: contrat-distribution
-description: Détail des modules, de l'installation et de la publication : modules, sondes, profil, deux modes, public et privé, contrôle de fuite.
+description: Cas où l'on peut nommer un harness ; détail des modules, de l'installation et de la publication : modules, sondes, profil, deux modes, public et privé, contrôle de fuite.
 module: noyau
 ---
 
 # Annexe du contrat — distribution
 
-> **À lire avant d'installer, de publier ou de synchroniser ; de toucher `installer.py` ou `publier.py` ; d'écrire un module ou une sonde ; d'écrire un skill qui charge le skill d'un autre module ; d'écrire dans un fichier publié un chemin vers une zone non publiée.** Annexe du contrat (`../VAULT-CONTRACT.md`).
+> **À lire avant de nommer un harness dans un fichier du dépôt ; d'installer, de publier ou de synchroniser ; de toucher `installer.py` ou `publier.py` ; d'écrire un module ou une sonde ; d'écrire un skill qui charge le skill d'un autre module ; d'écrire dans un fichier publié un chemin vers une zone non publiée.** Annexe du contrat (`../VAULT-CONTRACT.md`).
 > Elle précise, elle n'ajoute aucune règle : toute règle qu'on peut enfreindre
 > sans avoir rien chargé est aussi au noyau, et en cas de contradiction le
 > noyau fait foi — l'annexe est alors à corriger. La correspondance avec l'ancien
 > contrat est suivie dans `registre.md`, document de travail non normatif.
+
+## 3. Nommer un harness — les cas permis
+
+Le noyau (§3) interdit de **se soumettre** à un harness, pas de le nommer. La
+permission tient à la **nature** du propos, non à un nom de fichier. Nomment un
+harness, sans rien conditionner, notamment :
+
+- une **limite mesurée, tenue pour garde** — par exemple le plafond de taille de
+  l'`AGENTS.md` engendré, contrôlé par le vérificateur ;
+- une **leçon mesurée, rappelée en commentaire** ;
+- un **exemple illustratif** dans une règle générique ;
+- une **référence d'installation nécessaire** — renvoyer à la façon de poser le
+  coffre pour ce harness ;
+- une **note de provenance « adaptation assumée »** — dire d'où vient un fichier
+  n'est pas s'y lier ;
+- la **documentation d'installation et de publication** ;
+- les **fiches `adaptateurs-harness`** et la liste de noms qu'elles tiennent,
+  dont c'est l'objet même.
+
+La liste n'est pas close : d'autres cas bénins existent. Ce qui tranche est
+l'**objet** — nommer pour décrire, illustrer, mesurer ou installer, jamais pour
+conditionner.
 
 ## 13. Modules, installation et publication
 
@@ -151,9 +173,22 @@ dérive la seconde de la première, et refuse de publier ce qu'il ne sait pas
 relire. Il exporte l'arbre suivi par Git à `HEAD` — jamais le répertoire de
 travail, parce que ce qui n'est pas suivi n'a pas été relu —, vide
 `IA/system/session-log/`, `brouillon/` et `.archive/` de tout sauf leurs
-`README.md` (et, tant qu'il est là, l'ancien `mémoire/`), régénère, vérifie,
-passe un contrôle de fuite sur l'export final, et n'écrit dans la cible qu'avec
-`--appliquer`. Il ne pousse jamais.
+`README.md` (et, tant qu'il est là, l'ancien `mémoire/`), écarte les fichiers
+déclarés non publiés, régénère, vérifie, passe un contrôle de fuite sur
+l'export final, et n'écrit dans la cible qu'avec `--appliquer`. Il ne pousse
+jamais.
+
+**Un fichier suivi peut être privé.** Les zones vidées ne sont pas le seul
+retrait : un fichier suivi peut décrire une situation personnelle — le
+déploiement embarqué pour la machine de quelqu'un — et il est alors écarté de
+l'export, nommément, dans `publier.py`. L'exclure par module ne convient pas :
+le module regroupe ce qui n'a de sens qu'ensemble, et il porte aussi ce qui
+se publie. Par profil non plus : il ne filtre que l'installation (§13.3). Le
+retrait a lieu avant la régénération, et c'est ce qui tient le public
+cohérent : les index n'y citent que ce qui part, et `verifier_coffre.py`
+refuserait au public un chemin vers un fichier absent. Le dépôt privé, lui,
+garde le fichier et l'index complet : la décision de ne pas publier n'est pas
+une suppression.
 
 **`synchroniser` refuse quatre cibles** avant d'exporter quoi que ce soit —
 jamais la source ni ce qui la contient, jamais un coffre vivant, jamais un

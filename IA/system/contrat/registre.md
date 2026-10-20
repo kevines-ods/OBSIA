@@ -59,10 +59,10 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | 2.3 | Tout le reste du dépôt passe par un patch Git revu. | N |
 | 2.4 | Aucune suppression sans archivage : pour la mémoire, **l'historique Git du dépôt de données tient lieu d'archive** ; pour le reste du dépôt produit, un fichier retiré part dans `.archive/`, qui reste **versionné** (jamais ignoré par Git). Rien de `.archive/` n'est lu ni indexé ; les dossiers commençant par un point sont écartés partout. | N |
 | 2.5 | Le pourquoi de `.archive/` versionné (sinon il ne survit pas à un clone neuf). | A·verification |
-| 2.6 | Un aperçu listant les chemins, avant toute action qui touche plusieurs fichiers. | N |
+| 2.6 | Un aperçu listant les chemins, avant toute action qui touche plusieurs fichiers — hors l'écriture portée par un outil déclaré en MCP, pour un harnais pilotant un modèle local, à condition que chaque acte forme un commit annulable (§7.4). | N |
 | 2.7 | Les fichiers générés ne s'éditent jamais à la main. La liste : `sommaire.md`, `agents-index.md`, `skills-index.md`, `taches-index.md`, `modules-index.md`, `IA/README.md`. | N (liste complète gardée, M10) |
 | 2.8 | Hors du dépôt : un dépôt extérieur suit le §3, le coffre parent le §7. | N |
-| 2.9 | Plusieurs agents (§2.1) : jamais de commit dans l'arbre principal ; un worktree par séance ; branche `<nom-agent>/<sujet>` ; ne pas toucher la branche ni le worktree d'un autre agent ; se resynchroniser avant de pousser. | N |
+| 2.9 | Plusieurs agents (§2.1) : jamais de commit dans l'arbre principal du dépôt produit ; un worktree par séance ; branche `<nom-agent>/<sujet>` ; ne pas toucher la branche ni le worktree d'un autre agent ; se resynchroniser avant de pousser. | N |
 | 2.9b | Jamais de worktree sous `/tmp` ; une PR s'ouvre sur la branche par défaut, jamais sur la branche d'une autre PR. | N (ajoutés en N2, déjà décidés dans `travail-en-parallele.md`) |
 | 2.10 | Pourquoi l'arbre principal est une ressource commune, et le crochet de pré-commit. | A·verification ; renvoi à `travail-en-parallele.md` gardé au noyau |
 
@@ -70,7 +70,7 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 
 | # | Règle | Dest. |
 | --- | --- | --- |
-| 3.1 | Le coffre ne nomme aucun harness ni aucune base de code extérieure. | N |
+| 3.1 | Le coffre ne dépend d'aucun harness et n'en impose aucun, ni aucune base de code extérieure ; nommer un harness est légitime, mais aucun nom ni comportement propre à un harness ne conditionne le fonctionnement des règles que le coffre applique à la mémoire, des consignes de ses agents ni de celles de ses skills — la permission tient à la nature du propos (limite mesurée, illustration, installation, provenance), non à un nom de fichier, et la liste n'est pas close. | N ; les cas permis et leurs réserves (nature du propos, liste non close) A·distribution |
 | 3.2 | Sur un dépôt extérieur : patch Git revu, jamais de commit sur la branche par défaut. | N |
 | 3.3 | Les vérifications du projet passent avant de proposer le patch. | N |
 | 3.4 | Jamais de secret dans le code : variables d'environnement ou configuration hors dépôt. | N |
@@ -89,33 +89,33 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 
 | # | Règle | Dest. |
 | --- | --- | --- |
-| 5.1 | Tout agent, skill, MCP, tâche, module **et fichier du contrat** commence par un frontmatter valide. Les champs communs sont `schema`, `kind`, `name`, `description`, `read_only` et `module`. **Exceptions** : un MCP n'a ni `read_only` ni `skills` ; une tâche et un fichier du contrat n'ont pas de `read_only`. | N (exceptions gardées au noyau, A5) |
+| 5.1 | Tout agent, skill, MCP, tâche, module **et fichier du contrat** commence par un frontmatter valide. Les champs communs sont `schema`, `kind`, `name`, `description`, `read_only` et `module`. **Exceptions** : un MCP n'a ni `read_only` ni `skills` ; une tâche et un fichier du contrat n'ont pas de `read_only`. | N pour l'obligation d'un frontmatter valide avec son module ; champs communs et exceptions A·frontmatter (2026-10-10) |
 | 5.2 | Tableaux détaillés des champs par type (agents, skills, MCP, tâches), sémantique de `read_only`. | A·frontmatter |
 | 5.3 | `read_only: true` : aucune écriture nulle part, même par patch. | N (déjà au 2.1) |
-| 5.4 | `name` = nom du fichier, en minuscules avec tirets, sans espaces ; jamais `SKILL.md`. | N |
-| 5.5 | Les listes YAML s'écrivent une entrée par ligne ; les clés prennent un underscore ; un champ du frontmatter ne se répète pas dans le corps. | N (A3) |
+| 5.4 | `name` = nom du fichier, en minuscules avec tirets, sans espaces ; jamais `SKILL.md`. | A·frontmatter (contrôlé par le vérificateur, 2026-10-10) |
+| 5.5 | Les listes YAML s'écrivent une entrée par ligne ; les clés prennent un underscore ; un champ du frontmatter ne se répète pas dans le corps. | A·frontmatter (contrôlé par le vérificateur, 2026-10-10) |
 | 5.6 | **Une information vit à un seul endroit.** Une règle violable sans rien charger va au contrat ; une procédure va dans un skill. | N |
 | 5.7 | MCP : `permission: elevated` dès qu'un système externe est touché. Un MCP n'est utilisable que s'il est déclaré par un agent. | N |
-| 5.8 | Tâches : `quand` entre guillemets, `fuseau` obligatoire, `exécutant` dit qui a le droit de déclencher (`local` ou `harness`), une section `## Instruction` ou `## Commande` obligatoire. | N (A3) ; tableau détaillé A·frontmatter |
-| 5.9 | Un skill a une forme plate (`<nom>.md`) ou dossier (`<nom>/<nom>.md`) ; seul `references/` contient des notes. | N (A3) ; quand passer d'une forme à l'autre : A·frontmatter |
+| 5.8 | Tâches : `quand` entre guillemets, `fuseau` obligatoire, `exécutant` dit qui a le droit de déclencher (`local` ou `harness`), une section `## Instruction` ou `## Commande` obligatoire. | A·frontmatter et A·taches (2026-10-10) |
+| 5.9 | Un skill a une forme plate (`<nom>.md`) ou dossier (`<nom>/<nom>.md`) ; seul `references/` contient des notes. | A·frontmatter (2026-10-10) |
 
 ## §6 Nommage et mémoire
 
 | # | Règle | Dest. |
 | --- | --- | --- |
 | 6.1 | Les noms de notes sont uniques dans tout le coffre parent. | N |
-| 6.2 | Liens vers le contrat en chemin relatif, profondeur selon la forme du skill. | N (au §5, revue N2) ; le vérificateur : A·memoire |
+| 6.2 | Liens vers le contrat en chemin relatif, profondeur selon la forme du skill. | A·memoire (chemin relatif selon la forme, 2026-10-10) |
 | 6.3 | Arborescence de la mémoire du coffre parent (`0-PROJETS/`, `0-MEMOIRES/` — préférences et `<nom-agent>/expériences/`, **vivantes**, et chantiers clos **gelés** —, `0-PERSONNELS/` : profil ; projets avec résumé, vision, carnets du jour, documents ; **un dossier par chantier** portant ses `carnets/`, ses `documents/` et son résumé, un seul niveau ; plus de dossier `archives/`). | A·memoire (l'arbre est dans l'annexe ; le noyau garde, en une phrase, l'axe de partage de la mémoire) |
 | 6.4 | Tableau « où écrire selon la nature de l'information ». | A·memoire (le noyau renvoie à l'annexe) |
 | 6.5 | Profil, préférences et expériences ne se datent pas ; seuls les carnets portent une date. Dans le doute, on écrit dans le carnet. | N |
 | 6.6 | `0-PROJETS/` porte **tout** projet — du coffre comme de l'utilisateur ; `code/` y est exclu du dépôt de mémoire. | N |
 | 6.7 | Un projet du coffre passe par une PR, demande comprise : la description porte la demande et le résumé de séance, jamais la mémoire ni un chemin du coffre parent ; relecture à trois. | N |
 | 6.8 | Le carnet : son nom, son frontmatter (`agent`, `projet`, `statut`), son contenu, l'étape écrite **avant** d'agir, son dossier — celui du chantier, ou celui du projet pour une séance sans chantier —, un chantier transverse dans `obsia` sauf la part personnelle. | N |
-| 6.9 | Une séance sans chantier écrit dans le carnet du jour du projet de domaine. Un agent en lecture seule n'écrit aucun carnet. | N |
+| 6.9 | Une séance sans chantier n'a de carnet du jour que si un travail reste en suspens ; sinon, ses actions vont au journal de `_MAINTENANCE/`. Un agent en lecture seule n'écrit aucun carnet. | N ; détail `A·memoire` |
 | 6.10 | Reprise : chercher dans l'arbre principal et dans chaque worktree lié, par nom d'agent, rapprocher le carnet de l'état réel, laisser l'utilisateur choisir ; pendant la bascule, aux anciens emplacements aussi. | N |
 | 6.11 | Le carnet se commite à chaque étape. | N |
 | 6.12 | Transition : l'ancienne forme ne veut pas dire « sans historique », et pendant la bascule carnets, projets et notes personnelles se cherchent à tout emplacement qui existe, dans l'ordre — `0-PROJETS/`, l'ancien nom `-PROJETS/`, l'ancien `mémoire/projets/` du dépôt ; le profil sous `0-PERSONNELS/`, `-PERSONNELS/`, `mémoire/` ; les préférences et les expériences sous `0-MEMOIRES/`, puis `0-PERSONNELS/`, `-PERSONNELS/`, `mémoire/`. | A·memoire (l'ordre détaillé ; le noyau garde la clause datée — chantier `souverainete-des-donnees`, au plus tard le 2026-12-31 — et le renvoi) |
-| 6.13 | Clôture : le résumé devient un bilan avec une section « État », le dossier entier du chantier gèle dans `0-MEMOIRES/`, le durable remonte avant. | N |
+| 6.13 | Clôture : le résumé devient un bilan avec une section « État », le dossier entier du chantier gèle dans `0-MEMOIRES/`, le durable remonte avant. | N pour le gel et la distillation avant ; le bilan « État » et le déplacement A·memoire (2026-10-10) |
 | 6.14 | Rien de ce qui décrit l'utilisateur ne vit chez un agent ; tout agent `read_only: false` corrige sur place le profil (`0-PERSONNELS/`) et les préférences (`0-MEMOIRES/préférences/`, dossier commun, jamais sous le nom d'un agent). | N |
 | 6.15 | Pourquoi un projet ne vit pas chez un agent ; agent en lecture seule sans espace mémoire (`0-MEMOIRES/<nom-agent>/`). | A·memoire (règle gardée au 6.9) |
 | 6.16 | Le nom d'une note dit son sujet. | N |
@@ -139,8 +139,8 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | 7.11 | `code/` : §3 intégral ; exclusion Obsidian posée par l'installeur ; réserve sur l'effet du motif et sur l'unicité des noms. | A·coffre-parent (la phrase « §3 intégral » reste au noyau) |
 | 7.12 | Jamais une valeur interdite par le §9 dans `OBSIA/` ; le §9 l'emporte sur tout. | N |
 | 7.13 | `0-PERSONNELS/` : on y lit librement ; on n'y écrit que pour classer ou tenir sa note de référence ; son contenu ne migre jamais dans `OBSIA/`. | N |
-| 7.14 | Aperçu, copie datée dans `_MAINTENANCE/`, exécution, puis consignation, avant toute écriture hors `0-EN-VRAC/` ou sur plusieurs fichiers. | N |
-| 7.15 | Une action de chantier va au carnet, une action hors chantier dans `_MAINTENANCE/`. Un carnet dont on est l'auteur se met à jour sans nouvel aperçu. | N |
+| 7.14 | Aperçu, copie datée dans `_MAINTENANCE/`, exécution, puis consignation, avant toute écriture hors `0-EN-VRAC/` ou sur plusieurs fichiers. Exception bornée : l'écriture portée par un outil déclaré en MCP pour un harnais pilotant un modèle local (§5) et consignée au carnet (§9), où l'aperçu est rendu avec l'écriture à condition que l'écriture soit annulable — un acte = un commit ne portant que ses fichiers (jamais `-a`), écritures sérialisées, branche par défaut du dépôt de données, commit reconnaissable ; défait et consigné si le commit est refusé ou inexact. | N pour l'aperçu avant, l'exception bornée, la trace au carnet, l'annulabilité et la garde des secrets ; sérialisation, branche par défaut et commit reconnaissable A·coffre-parent et fiche `ecrivain-du-coffre` (2026-10-10) |
+| 7.15 | Une action va au carnet ; à défaut, au journal de `_MAINTENANCE/`. Un carnet dont on est l'auteur se met à jour sans nouvel aperçu. | N |
 | 7.16 | Le registre `notes_remplies.md` : une note qui y figure n'est pas à revérifier, et il se met à jour après chaque traitement. | N |
 | 7.17 | Tags du vocabulaire contrôlé (`IA/system/tags-du-coffre-parent.md`), jamais hors liste. Un lien ne relie que si sa cible existe. Les noms de notes sont uniques. | N |
 | 7.18 | Accès du harness : il doit lire et écrire à la racine du coffre parent. Lire la fiche `IA/MCP/coffre-parent.md` avant d'appeler ses outils. | N |
@@ -157,7 +157,7 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 
 | # | Règle | Dest. |
 | --- | --- | --- |
-| 9.1 | La trace d'une séance, c'est le carnet, écrit au fil de l'eau dans le dépôt du coffre parent (§7.1) ; la PR du produit ne porte que la demande et le résumé de séance, et se relit avec le diff. Il n'y a pas d'autre journal. | N |
+| 9.1 | La trace d'une séance, c'est le carnet, écrit au fil de l'eau dans le dépôt du coffre parent (§7.1) ; la PR du produit ne porte que la demande et le résumé de séance, et se relit avec le diff. Hors chantier sans suspens, le journal de `_MAINTENANCE/` (§7.4) en tient lieu. | N |
 | 9.2 | `IA/system/session-log/` est des notes de séance — donc de la **mémoire** : on n'y écrit plus, ses notes ne se réécrivent pas, et elles quittent le dépôt à la bascule. | Hors du noyau ; `A·memoire` (transition) — destination `0-MEMOIRES/obsia/session-log/`, gelé ; `verifier_coffre.py` refuse leur survie après le 2026-12-31 (§11). |
 | 9.3 | **Tout appel de MCP, quel que soit son `permission`**, et toute correction appliquée à un système, s'inscrivent au carnet sur une ligne horodatée (quoi, où, résultat). | N (perte relevée en B1, rétablie mot pour mot) |
 | 9.4 | Première limite : le carnet n'est pas un journal d'audit infalsifiable, et celui d'un projet de l'utilisateur n'a que l'aperçu du §7.4. | N |
@@ -185,14 +185,15 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | 11.5 | Avant un commit : `regenerate_sommaire`, `regenerate_index`, `verifier_coffre`, `evaluer_routage`. | A·verification (la séquence ; le crochet la lance, le noyau renvoie à l'annexe) |
 | 11.6 | Le crochet de pré-commit s'active une fois par clone — `installer.py --appliquer` l'arme (`git config core.hooksPath .githooks`). | A·verification (le noyau renvoie à l'annexe) |
 | 11.7 | CI, `--no-verify`, `evaluer_modele.py`, bibliothèque standard seule. | A·verification |
+| 11.8 | Le noyau a un plafond en mots, déclaré à un **seul** endroit (`CONSTRAINTS.md`, ligne « Noyau du contrat ») et contrôlé à chaque passage : sa taille, le plafond et l'écart s'affichent ; le relever se décide dans une PR. Une clause datée du noyau est signalée — **échue** comme **illisible** (`2028-02-30`). | N (nouveau) ; motifs A·verification |
 
 ## §12 Tâches planifiées
 
 | # | Règle | Dest. |
 | --- | --- | --- |
 | 12.1 | Une tâche se déclare dans `IA/tâches/`, qui fait foi ; un timer ou un cron n'en est qu'une instance. Créer, modifier ou **suspendre** une tâche passe par PR. **Instancier ou retirer une instance est une action à effet externe : une ligne horodatée au carnet.** | N (B2 de N0) |
-| 12.2 | Au plus une instance vivante par tâche, tous exécutants confondus. Une instance s'appelle `obsia-<tâche>`. L'instruction se suffit à elle-même. Le registre déclare une intention, jamais un état. | N |
-| 12.3 | `taches-index.md` est toujours en contexte ; savoir qu'une tâche existe n'est pas l'instancier. | N |
+| 12.2 | Au plus une instance vivante par tâche, tous exécutants confondus. Une instance s'appelle `obsia-<tâche>`. L'instruction se suffit à elle-même. Le registre déclare une intention, jamais un état. | N pour « au plus une instance, tous exécutants confondus » et le préfixe `obsia-` ; le reste A·taches (2026-10-10) |
+| 12.3 | `taches-index.md` est toujours en contexte ; savoir qu'une tâche existe n'est pas l'instancier. | N pour « savoir n'est pas instancier » ; « toujours en contexte » A·taches (2026-10-10) |
 | 12.4 | Pourquoi, et la procédure (skill `cron`). | A·taches |
 
 ## §13 Modules, installation, publication
@@ -200,12 +201,12 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | # | Règle | Dest. |
 | --- | --- | --- |
 | 13.1 | Tout agent, skill, MCP et tâche déclare son `module`. | N (déjà au 5.1) |
-| 13.2 | Frontmatter d'un module ; renvois entre modules ; les sondes, purement déclaratives, sans commande arbitraire ni réseau. | A·distribution |
-| 13.3 | Profil `obsia.local.yml` non versionné, écrit par l'installeur ; pas de profil = catalogue complet. | N (revue N3) ; le pourquoi : A·distribution |
+| 13.2 | Frontmatter d'un module ; renvois entre modules ; les sondes, purement déclaratives, sans commande arbitraire ni réseau. | A·distribution (2026-10-10) |
+| 13.3 | Profil `obsia.local.yml` non versionné, écrit par l'installeur ; pas de profil = catalogue complet. | N pour « pas de profil = catalogue complet » ; le reste A·distribution (2026-10-10) |
 | 13.4 | `installer.py` et `publier.py` n'écrivent qu'avec `--appliquer`. Lire `installation-et-publication.md` avant de les lancer avec `--appliquer`. | N |
-| 13.5 | Le privé fait foi ; la publication va à sens unique ; une correction faite sur le public se reporte à la main dans le privé. | N (A3) ; le pourquoi : A·distribution |
-| 13.6 | Un fichier publié ne cite pas un chemin non publié (`brouillon/`, `.archive/`, et l'ancien `mémoire/` pendant la bascule), sauf leurs `README.md` et `profil-utilisateur.md`. | N (s'enfreint en écrivant un skill) |
-| 13.7 | Contrôle de fuite : les valeurs à forme reconnaissable refusent la publication ; `--forcer` ne franchit jamais une clé privée ni un jeton ; les noms de la liste locale avertissent sans bloquer, et un agent rapporte l'avertissement. Liste absente = aucun nom contrôlé : « aucune trouvaille » ne dit alors rien des noms nus. | N (M7) ; motifs exacts A·distribution |
+| 13.5 | Le privé fait foi ; la publication va à sens unique ; une correction faite sur le public se reporte à la main dans le privé. | N, resserré ; le pourquoi : A·distribution |
+| 13.6 | Un fichier publié ne cite pas un chemin non publié (`brouillon/`, `.archive/`, et coffre parent), sauf leurs `README.md` et `profil-utilisateur.md`. | N (s'enfreint en écrivant un skill) |
+| 13.7 | Contrôle de fuite : les valeurs à forme reconnaissable refusent la publication ; `--forcer` ne franchit jamais une clé privée ni un jeton ; les noms de la liste locale avertissent sans bloquer, et un agent rapporte l'avertissement. Liste absente = aucun nom contrôlé : « aucune trouvaille » ne dit alors rien des noms nus. | N pour le refus par défaut, `--forcer` et l'avertissement de la liste locale ; motifs et noms A·distribution (2026-10-10) |
 
 ## Ce qui a été vérifié
 
@@ -236,8 +237,25 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
   Les mentions de l'ancien `session-log/` quittent le noyau (9.2, 13.6) : le fait
   vit dans `IA/README.md` et le skill `cloture-de-session`. Le noyau passe de 450
   à **446 lignes**, 4 067 mots.
-- **Estimation du noyau** : une centaine de lignes N, à une ou deux phrases
-  chacune, soit **environ 2 800 à 3 300 mots**. C'est au-dessus de la
-  cible de 2 000 mots de la v1 et autour du plafond de 3 000 mots de la v2.
-  Le seuil est un constat, pas un ordre : si le noyau dépasse 3 000 mots
-  sans perdre de règle, c'est le seuil qui cède, et le carnet le dit.
+- **Plafond du noyau** : la cible de 2 000 mots de la v1 et le plafond de
+  3 000 mots de la v2 étaient des constats. Depuis le 2026-10-10, le noyau a un
+  **plafond déclaré**, à la **seule** ligne « Noyau du contrat » de
+  `CONSTRAINTS.md` — c'est elle qui en porte le chiffre courant — que
+  `verifier_coffre.py` refuse de franchir et affiche à chaque passage (taille,
+  plafond, écart). Le relever se décide dans une PR (§11), jamais en silence :
+  ce n'est plus un seuil qui cède tout seul.
+- **Relèvement du 2026-10-12.** Le plafond porté par `CONSTRAINTS.md` est relevé
+  pour accueillir au §10 du noyau la règle « ce qui n'a pas été vérifié se dit »
+  (jusqu'ici propre à `administrateur.md`). Le relèvement est tracé par
+  l'exception `E1` (`seuil-desserre`), à réviser le 2027-01-11 — en redescendant
+  alors le plafond au niveau atteint.
+
+### Allègement du 2026-10-10 — trois questions
+
+La règle d'entrée du noyau devient un filtre en trois questions (préambule). Ont
+quitté le noyau pour leur annexe, sans perte de règle : le détail du §5
+(contrôlé par le vérificateur) → A·frontmatter ; la clôture, la réouverture, le
+domaine dormant et les deux mémoires du §6 → A·memoire (le gel et la collision
+restent au noyau) ; les conditions de l'exception du §7.4 → fiche
+`ecrivain-du-coffre` et A·coffre-parent ; le détail du §12 → A·taches ; les
+sondes, modules et profil du §13 → A·distribution.

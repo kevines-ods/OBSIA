@@ -51,6 +51,16 @@ PRIVE = ("IA/system/session-log", "brouillon", ".archive", "mémoire")
 #: une ceinture coûte moins cher qu'un secret dans un historique public.
 JAMAIS = ("obsia.local.yml", "prompt-systeme.md", ".env", "mcp.json", ".mcp.json")
 
+#: Un fichier suivi mais privé : il décrit une situation personnelle et ne
+#: part jamais au public. L'exclure par module ne convient pas — le module
+#: porte aussi ce qui se publie — ni par profil, qui ne filtre que
+#: l'installation (§13.3) : c'est la décision de publier ce fichier-là qui
+#: est personnelle, elle vit donc ici avec sa raison. La cohérence du public
+#: tient sans rien ajouter : `regenerate_index.py` tourne sur l'export, donc
+#: les index n'y citent jamais un fichier absent — et `verifier_coffre.py`
+#: refuserait au public un chemin vers lui.
+NON_PUBLIES = ("IA/agents/administrateur-mint.md",)
+
 #: Ce qui trahit un coffre vivant du côté de la cible. `synchroniser` efface
 #: tout ce que la cible contient hors `.git/` : lui donner un coffre de travail,
 #: c'est effacer le travail de quelqu'un. Les deux noms du même dossier y sont —
@@ -71,7 +81,10 @@ BLOQUANTS = (
      re.compile(r"\b(?:10\.\d{1,3}|192\.168|172\.(?:1[6-9]|2\d|3[01]))"
                 r"\.\d{1,3}\.\d{1,3}\b")),
     ("clé privée",
-     re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")),
+     # Le `(?: BLOCK)?` couvre l'armure PGP : une clé privée PGP s'annonce
+     # « BEGIN PGP PRIVATE KEY BLOCK », que le motif d'origine laissait passer —
+     # trou indépendant de toute exemption de bloc (relecture de `2c8d91d`).
+     re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY(?: BLOCK)?-----")),
     ("jeton d'API",
      re.compile(r"\b(?:ghp|gho|ghs|ghu|github_pat|sk-ant|sk-proj|sk-live|AKIA)"
                 r"[-_A-Za-z0-9]{10,}")),
@@ -141,9 +154,18 @@ TLD_RESERVES = (".test", ".example", ".invalid")
 
 #: Les étiquettes qu'un `--forcer` ne publie jamais — les valeurs à forme
 #: reconnaissable. Une clé privée ne se révoque pas — elle se remplace. Un jeton
-#: connu se révoque, mais seulement avant d'avoir servi : publié, il est déjà
-#: trop tard. Les autres catégories — une adresse, un nom d'hôte, un mot de
-#: passe à changer — se rattrapent.
+#: connu — et une clé secrète AWS, même famille de valeur — se révoque, mais
+#: seulement avant d'avoir servi : publié, il est déjà trop tard. Seul un
+#: « secret affecté » se rattrape : c'est un mot de passe à changer.
+#:
+#: Trois motifs de la **frontière publique** figurent ici pour une raison qui leur
+#: est propre, et aucun ne dit ce que le coffre privé a le droit de porter. Une
+#: adresse de courriel nomme un tiers qui n'a rien demandé à paraître dans un
+#: export. Une adresse IP privée et un nom d'hôte interne, eux, sont légitimes
+#: dans la mémoire privée : le §7.1 du contrat du coffre parent les y laisse, les
+#: refuser fermerait la mémoire au nom de la publication. C'est une décision de
+#: contrat, pas de détection — elle ne se rejoue pas ici, et elle ne fait pas de
+#: ces deux motifs une règle du coffre.
 #:
 #: Un *nom interdit* n'en fait pas partie : ce n'est pas une forme
 #: reconnaissable, c'est une liste personnelle qui frappe des mots. Il est
@@ -154,8 +176,9 @@ TLD_RESERVES = (".test", ".example", ".invalid")
 #: rien ne le révoque, et le publier nomme une arborescence privée (§13). Le
 #: corriger n'est pas un jugement à porter, c'est une évidence : sa place n'est
 #: pas dans l'export, donc il n'y a rien à forcer.
-SANS_FORCAGE = ("clé privée", "jeton d'API",
-                "chemin du coffre", "chemin du dépôt")
+SANS_FORCAGE = ("clé privée", "jeton d'API", "clé secrète AWS",
+                "adresse de courriel", "adresse IP privée",
+                "nom d'hôte interne", "chemin du coffre", "chemin du dépôt")
 
 #: La liste locale des noms interdits — noms d'hôtes, nom du dépôt privé, tout
 #: ce qui désigne l'infrastructure sans avoir de forme reconnaissable. Elle vit
@@ -534,6 +557,14 @@ def exporter(source: Path, vers: Path) -> None:
         for trouve in vers.rglob(rel):
             trouve.unlink()
 
+    # Après le vidage des zones privées et avant la régénération : les index
+    # ne doivent citer que ce qui part, et c'est bien après ce retrait que
+    # `regenerer_et_verifier` les réécrit.
+    for rel in NON_PUBLIES:
+        fichier = vers / rel
+        if fichier.is_file():
+            fichier.unlink()
+
     MOD.ecrire_gabarits_dinstance(vers)
 
 
@@ -673,9 +704,10 @@ def controler_le_texte(forcer: bool = False) -> int:
     paraissent sur le dépôt public avant que `publier.py` n'ait vu un seul
     fichier de l'export, et le contrôle d'arbre ne les lit donc jamais. Le même
     sens de `--forcer` s'applique — une clé privée se remplace, un jeton connu se
-    révoque, aucun des deux ne se force. Les chemins de la machine, eux, ne
-    peuvent pas se signaler ici : aucune racine n'est donnée, donc aucun chemin
-    n'est connu de ce mode.
+    révoque, une clé secrète AWS aussi ; une adresse de courriel, une adresse IP
+    privée et un nom d'hôte interne se retirent : aucun ne se force. Les chemins
+    de la machine, eux, ne peuvent pas se signaler ici : aucune racine n'est
+    donnée, donc aucun chemin n'est connu de ce mode.
     """
     texte = sys.stdin.read()
     noms, _ = charger_noms_interdits()
@@ -825,8 +857,10 @@ def main() -> int:
             if interdites:
                 print("  --forcer ne s'applique pas ici : %s."
                       % ", ".join(interdites), file=sys.stderr)
-                print("  Une clé privée se remplace, un jeton connu se révoque, un "
-                      "chemin de machine se retire — avant de publier, pas après.",
+                print("  Une clé privée se remplace, un jeton connu et une clé "
+                      "secrète AWS se révoquent ; une adresse de courriel, une "
+                      "adresse IP privée, un nom d'hôte interne ou un chemin de "
+                      "machine se retirent — avant de publier, pas après.",
                       file=sys.stderr)
                 return 1
             if not args.forcer:
@@ -845,6 +879,8 @@ def main() -> int:
         print("  Fichiers publiés : %d" % len(fichiers))
         print("  Vidés de leur contenu : %s" % ", ".join(PRIVE))
         print("  Jamais publiés        : %s" % ", ".join(JAMAIS))
+        if NON_PUBLIES:
+            print("  Suivis non publiés    : %s" % ", ".join(NON_PUBLIES))
 
         supprimes = chemins_a_supprimer(cible)
         print("  Entrées effacées dans la cible : %d" % len(supprimes))

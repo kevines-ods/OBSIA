@@ -3,8 +3,9 @@
 **Statut : vérifié sur documentation le 2026-09-30
 (<https://learn.chatgpt.com/docs/agent-configuration/agents-md>,
 <https://learn.chatgpt.com/docs/agent-configuration/subagents> et
-<https://learn.chatgpt.com/docs/config-file/config-reference>) — jamais éprouvé
-sur machine réelle.**
+<https://learn.chatgpt.com/docs/config-file/config-reference>). Éprouvé sur
+machine réelle (poste CachyOS, Arch) le 2026-10-08 — campagne gpt-oss-20b, Codex
+0.161, `CODEX_HOME` dédié, `wire_api = "responses"` (voir §1).**
 
 Agent d'OpenAI, en ligne de commande (`codex`) comme dans l'application. C'est
 le premier harness de ce dossier pour qui `AGENTS.md` n'est pas une commodité
@@ -36,6 +37,57 @@ déplaçable par la variable `CODEX_HOME` — donc **hors dépôt** par construc
 Un `.codex/` posé à la racine du coffre parent commence par un point :
 Obsidian ne l'indexe pas, et la règle d'unicité des noms de notes (§6) n'est
 pas touchée.
+
+### Isoler, ne pas contaminer
+
+`CODEX_HOME` déplace **tout** le répertoire d'accueil : c'est le levier
+d'isolation. Éprouvé le 2026-10-08 — un essai, une campagne ou un déploiement se
+fait sous un `CODEX_HOME` **dédié**, pour ne lire ni écrire la configuration
+personnelle de la machine (`~/.codex`), qui garde ses serveurs MCP et ses accès.
+Les autres harnais ont leur équivalent (`XDG_*`).
+
+```bash
+CODEX_HOME=/chemin/vers/un/repertoire/dedie codex
+```
+
+### Modèle local — `wire_api = "responses"`
+
+Codex 0.161 a **retiré l'API « chat »** (`wire_api = "chat"` : « no longer
+supported »). Il ne parle plus que l'**API Responses** : un fournisseur
+compatible OpenAI se déclare donc avec `wire_api = "responses"`, et `chat` ne
+passe plus. Le nom de la table vient de la référence de configuration (lien en
+bas de fiche) ; le reste est mesuré.
+
+```toml
+model_provider = "modele-local"          # le fournisseur retenu
+model = "gpt-oss-20b"
+
+[model_providers.modele-local]
+base_url = "http://serveur-modele.exemple.org/v1"
+wire_api = "responses"
+env_key = "CLE_MODELE_LOCAL"             # §3 : un nom de variable, pas un secret
+```
+
+`env_key` ne porte **pas** la clé : il en porte le **nom** (§3). La variable doit
+**exister** dans l'environnement — le relais local ne vérifie pas sa valeur, donc
+n'importe laquelle fait l'affaire — sans quoi le lancement échoue.
+
+Sur la ligne de commande, les mêmes clés se surchargent par `-c` — c'est ainsi
+que la campagne a branché le modèle local **sans écrire dans `config.toml`** :
+
+```bash
+codex \
+  -c 'model_providers.modele-local.base_url="http://serveur-modele.exemple.org/v1"' \
+  -c 'model_providers.modele-local.wire_api="responses"' \
+  -c 'model_providers.modele-local.env_key="CLE_MODELE_LOCAL"' \
+  -c 'model_provider="modele-local"' -m gpt-oss-20b
+```
+
+**La fenêtre se dimensionne sur la réservation de sortie.** Mesuré sur
+gpt-oss-20b, qui réserve 8 192 jetons de sortie : prévoir au moins **65 536 jetons
+déclarés** pour un modèle local qui porte le prompt OBSIA — le pic de contexte de
+la campagne atteint 25 456. Le détail de cette réservation, mesuré côté opencode,
+est en `opencode.md` §5.
 
 ## 2. Le bloc MCP
 
@@ -95,6 +147,7 @@ valeur.
 | fixer une variable (stdio) | `env = { CLE = "valeur" }` — **pas pour un secret** |
 | jeton d'un serveur HTTP | `bearer_token_env_var = "SEARXNG_TOKEN"` |
 | en-tête HTTP pris dans l'environnement | `env_http_headers = { X-Api-Key = "API_KEY" }` |
+| nommer la clé d'un fournisseur de modèle | `env_key = "CLE_MODELE_LOCAL"` — la variable doit **exister**, sa valeur n'est pas vérifiée |
 
 ## 4. Restreindre un serveur à un agent
 
@@ -173,16 +226,16 @@ python3 scripts/generer_prompt.py --sans-profil -o /tmp/agents-corps.md
 wc -c /tmp/agents-corps.md     # 26 523 : le corps, plus le saut de ligne final
                                #   que la commande ajoute — l'installeur, lui,
                                #   n'en ajoute pas
-wc -c "$COFFRE/AGENTS.md"      # 26 137 : le fichier écrit au profil courant
+wc -c "$COFFRE/AGENTS.md"      # ~26 000 : le fichier écrit au profil courant
 ```
 
 Le corps de l'`AGENTS.md` engendré au catalogue entier pèse donc 26 522 octets ;
 l'installeur y ajoute un marqueur de 106 octets, soit **26 628 octets, 81,3 % du
 plafond**. C'est le pire cas — le catalogue entier, celui que la CI et
 `verifier_coffre.py` mesurent — et aucun `obsia.local.yml` ne peut y masquer un
-dépassement : un profil ne fait que raccourcir le catalogue. Les 26 137 octets
-du `AGENTS.md` installé à la racine du coffre parent sont ce que Codex lit
-réellement ici, soit **79,8 %**.
+dépassement : un profil ne fait que raccourcir le catalogue. Le `AGENTS.md`
+installé à la racine du coffre parent — même ordre de grandeur, profil appliqué —
+est ce que Codex lit réellement ici, soit **~80 %** du plafond.
 
 Le chiffre bouge pour **deux** raisons : le catalogue, qui grandit, et la règle
 des secrets du §4, reprise mot pour mot en tête du prompt (331 octets) — elle se
@@ -245,10 +298,13 @@ journal de session est activé.
 
 ## 7. Ce que cette fiche ne dit pas
 
-- **Rien n'a tourné.** Le statut en tête est « vérifié sur documentation », et
-  cela ne se déduit pas d'un branchement qui a l'air de marcher.
+- **La fiche a été éprouvée une fois.** Le 2026-10-08, sur machine réelle
+  (Codex 0.161, gpt-oss-20b, `CODEX_HOME` dédié, `wire_api = "responses"`) : le
+  branchement tient et le modèle local répond. Le détail des §2 à §4 reste
+  « vérifié sur documentation » ; les points neufs du §1, eux, sont mesurés.
 - **La mesure de taille est datée.** 26 628 octets le 2026-10-08, catalogue entier
-  (26 137 octets pour le fichier réellement lu, profil appliqué). Elle ne dépend
+  — le pire cas, celui que la CI et `verifier_coffre.py` mesurent ; le fichier
+  réellement lu, profil appliqué, est du même ordre (~26 000). Elle ne dépend
   ni du poste ni du chemin — le texte engendré n'en porte aucun — mais elle
   vieillira quand même : la refaire avant de conclure.
 - **Le format des agents personnalisés est assumé comme mouvant** par la

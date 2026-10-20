@@ -236,6 +236,8 @@ def main() -> int:
     ap.add_argument("--explique", metavar="DEMANDE",
                     help="affiche le classement pour une demande, et sort")
     ap.add_argument("--seuil-collision", type=float, default=SEUIL_COLLISION)
+    ap.add_argument("--index-compact", action="store_true",
+                    help="ne router que sur la première phrase, celle que montre skills-index.md")
     opts = ap.parse_args()
 
     skills = [fm for fm in (lire_frontmatter(p)
@@ -244,6 +246,10 @@ def main() -> int:
     if not skills:
         print("Aucun skill lisible dans IA/skills/", file=sys.stderr)
         return 2
+    if opts.index_compact:
+        from regenerate_index import premiere_phrase
+        skills = [dict(s, description=premiere_phrase(s.get("description", "")))
+                  for s in skills]
     sacs, idf = construire_index(skills)
 
     if opts.explique:

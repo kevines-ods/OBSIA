@@ -209,6 +209,43 @@ To run them automatically before each commit, once per clone — `installer.py
 git config core.hooksPath .githooks
 ```
 
+## Date robustness: the suite turned at six dates
+
+A green suite answers a dated question: *is the code right that day?* A fixed
+future date can turn it red without a line of product changing — the
+switch-over tolerance did exactly that, red on 2027-01-01 while the branch was
+green on 2026-10-17. That question is asked separately, once a week:
+
+```bash
+python3 scripts/verifier_dates.py
+```
+
+It runs the whole suite once per declared date, each in its own process, with
+the day forced inside the harness — `verifier_coffre.py` reads no environment
+variable, so nothing can tell production a fake day. The dates are declared once,
+at the top of the script, and printed again in the header:
+
+```
+Dates déclarées (6) : 2026-12-31, 2027-01-01, 2027-06-01, 2028-02-29, 2028-06-01, 2030-01-01
+```
+
+Output is one line per date (`YYYY-MM-DD : Ran N tests, OK|ECHEC`), the full
+output of every failing run, then a verdict. It does not stop at the first
+failure: the loop visits all six dates, then exits 1 and names every red date —
+one run tells you whether one date or several have slipped. Exit codes: 0 when
+all six are green; 1 when at least one is red, or when a run finds no test at
+all; 2 only in `--une-date` mode, when the date is refused or when the run
+finds no test. A run that finds no test is refused rather than reported green:
+under the pinned Python, zero tests still print `Ran 0 tests` and `OK`, so a
+missing `tests/` used to look like a pass.
+It is not part of the pre-commit list above: six runs
+cost a few minutes, and what it catches is a calendar drift, not a diff
+regression — the diff is already judged by the checks above.
+
+A weekly schedule (`.github/workflows/robustesse-des-dates.yml`, Monday 03:00
+UTC) runs it, and `workflow_dispatch` runs it on demand. That workflow is the
+single weekly instance: nothing in a system cron duplicates it.
+
 ## Format
 
 A skill is a file `IA/skills/<name>.md`. When it grows — beyond roughly 500

@@ -23,6 +23,7 @@ mcp:
   - chrome-devtools
   - obsidian
   - coffre-parent
+  - ecrivain-du-coffre
   - searxng
   - modele-local
   - gmail

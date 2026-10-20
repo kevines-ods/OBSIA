@@ -60,6 +60,16 @@
         "OBSIA_LOCAL_MODEL": "nom-du-modele"
       }
     },
+    "ecrivain-du-coffre": {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "/chemin/absolu/vers/Mon coffre/OBSIA/serveur/mcp_ecrivain.py"
+      ],
+      "env": {
+        "OBSIA_COFFRE": "/chemin/absolu/vers/Mon coffre"
+      }
+    },
     "gmail": {
       "type": "stdio",
       "command": "npx",

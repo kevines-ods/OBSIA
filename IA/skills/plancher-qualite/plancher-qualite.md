@@ -96,6 +96,29 @@ dit, et c'est ce que le garde lit. Un seuil écrit sans opérateur est signalé
 comme « direction indéterminée » : le garde demande un humain plutôt que de
 deviner.
 
+**Le nombre se lit tel qu'il s'écrit.** « 4 560 » et « 4560 » sont le même
+nombre : le garde ôte **tout blanc** séparant les milliers — espace ordinaire,
+insécable (U+00A0), fine (U+2009), fine insécable (U+202F), tabulation — avant de
+comparer, et le constat montre les écritures entières (« 4 560 → 5 000 », jamais
+« 4 → 5 »). Un simple reformatage ne passe donc pas pour un seuil qui bouge, et
+un relèvement écrit avec une espace fine ne passe pas en silence.
+
+**Deux lignes ne s'apparient que si elles portent autant de nombres.** Le garde
+apparie les seuils d'une ligne à ceux de la **même** ligne — son premier champ —
+nombre pour nombre. Si la ligne en gagne ou en perd un, il **refuse
+l'appariement** et rend `seuil-modifie`, direction indéterminée : deux nombres
+d'une même ligne ne mesurent pas forcément la même chose (« 87 lignes » et
+« 80 % »), et il ne devine pas ce que le chiffre nouveau mesure. Sans ce refus,
+« `≥ 87 %` » devenu « `≥ 87 lignes, et ≥ 80 %` » passait sans un mot : les deux
+premiers nombres étaient comparés — 87 contre 87 —, le second n'avait pas de
+vis-à-vis, et la boucle passait au suivant. Le refus ne peut qu'**ajouter** des
+constats : à nombre de nombres égal, la comparaison est exactement celle d'avant.
+
+**Un seuil sans opérateur reste protégé.** « **100 %** couverts » est une barre
+même sans `≥` : la descendre est un desserrement. Le garde surveille donc **tous**
+les nombres d'une ligne de seuil, jamais seulement ceux qui suivent un
+comparateur — ne garder que ces derniers laisserait filer celui-là.
+
 ## 4. Le garde-plancher
 
 Le plancher ne se vérifie par aucun outil du marché : c'est un contrôle sur le
@@ -107,10 +130,17 @@ existe pour supprimer.
 python3 IA/skills/plancher-qualite/scripts/garde_plancher.py --depot <dépôt> --base main
 ```
 
+**Le garde est lu ailleurs, à sa source.** La CI d'OBSIA-UI exécute ce script
+tel qu'il est sur la branche par défaut de ce dépôt, sans copie : un changement
+de `garde_plancher.py` s'applique à la prochaine exécution de la CI de ses PR, sans
+pull request de ce côté-là. Toute PR qui le touche se fait donc relire par le
+`contradicteur` (`revue-de-code`) **en pensant à OBSIA-UI** : ce qui deviendrait
+rouge, ou vert à tort, sur ses PR ouvertes.
+
 | Il cherche | Dans |
 | --- | --- |
 | un vérificateur qu'on a fait taire | les lignes **ajoutées** |
-| un test allégé — `skip`, fichier supprimé, assertion retirée | les lignes ajoutées **et** retirées, et les fichiers supprimés |
+| un test allégé — `skip`, fichier supprimé, assertion retirée | les lignes ajoutées **et** retirées, et les fichiers supprimés ; une assertion se juge **par portée survivante**, sur l'arbre syntaxique ; un saut définitif, sur l'arbre |
 | du travail inachevé — stub, `catch` vide, `TODO` | les lignes ajoutées |
 | un seuil desserré | `CONSTRAINTS.md`, selon l'opérateur |
 | une exception ajoutée au plancher | `CONSTRAINTS.md` |
@@ -119,10 +149,67 @@ Sortie : **0** propre, **1** au moins une violation, **2** n'a pas pu tourner.
 Un 2 ne se lit jamais comme un 0 — un garde qui n'a pas tourné n'a rien
 approuvé.
 
-Deux propriétés à connaître :
+**Le garde se compte, et se budgette.** Chaque passage imprime « *N lecture(s)
+pour un plafond de M* », où M vaut `2 × fichiers modifiés + 1 × (ajoutés +
+supprimés) + 2`. Une **lecture** est un fichier dont le garde a eu besoin du
+contenu, quel que soit le moyen : deux versions du même fichier comptent pour
+deux, une relecture du même contenu pour une. Au-delà du plafond il rend un
+constat `budget-de-lectures`, que **aucune exception ne couvre** — un budget
+qu'une ligne lève n'est pas un budget. La suite du projet se compte de la même
+façon, avec `scripts/banc_de_processus.py`, et un plafond chiffré dans
+`CONSTRAINTS.md`. Les deux mesurent un **coût** : on n'économise pas des
+processus en achetant du couplage entre tests. Le compteur a une **limite de
+profondeur** : il vit dans le processus de la suite, donc un test qui lance un
+script qui lance lui-même des processus n'est compté qu'au premier étage — neuf
+scripts du dépôt lancent des processus. Le biais est constant, le plafond reste
+cohérent ; la conséquence utile est qu'**un test qui externalise du travail dans
+un sous-processus échappe au budget** — le budget ne se contourne pas par là, il
+se contournerait en trichant.
+
+**Une portée, pas un test.** La comparaison porte sur toute portée survivante —
+test, fonction d'aide, méthode, module (`<module>`) —, par nom qualifié : une
+aide qui perd son `assert` se voit comme un test qui perd son `assertEqual`, et
+le constat nomme la portée (`_aide_avec_assert : 1 → 0 assertions`). Les portées
+à zéro assertion restent dans la carte, sinon perdre la **dernière** ressemblerait
+à une fonction effacée. **Extraire** des assertions d'un test vers une aide
+légitime allège le test et **rougit** — c'est voulu ; l'acquitter se fait par une
+exception `E<n>`, qui porte sur le **fichier** (glob `fnmatch`, comme
+`.plancherignore`) et non sur le test ni sur la ligne.
+
+**Un test qu'on n'exécute plus.** Le garde relève deux formes seulement, parce
+que les autres sont honnêtes : un `skipIf`/`skipUnless` à **condition constante**
+(`True`, `False`, leur négation) et un `self.skipTest(…)` **énoncé nu** dans le
+corps d'un test, hors de tout `if`, `try` ou boucle. Un saut conditionnel sur
+l'environnement (`sys.platform`, `shutil.which(…)`) reste légitime et se tait.
+Mesure d'avant implémentation : zéro constat sur les 120 derniers commits, pour
+une trentaine de `skipIf` conditionnels dans le dépôt — la règle n'a pas de bruit
+à acquitter.
+
+**Ce qu'il ne sait pas peser : ni la force d'une assertion, ni son exécution.**
+Il compte des nœuds ; `self.assertEqual(v.refus.controle, "absence de secret")`
+remplacé par `self.assertTrue(True)` le laisse à 2 → 2 et il rend 0, et une
+assertion déplacée sous `if False:` ou dans une boucle `range(0)` compte pareil.
+C'est une limite du comptage, écrite pour ne pas être prise pour une garantie.
+Dans le même voisinage il attrape encore : une assertion retirée d'un test ou
+d'une aide, un test sauté sans condition, un fichier de test supprimé.
+
+Trois propriétés à connaître :
 
 - **Resserrer est silencieux, desserrer est bruyant.** Rien n'est signalé
   quand la barre monte.
+- **Il ne voit que les portées qui restent.** Une portée renommée ou effacée
+  n'est plus comparable à rien : le détecteur « un `def test_` a disparu » a été
+  **mesuré** — 9 constats sur les 120 derniers commits, dont deux renommages
+  purs, pour un seuil fixé d'avance à 3 — puis écarté. Ne le réinvente pas sans
+  une nouvelle mesure.
+- **Le plafond de processus se relève, mais pas pour finir vert.** Le *lead* du
+  chantier re-mesure avec `scripts/banc_de_processus.py`, quand une tranche qui
+  touche la suite en a un besoin légitime : re-mesure → `mesure + 2 %` → mise à
+  jour de `MESURE`/`PLAFOND` dans le banc **et** du chiffre de `CONSTRAINTS.md`
+  (un test tient les deux ensemble). La PR dit ce qui a été ajouté, combien de
+  processus cela coûte et pourquoi ce coût est justifié ; relever sans le dire
+  dans la description est un défaut de livraison. La procédure complète est dans
+  `CONSTRAINTS.md`, section « Comment le plafond de processus se relève ».
 - Il **ne cherche pas les secrets**, et ne rapporte jamais la valeur trouvée
   — seulement la règle et l'emplacement. Les secrets relèvent du `.gitignore`
   posé par `amorcage-du-projet` et du §4 du contrat.

@@ -119,7 +119,7 @@ class CoffreTemporaire(unittest.TestCase):
                 "# Hors mémoire\n\nÀ ne pas toucher.\n", encoding="utf-8")
 
         # Dossiers techniques à la racine, atteints par `--dossier=.`.
-        for technique in (".opencode/node_modules/truc", ".stversions"):
+        for technique in (".outil/node_modules/truc", ".stversions"):
             d = self.coffre / technique
             d.mkdir(parents=True)
             (d / "racine.md").write_text(
@@ -222,16 +222,16 @@ class TestParcoursEnProfondeur(CoffreTemporaire):
                                    "hors-memoire.md"), avant["stversions"])
 
     def test_la_racine_ne_descend_pas_dans_les_dossiers_techniques(self):
-        # B2, cas `--dossier=.` : `.opencode/node_modules/` et `.stversions/`.
-        avant = (self.lire(".opencode", "node_modules", "truc", "racine.md"),
+        # B2, cas `--dossier=.` : `.outil/node_modules/` et `.stversions/`.
+        avant = (self.lire(".outil", "node_modules", "truc", "racine.md"),
                  self.lire(".stversions", "racine.md"))
         code, sortie = self.executer(
             "--racine", self.coffre, "--dossier", ".")
         self.assertEqual(code, 0)
-        for marque in (".opencode", ".stversions", "node_modules"):
+        for marque in (".outil", ".stversions", "node_modules"):
             self.assertNotIn(marque, sortie)
         self.assertEqual(
-            (self.lire(".opencode", "node_modules", "truc", "racine.md"),
+            (self.lire(".outil", "node_modules", "truc", "racine.md"),
              self.lire(".stversions", "racine.md")), avant)
 
     def test_un_depot_imbrique_sans_nom_connu_est_ecarte(self):

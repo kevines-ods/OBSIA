@@ -60,8 +60,11 @@ module: noyau
   0-MEMOIRES/                             deux mémoires : l'une vit, l'autre est gelée
   ├── préférences/<sujet>.md             goûts et règles transversaux, corrigés sur place
   ├── <nom-agent>/expériences/<sujet>.md leçons de l'agent, corrigées sur place
-  └── <projet>/<chantier>/               chantier clos, gelé — plus jamais modifié
-      └── (le résumé devenu bilan, ses carnets `statut: clos`, ses documents)
+  └── <projet>/
+      ├── <chantier>/                    chantier clos, gelé — plus jamais modifié
+      │   └── (le résumé devenu bilan, ses carnets `statut: clos`, ses documents)
+      └── carnets/                       carnets de séance sans chantier, clos, gelés
+          └── AAAA-MM-JJ-<projet>-<sujet>.md
 
   0-PERSONNELS/
   └── profil-utilisateur.md              faits stables sur l'utilisateur et sa machine
@@ -95,7 +98,8 @@ module: noyau
   | l'état d'un projet | `0-PROJETS/<projet>/<projet> — résumé.md`, **mis à jour sur place** | oui |
   | l'état d'un chantier | `0-PROJETS/<projet>/<chantier>/<chantier> — résumé.md`, **mis à jour sur place** | oui |
   | une demande, un plan, une étape, une action sur un chantier | `0-PROJETS/<projet>/<chantier>/carnets/AAAA-MM-JJ-<chantier>-<sujet>.md` | oui |
-  | une séance sans chantier | `0-PROJETS/<projet>/carnets/AAAA-MM-JJ-<projet>-<sujet>.md` | oui |
+  | une séance sans chantier qui laisse un suspens | `0-PROJETS/<projet>/carnets/AAAA-MM-JJ-<projet>-<sujet>.md` | oui |
+  | une séance sans chantier bouclée — ses actions | `_MAINTENANCE/journal-des-seances.md`, une ligne par action | oui |
   | une leçon tirée d'un échec ou d'une manœuvre qui a marché | `0-MEMOIRES/<nom-agent>/expériences/<sujet>.md` | non — chez l'agent |
   | un savoir détaché de tout chantier | `0-SAVOIRS/` | oui |
 
@@ -150,18 +154,48 @@ module: noyau
   le dossier de `0-MEMOIRES/` à la clôture.
 
 - **Une séance sans chantier** — dépannage ponctuel, correction sur un
-  système, question qui finit en action — écrit dans le **carnet du jour**
-  du projet de domaine qui la porte : `0-PROJETS/obsia/` si elle touche le
-  coffre, sinon le projet de domaine tenu pour ce sujet
-  (`0-PROJETS/<domaine>/`). Elle ne crée pas
-  de chantier pour avoir un carnet. Un agent `read_only: true` n'écrit
-  aucun carnet : c'est l'agent qui reprend son travail qui consigne ses
-  constats et les appels qu'il a menés.
+  système, question qui finit en action — ne crée pas de chantier pour avoir
+  un carnet, et n'ouvre un **carnet du jour** que si elle laisse un travail
+  **en suspens** : une PR ouverte, une question qui attend l'utilisateur, une
+  étape à reprendre après une coupure. Ce carnet vit dans le projet qui la
+  porte : `0-PROJETS/obsia/` si elle touche le coffre, sinon le projet de
+  domaine tenu pour ce sujet (`0-PROJETS/<domaine>/`). S'il n'y en a aucun,
+  demander à l'utilisateur où l'écrire, plutôt que de rattacher la séance
+  d'autorité au projet le plus proche.
+
+  Dès qu'un carnet du jour passe `statut: clos` — le suspens qu'il portait est
+  levé —, il quitte au même instant `0-PROJETS/<projet>/carnets/` pour
+  `0-MEMOIRES/<projet>/carnets/`, gelé comme un chantier clos mais à l'écart des
+  dossiers de chantier, pour ne pas faire passer une séance pour un chantier.
+  Le dossier `carnets/` n'existe que si le projet a au moins un carnet de ce
+  type.
+
+  **Sinon — rien en suspens —, aucun carnet** : un dépannage bouclé dans la
+  séance ne laisse pas un fichier de plus dans `carnets/`, que personne ne
+  reprendra et qui noie les carnets vivants. Ce qu'il en reste se range par
+  nature :
+
+  - ses **actions** — effets externes compris (§9) — au **journal des
+    séances**, `_MAINTENANCE/journal-des-seances.md`, une ligne horodatée par
+    action, sous un titre daté de la séance : agent, quoi, où, résultat. Même
+    règle de nature que le carnet (§9) : jamais d'IP privée, de nom d'hôte
+    interne ni d'identifiant ;
+  - la **leçon**, s'il y en a une, dans `0-MEMOIRES/<nom-agent>/expériences/` ;
+  - un **savoir** réutilisable, par `0-EN-VRAC/` vers `0-SAVOIRS/` ;
+  - un **fait** sur l'infrastructure de l'utilisateur, dans le profil.
+
+  Le journal n'a ni `statut` ni reprise : il ne se relit que pour savoir ce qui
+  a été fait. Une séance qui découvre en route qu'elle laisse un suspens ouvre
+  son carnet à ce moment, et y reporte les lignes déjà écrites au journal.
+
+  Un agent `read_only: true` n'écrit aucun carnet ni aucune ligne de journal :
+  c'est l'agent qui reprend son travail qui consigne ses constats et les
+  appels qu'il a menés.
 
 - **Reprise.** Au démarrage, un agent cherche — dans l'arbre principal **et
   dans chaque worktree lié**, où vit le carnet d'un chantier en cours
   (§2.1) — les carnets `statut: en cours`
-  qui portent son nom d'agent — jamais un nom de harness, qui change. Il rapproche ce que le carnet déclare de l'état réel
+  qui portent son nom d'agent — le repère reste l'agent, jamais un harness, qui change. Il rapproche ce que le carnet déclare de l'état réel
   — `git status`, `git worktree list`, fichiers cités — avant de proposer de
   reprendre ; s'il en trouve plusieurs, il les liste et l'utilisateur
   choisit. La procédure vit dans `cloture-de-session`.
@@ -191,12 +225,18 @@ module: noyau
   `0-PROJETS/<projet>/<chantier>/` pour `0-MEMOIRES/<projet>/<chantier>/`, tel
   quel : le `— résumé` devient un bilan avec une section « État » (pour pouvoir
   le rouvrir), les carnets passent `statut: clos`, les documents suivent. Ce qui
-  est durable a été distillé **avant** vers `0-MEMOIRES/préférences/` (une
+  est durable a été distillé **avant** vers `0-SAVOIRS/` (un savoir détaché du
+  chantier), `0-MEMOIRES/préférences/` (une
   règle qui vaut ailleurs) ou `0-MEMOIRES/<agent>/expériences/` (une manière
   de travailler de l'agent). Le dossier gelé ne se modifie plus.
 
   **Rouvrir** un chantier clos le ramène dans `0-PROJETS/`, `statut: en cours`,
   **sans copie laissée** dans `0-MEMOIRES/`.
+
+  Un **carnet de séance sans chantier** clos suit la même logique en plus
+  léger : pas de dossier, pas de bilan à coiffer — c'est déjà un fichier seul.
+  Son déplacement vers `0-MEMOIRES/<projet>/carnets/` se fait au même instant
+  que son passage `statut: clos`, pas en différé.
 
   **Un domaine dormant n'est pas clos** : sans chantier actif, son dossier reste
   dans `0-PROJETS/` et **sa vision reste** — on n'archive pas un domaine vivant.

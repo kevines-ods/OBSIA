@@ -19,7 +19,7 @@ import shutil
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stderr
+from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from pathlib import Path
 
@@ -183,3 +183,129 @@ class TestControleAvecProfil(BaseCoffreIndex):
 
         self.assertEqual(code, 1)
         self.assertIn("IA/README.md", err)
+
+
+class TestLigneDeCommande(BaseCoffreIndex):
+    """`--help` affiche l'usage sans rien écrire ; un drapeau inconnu est refusé.
+
+    Même incident que `regenerate_sommaire.py`, corrigé par la PR #179 : le
+    script lisait `sys.argv` à la main, donc `--help` — ou une simple faute de
+    frappe — passait pour une absence d'option et les cinq index étaient
+    réécrits dans l'arbre de travail.
+    """
+
+    def executer(self, argv: list[str]) -> tuple[int, str, str]:
+        """Lance `main(argv)` et rend `(code, sortie, erreurs)`.
+
+        `argparse` rend la main par `SystemExit` (0 pour `--help`, 2 pour un
+        argument refusé) ; un lancement normal retourne un entier.
+        """
+        RI.RACINE = self.racine
+        sortie, erreurs = StringIO(), StringIO()
+        with redirect_stdout(sortie), redirect_stderr(erreurs):
+            try:
+                code = RI.main(argv)
+            except SystemExit as sortie_forcee:
+                code = sortie_forcee.code
+        return code, sortie.getvalue(), erreurs.getvalue()
+
+    def index_ecrits(self) -> list[str]:
+        """Les index présents sur le disque après un lancement."""
+        return [rel for rel in INDEX if (self.racine / rel).is_file()]
+
+    def test_help_affiche_l_usage_et_n_ecrit_aucun_index(self):
+        code, sortie, _ = self.executer(["--help"])
+
+        self.assertEqual(code, 0)
+        self.assertIn("usage", sortie.lower())
+        self.assertEqual(self.index_ecrits(), [])
+
+    def test_h_court_affiche_l_usage_et_n_ecrit_aucun_index(self):
+        code, sortie, _ = self.executer(["-h"])
+
+        self.assertEqual(code, 0)
+        self.assertIn("usage", sortie.lower())
+        self.assertEqual(self.index_ecrits(), [])
+
+    def test_un_drapeau_inconnu_est_refuse_et_n_ecrit_aucun_index(self):
+        """Une faute de frappe ne doit plus réécrire les cinq index."""
+        code, _, erreurs = self.executer(["--verfier"])
+
+        self.assertNotEqual(code, 0)
+        self.assertIn("--verfier", erreurs)
+        self.assertEqual(self.index_ecrits(), [])
+
+    def test_verifier_n_ecrit_rien_meme_quand_un_index_est_perime(self):
+        """`--verifier` est un constat, jamais une écriture."""
+        self.generer()                                   # index à jour...
+        (self.racine / "IA/README.md").unlink()          # ... puis un manquant
+
+        code, _, erreurs = self.executer(["--verifier"])
+
+        self.assertEqual(code, 1)
+        self.assertIn("IA/README.md", erreurs)
+        self.assertFalse((self.racine / "IA/README.md").exists(),
+                         "« --verifier » ne doit pas réécrire l'index manquant")
+
+    def test_sans_option_les_cinq_index_sont_bien_ecrits(self):
+        """Témoin : le même décor, sans option, écrit — sinon rien n'est prouvé."""
+        code, _, _ = self.executer([])
+
+        self.assertEqual(code, 0)
+        self.assertEqual(self.index_ecrits(), list(INDEX))
+
+    def test_l_option_racine_vise_un_autre_coffre(self):
+        """`--racine` l'emporte sur la racine du script.
+
+        C'est la couture dont `verifier_coffre.verifier_derives()` a besoin pour
+        juger un coffre qui n'est pas celui du produit ; sans elle, le contrôle
+        jugeait toujours les index de la machine, quel que soit `--coffre`.
+        """
+        pas_nous = self.racine.parent / "pas-nous"
+        RI.RACINE = pas_nous
+        sortie, erreurs = StringIO(), StringIO()
+        with redirect_stdout(sortie), redirect_stderr(erreurs):
+            code = RI.main(["--racine", str(self.racine)])
+
+        self.assertEqual(code, 0, erreurs.getvalue())
+        self.assertEqual(self.index_ecrits(), list(INDEX))
+        self.assertFalse(pas_nous.exists(),
+                         "rien ne doit atterrir dans la racine du script")
+
+
+class PremierePhrase(unittest.TestCase):
+    """L'index compact ne montre que la première phrase d'une description."""
+
+    def test_coupe_au_premier_point_suivi_d_un_blanc(self):
+        self.assertEqual(RI.premiere_phrase("Faire A — `x.md`. À charger quand B."),
+                         "Faire A — `x.md`.")
+
+    def test_ne_coupe_pas_dans_un_nom_de_fichier(self):
+        self.assertEqual(RI.premiere_phrase("Écrire `docs/PLAN.md` vite. Puis."),
+                         "Écrire `docs/PLAN.md` vite.")
+
+    def test_description_sans_point_rendue_entiere(self):
+        self.assertEqual(RI.premiere_phrase("  Faire A  "), "Faire A")
+
+    def test_une_abreviation_ne_coupe_pas(self):
+        for abrev in ("p. ex.", "cf.", "etc.", "c.-à-d."):
+            with self.subTest(abreviation=abrev):
+                self.assertEqual(
+                    RI.premiere_phrase("Faire A, %s B, vite. Puis C." % abrev),
+                    "Faire A, %s B, vite." % abrev)
+
+    def test_un_mot_qui_finit_comme_une_abreviation_coupe(self):
+        # « index. » finit par « ex. » : ce n'est pas l'abréviation.
+        self.assertEqual(RI.premiere_phrase("Lire l'index. Puis C."),
+                         "Lire l'index.")
+
+    def test_aucune_description_versionnee_n_est_amputee(self):
+        racine = Path(__file__).resolve().parent.parent
+        for chemin in sorted((racine / "IA" / "skills").rglob("*.md")):
+            fm = RI.lire_frontmatter(chemin)
+            if not fm or fm.get("kind") != "skill":
+                continue
+            with self.subTest(skill=fm.get("name")):
+                phrase = RI.premiere_phrase(fm.get("description", ""))
+                self.assertFalse(RI.finit_par_abreviation(phrase),
+                                 "première phrase coupée sur une abréviation")

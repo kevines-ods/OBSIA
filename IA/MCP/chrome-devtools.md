@@ -65,6 +65,6 @@ relus.
 - Ne naviguer que vers des URLs autorisées (listes blanches optionnelles).
 - Le profil lancé par `--isolated=true` est jetable — ne jamais le pointer
   vers un profil Chrome personnel contenant des sessions authentifiées.
-- Consigner les navigations au carnet — du chantier, ou du jour hors chantier — (`VAULT-CONTRACT.md` §9) —
-  il n'y a pas de journal séparé. Y écrire la nature de la navigation, pas une
+- Consigner les navigations au carnet — du chantier ou du jour, à défaut le journal de `_MAINTENANCE/` — (`VAULT-CONTRACT.md` §9) —
+  pas de journal dédié aux navigations. Y écrire la nature de la navigation, pas une
   URL interne : le dépôt est public.

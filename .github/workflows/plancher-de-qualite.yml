@@ -1,0 +1,74 @@
+name: Plancher de qualité
+
+# Le plancher du projet (`CONSTRAINTS.md`) refuse un *diff* qui baisse la barre :
+# faire taire un vérificateur, alléger un test, laisser du travail inachevé,
+# desserrer un seuil. Le script est partagé — `plancher-qualite` —, le plancher
+# est propre au projet.
+#
+# Ce contrôle vit dans son propre workflow, et pas dans « Vérifier le coffre »,
+# pour deux raisons :
+#
+# 1. Il juge un *diff* contre une base, pas l'arbre. Il lui faut l'historique et
+#    la référence de base, donc un clone complet — ce que la vérification, qui
+#    tourne à chaque poussée, n'a pas besoin de payer.
+# 2. Il ne se déclenche que sur une pull request : sans diff, il n'a rien à dire.
+#
+# Le garde est lu **sur la base**, pas sur la tête de la PR : c'est la règle en
+# vigueur avant le changement qui juge le changement. Lu dans la tête, une PR
+# pourrait retirer le motif qui la surveille et prendre le raccourci dans le même
+# geste — exactement ce que ce plancher existe pour empêcher.
+#
+# C'est un demi-verrou, et il faut le savoir : la *définition* de ce workflow,
+# GitHub la lit dans la tête de la PR — une PR peut donc réécrire ces lignes-ci.
+# Seule une protection de branche fermerait ce dernier pas ; ce dépôt ne
+# l'autorise pas. La voie de secours reste la relecture humaine de la PR.
+#
+# Le script n'utilise que la bibliothèque standard : `python3` du runner suffit,
+# rien à installer.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+# `contents: read` suffit : on lit la base et le diff, rien de plus.
+permissions:
+  contents: read
+
+jobs:
+  plancher:
+    # La borne du garde, décision utilisateur : une publication verse d'un
+    # coup un arbre déjà relu, PR par PR, par ce même garde — juger ce
+    # versement comme du travail neuf le fait crier sur des constats
+    # arbitrés (un skill qui enseigne la dette technique cite des marqueurs
+    # d'inachèvement, c'est son sujet). La synchronisation n'échappe donc
+    # au garde que sur un dépôt public (`private == false`) et depuis une
+    # tête `publication/*`. Partout ailleurs — tout dépôt privé, toute
+    # branche de travail — le garde reste actif ; la publication reste
+    # relue par son aperçu et son contrôle de fuite.
+    if: ${{ !(github.event.repository.private == false && startsWith(github.head_ref, 'publication/')) }}
+    runs-on: ubuntu-latest
+    steps:
+      # `fetch-depth: 0` : le garde compare deux points de l'historique et
+      # s'appuie sur une référence de base — un clone superficiel ne les a pas.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Le plancher du projet ne se desserre pas
+        env:
+          # Passée par l'environnement, jamais interpolée dans le script : un nom
+          # de branche de PR est une donnée de l'auteur, pas du code.
+          BASE: ${{ github.event.pull_request.base.ref || 'main' }}
+        run: |
+          # La base peut manquer selon la façon dont la référence a été
+          # récupérée : on la demande, plutôt que de laisser le garde sortir en
+          # 2 (n'a pas pu tourner) et se lire comme un 0.
+          git fetch --no-tags origin "+refs/heads/$BASE:refs/remotes/origin/$BASE"
+
+          GARDE="IA/skills/plancher-qualite/scripts/garde_plancher.py"
+
+          # Le garde est lu sur la base : c'est la règle en vigueur qui juge le
+          # changement. S'il manque côté base, `git show` échoue et le voyant
+          # passe au rouge — jamais de vert par défaut.
+          git show "origin/$BASE:$GARDE" > "$RUNNER_TEMP/garde_plancher.py"
+          python3 "$RUNNER_TEMP/garde_plancher.py" --depot . --base "origin/$BASE"

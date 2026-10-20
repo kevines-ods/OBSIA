@@ -29,11 +29,19 @@ Un dossier parent reprend les chiffres de ses enfants, de bas en haut.
 Usage :
     python3 scripts/regenerate_sommaire.py
     python3 scripts/regenerate_sommaire.py --verifier   # n'écrit rien, sort 1 si périmé
+    python3 scripts/regenerate_sommaire.py --help       # affiche l'usage, n'écrit rien
 """
 
+import argparse
 import os
 import re
 import sys
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from convention_des_notes import (  # noqa: E402  (après l'insertion de sys.path)
+    DOSSIERS_HORS_MEMOIRE, dossier_hors_memoire, est_depot_imbrique)
 
 RACINE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 #: Le coffre parent : le dossier qui contient ce dépôt, et donc la mémoire.
@@ -194,37 +202,11 @@ def racines_de_memoire():
     return sorted(racines)
 
 
-#: Dossiers où l'on n'écrit jamais de sommaire, et dans lesquels on ne descend
-#: pas : le `code/` d'un projet est un dépôt Git distinct (§7.3 du contrat),
-#: `node_modules/` n'est pas de la mémoire. Même règle que
-#: `appliquer_convention_parent.py` (PR #128) — la liste de noms reste un filet
-#: sous la règle du `.git`.
-DOSSIERS_HORS_MEMOIRE = ("node_modules", "code")
-
-
-def est_depot_imbrique(dossier: str) -> bool:
-    """Vrai si `dossier` porte son propre dépôt Git — un dépôt imbriqué.
-
-    `.git` peut être un dossier (dépôt courant) ou un fichier (sous-module,
-    arbre de travail lié) : on teste l'existence, jamais le type.
-    """
-    return os.path.exists(os.path.join(dossier, ".git"))
-
-
-def dossier_hors_memoire(dossier: str) -> bool:
-    """Vrai si l'on ne doit ni résumer `dossier`, ni descendre dedans.
-
-    Un dossier technique (`code/`, `node_modules/`), ou tout dossier portant un
-    `.git` quel que soit son nom : on ne pose jamais de sommaire dans un autre
-    dépôt.
-
-    Ne s'applique qu'aux dossiers **rencontrés sous** une racine de mémoire. La
-    racine du parcours, elle, n'est jamais filtrée : on résume toujours le
-    dossier par lequel on entre — sans quoi le coffre, qui est lui-même un dépôt,
-    n'aurait aucun sommaire.
-    """
-    return (os.path.basename(dossier.rstrip(os.sep)) in DOSSIERS_HORS_MEMOIRE
-            or est_depot_imbrique(dossier))
+# La frontière de mémoire vient de `convention_des_notes` : l'applicateur,
+# l'indexeur et ce script en partagent une seule définition. Le parcours passe
+# par `dossier_hors_memoire` ; `DOSSIERS_HORS_MEMOIRE` et `est_depot_imbrique`
+# restent exposés à la surface du module, où `tests/test_regenerate_sommaire.py`
+# les lit pour vérifier que les marcheurs ne divergent pas.
 
 
 def notes_de(dossier: str):
@@ -320,8 +302,26 @@ def rendre(dossier: str, cumul: dict) -> str:
 
 # ----------------------------------------------------------------------- main
 
-def main() -> int:
-    verifier = "--verifier" in sys.argv
+def analyser_arguments(argv=None):
+    """Lit la ligne de commande.
+
+    Un analyseur explicite plutôt qu'une lecture à la main de `sys.argv` : un
+    drapeau inconnu doit être refusé, jamais ignoré en silence. Sans lui,
+    `--help` — ou une simple faute de frappe — passait pour une absence
+    d'option et le script régénérait tout le coffre (incident du 2026-10-12).
+    """
+    analyseur = argparse.ArgumentParser(
+        description="Régénère les sommaire.md des dossiers de mémoire (§2). "
+                    "Sans option, il écrit les sommaires du coffre.")
+    analyseur.add_argument(
+        "--verifier", action="store_true",
+        help="n'écrit rien et sort 1 si un sommaire est périmé, 0 sinon")
+    return analyseur.parse_args(argv)
+
+
+def main(argv=None) -> int:
+    options = analyser_arguments(argv)
+    verifier = options.verifier
     racines = racines_de_memoire()
     if not racines:
         print("Aucun dossier à sommaire — ni %s, ni %s dans %s : rien à résumer."

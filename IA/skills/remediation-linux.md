@@ -200,7 +200,7 @@ Pièges de configuration système :
 2. Vérifier que rien d'autre n'a cassé : `systemctl --failed`.
 3. Consigner : symptôme, cause, action, résultat. C'est ce qui rend la panne
    suivante plus rapide à résoudre. Deux destinations, selon la portée :
-   le **carnet** — du chantier, ou du jour hors chantier — (`VAULT-CONTRACT.md` §9) pour la trace de l'action ;
+   le **carnet** — du chantier ou du jour, à défaut le journal de `_MAINTENANCE/` — (`VAULT-CONTRACT.md` §9) pour la trace de l'action ;
    `0-MEMOIRES/<nom-agent>/expériences/` si la leçon resservira ailleurs (§6).
    Ni l'un ni l'autre ne reçoit d'adresse IP, de nom d'hôte interne ou
    d'identifiant — le dépôt est public.

@@ -89,6 +89,19 @@ Présenter la carte, les zones fragiles et les deux documents. La porte n'est
 franchie que lorsque l'utilisateur a confirmé que le cadrage reconstitué
 décrit bien son projet — y compris les points `à confirmer`.
 
+## Après la reprise — quel skill porte quelle tranche
+
+Selon la nature du changement, une tranche peut être portée par un skill
+dédié plutôt que par `construction-dune-tranche` :
+
+| Le changement est… | Skill |
+| --- | --- |
+| restructurer sans changer le comportement | `refactoring-sur` — livré **avant** la fonctionnalité qu'il prépare |
+| mettre à jour dépendances, cadriciel ou langage | `montee-de-version` |
+| faire évoluer un schéma ou un format de données | `migration-de-donnees` |
+| décider quoi rembourser avant d'étoffer | `dette-technique` → `docs/DETTE.md` |
+| remettre la documentation d'aplomb | `documentation-du-projet` — et à la fin de toute tranche qui change l'installation, la configuration ou une décision |
+
 ## Rationalisations
 
 | Ce qu'on se dit | La réalité |

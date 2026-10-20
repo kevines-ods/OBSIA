@@ -1,10 +1,21 @@
 #!/bin/sh
 # Régénère les sommaires de la mémoire du coffre parent (§11), qui ne sont pas
-# versionnés dans ce dépôt. Silencieux, et jamais bloquant : un sommaire absent
-# ou périmé gêne la lecture, il ne casse rien. Sans coffre parent (clone nu,
-# CI), le script n'a rien à résumer et sort sans bruit.
+# versionnés dans ce dépôt. Jamais bloquant, et muet quand tout va bien : un
+# sommaire absent ou périmé gêne la lecture, il ne casse rien. Sans coffre parent
+# (clone nu, CI), le script n'a rien à résumer et sort sans bruit.
 racine=$(git rev-parse --show-toplevel) || exit 0
 [ -f "$racine/scripts/regenerate_sommaire.py" ] || exit 0
 command -v python3 >/dev/null 2>&1 || exit 0
-( cd "$racine" && python3 scripts/regenerate_sommaire.py >/dev/null 2>&1 ) || true
+if ! ( cd "$racine" && python3 scripts/regenerate_sommaire.py >/dev/null ); then
+    echo "post-merge : les sommaires du coffre n'ont pas pu être régénérés" >&2
+fi
+# Puis l'AGENTS.md du coffre parent (§11) : un amendement du §4 change le prompt
+# engendré, donc la règle des secrets que lit l'agent. Une fusion est le moment
+# où le §4 fusionné devient ce que l'agent lit — c'est ici, et ici seulement,
+# que l'arbre principal est réécrit.
+[ -f "$racine/scripts/installer.py" ] || exit 0
+if ! ( cd "$racine" && python3 scripts/installer.py --agents >/dev/null ); then
+    echo "post-merge : ÉCHEC — l'AGENTS.md du coffre n'a pas pu être rafraîchi," \
+         "il peut être périmé" >&2
+fi
 exit 0

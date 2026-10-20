@@ -43,6 +43,11 @@ jobs:
       - name: Routage des skills
         run: python3 scripts/evaluer_routage.py
 
+      # Même registre, routé sur la seule première phrase : c'est tout ce que
+      # `skills-index.md` montre d'office à un modèle à petit contexte.
+      - name: Routage sur l'index compact
+        run: python3 scripts/evaluer_routage.py --index-compact
+
       # Les sommaires vivent dans le coffre parent, pas dans ce dépôt (§6, §11) :
       # un clone nu n'en a aucun, et le script sort proprement sans rien écrire.
       - name: Les sommaires se génèrent

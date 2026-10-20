@@ -80,7 +80,7 @@ soi. Avant de s'en servir :
   invalide` ou `IMPOSSIBLE:` disent que l'appel a échoué — on corrige la
   consigne ou on fait soi-même, sans réessayer à l'aveugle.
 - **Écrire soi-même**, selon les zones et le preview du §7 — le modèle local
-  n'écrit rien.
+  n'écrit rien (hors l'écriture portée par un outil déclaré, §7.4).
 
 ## Confidentialité
 
@@ -91,7 +91,7 @@ réseau privé. Si son adresse désigne un service tiers, ne rien transmettre de
 
 ## Tracer
 
-Chaque appel laisse une ligne au carnet — du chantier, ou du jour hors chantier — (§9) : la nature de la
+Chaque appel laisse une ligne au carnet — du chantier ou du jour, à défaut le journal de `_MAINTENANCE/` — (§9) : la nature de la
 tâche et le résultat retenu ou écarté — jamais l'adresse du serveur.
 
 ## Brancher le serveur

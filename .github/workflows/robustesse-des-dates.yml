@@ -1,0 +1,45 @@
+name: Robustesse à la date
+
+# Une suite verte répond à une question datée. Deux cas de la tranche 5
+# rougissaient le 2027-01-01 sans qu'une ligne de produit change : la suite
+# mesurait la tolérance de bascule avec l'horloge du jour. Ce workflow pose la
+# question à six dates déclarées, une fois par semaine.
+#
+# Il ne tourne pas à chaque poussée : six passages de la suite coûtent quelques
+# minutes, et ce qu'il cherche — une dérive de calendrier — ne change pas d'un
+# commit à l'autre. Le diff, lui, est déjà jugé par « Vérifier le coffre ».
+#
+# C'est **l'instance hebdomadaire unique** de ce contrôle : rien dans un cron
+# système ne la double. Une tâche déclarée deux fois s'écarte de l'autre sans
+# que personne ne le voie.
+#
+# Aucune dépendance : le script n'utilise que la bibliothèque standard, et le
+# runner fournit `python3`.
+
+on:
+  schedule:
+    # Lundi 03:00 UTC. GitHub retarde parfois un `schedule` de quelques minutes
+    # en période de charge : l'heure est un repère, pas une garantie.
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  six-dates:
+    runs-on: ubuntu-latest
+    # Six exécutions d'environ une minute : la borne est large, et elle existe
+    # pour qu'un blocage ne consomme pas la demi-journée d'un runner.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      # Le script sort non-zéro dès qu'une date rougit et nomme les tests
+      # fautifs : la tâche est rouge pour la même raison, sans rien ajouter.
+      - name: La suite tournée à chaque date déclarée
+        run: python3 scripts/verifier_dates.py

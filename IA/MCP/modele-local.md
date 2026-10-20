@@ -39,7 +39,8 @@ alertes : réponse tronquée, vide, JSON invalide, tâche refusée.
 configurée peut désigner une autre machine que celle de l'agent : le contenu
 transmis sort alors du poste. Le serveur, lui, n'écrit rien et n'expose au
 modèle ni fichier ni outil — c'est ce qui rend la délégation sûre pour le
-coffre.
+coffre. **L'écriture au nom d'un modèle local passe par un outil déclaré
+(§7.4), jamais par ce serveur.**
 
 ## Règles d'usage
 
@@ -47,7 +48,7 @@ coffre.
   comment rédiger la consigne, et comment relire.
 - **Le résultat ne s'écrit jamais tel quel** : l'agent le contrôle contre la
   source, puis écrit lui-même selon le §7.
-- **Consigner l'usage** : une ligne par appel au carnet — du chantier, ou du jour hors chantier — (§9).
+- **Consigner l'usage** : une ligne par appel au carnet — du chantier ou du jour, à défaut le journal de `_MAINTENANCE/` — (§9).
 
 ## Sécurité
 

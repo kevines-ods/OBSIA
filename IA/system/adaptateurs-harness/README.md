@@ -80,12 +80,13 @@ section par section.
 | `deepseek-harness.md` | DeepSeek Harness (DSH) | **aucune** — une ligne de greffon par serveur | oui — `!!js process.env.X` | vérifié 2026-09-30, **sauf le §4** |
 | `pi.md` | Pi | **aucune** — pas de MCP intégré | sans objet — variables d'environnement | vérifié 2026-09-16 |
 | `vibe-work.md` | Vibe Work (Mistral, hébergé) | **aucune** — connecteurs posés par l'administrateur de l'espace | sans objet — OAuth côté plateforme (la doc cite aussi « aucun », « Bearer », « Basic ») | constat direct, 2026-10-07 |
+| `vibe-code-cli.md` | Vibe Code CLI (Mistral, ligne de commande) | `mcp_servers` (TOML) | non — des **noms** (`api_key_env`) ; `headers` peut porter un littéral | documentée, non éprouvée, 2026-10-10 |
 
 Trois choses que ce tableau rend visibles d'un coup d'œil, et qui décident du
 branchement :
 
-- **`mcpServers` n'est pas une norme.** Trois harness sur dix l'utilisent ;
-  quatre attendent une autre clé, deux n'en ont aucune, et DSH n'empile pas de
+- **`mcpServers` n'est pas une norme.** Trois harness sur onze l'utilisent ;
+  cinq attendent une autre clé, deux n'en ont aucune, et DSH n'empile pas de
   clé du tout — une ligne de greffon par serveur. Recopier le bloc de
   `commun.md` sans lire la fiche échoue en silence.
 - **Deux fiches ne peuvent pas porter un jeton.** Sur AionUi la documentation

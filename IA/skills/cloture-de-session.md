@@ -35,7 +35,8 @@ Ne pas se fier à sa mémoire de la conversation : lire le diff.
 | --- | --- |
 | l'outil lui-même — un skill, un agent, un script du dépôt | `Mon coffre/0-PROJETS/obsia/<chantier>/` |
 | un autre projet — du coffre ou de l'utilisateur | `Mon coffre/0-PROJETS/<projet>/<chantier>/` |
-| rien de tout cela — dépannage, correction ponctuelle | le carnet du jour du projet de domaine (§6) : `Mon coffre/0-PROJETS/obsia/carnets/`, ou `0-PROJETS/<domaine>/carnets/` |
+| rien de tout cela — dépannage, correction ponctuelle — qui laisse un suspens | le carnet du jour du projet de domaine (§6) : `Mon coffre/0-PROJETS/obsia/carnets/`, ou `0-PROJETS/<domaine>/carnets/` ; aucun projet : demander |
+| la même chose, bouclée dans la séance | aucun carnet : les actions au journal `Mon coffre/_MAINTENANCE/journal-des-seances.md`, la leçon dans `expériences/` (`contrat-memoire`) |
 | une tâche terminée qui laisse un état à tenir à jour | `Mon coffre/0-PERSONNELS/<sujet>.md`, avec `auteur: <nom-agent>` |
 
 Test (§7.3.1) : *est-ce que ça décrit le produit ?* Si oui, ça s'écrit dans le
@@ -120,6 +121,13 @@ laissée** dans `0-MEMOIRES/`.
 
 Le carnet, à la clôture, voit sa section `## Étape en cours` devenir un avis de
 clôture, l'état de la séance restant conservé en citation.
+
+**Clore un carnet de séance sans chantier.** Même logique, en plus léger :
+pas de dossier ni de bilan à coiffer. Dès que son suspens est levé, régler
+`statut: clos`, puis déplacer le fichier au même instant de
+`0-PROJETS/<projet>/carnets/` vers `0-MEMOIRES/<projet>/carnets/` — à l'écart
+des chantiers clos, pour qu'on ne le prenne pas pour un chantier. Le dossier
+`carnets/` n'existe que s'il y a déjà un carnet à y mettre.
 
 `0-MEMOIRES/` n'est gelé **qu'à moitié** : le dossier du chantier qu'on vient d'y
 déposer ne bouge plus, mais `préférences/` et `<nom-agent>/expériences/`, qui

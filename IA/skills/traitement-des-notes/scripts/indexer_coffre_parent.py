@@ -43,7 +43,6 @@ Usage :
 """
 
 import argparse
-import os
 import re
 import sys
 from pathlib import Path
@@ -51,6 +50,29 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 
 CONTRAT_REL = Path("IA") / "system" / "VAULT-CONTRACT.md"
+
+
+def _racine_du_depot(depuis: Path) -> Path | None:
+    """Le dossier du dépôt OBSIA le plus proche au-dessus de `depuis`."""
+    d = depuis.resolve().parent
+    for _ in range(10):
+        if (d / CONTRAT_REL).is_file():
+            return d
+        if d.parent == d:
+            break
+        d = d.parent
+    return None
+
+
+_RACINE_DEPOT = _racine_du_depot(Path(__file__))
+if _RACINE_DEPOT is None:
+    raise SystemExit("Dépôt OBSIA introuvable au-dessus de %s" % __file__)
+if str(_RACINE_DEPOT / "scripts") not in sys.path:
+    sys.path.insert(0, str(_RACINE_DEPOT / "scripts"))
+
+# La convention des notes vit dans le moteur partagé, en un seul exemplaire.
+from convention_des_notes import (  # noqa: E402
+    corps, est_note, extraire_frontmatter, notes_du_dossier)
 
 # Dossiers de premier niveau du coffre parent (§7.1), dans l'ordre d'affichage.
 # `0-MEMOIRES/` porte les préférences et les expériences (vivantes) **et** les
@@ -71,60 +93,7 @@ INDEX_GENERES = {nom_index(d) for d in DOSSIERS}
 
 def trouver_racine_depot(script: Path) -> Path | None:
     """Remonte jusqu'au dossier qui contient IA/system/VAULT-CONTRACT.md."""
-    d = script.resolve().parent
-    for _ in range(10):
-        if (d / CONTRAT_REL).is_file():
-            return d
-        if d.parent == d:
-            break
-        d = d.parent
-    return None
-
-
-def extraire_frontmatter(texte: str) -> dict:
-    """Frontmatter YAML minimal (scalaires et listes à tirets).
-
-    Même analyseur que `appliquer_convention_parent.py` : le format des notes du
-    coffre parent est volontairement simple, et aucune dépendance externe n'est
-    admise dans ce dépôt.
-    """
-    if not texte.startswith("---"):
-        return {}
-    fin = texte.find("\n---", 3)
-    if fin == -1:
-        return {}
-    donnees: dict = {}
-    cle_liste: str | None = None
-    for ligne in texte[3:fin].splitlines():
-        nu = ligne.strip()
-        if not nu or nu.startswith("#"):
-            continue
-        if nu.startswith("- ") and cle_liste:
-            donnees[cle_liste].append(nu[2:].strip().strip("'\""))
-            continue
-        if ":" not in nu:
-            continue
-        cle, _, valeur = nu.partition(":")
-        cle = cle.strip()
-        valeur = valeur.strip()
-        if not valeur:
-            donnees[cle] = []
-            cle_liste = cle
-            continue
-        cle_liste = None
-        donnees[cle] = valeur.strip("'\"")
-    return donnees
-
-
-def corps(texte: str) -> str:
-    """Le texte situé après le frontmatter, s'il y en a un."""
-    if not texte.startswith("---"):
-        return texte
-    fin = texte.find("\n---", 3)
-    if fin == -1:
-        return texte
-    retour = texte.find("\n", fin + 1)
-    return texte[retour + 1:] if retour != -1 else ""
+    return _racine_du_depot(script)
 
 
 def premiere_accroche(texte: str) -> str:
@@ -141,22 +110,18 @@ def premiere_accroche(texte: str) -> str:
     return ""
 
 
-def notes_du_dossier(dossier: Path) -> list[Path]:
-    """Notes Markdown du dossier — dépôts de projet et index générés écartés."""
-    trouves: list[Path] = []
-    for chemin, sous, fichiers in os.walk(dossier):
-        racine = Path(chemin)
-        if (racine / ".git").exists():      # dépôt de projet : hors index (§7.3)
-            sous[:] = []
-            continue
-        sous[:] = [s for s in sous if not s.startswith(".")]
-        for nom in fichiers:
-            if not nom.endswith(".md") or nom.startswith("."):
-                continue
-            if nom in INDEX_GENERES:        # un index ne se liste pas lui-même
-                continue
-            trouves.append(racine / nom)
-    return sorted(trouves, key=lambda p: p.relative_to(dossier).as_posix())
+def retenir_note_de_l_index(nom: str) -> bool:
+    """Ce que l'index liste : une note du coffre, sauf un index généré.
+
+    L'indexeur s'aligne sur l'applicateur, comme le veut la phase 1 du plan
+    (« il ne reste qu'une définition par règle partagée », `docs/PLAN.md`) :
+    c'est ``est_note`` qui décide ce qu'est une note, en un seul exemplaire. Les
+    **fichiers de dossier** (`sommaire.md`, `README.md`) que l'installeur pose
+    n'en sont pas, et l'index cesse de les compter. L'indexeur n'ajoute qu'une
+    règle, la sienne : écarter ses propres index, pour ne pas se compter
+    lui-même.
+    """
+    return est_note(nom) and nom not in INDEX_GENERES
 
 
 def ligne(chemin: Path) -> str:
@@ -165,7 +130,8 @@ def ligne(chemin: Path) -> str:
         return valeur.replace("|", "\\|") or "—"
 
     texte = chemin.read_text(encoding="utf-8", errors="replace")
-    fm = extraire_frontmatter(texte)
+    fm, _ = extraire_frontmatter(texte)
+    fm = fm or {}
     desc = str(fm.get("description") or "").strip() or premiere_accroche(texte)
     desc = re.sub(r"\s+", " ", desc).strip()
     if len(desc) > LONGUEUR_DESCRIPTION:
@@ -180,7 +146,7 @@ def ligne(chemin: Path) -> str:
 
 def rendre(dossier_nom: str, dossier: Path) -> str:
     """Le contenu complet d'un index, pour un dossier donné."""
-    notes = notes_du_dossier(dossier)
+    notes = notes_du_dossier(dossier, retenir=retenir_note_de_l_index)
     L = ["# %s — Index de %s/" % (nom_index(dossier_nom), dossier_nom), "",
          "> Fichier **généré** par",
          "> `IA/skills/traitement-des-notes/scripts/indexer_coffre_parent.py` —",
