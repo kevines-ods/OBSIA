@@ -2,7 +2,7 @@
 schema: 1
 kind: mcp
 name: nextcloud
-description: Lire et tenir l'agenda, les tâches, les notes et les contacts de l'utilisateur sur son instance Nextcloud auto-hébergée. À charger pour consulter ou planifier un rendez-vous, noter une idée, gérer une liste de tâches, retrouver un contact. Aucune création, modification ou suppression sans confirmation explicite.
+description: Lire et tenir l'agenda, les tâches, les notes et les contacts de l'utilisateur sur son instance Nextcloud auto-hébergée. À charger pour consulter ou planifier un rendez-vous, noter une idée, gérer une liste de tâches, retrouver un contact. Aucune création ni modification sans confirmation explicite ; jamais de suppression, même confirmée.
 module: services-nextcloud
 type: tool
 transport: stdio
@@ -40,15 +40,18 @@ Trois variables d'environnement : `NEXTCLOUD_HOST`, `NEXTCLOUD_USERNAME`,
 `permission: elevated` : chaque appel sort de la machine vers l'instance, et
 une invitation d'agenda part chez des tiers.
 
-Le serveur expose **plus de cent outils** sur une dizaine d'applications. Il
-n'en bride aucun : la limite vit ici.
+Vérifié le 2026-10-02 : **151 outils**, préfixés par application
+(`nc_calendar_*`, `nc_notes_*`, `nc_contacts_*`, `nc_webdav_*`, `deck_*`,
+`nc_share_*`, `nc_mail_*`…), dont seize qui suppriment
+(`nc_calendar_delete_event`, `nc_notes_delete_note`, `nc_webdav_delete_resource`,
+`nc_share_delete`…). Le serveur n'en bride aucun : la limite vit ici.
 
 | Usage | Applications | Règle |
 | --- | --- | --- |
 | **autorisé** | Calendar (événements et tâches), Notes, Contacts | lecture libre ; création et modification après confirmation |
 | **lecture seule** | Files (WebDAV), Deck | lire pour répondre, jamais écrire |
 | **interdit** | Sharing, Mail, Talk, Tables, News, Cookbook, Collectives, Shopping List | ne jamais appeler |
-| **interdit partout** | tout outil de **suppression** (`delete_*`) | ne jamais appeler — voir « Ne rien supprimer » |
+| **interdit partout** | tout outil **dont l'effet** est de supprimer, vider ou mettre à la corbeille un objet entier, quel que soit son nom (`delete`, `trash`, `purge`, `empty` en sont des indices) ; lire la corbeille ou retirer un participant d'un objet existant n'en est pas | ne jamais appeler — voir « Ne rien supprimer » |
 
 ## Règles d'usage
 
@@ -73,7 +76,7 @@ n'en bride aucun : la limite vit ici.
   compte, ni contenu d'agenda ou de note. Le dépôt est public (§7.2).
 - **Le mot de passe d'application vit hors dépôt**, en variable
   d'environnement de la configuration du harness, jamais dans une note (§4).
-- **Consigner l'usage** : tout appel laisse une ligne au carnet — du chantier, ou du jour hors chantier — (§9),
+- **Consigner l'usage** : tout appel laisse une ligne au carnet — du chantier ou du jour, à défaut le journal de `_MAINTENANCE/` — (§9),
   la nature de l'action (« création d'un événement »), jamais son contenu.
 - **Révocation** : en cas de doute, supprimer le mot de passe d'application
   dans Appareils et sessions ; le serveur perd l'accès immédiatement.

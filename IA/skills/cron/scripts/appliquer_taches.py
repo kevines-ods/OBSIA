@@ -42,7 +42,8 @@ CONFIG = Path.home() / ".config" / "obsia" / "appliquer.conf"
 
 GABARIT_CONFIG = """\
 # Configuration locale de appliquer_taches.py — NON versionnée, à dessein :
-# elle nomme un harness, ce que le coffre ne fait jamais (§3).
+# elle nomme un harness — le §3 le permet hors du produit, tant qu'aucun nom ni
+# comportement de harness n'y conditionne le fonctionnement.
 
 # Commande qui lance un agent avec une instruction.
 # `{instruction}` est remplacé par le chemin du fichier contenant l'instruction
@@ -374,7 +375,7 @@ def main() -> int:
                               for n in posees)
         print("\nsystemd injoignable depuis ici. Les changements sont sur "
               "disque ; à faire sur la machine :\n" + rappel)
-    print("Agent appelant : consigner ces actions au carnet — du chantier, ou du jour hors chantier — (§9).")
+    print("Agent appelant : consigner ces actions au carnet — du chantier ou du jour, à défaut le journal de `_MAINTENANCE/` — (§9).")
     return 0
 
 

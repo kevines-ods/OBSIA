@@ -205,7 +205,8 @@ def apercu(modules: list[dict], actifs: set[str], racine: Path,
     if est_un_coffre_parent(coffre_parent):
         for rel, mot in ((".gitignore", "conservé"),
                          (".githooks/pre-commit", "rafraîchi"),
-                         (".githooks/post-commit", "rafraîchi")):
+                         (".githooks/post-commit", "rafraîchi"),
+                         (".githooks/post-rewrite", "rafraîchi")):
             chemin = coffre_parent / rel
             print("      %-9s: %s" % (mot if chemin.is_file() else "posé", rel))
         print("      dépôt de données : %s"
@@ -874,7 +875,7 @@ def poser_crochets_depot(coffre: Path, produit: Path) -> None:
         avertir_du_lien(Path(CROCHETS_DEPOT))
         return
     poses = []
-    for nom in ("pre-commit", "post-commit"):
+    for nom in ("pre-commit", "post-commit", "post-rewrite"):
         gabarit = produit / GABARITS_DEPOT / nom
         if not gabarit.is_file():
             continue
@@ -951,7 +952,23 @@ def main() -> int:
                     help="retient tout le catalogue et supprime le profil")
     ap.add_argument("--appliquer", action="store_true",
                     help="exécute ; sans lui, l'installeur n'affiche qu'un aperçu")
+    ap.add_argument("--agents", action="store_true",
+                    help="rafraîchit seulement l'AGENTS.md du coffre parent, puis "
+                         "s'arrête — c'est ce que le crochet post-merge demande "
+                         "après tout amendement du §4")
     args = ap.parse_args()
+
+    # Un amendement du §4 change le prompt engendré, donc l'AGENTS.md lu par
+    # l'agent : le rafraîchir sans rejouer l'installation entière. Le crochet
+    # `post-merge` du dépôt produit appelle ce mode après chaque fusion (§11).
+    if args.agents:
+        coffre = args.installer.resolve() if args.installer else args.racine.resolve()
+        if not est_un_coffre_parent(coffre.parent):
+            print("Pas de coffre parent sous %s : rien à rafraîchir, l'AGENTS.md "
+                  "reste tel quel." % coffre.parent, file=sys.stderr)
+            return 0
+        ecrire_agents(coffre)
+        return 0
 
     racine = args.racine.resolve()
     modules = MOD.lire_modules(racine)

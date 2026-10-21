@@ -8,6 +8,9 @@ Usage :
     ./generer_prompt.py --mcp                    # affiche aussi la config MCP à faire
     ./generer_prompt.py --sans-profil            # ignore obsia.local.yml (pire cas)
     ./generer_prompt.py --racine /chemin/OBSIA
+    ./generer_prompt.py --embarque contradicteur -o AGENTS-embarque.md
+    ./generer_prompt.py --compact assistant      # prompt court, modèle à petit contexte
+    ./generer_prompt.py --compact batisseur --phase cadrage
 
 Aucune dépendance externe : le frontmatter est lu par un analyseur minimal,
 suffisant pour le format strict défini dans VAULT-CONTRACT.md.
@@ -403,6 +406,240 @@ def prompt_du_coffre(racine: Path = RACINE_DEFAUT,
     return construire_prompt(agents, skills, taches, regle_des_secrets(racine))
 
 
+# ------------------------------------------------------------- mode embarqué
+
+def corps_declaratif(chemin: Path) -> str | None:
+    """Le corps Markdown d'un fichier déclaratif, frontmatter ôté.
+
+    Rend None si le fichier ne se lit pas ou n'a pas de frontmatter : sans
+    frontmatter ce n'est pas une déclaration, et le mode embarqué n'a rien
+    à engendrer à partir d'elle.
+    """
+    if not lire_frontmatter(chemin):
+        return None
+    try:
+        texte = chemin.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return None
+    fin = texte.find("\n---", 3)
+    if fin == -1:
+        return None
+    return texte[fin + 4:].strip("\n")
+
+
+def prompt_embarque(racine: Path = RACINE_DEFAUT,
+                    nom_agent: str = "") -> str | None:
+    """Le prompt autonome d'un agent, pour un poste sans coffre.
+
+    Le déploiement embarqué — un harness posé sur une machine qui ne porte
+    ni le dépôt OBSIA ni le coffre parent — ne peut pas suivre la méthode du
+    §10 : pas de noyau à lire, pas d'index à consulter, pas de skills sur le
+    disque. Le prompt porte donc tout ce dont l'agent dispose : un en-tête
+    qui dit où il opère, la règle des secrets (même repère que partout,
+    `regle_des_secrets`), et le **corps intégral** du fichier de l'agent —
+    c'est lui, seul, qui doit porter sa méthode, sans renvoi vers ce que la
+    machine ne porte pas.
+
+    Le contexte propre au poste — qui le tient, sous quel nom lui parler,
+    où vit le carnet — vit dans l'AGENTS.md du carnet, côté coffre parent :
+    jamais dans ce prompt, jamais dans le dépôt (§7.3.1).
+
+    Rend None si l'agent n'existe pas ou ne se lit pas : l'appelant décide
+    quoi en dire.
+    """
+    chemin = Path(racine) / "IA" / "agents" / f"{nom_agent}.md"
+    corps = corps_declaratif(chemin)
+    if corps is None:
+        return None
+
+    lignes: list[str] = []
+    a = lignes.append
+
+    # Même raison d'être que l'en-tête du prompt du coffre, adapté au poste :
+    # il n'y a ni deux racines ni sous-dossier OBSIA/ à nommer — juste une
+    # session dont le dossier de travail est le carnet, et rien d'autre à
+    # lire sur la machine.
+    a("Tu opères sur un poste distant, sans accès au coffre OBSIA : ni son")
+    a("dépôt, ni le coffre qui porte la mémoire, ne sont sur cette machine.")
+    a("Les règles qui suivent font foi. Le dossier de travail de ta session")
+    a("est le carnet du chantier : c'est ta seule écriture durable, et son")
+    a("propriétaire y lit à distance ce qui s'y est écrit.")
+    a("")
+
+    regle = regle_des_secrets(racine)
+    if regle:
+        a("## Secrets")
+        a("")
+        a(regle)
+        a("")
+
+    a(corps)
+    return "\n".join(lignes)
+
+
+# --------------------------------------------------------------- mode compact
+
+#: Le plafond du prompt compact, en caractères : ce qu'un modèle local de 8 000
+#: jetons garde de place pour la conversation une fois le prompt posé.
+PLAFOND_COMPACT = 8000
+
+#: La section du noyau que le prompt compact reprend telle quelle : qui écrit
+#: où, le patch, le preview. Bornée par son titre et le suivant, pour ne garder
+#: aucune copie à rafraîchir (§5).
+SECTION_ECRITURE = re.compile(r"^## 2\. .*?(?=^##)", re.MULTILINE | re.DOTALL)
+
+
+class NoyauIncomplet(ValueError):
+    """Un noyau présent auquel manque une règle grave que le prompt compact porte."""
+
+
+def section_ecriture(racine: Path = RACINE_DEFAUT) -> str:
+    """Le §2 du noyau sans ses sous-sections, ou "" s'il n'y a pas de noyau.
+
+    Un noyau présent sans §2 lève `NoyauIncomplet` : rendre "" ferait sortir
+    la règle d'écriture du prompt sans que rien ne le dise.
+    """
+    try:
+        contrat = (Path(racine) / NOYAU).read_text(encoding="utf-8")
+    except OSError:
+        return ""
+    m = SECTION_ECRITURE.search(contrat)
+    if m is None:
+        raise NoyauIncomplet("le §2 (écriture) est introuvable dans le noyau")
+    return m.group(0).strip("\n")
+
+
+#: Les balises de phase d'une fiche d'agent (`contrat-frontmatter`) : un
+#: commentaire HTML seul sur sa ligne, muet dans Obsidian.
+BALISE_PHASE = re.compile(r"^<!--\s*phase\s*:\s*([a-z0-9-]+)\s*-->\s*$")
+FIN_DE_PHASE = "fin"
+SKILL_CITE = re.compile(r"`([a-z0-9-]+)`")
+
+
+class BalisageInvalide(ValueError):
+    """Une fiche dont les balises de phase ne s'ouvrent et ne se ferment pas."""
+
+
+def decouper_en_phases(corps: str) -> tuple[str, dict[str, str]]:
+    """(socle, {phase: section}) d'un corps de fiche, balises ôtées.
+
+    Hors balises, c'est le socle : il entre dans tout prompt compact. Une
+    phase ne s'imbrique pas, se ferme avant la suivante et ne se répète pas.
+    """
+    socle: list[str] = []
+    phases: dict[str, list[str]] = {}
+    ouverte = None
+    for n, ligne in enumerate(corps.splitlines(), 1):
+        m = BALISE_PHASE.match(ligne.strip())
+        if not m:
+            (phases[ouverte] if ouverte else socle).append(ligne)
+            continue
+        nom = m.group(1)
+        if nom == FIN_DE_PHASE:
+            if ouverte is None:
+                raise BalisageInvalide(f"ligne {n} : fin de phase sans ouverture")
+            ouverte = None
+        elif ouverte is not None:
+            raise BalisageInvalide(f"ligne {n} : phase « {nom} » ouverte dans « {ouverte} »")
+        elif nom in phases:
+            raise BalisageInvalide(f"ligne {n} : phase « {nom} » déjà définie")
+        else:
+            ouverte = nom
+            phases[nom] = []
+    if ouverte is not None:
+        raise BalisageInvalide(f"phase « {ouverte} » jamais fermée")
+    net = lambda L: re.sub(r"\n{3,}", "\n\n", "\n".join(L)).strip("\n")
+    return net(socle), {k: net(v) for k, v in phases.items()}
+
+
+def skills_par_phase(declares: list[str], socle: str,
+                     phases: dict[str, str]) -> dict[str, list[str]]:
+    """Les skills déclarés, rangés sous la première phase qui les cite.
+
+    Un skill cité dans le socle, ou nulle part, est commun à toutes.
+    """
+    rang: dict[str, str] = {}
+    cites_au_socle = set(SKILL_CITE.findall(socle))
+    for phase, texte in phases.items():
+        for nom in SKILL_CITE.findall(texte):
+            rang.setdefault(nom, phase)
+    groupes: dict[str, list[str]] = {"communs": []}
+    groupes.update({p: [] for p in phases})
+    for nom in declares:
+        cle = "communs" if nom in cites_au_socle else rang.get(nom, "communs")
+        groupes[cle].append(nom)
+    return {k: v for k, v in groupes.items() if v}
+
+
+def prompt_compact(racine: Path = RACINE_DEFAUT, nom_agent: str = "",
+                   phase: str | None = None) -> str | None:
+    """Le prompt court d'un agent, pour un modèle à petit contexte.
+
+    Distinct du mode embarqué : le coffre est là, l'agent lit à la demande.
+    Le prompt porte les seules règles graves du noyau — l'écriture et le
+    preview (§2), les secrets (§4) —, le **socle** de la fiche, la section de
+    la phase demandée s'il y en a une, et les skills **par nom seul**, groupés
+    par phase : leur description se lit dans `skills-index.md`.
+
+    Rend None si l'agent n'existe pas ou ne se lit pas. Lève
+    `BalisageInvalide` sur une fiche mal balisée, `KeyError` sur une phase
+    inconnue, `NoyauIncomplet` si le noyau existe sans l'une des deux règles.
+    Ne tronque jamais : l'appelant compare à `PLAFOND_COMPACT` et refuse.
+    """
+    chemin = Path(racine) / "IA" / "agents" / f"{nom_agent}.md"
+    corps = corps_declaratif(chemin)
+    fm = lire_frontmatter(chemin) if corps is not None else None
+    if corps is None or not fm:
+        return None
+    socle, phases = decouper_en_phases(corps)
+    if phase is not None and phase not in phases:
+        raise KeyError(phase)
+    connus = {s["name"] for s in collecter(Path(racine) / "IA" / "skills", "skill")}
+    declares = [n for n in fm.get("skills", []) if n in connus]
+
+    lignes: list[str] = []
+    a = lignes.append
+    a("Tu es l'agent OBSIA `%s`. Ces règles font foi ; pour un acte qu'elles"
+      % nom_agent)
+    a("ne couvrent pas, lire `IA/system/VAULT-CONTRACT.md`.")
+    a("")
+    ecriture = section_ecriture(racine)
+    if ecriture:
+        a(ecriture)
+        a("")
+    regle = regle_des_secrets(racine)
+    if not regle and (Path(racine) / NOYAU).is_file():
+        raise NoyauIncomplet("la règle des secrets (§4) a perdu ses repères")
+    if regle:
+        a("## Secrets")
+        a("")
+        a(regle)
+        a("")
+    a(socle)
+    if phases:
+        a("")
+        if phase is None:
+            a("## Phases de cette fiche — aucune chargée")
+            a("")
+            a("Avant d'agir, relis dans `IA/agents/%s.md` la section de la phase qui"
+              % nom_agent)
+            a("s'applique : %s." % ", ".join("`%s`" % p for p in phases))
+        else:
+            a("## Phase chargée : `%s`" % phase)
+            a("")
+            a(phases[phase])
+    if declares:
+        a("")
+        a("## Tes skills — `IA/skills/<nom>.md`, à lire avant d'en appliquer un")
+        a("")
+        # Phase chargée : ses skills et les communs seulement ; ceux des
+        # autres phases se lisent avec elles, dans la fiche.
+        for groupe, noms in skills_par_phase(declares, socle, phases).items():
+            if phase is None or groupe in ("communs", phase):
+                a("- %s : %s" % (groupe, ", ".join("`%s`" % n for n in noms)))
+    return "\n".join(lignes)
+
+
 # ---------------------------------------------------------------------- main
 
 def main() -> int:
@@ -416,12 +653,89 @@ def main() -> int:
     ap.add_argument("--sans-profil", action="store_true",
                     help="ignore obsia.local.yml : le catalogue entier, le pire "
                          "cas que mesure verifier_coffre.py et la CI")
+    ap.add_argument("--embarque", metavar="AGENT",
+                    help="engendre le prompt autonome de cet agent pour un "
+                         "poste sans coffre, au lieu du prompt du coffre")
+    ap.add_argument("--compact", metavar="AGENT",
+                    help="engendre le prompt court de cet agent (règles graves, "
+                         "fiche, skills en une ligne), plafonné à %d caractères"
+                         % PLAFOND_COMPACT)
+    ap.add_argument("--phase", metavar="PHASE",
+                    help="avec --compact : charge aussi cette section balisée "
+                         "de la fiche")
     args = ap.parse_args()
 
     racine = args.racine.resolve()
     if not racine.is_dir():
         print(f"Racine introuvable : {racine}", file=sys.stderr)
         return 1
+
+    if args.compact and args.embarque:
+        print("--compact et --embarque s'excluent : un seul prompt à la fois.",
+              file=sys.stderr)
+        return 1
+
+    if args.compact:
+        try:
+            prompt = prompt_compact(racine, args.compact, args.phase)
+        except NoyauIncomplet as e:
+            print(f"Noyau incomplet, aucun prompt compact : {e}", file=sys.stderr)
+            return 1
+        except BalisageInvalide as e:
+            print(f"Balisage de phase invalide dans IA/agents/{args.compact}.md : "
+                  f"{e}", file=sys.stderr)
+            return 1
+        except KeyError:
+            print(f"Phase inconnue pour {args.compact} : {args.phase}",
+                  file=sys.stderr)
+            return 1
+        if prompt is None:
+            print(f"Agent introuvable ou illisible : {args.compact}",
+                  file=sys.stderr)
+            return 1
+        # Tronquer ferait perdre une règle sans le dire : on refuse, et c'est
+        # la fiche de l'agent qui s'allège.
+        if len(prompt) > PLAFOND_COMPACT:
+            print(f"Prompt compact trop long : {len(prompt)} caractères pour "
+                  f"un plafond de {PLAFOND_COMPACT}. Alléger le socle de "
+                  f"IA/agents/{args.compact}.md, ou en baliser une phase "
+                  f"(contrat-frontmatter).", file=sys.stderr)
+            return 1
+        if args.sortie:
+            args.sortie.write_text(prompt + "\n", encoding="utf-8")
+            print(f"Écrit : {args.sortie}", file=sys.stderr)
+        else:
+            print(prompt)
+        print(f"\n{len(prompt)} caractères.", file=sys.stderr)
+        return 0
+
+    if args.phase:
+        print("--phase ne vaut qu'avec --compact.", file=sys.stderr)
+        return 1
+
+    if args.embarque:
+        prompt = prompt_embarque(racine, args.embarque)
+        if prompt is None:
+            print(f"Agent introuvable ou illisible : {args.embarque}",
+                  file=sys.stderr)
+            return 1
+        # Le prompt embarqué voyage vers d'autres machines : un chemin absolu
+        # y serait faux partout, comme dans l'AGENTS.md du coffre. La garde
+        # est ici, à l'engendrement : c'est le seul endroit qui voit tous les
+        # prompts embarqués passer.
+        fautifs = chemins_absolus(prompt)
+        if fautifs:
+            print("Un chemin absolu de machine a contaminé le prompt "
+                  "embarqué :", file=sys.stderr)
+            for ligne in fautifs:
+                print(f"  · {ligne}", file=sys.stderr)
+            return 1
+        if args.sortie:
+            args.sortie.write_text(prompt + "\n", encoding="utf-8")
+            print(f"Écrit : {args.sortie}", file=sys.stderr)
+        else:
+            print(prompt)
+        return 0
 
     agents, skills, taches, _ = declarations_reduites(racine,
                                                       sans_profil=args.sans_profil)

@@ -30,6 +30,11 @@ Chacun de ces cas sort en 1 :
     est synchronisé entre des postes où le coffre n'a ni le même chemin ni le même
     nom, et un `/srv/…` y est faux « partout ailleurs » — la racine se désigne par
     son sous-dossier `OBSIA/`, jamais par un chemin ;
+  · un noyau du contrat (`IA/system/VAULT-CONTRACT.md`) au-delà de son plafond en
+    mots, déclaré à un seul endroit — la table de `CONSTRAINTS.md`, ligne « Noyau
+    du contrat », comme le plancher de tests : le noyau est lu **en entier** par
+    tout agent au démarrage, donc le laisser grossir se paie à chaque séance, et
+    sa taille, son plafond et l'écart s'affichent à chaque passage ;
   · une déclaration sans `module`, ou visant un module inexistant (§13) ;
   · une annexe du contrat (`IA/system/contrat/*.md`, sauf `registre.md`) au
     frontmatter invalide — `kind` autre que `contract`, `schema` non entier,
@@ -91,6 +96,13 @@ celle du fichier que l'installeur écrit, marqueur compris, sur le catalogue
 entier — profil ignoré, le pire cas, celui sous lequel la CI vérifie, pour ne
 pas dépendre d'un `obsia.local.yml` qui n'est pas versionné.
 
+Une **clause datée** du noyau du contrat qui a échu : une date ISO `AAAA-MM-JJ`
+est la seule façon d'y écrire une échéance (« se retire au plus tard le
+2026-12-31 ») ; passé le jour, l'avertissement dit la ligne et la date, parce
+qu'une échéance dépassée laisse croire qu'un régime tient encore. Une date bien
+formée mais inexistante (`2028-02-30`, `2026-13-01`) est dite « illisible » : on
+avertit, on ne sort pas en traceback devant une faute de frappe.
+
 PORTÉE DU CONTRÔLE DES CHEMINS
 ------------------------------
 Un contrôle qu'on croit plus large qu'il n'est vaut moins que pas de contrôle
@@ -145,8 +157,16 @@ sys.path.insert(0, str(SCRIPTS))
 
 from generer_prompt import (RACINE_DEFAUT, chemins_absolus,
                             fichiers_declaratifs, lire_frontmatter,
-                            prompt_du_coffre)
+                            prompt_du_coffre, regle_des_secrets)
 from installer import contenu_agents
+
+#: Les noms de la mémoire du coffre, et « qui est un agent », n'ont **qu'une**
+#: définition : le moteur partagé `convention_des_notes`, que l'applicateur du
+#: skill emprunte aussi. Deux copies finiraient par diverger sur les noms mêmes
+#: qui séparent la mémoire vivante du chantier gelé (§6).
+from convention_des_notes import (EXPERIENCES, MEMOIRES, PREFERENCES,
+                                  STATUTS_CARNET, carnet_a_la_forme,
+                                  carnet_du_dossier, liste_des_agents)
 import modules as MOD
 
 RACINE = RACINE_DEFAUT
@@ -178,6 +198,20 @@ TYPES_SKILL = ("core", "outil")
 # laissent le temps de réduire avant que le surplus ne soit écarté.
 TAILLE_FICHIER_AGENTS_AVERTISSEMENT = 28 * 1024     # 28 672 o
 TAILLE_FICHIER_AGENTS_ERREUR = 32 * 1024            # 32 768 o
+
+# Le noyau du contrat (`IA/system/VAULT-CONTRACT.md`) est lu **en entier** par
+# tout agent au démarrage : c'est un coût payé à chaque séance, pas un détail.
+# Son plafond en mots vit dans son **unique** endroit déclaré — la table de
+# `CONSTRAINTS.md`, ligne « Noyau du contrat », comme le plancher de tests. La
+# mesure est `len(texte.split())`, identique à `wc -w`. Relever le plafond se
+# décide dans une PR (§11), jamais en silence.
+NOYAU = Path("IA") / "system" / "VAULT-CONTRACT.md"
+LIBELLE_PLAFOND_NOYAU = "Noyau du contrat"
+
+# Une échéance datée dans le noyau s'écrit en ISO `AAAA-MM-JJ` — la seule forme
+# admise. Passé le jour, le contrôle avertit : une clause périmée laisse croire
+# qu'un régime tient encore.
+CLAUSE_DATEE = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 erreurs: list[str] = []
 avertissements: list[str] = []
@@ -240,18 +274,28 @@ def signaler_memoire(chemin, message):
 #: Tolérance de bascule (§11) : le chantier dont la clôture les retire, et la
 #: date écrite au plus tard de laquelle elles doivent avoir disparu. Tant qu'il
 #: dure, la mémoire vit sous deux formes à la fois et le contrôle doit rester
-#: utilisable — ses tolérances avertissent, même sur le coffre lui-même, et le
-#: message porte la date : c'est elle qui force la clôture si elle traîne.
+#: utilisable : ses tolérances avertissent — même sur le coffre lui-même — et le
+#: message porte la date. **Passé cette date, les mêmes formes refusent** : c'est
+#: elle qui force la clôture si elle traîne, au lieu d'un avertissement éternel.
 BASCULE = "souverainete-des-donnees"
 BASCULE_FIN = "2026-12-31"
 
 
-def signaler_bascule(chemin, message):
-    """Une tolérance de bascule (§11) : toujours un avertissement, jamais une erreur.
+def signaler_bascule(chemin, message, aujourdhui=None):
+    """Une tolérance de bascule (§11) : avertissement, puis erreur après le jour dit.
 
-    Le chantier est nommé et la date de fin écrite : à sa clôture — au plus tard
-    le jour dit — la tolérance tombe avec l'ancienne forme qu'elle excusait.
+    Le chantier est nommé et la date de fin écrite. Tant que la bascule dure,
+    l'ancienne forme avertit sans interrompre — la mémoire vit sous deux formes,
+    et exiger la disparition de celle qu'on migre empêcherait de finir. Passé
+    `BASCULE_FIN`, le même vestige fait échouer le contrôle : un avertissement
+    éternel ne se lit plus, et une tolérance qu'on ne paie pas ne se retire
+    jamais. `aujourdhui` n'existe que pour le test, comme dans
+    `bascule_echue`.
     """
+    if bascule_echue(aujourdhui):
+        erreur(chemin, "bascule non achevée : %s — la tolérance a expiré le %s "
+                       "(§11, chantier « %s »)" % (message, BASCULE_FIN, BASCULE))
+        return
     avertir(chemin, "%s (tolérance de bascule — chantier « %s », à retirer au plus "
                     "tard le %s, §11)" % (message, BASCULE, BASCULE_FIN))
 
@@ -873,10 +917,12 @@ def verifier_unicite_des_noms():
 
 
 # ------------------------------------------------------------------- carnets
+# La forme d'un carnet n'a qu'un exemplaire, et il vit dans le moteur partagé :
+# c'est lui qui nomme (`nom_de_carnet`), c'est lui qui reconnaît
+# (`carnet_a_la_forme`, `carnet_du_dossier`). La date et les statuts se lisent là
+# aussi — deux listes de statuts finiraient par diverger.
 
-DATE_CARNET = re.compile(r"^\d{4}-\d{2}-\d{2}-")
 NOTE_DATEE_A_PLAT = re.compile(r"^\d{4}-\d{2}-\d{2}-.*\.md$")
-STATUTS_CARNET = ("en cours", "en attente", "clos")
 RESERVES_PROJET = ("carnets", "documents", "code")
 
 
@@ -925,7 +971,9 @@ def verifier_carnets():
     - tant que la bascule dure (§11), une note datée à plat et un dossier
       `archives/` (au niveau du projet comme sous `carnets/`) restent tolérés :
       avertissement, jamais erreur — même sur le coffre lui-même, sans quoi la
-      migration serait impossible à finir.
+      migration serait impossible à finir. **Passé le 2026-12-31, la tolérance
+      tombe** : les mêmes formes font échouer le contrôle, comme l'ancienne
+      mémoire de `verifier_bascule` — une échéance, un seul traitement.
     """
     for projets in emplacements_de_projets():
         for projet in sorted(projets.iterdir()):
@@ -982,10 +1030,10 @@ def verifier_carnets_dun_projet(dossier: Path, projet: str):
 
 def verifier_carnet(chemin: Path, projet: str):
     rel = designation(chemin)
-    if not DATE_CARNET.match(chemin.name):
+    if not carnet_a_la_forme(chemin.name):
         signaler_memoire(rel, "carnet mal nommé — attendu "
                               "`AAAA-MM-JJ-<projet>-<sujet>.md` (§6)")
-    elif not chemin.name.startswith(chemin.name[:11] + projet + "-"):
+    elif not carnet_du_dossier(chemin.name, projet):
         signaler_memoire(rel, "carnet mal nommé : `<projet>` ne correspond pas au "
                               "dossier `%s` (§6)" % projet)
     fm = lire_frontmatter(chemin)
@@ -1015,17 +1063,14 @@ def _git_dans(chemin: Path, *arguments: str) -> subprocess.CompletedProcess:
 
 # ------------------------------------------------------- noms de 0-MEMOIRES
 
-MEMOIRES = "0-MEMOIRES"
-PREFERENCES = "préférences"
-LECONS = "expériences"
-
-
 def noms_d_agents_declares() -> set:
-    """Le nom de chaque agent déclaré : sous `0-MEMOIRES/`, il est réservé (§6)."""
-    dossier = RACINE / "IA" / "agents"
-    if not dossier.is_dir():
-        return set()
-    return {chemin.stem for chemin in fichiers_declaratifs(dossier)}
+    """Le nom de chaque agent déclaré : sous `0-MEMOIRES/`, il est réservé (§6).
+
+    « Qui est un agent » n'a **qu'une** définition : `liste_des_agents` du moteur
+    partagé, qui voit les deux formes de déclaration (§5) — un agent déclaré en
+    dossier compte autant qu'un agent déclaré d'un fichier plat.
+    """
+    return set(liste_des_agents(RACINE))
 
 
 def verifier_noms_de_memoire():
@@ -1064,14 +1109,14 @@ def verifier_noms_de_memoire():
                                              "ce nom (§6)" % (MEMOIRES, PREFERENCES))
             continue
         if entree.name in reserves:
-            lecons = entree / LECONS
+            lecons = entree / EXPERIENCES
             if not lecons.is_dir():
                 signaler_memoire(entree, "`%s/%s/` est l'espace mémoire de cet agent : il ne contient "
                                          "que `%s/`. Un projet ne peut pas porter le nom d'un agent (§6)"
-                                 % (MEMOIRES, entree.name, LECONS))
+                                 % (MEMOIRES, entree.name, EXPERIENCES))
             elif [e for e in sorted(lecons.iterdir()) if e.is_dir()]:
                 signaler_memoire(lecons, "`%s/` ne contient que des notes `<sujet>.md` (§6)"
-                                 % LECONS)
+                                 % EXPERIENCES)
             continue
         if not [e for e in sorted(entree.iterdir())
                 if e.is_dir() and not e.name.startswith(".")]:
@@ -1360,9 +1405,15 @@ def verifier_derives():
     Les sommaires de `mémoire/` n'en font plus partie : ils ne sont pas
     versionnés (§11), donc un clone neuf — celui de la CI — n'en a pas, et
     les exiger reviendrait à refuser tout clone propre.
+
+    `--racine` dit quel coffre juger : sans lui, le générateur indexe la racine
+    du produit, c'est-à-dire la machine, quel que soit le `--coffre` reçu. Un
+    contrôle qui juge un autre coffre que celui qu'on lui donne ne prouve rien ;
+    c'est pourtant ce qu'il faisait, et aucun test ne pouvait le voir.
     """
     for script, quoi in (("regenerate_index.py", "index"),):
-        res = subprocess.run([sys.executable, str(SCRIPTS / script), "--verifier"],
+        res = subprocess.run([sys.executable, str(SCRIPTS / script),
+                              "--racine", str(RACINE), "--verifier"],
                              capture_output=True, text=True, cwd=str(RACINE))
         if res.returncode != 0:
             detail = (res.stderr or res.stdout).strip().replace("\n", " / ")
@@ -1414,6 +1465,152 @@ def verifier_taille_du_fichier_agents():
                 "fichier global partage — réduire le catalogue avant d'y arriver"
                 % (taille,
                    TAILLE_FICHIER_AGENTS_AVERTISSEMENT, TAILLE_FICHIER_AGENTS_ERREUR))
+
+
+def plafond_du_noyau(chemin=None):
+    """Le plafond du noyau, lu à son **unique** endroit déclaré : `CONSTRAINTS.md`.
+
+    Le nombre ne vit qu'ici — dans la table, ligne « Noyau du contrat », comme le
+    plancher de tests — et nulle part ailleurs : une seconde copie finirait par
+    diverger de la première, et c'est celle qu'on croit qui ment. Rend ``None``
+    quand le document ou la ligne manquent : c'est à l'appelant de dire si cela
+    doit être une erreur.
+    """
+    chemin = Path(chemin) if chemin else RACINE / "CONSTRAINTS.md"
+    if not chemin.is_file():
+        return None
+    for ligne in chemin.read_text(encoding="utf-8").splitlines():
+        nue = ligne.strip()
+        if not nue.startswith("|"):
+            continue
+        champs = [champ.strip() for champ in nue.strip("|").split("|")]
+        if len(champs) < 2 or champs[0] != LIBELLE_PLAFOND_NOYAU:
+            continue
+        trouve = re.search(r"≤\s*\**\s*(\d[\d\s]*)", nue)
+        if trouve:
+            return int(re.sub(r"\s", "", trouve.group(1)))
+    return None
+
+
+def mots_du_noyau(chemin=None) -> int:
+    """Le nombre de mots du noyau, à la manière de `wc -w`.
+
+    `len(texte.split())` compte les suites de caractères non blancs exactement
+    comme `wc -w` : la mesure annoncée est celle qu'on peut rejouer en ligne de
+    commande, sans outil du dépôt.
+    """
+    chemin = Path(chemin) if chemin else RACINE / NOYAU
+    return len(chemin.read_text(encoding="utf-8").split())
+
+
+def verifier_taille_du_noyau():
+    """Le noyau du contrat tient sous son plafond, et on le dit à chaque passage.
+
+    Le noyau est lu **en entier** par tout agent au démarrage : sa taille est un
+    coût payé à chaque séance, pas un détail. Le plafond vit dans son unique
+    endroit déclaré (`CONSTRAINTS.md`, ligne « Noyau du contrat ») ; le relever
+    se décide dans une PR (§11), jamais en silence. La mesure est celle de
+    `wc -w` ; l'écart est la marge restante avant le plafond.
+
+    Rend la ligne à afficher — taille, plafond, écart — ou ``None`` s'il n'y a
+    pas de noyau à mesurer : un clone sans noyau, ou un dossier de mémoire, n'a
+    rien à dire ici (le second n'a pas non plus de `CONSTRAINTS.md`).
+    """
+    chemin_noyau = RACINE / NOYAU
+    chemin_plafond = RACINE / "CONSTRAINTS.md"
+    if not chemin_noyau.is_file() or not chemin_plafond.is_file():
+        return None
+
+    mots = mots_du_noyau(chemin_noyau)
+    plafond = plafond_du_noyau(chemin_plafond)
+    if plafond is None:
+        erreur("CONSTRAINTS.md",
+               "le plafond du noyau du contrat n'est pas déclaré : la table doit "
+               "porter une ligne « %s » avec un nombre de mots (`≤ N mots`) — "
+               "sans elle, le noyau peut grossir sans que rien ne le dise"
+               % LIBELLE_PLAFOND_NOYAU)
+        return "Noyau du contrat : %d mots, plafond non déclaré." % mots
+
+    if mots > plafond:
+        erreur("IA/system/VAULT-CONTRACT.md",
+               "le noyau pèse %d mots, %d au-dessus du plafond de %d : le noyau "
+               "est lu en entier à chaque séance — le ramener sous le plafond, "
+               "ou relever le plafond dans une PR (§11), jamais en silence"
+               % (mots, mots - plafond, plafond))
+    return ("Noyau du contrat : %d mots sur %d (marge %d)."
+            % (mots, plafond, plafond - mots))
+
+
+def verifier_regle_des_secrets():
+    """Le bloc de la règle des secrets (§4) est là, entre ses repères.
+
+    `generer_prompt.regle_des_secrets` rend ``""`` quand les repères
+    `regle-secrets` disparaissent du noyau : le prompt engendré — et donc
+    l'`AGENTS.md` lu par l'agent — perdent alors la règle **en silence**, alors
+    qu'elle est la seule porte qui protège les secrets (§4, §5). Le générateur a
+    beau être tenu par un test, ce test vit dans le dépôt produit ; ce contrôle-ci
+    le dit depuis le coffre, là où l'amendement du §4 atterrit.
+
+    Rend la ligne à afficher, ou ``None`` s'il n'y a pas de noyau à lire : un
+    clone sans contrat n'a rien à dire ici.
+    """
+    chemin_noyau = RACINE / NOYAU
+    if not chemin_noyau.is_file():
+        return None
+
+    bloc = regle_des_secrets(RACINE)
+    if not bloc.strip():
+        erreur("IA/system/VAULT-CONTRACT.md",
+               "le bloc de la règle des secrets (§4, repères `regle-secrets`) est "
+               "vide ou introuvable : le prompt engendré — et l'`AGENTS.md` lu par "
+               "l'agent — perdent la règle en silence ; rétablir le bloc entre ses "
+               "repères (§4, §5)")
+        return "Règle des secrets : bloc vide ou introuvable."
+
+    return ("Règle des secrets : %d caractères, entre ses repères."
+            % len(bloc))
+
+
+def verifier_clauses_datees_du_noyau(aujourdhui=None):
+    """Une clause datée du noyau ne survit pas à sa date.
+
+    Forme reconnue : une date ISO `AAAA-MM-JJ` écrite dans le noyau — la seule
+    admise pour y dater une échéance (« se retire au plus tard le 2026-12-31 »).
+    Passé le jour, l'avertissement dit la ligne et la date : une échéance
+    dépassée laisse croire qu'un régime tient encore, et le contrat doit être
+    nettoyé ou la clause redatée. Un avertissement suffit — toutes les dates du
+    noyau ne sont pas des échéances, et la relecture humaine tranche.
+
+    Une date **bien formée mais inexistante** (`2028-02-30`, `2026-13-01`) est
+    dite « illisible » : `date.fromisoformat` lèverait une `ValueError`, qui
+    sortirait le vérificateur en traceback et refuserait un coffre cohérent pour
+    une faute de frappe. On avertit, on ne s'arrête pas.
+
+    `aujourdhui` n'existe que pour le test.
+    """
+    chemin = RACINE / NOYAU
+    if not chemin.is_file():
+        return
+    if aujourdhui is None:
+        aujourdhui = date.today()
+    for numero, ligne in enumerate(chemin.read_text(encoding="utf-8").splitlines(), 1):
+        for trouve in CLAUSE_DATEE.finditer(ligne):
+            ecrite = trouve.group(0)
+            try:
+                echeance = date.fromisoformat(ecrite)
+            except ValueError:
+                avertir("IA/system/VAULT-CONTRACT.md",
+                        "date illisible, ligne %d : « %s » a la forme d'une date "
+                        "sans en être une — la corriger, ou l'écrire autrement "
+                        "si ce n'est pas une échéance" % (numero, ecrite))
+                continue
+            if echeance >= aujourdhui:
+                continue
+            avertir("IA/system/VAULT-CONTRACT.md",
+                    "clause datée périmée, ligne %d : la date %s est passée — "
+                    "retirer la clause ou la redater, une échéance dépassée "
+                    "laisse croire qu'un régime tient encore"
+                    % (numero, ecrite))
 
 
 def verifier_chemins_du_prompt():
@@ -1557,6 +1754,13 @@ def main(argv=None) -> int:
     verifier_derives()
     verifier_taille_du_fichier_agents()
     verifier_chemins_du_prompt()
+    ligne_du_noyau = verifier_taille_du_noyau()
+    verifier_clauses_datees_du_noyau()
+    ligne_des_secrets = verifier_regle_des_secrets()
+    if ligne_du_noyau and not silencieux:
+        print(ligne_du_noyau)
+    if ligne_des_secrets and not silencieux:
+        print(ligne_des_secrets)
 
     if avertissements and not silencieux:
         print("Avertissements (%d) :" % len(avertissements))

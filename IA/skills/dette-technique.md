@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: dette-technique
-description: Inventorier la dette technique d'un projet existant — code mort, duplications, TODO et FIXME, dépendances en retard ou abandonnées, zones sans test, contournements — puis la classer par coût et par risque dans `docs/DETTE.md` pour décider quoi rembourser et quand. À charger avant d'étoffer un projet qui a vieilli, ou quand chaque modification coûte plus cher que la précédente. Inventorie et classe : ne corrige rien.
+description: Inventorier la dette technique d'un projet qui a vieilli, pour savoir quoi nettoyer en priorité et quand — code mort, duplications, TODO et FIXME, dépendances en retard ou abandonnées, zones sans test, contournements — classée par coût et par risque dans `docs/DETTE.md`. À charger avant d'étoffer un projet existant, ou quand chaque modification coûte plus cher que la précédente. Inventorie et classe : ne corrige rien.
 module: construction
 type: outil
 read_only: false

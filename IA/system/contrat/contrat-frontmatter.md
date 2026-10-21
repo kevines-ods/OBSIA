@@ -43,6 +43,16 @@ Tout fichier agent ou skill commence par un frontmatter YAML valide.
 | `skills` | liste | une entrée par ligne, tirets YAML |
 | `mcp` | liste | idem |
 
+**Phases d'une fiche d'agent** — le corps d'une fiche peut se découper en
+phases, pour qu'un prompt compact (`generer_prompt.py --compact AGENT --phase P`)
+n'en charge qu'une. Une phase s'ouvre par `<!-- phase: <nom> -->` et se ferme
+par `<!-- phase: fin -->`, chaque balise seule sur sa ligne ; pas
+d'imbrication, pas de phase répétée, noms en minuscules et tirets. Hors
+balises, c'est le **socle** : rôle, règles propres, interdits — il entre dans
+tout prompt. Un skill déclaré appartient à la première phase qui le cite entre
+accents graves ; cité au socle ou nulle part, il est commun. Baliser ne retire
+rien : la fiche entière reste lue en conversation.
+
 **Champs propres aux skills**
 
 | Champ | Type | Notes |

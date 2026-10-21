@@ -1,0 +1,19 @@
+#!/bin/sh
+# Crochet d'après-réécriture du **dépôt de données du coffre** (§7.1).
+#
+# Une réécriture d'historique (`git rebase`) rejoue des commits : autant
+# d'après-commits qui, sans cela, pousseraient chacun un état intermédiaire d'un
+# historique en cours de réécriture. Le script suspend donc la poussée tant qu'un
+# `rebase-merge`/`rebase-apply` est en cours — et ce crochet-ci est le signal que
+# la réécriture est finie : il pousse **une fois** la pointe finale, le seul
+# moment où la branche est réattachée et stable.
+#
+# `git commit --amend` tire aussi `post-rewrite`, mais son `post-commit` a déjà
+# poussé : on ne refait pas la poussée dans ce cas. La suspension explicite
+# (`OBSIA_POUSSEE=0` ou la marque `.git/obsia-poussee.suspendue`) reste respectée.
+[ "$1" = "amend" ] && exit 0
+racine=$(git rev-parse --show-toplevel)
+outils="$racine/@PRODUIT@"
+python3 "$outils/scripts/depot_de_donnees.py" apres-rewrite \
+  --coffre "$racine" >/dev/null 2>&1 &
+exit 0

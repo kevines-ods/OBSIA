@@ -167,6 +167,19 @@ régénérer l'`AGENTS.md`.
 
 ## Publication — `publier.py` (§13.5)
 
+### Des fichiers suivis ne partent pas
+
+En plus des zones vidées, `publier.py` écarte de l'export les fichiers de sa
+liste `NON_PUBLIES` : suivis dans le privé — ils y font foi — mais décrivant
+une situation personnelle, tel un agent de déploiement embarqué pour la
+machine de quelqu'un. Un module ne peut pas porter l'exclusion : il regroupe
+ce qui n'a de sens qu'ensemble et porte aussi ce qui se publie ; un profil
+non plus, qui ne filtre que l'installation (§13.3). Le retrait a lieu dans
+`exporter`, avant la régénération : les index du public n'y citent donc
+jamais un fichier absent, et c'est `verifier_coffre.py` qui garde ce lien —
+un chemin vers le fichier retiré ferait échouer la vérification du public.
+L'aperçu liste ces fichiers à côté des zones vidées.
+
 ### Les quatre refus de `synchroniser`
 
 **`synchroniser` refuse quatre cibles**, avant d'exporter quoi que ce soit, code

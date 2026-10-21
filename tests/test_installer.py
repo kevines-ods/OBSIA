@@ -96,10 +96,64 @@ class BaseInstalleur(unittest.TestCase):
         self.assertEqual(resultat.returncode, 0, resultat.stderr)
         return sortie.read_text(encoding="utf-8")
 
+    def cible(self) -> Path:
+        """La cible d'une installation en copie : un coffre à côté du dépôt."""
+        return self.parent / "chez-moi" / "OBSIA"
+
+    def nettoyer_le_travail(self) -> None:
+        """Efface l'arbre de travail de la cible — le parent de `cible()`, où vit la mémoire.
+
+        Écrit ici et pas dans la boucle qui s'en sert : c'est ce qui fait suivre
+        le nettoyage quand un cas déplace `cible()`. Un chemin recopié à côté,
+        lui, se contente de ne rien effacer — `ignore_errors=True` — et l'erreur
+        tombe deux cas plus loin, dans un `mkdir`.
+        """
+        shutil.rmtree(self.cible().parent, ignore_errors=True)
+
     def corps(self, chemin: Path) -> str:
         """L'AGENTS.md sans sa première ligne de marqueur ni la ligne vide."""
         lignes = chemin.read_text(encoding="utf-8").splitlines(keepends=True)
         return "".join(lignes[2:])
+
+
+class TestModeAgentsSeul(BaseInstalleur):
+    """`--agents` rafraîchit l'`AGENTS.md` du coffre parent, et rien d'autre.
+
+    C'est ce que le crochet `post-merge` demande après une fusion qui touche le
+    §4 : rejouer l'installation entière réécrirait les fiches d'agents et de
+    skills qu'aucune fusion n'a touchées.
+    """
+
+    def coffre(self) -> Path:
+        """Le parent doit porter un marqueur de coffre (§7.1)."""
+        (self.parent / ".obsidian").mkdir(exist_ok=True)
+        return self.parent
+
+    def test_agents_ne_touche_que_l_agents_md(self):
+        self.profil()
+        self.coffre()
+        avant = set(self.parent.rglob("*"))
+
+        resultat = self.lancer("--agents")
+
+        self.assertEqual(0, resultat.returncode, resultat.stderr)
+        nouveaux = set(self.parent.rglob("*")) - avant
+        self.assertEqual({"AGENTS.md"},
+                         {str(p.relative_to(self.parent)) for p in nouveaux},
+                         "seul l'AGENTS.md du coffre est écrit")
+        self.assertTrue(avant <= set(self.parent.rglob("*")),
+                        "rien ne doit disparaître")
+
+    def test_agents_se_tait_sans_coffre_parent(self):
+        """Sans marqueur de coffre, rien à rafraîchir et rien à casser."""
+        self.profil()
+        avant = set(self.parent.rglob("*"))
+
+        resultat = self.lancer("--agents")
+
+        self.assertEqual(0, resultat.returncode, resultat.stderr)
+        self.assertEqual(avant, set(self.parent.rglob("*")))
+        self.assertIn("Pas de coffre parent", resultat.stderr)
 
 
 class TestEnTeteNommeLeCoffrePasLeDepot(BaseInstalleur):
@@ -131,6 +185,9 @@ class TestEnTeteNommeLeCoffrePasLeDepot(BaseInstalleur):
                       contenu)
         self.assertIn("Dépôt OBSIA (agents, skills, contrat) : "
                       "son sous-dossier OBSIA/.\n", contenu)
+        # Le dépôt n'est pas « la racine du coffre » : c'est l'erreur qui a fait
+        # écrire `0-SAVOIRS/` dedans, sous Goose et DeepSeek Harness.
+        self.assertNotIn("Racine du coffre", contenu)
 
     def test_le_fichier_pose_ne_porte_aucun_chemin_absolu(self):
         """Ni le chemin du coffre, ni celui du dépôt, ni aucun autre."""
@@ -143,15 +200,6 @@ class TestEnTeteNommeLeCoffrePasLeDepot(BaseInstalleur):
         self.assertEqual([], trouves, "chemins absolus dans le fichier : %s" % trouves)
         self.assertNotIn(str(self.parent), contenu)
         self.assertNotIn(str(self.racine), contenu)
-
-    def test_le_depot_n_est_pas_annonce_comme_le_coffre(self):
-        self.profil()
-
-        self.lancer("--appliquer")
-
-        self.assertNotIn("Racine du coffre",
-                         self.agents_md().read_text(encoding="utf-8"))
-
 
 class TestEcritureAgentsMd(BaseInstalleur):
     """--appliquer écrit AGENTS.md à côté du coffre, avec le bon contenu."""
@@ -205,40 +253,40 @@ class TestEcritureAgentsMd(BaseInstalleur):
         self.assertIn("agent-verif", texte)
         self.assertNotIn("agent-hors-profil", texte)
 
-    def test_l_etape_de_reprise_borne_son_champ(self):
-        """L'étape 0 vaut pour qui écrit, dans l'arbre principal et les worktrees."""
-        self.ecrire("IA/agents/agent-ecrit.md",
-                    "---\nschema: 1\nkind: agent\nname: agent-ecrit\n"
-                    "description: Un agent qui écrit.\nread_only: false\n"
-                    "module: construction\n---\n\nCorps.\n")
-        self.profil()
-
-        self.lancer("--appliquer")
-
-        texte = self.agents_md().read_text(encoding="utf-8")
-        # L'étape 0 engendrée reprend le §10 du contrat, mot pour mot — le
-        # passage est long, il se replie : on compare mot à mot, pas ligne à ligne.
-        normalise = " ".join(texte.replace("**", "").split())
-        self.assertIn("dans l'arbre principal et dans chaque worktree lié", normalise)
-        self.assertIn("Un agent `read_only: true` n'a pas de carnet : il saute "
-                      "cette étape.", normalise)
-        # L'index marque les agents en lecture seule, comme les skills.
-        self.assertIn("**agent-verif** [lecture seule]", texte)
-        self.assertIn("**agent-ecrit** —", texte)
-
     def test_l_etape_0_engendree_reprend_celle_du_contrat(self):
-        """N1 : l'étape 0 de l'`AGENTS.md` et celle du §10 disent la même chose."""
+        """N1 : l'étape 0 de l'`AGENTS.md` et celle du §10 disent la même chose.
+
+        Et elle borne son champ : elle vaut pour qui écrit, dans l'arbre
+        principal et les worktrees ; un agent `read_only: true` n'a pas de
+        carnet et la saute. L'index, lui, marque les agents en lecture seule
+        comme les skills.
+        """
         def etape_0(texte):
             bloc = re.search(r"^0\. Au démarrage.*?(?=\n1\. |\Z)", texte,
                              re.MULTILINE | re.DOTALL).group(0)
             return " ".join(bloc.replace("**", "").split())
 
+        self.ecrire("IA/agents/agent-ecrit.md",
+                    "---\nschema: 1\nkind: agent\nname: agent-ecrit\n"
+                    "description: Un agent qui écrit.\nread_only: false\n"
+                    "module: construction\n---\n\nCorps.\n")
         self.profil()
         self.lancer("--appliquer")
+
+        texte = self.agents_md().read_text(encoding="utf-8")
         contrat = (SCRIPTS.parent / "IA" / "system"
                    / "VAULT-CONTRACT.md").read_text(encoding="utf-8")
-        self.assertEqual(etape_0(contrat),
-                         etape_0(self.agents_md().read_text(encoding="utf-8")))
+        # Le passage est long, il se replie : on compare mot à mot, pas ligne
+        # à ligne.
+        self.assertEqual(etape_0(contrat), etape_0(texte))
+
+        normalise = " ".join(texte.replace("**", "").split())
+        self.assertIn("dans l'arbre principal et dans chaque worktree lié",
+                      normalise)
+        self.assertIn("Un agent `read_only: true` n'a pas de carnet : il saute "
+                      "cette étape.", normalise)
+        self.assertIn("**agent-verif** [lecture seule]", texte)
+        self.assertIn("**agent-ecrit** —", texte)
 
     def test_la_methode_renvoie_au_noyau_et_pas_aux_annexes(self):
         """N3 : le noyau se lit en entier, une annexe seulement avant son acte.
@@ -396,6 +444,8 @@ class TestFichierEtranger(BaseInstalleur):
     """Un AGENTS.md sans le marqueur n'est jamais écrasé."""
 
     def test_un_fichier_sans_marqueur_est_laisse_intact(self):
+        """Un AGENTS.md sans le marqueur n'est jamais écrasé, et sauter n'est
+        pas une erreur : le code de retour reste 0 et la sortie le dit."""
         self.profil()
         self.agents_md().write_text("# Mes consignes à moi\n", encoding="utf-8")
 
@@ -405,39 +455,41 @@ class TestFichierEtranger(BaseInstalleur):
                          "# Mes consignes à moi\n")
         self.assertIn("AGENTS.md", resultat.stderr)
         self.assertIn("marqueur", resultat.stderr)
-
-    def test_le_code_de_retour_n_est_pas_change_par_le_saut(self):
-        """Sauter ce fichier n'est pas une erreur du coffre."""
-        self.profil()
-        self.agents_md().write_text("à moi\n", encoding="utf-8")
-
-        resultat = self.lancer("--appliquer")
-
         self.assertEqual(resultat.returncode, 0, resultat.stderr)
         self.assertIn("Installation terminée", resultat.stdout)
 
-    def test_un_fichier_avec_marqueur_est_regenere(self):
-        self.profil()
-        self.agents_md().write_text(
-            "%s\n\nvieux prompt\n" % INS.MARQUEUR_AGENTS, encoding="utf-8")
+    def test_le_marqueur_est_reconnu_meme_entoure(self):
+        """Le marqueur se reconnaît seul, après une ligne vide, après un BOM.
 
-        resultat = self.lancer("--appliquer")
+        Les trois écritures viennent du même geste : un fichier posé par une
+        version antérieure, puis retouché à la main. Le BOM est le cas du
+        bloc-notes Windows, l'ancien libellé celui d'avant le renommage des
+        scripts — aucun ne doit empêcher la régénération, et aucun ne doit
+        laisser survivre le vieux prompt.
+        """
+        reference = self.prompt_de_reference()
+        cas = (
+            ("le marqueur seul",
+             "%s\n\nvieux prompt\n" % INS.MARQUEUR_AGENTS),
+            ("une ligne vide avant",
+             "\n%s\n\nvieux prompt\n" % INS.MARQUEUR_AGENTS),
+            ("un BOM avant",
+             "\ufeff%s\n\nvieux prompt\n" % INS.MARQUEUR_AGENTS),
+            ("un ancien libellé",
+             "<!-- généré par OBSIA/scripts/installer.py, version antérieure -->"
+             "\n\nvieux prompt\n"),
+        )
+        for libelle, contenu in cas:
+            with self.subTest(marqueur=libelle):
+                self.profil()
+                self.agents_md().write_text(contenu, encoding="utf-8")
 
-        self.assertEqual(resultat.returncode, 0, resultat.stderr)
-        self.assertEqual(self.corps(self.agents_md()),
-                         self.prompt_de_reference())
-        self.assertNotIn("vieux prompt", self.agents_md().read_text(encoding="utf-8"))
+                resultat = self.lancer("--appliquer")
 
-    def test_un_marqueur_apres_une_ligne_vide_suffit(self):
-        """Le marqueur reste reconnaissable même précédé de blancs."""
-        self.profil()
-        self.agents_md().write_text(
-            "\n%s\n\nvieux prompt\n" % INS.MARQUEUR_AGENTS, encoding="utf-8")
-
-        self.lancer("--appliquer")
-
-        self.assertEqual(self.corps(self.agents_md()),
-                         self.prompt_de_reference())
+                self.assertEqual(resultat.returncode, 0, resultat.stderr)
+                self.assertEqual(self.corps(self.agents_md()), reference)
+                self.assertNotIn("vieux prompt",
+                                 self.agents_md().read_text(encoding="utf-8"))
 
 
 class TestRegenerationIdempotente(BaseInstalleur):
@@ -587,14 +639,20 @@ class TestEcritureImpossible(BaseInstalleur):
     """
 
     def test_un_dossier_a_la_place_du_fichier_est_saute(self):
+        """L'aperçu le dit d'avance, et la pose continue sans écrire dedans."""
         self.profil()
         self.agents_md().mkdir()
+
+        apercu = self.lancer()
+
+        self.assertIn("sauté", apercu.stdout)
 
         resultat = self.lancer("--appliquer")
 
         self.assertEqual(resultat.returncode, 0, resultat.stderr)
         self.assertIn("AGENTS.md", resultat.stderr)
         self.assertTrue(self.agents_md().is_dir())
+        self.assertEqual(list(self.agents_md().iterdir()), [])
 
     def test_un_lien_casse_est_saute_sans_ecrire_derriere(self):
         """Un lien cassé pointe ailleurs : écrire au travers créerait un fichier
@@ -624,15 +682,6 @@ class TestEcritureImpossible(BaseInstalleur):
         self.assertTrue(self.agents_md().is_symlink())
         self.assertIn("vieux prompt", cible.read_text(encoding="utf-8"))
 
-    def test_l_apercu_annonce_le_saut_d_un_dossier(self):
-        self.profil()
-        self.agents_md().mkdir()
-
-        resultat = self.lancer()
-
-        self.assertIn("sauté", resultat.stdout)
-        self.assertEqual(list(self.agents_md().iterdir()), [])
-
     def test_un_parent_en_lecture_seule_est_saute(self):
         """Le dossier où poser AGENTS.md refuse l'écriture : on le dit et on
         continue. Un droit manquant n'est pas une raison d'échouer."""
@@ -651,36 +700,6 @@ class TestEcritureImpossible(BaseInstalleur):
 
 class TestMarqueur(BaseInstalleur):
     """Le marqueur décide : reconnu, le fichier est à nous ; sinon, il ne l'est pas."""
-
-    def test_un_marqueur_precede_d_un_bom_est_reconnu(self):
-        """Un BOM en tête ne doit pas rendre le fichier étranger à lui-même."""
-        self.profil()
-        self.agents_md().write_text(
-            "\ufeff%s\n\nvieux prompt\n" % INS.MARQUEUR_AGENTS, encoding="utf-8")
-
-        resultat = self.lancer("--appliquer")
-
-        self.assertEqual(resultat.returncode, 0, resultat.stderr)
-        self.assertEqual(self.corps(self.agents_md()),
-                         self.prompt_de_reference())
-        self.assertNotIn("vieux prompt",
-                         self.agents_md().read_text(encoding="utf-8"))
-
-    def test_un_ancien_libelle_reste_reconnu(self):
-        """Changer le marqueur un jour ne doit pas orpheliner les installations.
-
-        Un fichier posé par une version antérieure porte le libellé reconnu dans
-        une formule différente : il doit être régénéré, pas délaissé.
-        """
-        self.profil()
-        self.agents_md().write_text(
-            "<!-- généré par OBSIA/scripts/installer.py, version antérieure -->\n"
-            "\nvieux prompt\n", encoding="utf-8")
-
-        self.lancer("--appliquer")
-
-        self.assertEqual(self.corps(self.agents_md()),
-                         self.prompt_de_reference())
 
     def test_l_avertissement_dit_quoi_faire(self):
         """Un avertissement qui ne dit pas comment s'en défaire ne sert à rien."""
@@ -775,8 +794,8 @@ class TestLaCopieNeTouchePasALInstance(BaseInstalleur):
 class TestAucunLienSuivi(BaseInstalleur):
     """Un lien symbolique de la cible ne se suit ni en lecture ni en écriture.
 
-    Un `IA` déplacé ailleurs, une `mémoire/` partagée : l'installeur écrirait
-    hors du coffre qu'il croit installer. Il le dit, et passe.
+    Un `IA` déplacé ailleurs, un `IA/system/session-log` partagé : l'installeur
+    écrirait hors du coffre qu'il croit installer. Il le dit, et passe.
     """
 
     def cible(self) -> Path:
@@ -799,17 +818,66 @@ class TestAucunLienSuivi(BaseInstalleur):
         self.assertEqual(sorted(p.name for p in self.ailleurs().iterdir()), [])
         self.assertIn("lien", resultat.stderr.lower())
 
-    def test_la_memoire_liee_n_est_pas_remplie(self):
+    def test_les_dossiers_lies_ne_sont_pas_remplis_ni_reduits(self):
+        """Deux dossiers du coffre, un seul geste : aucune écriture à travers un lien.
+
+        `IA/agents` est réécrit par la réduction des agents. `0-PERSONNELS` est
+        le dossier que l'installeur remplit vraiment dans le coffre parent
+        depuis le §7.1 — il y dépose `profil-utilisateur.md` puis `0-MEMOIRES/`.
+        Son ancien emplacement, `cible/mémoire`, n'est plus écrit du tout : la
+        moitié de ce test qui le visait passait sans rien prouver (mesuré en
+        tranche 2, §9.1 du carnet), et c'est pourquoi elle a été réécrite ici.
+        Un lien reste un lien dans les deux cas : le dossier visé garde son
+        contenu, et le fichier lié garde son texte — un skill absent ne se retire
+        pas d'un fichier qui n'est pas à nous.
+        """
         self.profil(mode="copie")
         cible = self.cible()
         cible.mkdir(parents=True)
-        (cible / "mémoire").symlink_to(self.ailleurs(), target_is_directory=True)
+        personnels = self.parent / "personnels-du-copie"
+        personnels.mkdir()
+        agents = self.parent / "agents-du-copie"
+        agents.mkdir()
+        (cible.parent / "0-PERSONNELS").symlink_to(personnels,
+                                                   target_is_directory=True)
+        (cible / "IA").mkdir(parents=True)
+        (cible / "IA" / "agents").symlink_to(agents, target_is_directory=True)
+        agent = agents / "agent-verif.md"
+        agent.write_text("---\nname: agent-verif\nskills:\n  - absent\n"
+                         "---\n\nCorps.\n", encoding="utf-8")
 
         resultat = self.lancer("--appliquer", "--installer", str(cible))
 
         self.assertEqual(resultat.returncode, 0, resultat.stderr)
-        self.assertEqual(sorted(p.name for p in self.ailleurs().iterdir()), [])
-        self.assertTrue((cible / "mémoire").is_symlink())
+        # Le lien doit être resté un lien : s'il devenait un vrai dossier,
+        # l'écriture irait dans la cible et le dossier visé resterait vide —
+        # le test serait vert sur une preuve perdue.
+        self.assertTrue((cible.parent / "0-PERSONNELS").is_symlink())
+        self.assertTrue((cible / "IA" / "agents").is_symlink())
+        self.assertEqual(sorted(p.name for p in personnels.iterdir()), [],
+                         "les personnels liés ont été remplis")
+        self.assertIn("absent", agent.read_text(encoding="utf-8"),
+                      "l'agent lié a été réduit")
+
+    def test_les_personnels_non_lies_sont_bien_remplis(self):
+        """Témoin du test précédent : sans lien, l'installeur écrit bien là.
+
+        Sans ce témoin, un `0-PERSONNELS` vide ne prouverait rien — il pourrait
+        l'être pour n'importe quelle raison, et la moitié liée du test d'au-dessus
+        redeviendrait une preuve morte. C'est exactement ce qui était arrivé à
+        `cible/mémoire` : aucun contrôle n'y écrivait plus, et le test restait vert.
+        """
+        self.profil(mode="copie")
+        cible = self.cible()
+
+        resultat = self.lancer("--appliquer", "--installer", str(cible))
+
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        profil = cible.parent / "0-PERSONNELS" / "profil-utilisateur.md"
+        self.assertTrue(profil.is_file(),
+                        "l'installeur n'écrit pas dans les personnels du coffre")
+        self.assertIn("profil", profil.read_text(encoding="utf-8").lower(),
+                      "le fichier écrit n'est pas un profil")
 
     def test_le_journal_lie_n_est_pas_rempli(self):
         self.profil(mode="copie")
@@ -822,19 +890,6 @@ class TestAucunLienSuivi(BaseInstalleur):
 
         self.assertEqual(sorted(p.name for p in self.ailleurs().iterdir()), [])
 
-    def test_les_agents_lies_ne_sont_pas_reduits(self):
-        self.profil(mode="copie")
-        cible = self.cible()
-        ailleurs = self.ailleurs()
-        (cible / "IA").mkdir(parents=True)
-        (cible / "IA" / "agents").symlink_to(ailleurs, target_is_directory=True)
-        agent = ailleurs / "agent-verif.md"
-        agent.write_text("---\nname: agent-verif\nskills:\n  - absent\n"
-                         "---\n\nCorps.\n", encoding="utf-8")
-
-        self.lancer("--appliquer", "--installer", str(cible))
-
-        self.assertIn("absent", agent.read_text(encoding="utf-8"))
 
 
 class TestRegenerationSansLien(BaseInstalleur):
@@ -851,9 +906,6 @@ class TestRegenerationSansLien(BaseInstalleur):
     là où écrivent les vrais générateurs et qui disent la phrase du
     vérificateur — « index et sommaires à jour ».
     """
-
-    def cible(self) -> Path:
-        return self.parent / "chez-moi" / "OBSIA"
 
     def memoire(self) -> Path:
         """La mémoire du coffre cible : à côté du dépôt, pas dedans (§7.1)."""
@@ -903,82 +955,82 @@ class TestRegenerationSansLien(BaseInstalleur):
         self.assertTrue((cible / "IA" / "system" / "agents-index.md").is_file())
         self.assertIn("index et sommaires à jour", resultat.stdout)
 
-    def test_la_memoire_liee_n_est_pas_regeneree(self):
-        self.profil(mode="copie")
-        cible = self.cible()
-        cible.mkdir(parents=True)
-        self.memoire().symlink_to(self.ailleurs(), target_is_directory=True)
-        self.poser_les_generateurs()
+    def test_un_lien_quel_qu_il_soit_arrete_la_regeneration(self):
+        """Où que le lien soit posé, la régénération n'écrit pas à travers lui.
 
-        resultat = self.lancer("--appliquer", "--installer", str(cible))
-
-        self.assertEqual(resultat.returncode, 0, resultat.stderr)
-        self.assertEqual(sorted(p.name for p in self.ailleurs().iterdir()), [],
-                         "la régénération a écrit à travers le lien")
-        self.assertIn("lien", resultat.stderr.lower())
-        self.assertNotIn("index et sommaires à jour",
-                         resultat.stdout + resultat.stderr)
-        self.assertIn("sans régénération", resultat.stdout)
-
-    def test_l_ia_lie_n_est_pas_regenere(self):
-        self.profil(mode="copie")
-        cible = self.cible()
-        cible.mkdir(parents=True)
-        (cible / "IA").symlink_to(self.ailleurs(), target_is_directory=True)
-        self.poser_les_generateurs()
-
-        resultat = self.lancer("--appliquer", "--installer", str(cible))
-
-        self.assertEqual(resultat.returncode, 0, resultat.stderr)
-        self.assertEqual(sorted(p.name for p in self.ailleurs().iterdir()), [],
-                         "la régénération a écrit à travers le lien")
-        self.assertIn("lien", resultat.stderr.lower())
-        self.assertNotIn("index et sommaires à jour",
-                         resultat.stdout + resultat.stderr)
-        self.assertIn("sans régénération", resultat.stdout)
-
-    def test_un_lien_imbrique_dans_l_ia_n_est_pas_regenere(self):
-        """Un lien plus profond suffit : `IA/system` posé ailleurs.
-
-        `regenerate_index.py` écrit sous `IA/system/`. Ne regarder que `IA`
-        laissait donc ce lien-là passer, et les index partir hors de la cible
-        sans un mot — il faut parcourir l'arbre, pas ses deux racines.
+        Quatre places essayées : `0-SAVOIRS/`, `IA/`, `IA/system` — plus profond
+        que les deux racines, ce qui suffisait à passer — et un fichier lié.
+        `regenerate_index.py` écrit sous `IA/system/` : ne regarder que les deux
+        racines laissait donc le troisième partir hors de la cible sans un mot.
+        Chaque cas repart d'une cible neuve : sans cela, le lien du précédent
+        resterait en place et le refus viendrait de lui.
         """
-        self.profil(mode="copie")
-        cible = self.cible()
-        (cible / "IA").mkdir(parents=True)
-        (cible / "IA" / "system").symlink_to(self.ailleurs(),
-                                            target_is_directory=True)
-        self.poser_les_generateurs()
+        lien = self.ailleurs()
+        cas = (
+            ("la mémoire liée", "memoire"),
+            ("l'IA liée", "ia"),
+            ("un lien imbriqué dans l'IA", "imbrique"),
+            ("un fichier lié dans la mémoire", "fichier"),
+        )
+        for libelle, forme in cas:
+            with self.subTest(lien=libelle):
+                self.nettoyer_le_travail()
+                shutil.rmtree(lien, ignore_errors=True)
+                lien.mkdir()
+                self.profil(mode="copie")
+                cible = self.cible()
+                if forme == "memoire":
+                    cible.mkdir(parents=True)
+                    self.memoire().symlink_to(lien, target_is_directory=True)
+                elif forme == "ia":
+                    cible.mkdir(parents=True)
+                    (cible / "IA").symlink_to(lien, target_is_directory=True)
+                elif forme == "imbrique":
+                    (cible / "IA").mkdir(parents=True)
+                    (cible / "IA" / "system").symlink_to(
+                        lien, target_is_directory=True)
+                else:
+                    self.memoire().mkdir(parents=True)
+                    (self.memoire() / "sommaire.md").symlink_to(
+                        lien / "sommaire.md")
+                self.poser_les_generateurs()
 
-        resultat = self.lancer("--appliquer", "--installer", str(cible))
+                resultat = self.lancer("--appliquer", "--installer", str(cible))
 
-        self.assertEqual(resultat.returncode, 0, resultat.stderr)
-        self.assertEqual(sorted(p.name for p in self.ailleurs().iterdir()), [],
-                         "la régénération a écrit à travers le lien")
-        self.assertIn("lien", resultat.stderr.lower())
-        self.assertNotIn("index et sommaires à jour",
-                         resultat.stdout + resultat.stderr)
-        self.assertIn("sans régénération", resultat.stdout)
+                self.assertEqual(resultat.returncode, 0, resultat.stderr)
+                self.assertEqual(sorted(p.name for p in lien.iterdir()), [],
+                                 "la régénération a écrit à travers le lien")
+                self.assertIn("lien", resultat.stderr.lower())
+                self.assertNotIn("index et sommaires à jour",
+                                 resultat.stdout + resultat.stderr)
+                self.assertIn("sans régénération", resultat.stdout)
 
-    def test_un_fichier_lie_dans_la_memoire_n_est_pas_regenere(self):
-        """Même un fichier lié compte : `0-SAVOIRS/sommaire.md` pointé ailleurs."""
-        self.profil(mode="copie")
-        cible = self.cible()
-        self.memoire().mkdir(parents=True)
-        (self.memoire() / "sommaire.md").symlink_to(
-            self.ailleurs() / "sommaire.md")
-        self.poser_les_generateurs()
 
-        resultat = self.lancer("--appliquer", "--installer", str(cible))
+class TestLeNettoyageSuitLaCible(BaseInstalleur):
+    """Le nettoyage entre deux cas suit `cible()`, pas un chemin qui lui ressemble.
 
-        self.assertEqual(resultat.returncode, 0, resultat.stderr)
-        self.assertEqual(sorted(p.name for p in self.ailleurs().iterdir()), [],
-                         "la régénération a écrit à travers le lien")
-        self.assertIn("lien", resultat.stderr.lower())
-        self.assertNotIn("index et sommaires à jour",
-                         resultat.stdout + resultat.stderr)
-        self.assertIn("sans régénération", resultat.stdout)
+    Il était écrit `self.parent / "chez-moi"`, à côté d'un `cible()` qui renvoie
+    `self.parent / "chez-moi" / "OBSIA"` : les deux chemins se ressemblaient, et
+    rien ne les tenait ensemble. Que `cible()` déménage, et le nettoyage devient
+    un `rmtree` qui ne fait rien — il est en `ignore_errors=True` —, les cas se
+    marchent dessus, et l'erreur tombe loin de sa cause : un `FileExistsError`
+    dans un `mkdir`, pas un nettoyage qui rate.
+
+    D'où une cible déplacée exprès : ce test ne prouve pas que le chemin est
+    juste, il prouve qu'il **suit** la cible.
+    """
+
+    def cible(self) -> Path:
+        return self.parent / "autre" / "OBSIA"
+
+    def test_le_travail_de_la_cible_est_efface(self):
+        self.cible().mkdir(parents=True)
+        (self.cible() / "reste.txt").write_text("x", encoding="utf-8")
+
+        self.nettoyer_le_travail()
+
+        self.assertFalse(self.cible().exists())
+        self.assertFalse(self.cible().parent.exists())
 
 
 class TestExclusionObsidian(BaseInstalleur):
@@ -1131,7 +1183,7 @@ class TestDepotDeDonnees(BaseInstalleur):
 
     def outiller_le_produit(self):
         """Le produit porte ses gabarits, comme le dépôt versionné les publie."""
-        for nom in ("gitignore-coffre", "pre-commit", "post-commit"):
+        for nom in ("gitignore-coffre", "pre-commit", "post-commit", "post-rewrite"):
             self.ecrire("IA/system/depot-de-donnees/" + nom,
                         (GABARITS_DEPOT / nom).read_text(encoding="utf-8"))
 
@@ -1140,7 +1192,8 @@ class TestDepotDeDonnees(BaseInstalleur):
                     "schema: 1\nmode: en-place\nmodules:\n  - construction\n"
                     "coffre_distant: %s\n" % url)
 
-    def test_la_liste_blanche_est_posee_depuis_le_gabarit(self):
+    def test_le_depot_de_donnees_est_initialise(self):
+        """La liste blanche posée depuis le gabarit, et le dépôt initialisé."""
         self.marquer_le_coffre()
         self.outiller_le_produit()
         self.profil()
@@ -1149,6 +1202,7 @@ class TestDepotDeDonnees(BaseInstalleur):
         self.assertEqual(LISTE_BLANCHE,
                          (self.parent / ".gitignore").read_text(encoding="utf-8"))
         self.assertIn("liste blanche", resultat.stdout)
+        self.assertTrue((self.parent / ".git").is_dir())
 
     def test_la_liste_blanche_n_est_jamais_ecrasee(self):
         self.marquer_le_coffre()
@@ -1160,40 +1214,37 @@ class TestDepotDeDonnees(BaseInstalleur):
                          (self.parent / ".gitignore").read_text(encoding="utf-8"))
         self.assertIn("reste tel quel", resultat.stderr)
 
-    def test_le_depot_de_donnees_est_initialise(self):
-        self.marquer_le_coffre()
-        self.outiller_le_produit()
-        self.profil()
-        self.lancer("--appliquer")
-        self.assertTrue((self.parent / ".git").is_dir())
-
     def test_les_crochets_sont_poses_et_actives(self):
-        self.marquer_le_coffre()
-        self.outiller_le_produit()
-        self.profil()
-        self.lancer("--appliquer")
-        crochet = self.parent / ".githooks" / "pre-commit"
-        self.assertTrue(crochet.is_file())
-        self.assertTrue(os.access(crochet, os.X_OK), "un crochet doit être exécutable")
-        texte = crochet.read_text(encoding="utf-8")
-        self.assertNotIn("@PRODUIT@", texte)
-        self.assertIn('outils="$racine/OBSIA"', texte)
-        self.assertEqual(".githooks",
-                         git(self.parent, "config", "core.hooksPath").stdout.strip())
+        """Les crochets d'un seul geste : posés, exécutables, armés, sans gabarit.
 
-    def test_le_crochet_arme_le_garde_de_secrets(self):
-        """Le crochet posé mène à `avant-commit`, qui porte le refus de secret.
-
-        Le gabarit est posé par l'installeur : c'est lui qui arme le garde. Le
-        corps du garde vit dans le dépôt produit et suit ses mises à jour.
+        `pre-commit` mène à `avant-commit`, qui porte le refus de secret : le
+        gabarit ne fait que l'armer, le corps du garde vit dans le dépôt produit
+        et suit ses mises à jour. `post-rewrite` est la poussée unique de fin de
+        rebase (§7.1). Aucun ne garde son `@PRODUIT@` : ce serait un crochet qui
+        ne trouverait rien.
         """
         self.marquer_le_coffre()
         self.outiller_le_produit()
         self.profil()
         self.lancer("--appliquer")
+
+        for nom in ("pre-commit", "post-rewrite"):
+            with self.subTest(crochet=nom):
+                crochet = self.parent / ".githooks" / nom
+                self.assertTrue(crochet.is_file(), nom)
+                self.assertTrue(os.access(crochet, os.X_OK),
+                                "un crochet doit être exécutable")
+                self.assertNotIn("@PRODUIT@",
+                                 crochet.read_text(encoding="utf-8"), nom)
+
         texte = (self.parent / ".githooks" / "pre-commit").read_text(encoding="utf-8")
+        self.assertIn('outils="$racine/OBSIA"', texte)
         self.assertIn("avant-commit", texte)
         self.assertIn("forme de secret", texte)
+        self.assertEqual(".githooks",
+                         git(self.parent, "config", "core.hooksPath").stdout.strip())
+        self.assertIn("apres-rewrite",
+                      (self.parent / ".githooks" / "post-rewrite").read_text(encoding="utf-8"))
 
     def test_le_distant_declare_devient_origin_sans_jamais_pousser(self):
         self.marquer_le_coffre()
@@ -1240,7 +1291,12 @@ class TestDepotDeDonnees(BaseInstalleur):
         self.assertFalse((self.parent / ".githooks").exists())
 
     def test_le_readme_de_la_memoire_dit_les_deux_memoires(self):
-        """§6 : `0-MEMOIRES/` n'est pas qu'une archive, et son README le dit."""
+        """§6 : `0-MEMOIRES/` n'est pas qu'une archive, et son README le dit.
+
+        `préférences/` et `expériences/` sont posés même vides : chapitre gelé
+        et README vont ensemble, sans quoi la mémoire gelée n'aurait pas de
+        place pour nommer ses morceaux.
+        """
         self.marquer_le_coffre()
         self.outiller_le_produit()
         self.profil()
@@ -1252,20 +1308,7 @@ class TestDepotDeDonnees(BaseInstalleur):
         self.assertIn("expériences/", lireme)
         self.assertIn("gelé", lireme)
         self.assertIn("ne peut s'appeler", lireme)
-
-    def test_les_preferences_ont_un_dossier_des_l_installation(self):
-        """§6 : `0-MEMOIRES/préférences/` est posé même vide, et se retrouve."""
-        self.marquer_le_coffre()
-        self.outiller_le_produit()
-        self.profil()
-
-        self.lancer("--appliquer")
-
         self.assertTrue((self.parent / "0-MEMOIRES" / "préférences").is_dir())
-
-
-if __name__ == "__main__":
-    unittest.main()
 
 
 class TestDossierPersonnel(BaseInstalleur):
@@ -1302,3 +1345,7 @@ class TestDossierPersonnel(BaseInstalleur):
         self.assertTrue(INS.parent_est_le_dossier_personnel(self.racine))
         os.environ["HOME"] = str(self.racine)
         self.assertFalse(INS.parent_est_le_dossier_personnel(self.racine))
+
+
+if __name__ == "__main__":
+    unittest.main()

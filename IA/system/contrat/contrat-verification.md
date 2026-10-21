@@ -53,12 +53,27 @@ raison**. On corrige la source, puis on régénère — jamais l'inverse.
 - `scripts/evaluer_routage.py` contrôle le **déclenchement** — la
   `description` d'un skill est le seul élément toujours présent en contexte,
   donc la seule chose qui décide qu'il se charge, et rien d'autre ne vérifie
-  qu'elle porte les mots que l'utilisateur emploie.
+  qu'elle porte les mots que l'utilisateur emploie. `--index-compact` rejoue
+  le registre sur sa seule première phrase, celle que `skills-index.md` montre.
 
 Ce que chacun contrôle exactement, ce qu'il écarte et pourquoi, vit dans **son
 propre docstring** — `python3 scripts/verifier_coffre.py --help` ou la tête du
 fichier. Le recopier ici en ferait une seconde version à tenir à jour, ce que
 le §5 interdit.
+
+Parmi ce que `verifier_coffre.py` refuse, un **plafond du noyau** : la taille du
+noyau (`IA/system/VAULT-CONTRACT.md`, lu en entier à chaque séance) est bornée par
+un nombre déclaré à un **seul** endroit — la table de `CONSTRAINTS.md`, ligne
+« Noyau du contrat », comme le plancher de tests — et le contrôle affiche à
+chaque passage la taille, le plafond et l'écart. Le relever se décide dans une
+PR (§11), jamais en silence. La mesure est celle de `wc -w` : `len(texte.split())`.
+
+Une **clause datée** du noyau qui a échu est signalée, sans refus : une date ISO
+`AAAA-MM-JJ` y est la seule façon d'écrire une échéance (« se retire au plus tard
+le 2026-12-31 »), et passé le jour la clause doit être retirée ou redatée — une
+échéance dépassée laisse croire qu'un régime tient encore. Une date **bien formée
+mais inexistante** (`2028-02-30`, `2026-13-01`) est dite « illisible », pour la
+même raison : on avertit, on ne sort pas en traceback devant une faute de frappe.
 
 Trois règles, en revanche, appartiennent à ce contrat et pas au code :
 
@@ -95,6 +110,7 @@ python3 scripts/regenerate_sommaire.py
 python3 scripts/regenerate_index.py
 python3 scripts/verifier_coffre.py
 python3 scripts/evaluer_routage.py
+python3 scripts/evaluer_routage.py --index-compact
 ```
 
 Les deux scripts du §13 — `scripts/installer.py` et `scripts/publier.py` — ne
@@ -129,11 +145,12 @@ conversation. L'arbre de travail principal est donc une ressource commune :
 une séance qui y change de branche déplace celle d'une autre entre deux de ses
 commandes, et un commit atterrit sur la mauvaise branche sans que rien ne le
 signale. Les règles qui en découlent sont au noyau (§2.1) : jamais de commit dans
-l'arbre principal ni de worktree sous `/tmp`, une branche au nom de son agent,
-une PR ouverte sur la branche par défaut, se resynchroniser avant de pousser.
+l'arbre principal du dépôt produit ni de worktree sous `/tmp`, une branche au nom
+de son agent, une PR ouverte sur la branche par défaut, se resynchroniser avant
+de pousser.
 
 Le crochet de pré-commit refuse toujours un commit sur la branche par défaut.
-Il ne fait respecter « jamais dans l'arbre principal » et « une branche au nom
-de son agent » que sur une machine où `git config obsia.arbresSepares true` est
-posée, en plus de `core.hooksPath`. Les commandes, la publication et le ménage :
-`IA/system/travail-en-parallele.md`.
+Il ne fait respecter « jamais dans l'arbre principal du dépôt produit » et « une
+branche au nom de son agent » que sur une machine où `git config
+obsia.arbresSepares true` est posée, en plus de `core.hooksPath`. Les commandes,
+la publication et le ménage : `IA/system/travail-en-parallele.md`.

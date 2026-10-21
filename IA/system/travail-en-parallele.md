@@ -6,7 +6,9 @@ servent qu'au moment de travailler sur une branche (§5 : une information vit à
 un seul endroit).
 
 Le principe tient en une phrase : **l'arbre principal est à tout le monde, un
-worktree n'est qu'à sa séance.**
+worktree n'est qu'à sa séance et à son chantier.** Autrement dit : **un chantier,
+un worktree** — deux chantiers ne partagent jamais le même dossier, même menés le
+même jour par le même agent.
 
 ## Commencer un travail
 
@@ -20,6 +22,21 @@ cd ~/obsia-worktrees/<nom-agent>-<sujet>
 
 Jamais sous `/tmp` : un dossier temporaire se vide au redémarrage, et le
 worktree part avec lui — ce qui n'est pas commité est perdu.
+
+Un **nouveau chantier** ouvre une branche **et** un worktree neufs : le worktree
+d'un chantier précédent ne se réutilise jamais, même pour un sujet voisin. Dans
+les commandes ci-dessus, `<sujet>` nomme donc le **chantier**, pas la séance, et
+le dossier ne sert qu'à lui — de son ouverture jusqu'à sa pull request (§« Finir »).
+On repart de `origin/main`, sinon la branche hérite du travail inachevé du chantier
+d'avant.
+
+**Est un nouveau chantier** toute demande qui ouvre ou change le dossier
+`0-PROJETS/<projet>/<chantier>/` — son carnet et son résumé (§6). Un nom de
+chantier différent = un worktree différent, sans exception. **Dans le doute,
+c'est un nouveau chantier** ; et si le doute persiste, le demander avant de
+réutiliser un worktree. Une **séance sans chantier** (§6) qui touche le dépôt
+ouvre elle aussi son propre worktree, nommé d'après le sujet du jour — jamais celui d'un chantier
+précédent.
 
 Tout se fait ensuite dans ce dossier : édition, régénération, vérifications,
 commit, poussée. Le crochet de pré-commit y est actif comme ailleurs —

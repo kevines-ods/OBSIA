@@ -115,7 +115,7 @@ compris ce que l'utilisateur avait mis à la main et dont OBSIA ne sait rien.
 2. **sauvegarder** l'existant à côté, daté — sans quoi il n'y a pas de retour
    arrière : ces fichiers ne sont pas versionnés ;
 3. écrire ;
-4. **consigner** au carnet — du chantier, ou du jour hors chantier — (§9) : quoi, où, résultat. Brancher un
+4. **consigner** au carnet — du chantier ou du jour, à défaut le journal de `_MAINTENANCE/` — (§9) : quoi, où, résultat. Brancher un
    serveur est une action à effet externe, quel que soit son `permission`.
 
 ### 6. Vérifier — un serveur par un serveur
@@ -153,9 +153,9 @@ serveur de la configuration pour obtenir un vert complet.
 - **Il ne crée pas de fiche MCP.** Une fiche neuve suit le §5 et
   `createur-de-skill` ; ce skill traduit ce qui existe.
 - **Il ne choisit pas de harness.** Le coffre n'en recommande aucun (§3).
-- **Il ne branche pas le cerveau.** Charger `CLAUDE.md` ou le prompt généré, et
-  donner accès au coffre parent, sont les deux autres besoins — ils vivent dans
-  `IA/system/adaptateurs-harness/commun.md`.
+- **Il ne branche pas le cerveau.** Charger le fichier d'entrée du harness ou le
+  prompt engendré, et donner accès au coffre parent, sont les deux autres
+  besoins — ils vivent dans `IA/system/adaptateurs-harness/commun.md`.
 
 ## Rationalisations
 

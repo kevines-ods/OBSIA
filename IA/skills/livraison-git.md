@@ -73,9 +73,13 @@ action à effet externe, et le choix public/privé lui appartient.
 
 ## 5. Pull request
 
-Titre court. Corps en deux parties : **Ce que ça change** (une à trois puces)
-et **Comment le vérifier** (les étapes exactes pour rejouer le comportement).
-Renvoyer l'URL à l'utilisateur.
+Titre court. Le corps de la PR se construit **à partir du modèle du dépôt**
+(`.github/pull_request_template.md`), dont on reprend les rubriques et la case
+« Relu par le contradicteur ». Cette case reste **présente et vide** tant que la
+relecture n'est pas faite : présente, c'est le seul endroit que l'utilisateur
+peut cocher ; vide, on ne coche qu'après la relecture. Un corps écrit de mémoire
+la fait disparaître : il ne reste alors rien à cocher (le voyant, lui, s'allume
+dès le premier envoi). Renvoyer l'URL à l'utilisateur.
 
 La PR se crée par le MCP `git-hub` — lire `IA/MCP/git-hub.md` avant le
 premier appel (§10.2) : il est en `permission: elevated` et écrit sur un dépôt
@@ -96,7 +100,9 @@ et la case « Relu par le contradicteur ». Le contrôle
 `scripts/verifier_relecture.py`, déclenché par
 `.github/workflows/relecture-adverse.yml`, vire au rouge tant qu'elle n'est pas
 cochée — un signal, pas un verrou : la fusion reste possible, et cocher la case
-relance le contrôle.
+relance le contrôle. Qui coche : l'auteur de la PR, le lead, ou l'utilisateur —
+jamais le relecteur, en lecture seule, pas même quand son verdict est
+favorable.
 
 Deux limites de ce contrôle, à connaître plutôt qu'à découvrir :
 
@@ -104,7 +110,11 @@ Deux limites de ce contrôle, à connaître plutôt qu'à découvrir :
   relue desserrerait le contrôle qu'elle doit passer. C'est un **demi-verrou** :
   la définition du workflow, GitHub la lit dans la tête de la PR, donc une PR
   peut encore réécrire ces lignes-là. Seule une protection de branche fermerait
-  ce dernier pas.
+  ce dernier pas. **Corollaire :** une PR qui corrige le message de ce contrôle
+  n'en voit pas l'effet sur elle-même tant qu'elle n'est pas fusionnée, le
+  script qui s'exécute étant celui de la base. Il faut la fusionner, puis
+  regarder la PR suivante — ou toute PR dont le contrôle se relance après la
+  fusion.
 - Il ne tourne que sur le dépôt privé. Sur le miroir public, la case n'a pas à
   être cochée : la relecture adverse est un pas interne, et le modèle le dit.
 

@@ -6,6 +6,14 @@
 # fraîcheur de la dernière poussée réussie se lit avec
 # `scripts/depot_de_donnees.py fraicheur` — c'est ce qu'un moniteur push
 # surveille.
+#
+# Une seule poussée à la fois : le script se verrouille (verrou pris dans le
+# dossier git commun, donc partagé par les worktrees du coffre) et anti-rebonde,
+# si bien qu'un rebase qui rejoue N commits ne lance pas N poussées concurrentes.
+# Pendant une réécriture d'historique (rebase), la poussée se suspend d'elle-même
+# et reprend une fois à la fin, par le crochet `post-rewrite`. Pour suspendre une
+# autre réécriture (filter-branch) : `OBSIA_POUSSEE=0` ou la marque
+# `.git/obsia-poussee.suspendue`.
 racine=$(git rev-parse --show-toplevel)
 outils="$racine/@PRODUIT@"
 python3 "$outils/scripts/depot_de_donnees.py" apres-commit \

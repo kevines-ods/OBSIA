@@ -2,18 +2,28 @@
 # -*- coding: utf-8 -*-
 """Le garde anti-secret du pre-commit du dépôt de données (§7.1).
 
-Le 2026-10-04, un mot de passe est entré en clair dans la mémoire du coffre
-(`_MAINTENANCE/opencode.md`), puis a été recopié par un index régénéré. Rien ne
-l'a arrêté. La liste blanche du §7.1 interdit toute règle par *nom de fichier*,
-et le motif « secret affecté » de `publier.py` ne voit qu'une valeur **nommée** :
-un mot de passe collé seul, sans le mot « mot de passe », passe au travers.
+Le 2026-10-04, une note de `_MAINTENANCE/` a porté un mot de passe en clair,
+puis un index régénéré l'a recopié. Rien ne l'a arrêté. La liste blanche du §7.1
+interdit toute règle par *nom de fichier*, et le motif « secret affecté » de
+`publier.py` ne voit qu'une valeur **nommée** : un mot de passe collé seul, sans
+le mot « mot de passe », passe au travers.
 
 Ce garde refuse donc, dans ce que le commit **ajoute** au dépôt de données :
 
   * les valeurs qui répondent aux motifs de **secret** de `publier.BLOQUANTS`,
     importés de là — jamais recopiés (`motifs_secrets`) ;
   * un fichier dont **tout le contenu** est un unique jeton sans espace à forte
-    entropie — le cas exact qui a échoué (`jeton_isole`).
+    entropie — le cas exact qui a échoué (`jeton_isole`) ;
+  * un **bloc** de base64 recopié — le corps d'une clé **sans son en-tête**, au
+    moins trois lignes consécutives qui ne sont que du base64 (`bloc_base64`);
+    `jeton_isole` refuse tout espace, donc cette forme lui échappait. Deux formes
+    publiques en sont exemptées : les **empreintes** (un hexadécimal de 40 ou 64
+    est dans l'alphabet du base64 sans en être, cf. `empreinte_de_bloc`) et un
+    bloc **encadré** par `-----BEGIN PGP PUBLIC KEY BLOCK-----` ou `-----BEGIN
+    CERTIFICATE-----`, la paire complète requise et **aucun délimiteur à
+    l'intérieur**. L'exemption n'est pas un mur : un corps **nu** entre deux faux
+    délimiteurs publics reste indistinguable d'une vraie clé publique — limite
+    assumée, consignée par un test.
 
 Trois règles évitent de refuser la mémoire ordinaire :
 
@@ -38,6 +48,17 @@ refuser la mémoire au nom de la publication.
 
 Tout se lit en octets : un fichier qui n'est pas de l'UTF-8 — binaire ou Latin-1
 — ne doit pas faire tomber le crochet.
+
+Rien ne relit la mémoire **déjà écrite**. Aucun contrôle ne parcourt le coffre à
+la recherche de secrets : les deux portes voient un contenu au moment où il
+arrive — celle du commit, la différence entre `HEAD` et l'index ; celle de
+l'entrée, le texte candidat. Un secret **nommé**, sur une ligne qu'un commit ne
+touche pas, reste donc en place sans être revu : le retirer est un acte humain,
+sur la note et dans l'historique. C'est une décision, pas un oubli. Elle a une
+limite, voulue : un **bloc de base64** ou un **jeton isolé** n'ont de sens que
+dans le fichier entier, donc ils sont relus dans le contenu complet de chaque
+fichier indexé — un bloc déjà écrit est refusé au commit suivant.
+`tests/test_secrets_a_deux_portes.py` fixe les deux versants de ce choix.
 
 Bibliothèque standard uniquement.
 """
@@ -71,6 +92,29 @@ CLASSES_MIN = 2
 #: Shannon, bits par caractère. Un mot français tourne autour de 3 ; un secret
 #: tiré au hasard au-dessus de 4.
 ENTROPIE_MIN = 3.5
+
+#: Une ligne d'un bloc de base64 recopié. La ligne doit n'être **que** du base64 ;
+#: le vrai cas — le corps d'une clé privée — fait des lignes de 64 caractères, et
+#: 40 écarte un identifiant court.
+LIGNE_BASE64_MIN = 40
+#: En deçà de trois lignes consécutives, c'est une citation, pas un bloc recopié.
+LIGNES_BLOC_MIN = 3
+#: Une ligne qui n'est que du base64 : l'alphabet standard, un remplissage `=`
+#: facultatif, au moins `LIGNE_BASE64_MIN` caractères, et rien d'autre. Une ligne
+#: qui mêle une phrase et du base64 ne compte pas — « sans autre prose ».
+_LIGNE_BASE64 = re.compile(r"\A[A-Za-z0-9+/]{%d,}={0,2}\Z" % LIGNE_BASE64_MIN)
+
+#: Les armures qui rendent un bloc de base64 **public** : une clé PGP publique et
+#: un certificat. Elles **seules** exemptent le bloc qu'elles encadrent. La paire
+#: complète est requise — un `BEGIN` orphelin n'exempte rien — et **aucun
+#: délimiteur ne doit vivre à l'intérieur** : c'est ce qui démasque une armure
+#: privée glissée dans un cadre public (détournement prouvé à la relecture de
+#: `2c8d91d`). Reste hors de portée, et assumé : un corps **nu** entre deux faux
+#: délimiteurs publics, qu'aucune inspection ne distingue d'une vraie clé publique.
+_CADRES_PUBLICS = (
+    ("-----BEGIN PGP PUBLIC KEY BLOCK-----", "-----END PGP PUBLIC KEY BLOCK-----"),
+    ("-----BEGIN CERTIFICATE-----", "-----END CERTIFICATE-----"),
+)
 
 #: Ce qui suit une affectation. Le mot-clé de `publier` ne porte ni `=` ni `:`,
 #: donc le premier séparateur d'une correspondance est celui de l'affectation.
@@ -106,6 +150,11 @@ _HEX = re.compile(r"\A[0-9a-fA-F]{7,64}\Z")
 #: (64). Un hexadécimal hors de ces longueurs est un secret possible — les
 #: seize octets de `openssl rand -hex 16` font trente-deux caractères.
 _LONGUEURS_EMPREINTE = frozenset({7, 8, 9, 10, 11, 12, 40, 64})
+#: Les longueurs qui, **dans un bloc de base64**, valent une empreinte : le
+#: condensat entier seul — SHA-1 (40), SHA-256 (64). Un condensat abrégé (7 à 12)
+#: sert à citer un commit dans une phrase ; il n'atteint pas `LIGNE_BASE64_MIN` et
+#: n'a donc rien à exempter dans un bloc de trois lignes.
+LONGUEURS_EMPREINTE_DE_BLOC = (40, 64)
 #: Un mot qui dit qu'un hexadécimal est une empreinte, pas un secret.
 _MOTS_EMPREINTE = re.compile(r"(?i)\b(?:sha(?:-?\d+)?|commit|empreinte|fingerprint)\b")
 #: Un identifiant d'objet : un UUID n'est pas un secret.
@@ -146,6 +195,22 @@ def est_empreinte(texte: str, contexte: str = "") -> bool:
     if len(texte) in _LONGUEURS_EMPREINTE:
         return True
     return bool(_MOTS_EMPREINTE.search(contexte))
+
+
+def empreinte_de_bloc(ligne: str) -> bool:
+    """La ligne est-elle une empreinte **entière**, donc pas une ligne de clé ?
+
+    Plus étroit qu'`est_empreinte`, exprès : dans un bloc de base64, seules les
+    longueurs de condensat complet exemptent — SHA-1 (**40**) et SHA-256 (**64**),
+    cf. `LONGUEURS_EMPREINTE_DE_BLOC`. Un condensat abrégé (7 à 12) ne peut pas
+    former une ligne de `LIGNE_BASE64_MIN` caractères ; s'il en atteignait la
+    longueur, il n'en serait pas moins une empreinte abrégée, qui n'a rien à faire
+    au milieu d'un bloc de trois lignes.
+
+    Pas de contexte ici : la ligne se juge seule, sans le mot « sha » ou
+    « commit » qui l'entoure dans une phrase.
+    """
+    return _HEX.match(ligne) is not None and len(ligne) in LONGUEURS_EMPREINTE_DE_BLOC
 
 
 def valeur_a_forme_de_secret(valeur: str, contexte: str = "",
@@ -226,8 +291,9 @@ def jeton_isole(contenu: str, contexte: str = ""):
     """Rend le jeton si tout `contenu` en est un seul, sans espace et à forte
     entropie ; `None` sinon.
 
-    C'est le cas d'école : `opencode.md` ne portait qu'une chaîne de 32
-    caractères, sans le mot « mot de passe ». Aucun motif nommé ne la voyait.
+    C'est le cas d'école : la note de `_MAINTENANCE/` du 2026-10-04 ne portait
+    qu'une chaîne de 32 caractères, sans le mot « mot de passe ». Aucun motif
+    nommé ne la voyait.
     Les empreintes (condensat, identifiant de commit), les adresses et les URL
     sont écartées : un fichier qui n'est que cela n'est pas un secret.
     """
@@ -243,6 +309,87 @@ def jeton_isole(contenu: str, contexte: str = ""):
     if entropie(nu) < ENTROPIE_MIN:
         return None
     return nu
+
+
+def _lignes_sous_cadre_public(lignes: list) -> set:
+    """Les indices des lignes **à l'intérieur** d'un cadre public fermé.
+
+    Seule une paire `BEGIN`/`END` complète exempte : un en-tête orphelin ne doit
+    pas ouvrir un trou où recopier une clé. Les lignes d'armure elles-mêmes ne
+    sont pas rendues — elles ne sont pas du base64 et ne comptent pour rien.
+
+    L'exemption **tombe** dès qu'une ligne intérieure est elle-même un délimiteur
+    (`-----BEGIN` ou `-----END`) : le corps d'une clé publique ou d'un certificat
+    n'en porte aucun, donc un délimiteur là est le signe d'une armure **privée**
+    glissée dans un cadre public. C'est le détournement prouvé à la relecture de
+    `2c8d91d`.
+
+    Ce qui reste au-dehors du filet, et qu'aucune inspection ne peut trancher :
+    un corps de base64 **nu** entre deux **faux** délimiteurs publics est
+    indistinguable du corps d'une vraie clé publique. Celui-là passe — c'est le
+    refus de l'en-tête privé (`secret_dans_une_ligne`) qui tient le secret.
+    """
+    interieures = set()
+    for debut, fin in _CADRES_PUBLICS:
+        ouverte = None
+        for i, ligne in enumerate(lignes):
+            nue = ligne.strip()
+            if ouverte is None:
+                if nue == debut:
+                    ouverte = i
+            elif nue == fin:
+                interieur = lignes[ouverte + 1:i]
+                if not any(_est_un_delimiteur(l) for l in interieur):
+                    interieures.update(range(ouverte + 1, i))
+                ouverte = None
+    return interieures
+
+
+def _est_un_delimiteur(ligne: str) -> bool:
+    """Vrai si la ligne est une ligne d'armure (`-----BEGIN …` / `-----END …`)."""
+    nue = ligne.strip()
+    return nue.startswith("-----BEGIN") or nue.startswith("-----END")
+
+
+def bloc_base64(contenu: str):
+    """Rend la première ligne d'un bloc de base64 recopié, ou `None` sinon.
+
+    Une clé recopiée **sans son en-tête** (`-----BEGIN …`) est une suite de
+    lignes de base64 : `jeton_isole`, qui refuse tout espace, ne les voit pas.
+    C'est ce trou que cette forme ferme. On exige au moins `LIGNES_BLOC_MIN`
+    lignes **consécutives** dont chacune n'est que du base64 (au moins
+    `LIGNE_BASE64_MIN` caractères) : une seule ligne citée, ou du base64 noyé
+    dans la prose, ne suffit pas — la mémoire ordinaire passe.
+
+    Deux formes **publiques** ne sont pas des secrets et ne se refusent pas :
+
+    * les **empreintes** — un hexadécimal de 40 (SHA-1) ou 64 (SHA-256)
+      caractères est dans l'alphabet du base64 sans en être, et trois empreintes
+      à la suite sont un journal de notes, pas une clé ; c'est `empreinte_de_bloc`
+      qui tranche, et **ces deux longueurs seules** ;
+    * un bloc **encadré** par `-----BEGIN PGP PUBLIC KEY BLOCK-----` ou
+      `-----BEGIN CERTIFICATE-----`, et fermé par la ligne `END` correspondante
+      — une clé publique ou un certificat, faits pour être recopiés.
+
+    L'exemption du cadre n'est pas un mur : elle tombe si un délimiteur s'y
+    glisse (`_lignes_sous_cadre_public`), ce qui démasque une armure **privée**
+    encadrée ; mais un corps **nu** entre deux faux délimiteurs publics reste,
+    lui, indistinguable d'une vraie clé publique — **limite assumée**, consignée
+    par un test. Le refus d'un secret recopié tient d'abord à son **en-tête**
+    privé, que `secret_dans_une_ligne` refuse.
+    """
+    lignes = contenu.splitlines()
+    exemptees = _lignes_sous_cadre_public(lignes)
+    suite = 0
+    for i, ligne in enumerate(lignes):
+        nue = ligne.strip()
+        if i in exemptees or empreinte_de_bloc(nue) or not _LIGNE_BASE64.match(nue):
+            suite = 0
+            continue
+        suite += 1
+        if suite >= LIGNES_BLOC_MIN:
+            return nue
+    return None
 
 
 # ---------------------------------------------------------------- lecture git
@@ -334,30 +481,51 @@ def _apercu(valeur: str) -> str:
     return "%s… (%d caractères)" % (valeur[:4], len(valeur))
 
 
+def secret_dans_une_ligne(texte: str):
+    """Le premier secret d'une ligne, ou ``None`` — fonction pure.
+
+    Rend ``(étiquette, extrait)``. Sert à ``verifier`` (ligne par ligne d'un
+    commit) et à la porte d'entrée du produit, qui juge un texte candidat avant
+    qu'il n'existe : la décision est prise des deux côtés par la même copie des
+    motifs, sans dupliquer la finesse du cas « secret affecté ».
+    """
+    for etiquette, motif in motifs_secrets():
+        trouve = motif.search(texte)
+        if not trouve:
+            continue
+        if etiquette == "secret affecté":
+            brut = _valeur_affectee(trouve.group(0))
+            guillemetee = brut.lstrip()[:1] in ("\"", "'")
+            if not valeur_a_forme_de_secret(
+                    brut, contexte=texte, guillemetee=guillemetee):
+                continue
+        return (etiquette, trouve.group(0))
+    return None
+
+
 def verifier(coffre) -> int:
     """Rend 0 si ce que le commit ajoute est propre, 1 sinon — et dit quoi.
 
     Chaque refus nomme le fichier, la ligne et le motif ; la valeur n'est montrée
-    que tronquée, pour ne pas la réintroduire là où on la lit.
+    que tronquée, pour ne pas la réintroduire là où on la lit. Les motifs sont
+    demandés **une fois par commit**, avant tout jugement, même quand rien n'est
+    à juger (`motifs_secrets`) : une étiquette disparue doit faire tomber le
+    crochet, jamais le laisser muet faute d'avoir été sollicité.
     """
     coffre = Path(coffre)
     if not _est_depot(coffre):
         return 0
-    motifs = motifs_secrets()  # la source doit porter ses étiquettes, toujours
+
+    # Un appel inconditionnel : c'est ici qu'une étiquette manquante de
+    # `publier.BLOQUANTS` lève. Le remettre sous condition reviendrait à ne
+    # plus vérifier la source dès qu'un commit n'ajoute aucune ligne.
+    motifs_secrets()
 
     problemes = []
     for chemin, numero, texte in lignes_ajoutees(coffre):
-        for etiquette, motif in motifs:
-            trouve = motif.search(texte)
-            if not trouve:
-                continue
-            if etiquette == "secret affecté":
-                brut = _valeur_affectee(trouve.group(0))
-                guillemetee = brut.lstrip()[:1] in ("\"", "'")
-                if not valeur_a_forme_de_secret(
-                        brut, contexte=texte, guillemetee=guillemetee):
-                    continue
-            problemes.append((chemin, numero, etiquette, trouve.group(0)))
+        trouve = secret_dans_une_ligne(texte)
+        if trouve is not None:
+            problemes.append((chemin, numero, trouve[0], trouve[1]))
     for chemin in fichiers_indexes(coffre):
         contenu = contenu_indexe(coffre, chemin)
         if contenu is None:
@@ -365,6 +533,10 @@ def verifier(coffre) -> int:
         jeton = jeton_isole(contenu, contexte=chemin)
         if jeton is not None:
             problemes.append((chemin, None, "valeur isolée à forte entropie", jeton))
+            continue
+        bloc = bloc_base64(contenu)
+        if bloc is not None:
+            problemes.append((chemin, None, "bloc de base64 recopié", bloc))
 
     if not problemes:
         return 0

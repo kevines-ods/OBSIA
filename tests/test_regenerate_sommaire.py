@@ -1,5 +1,7 @@
 """Le générateur de sommaires lit une note sans prendre son frontmatter pour du texte."""
 
+import contextlib
+import io
 import sys
 import tempfile
 import unittest
@@ -97,7 +99,7 @@ class TestZonesDEcriture(unittest.TestCase):
         (code / ".git").mkdir(parents=True)
         (code / "README.md").write_text("# Code\n\nUn dépôt.\n", encoding="utf-8")
 
-        RS.main()
+        RS.main([])
 
         sommaire = (projet / "sommaire.md").read_text(encoding="utf-8")
         self.assertNotIn("code/", sommaire)          # ni sommaire, ni mention
@@ -116,7 +118,7 @@ class TestZonesDEcriture(unittest.TestCase):
         (fichier / ".git").write_text("gitdir: ailleurs\n", encoding="utf-8")
         (fichier / "note.md").write_text("# Note\n\nAussi dans un dépôt.\n", encoding="utf-8")
 
-        RS.main()
+        RS.main([])
 
         self.assertTrue((gel / "sommaire.md").is_file())
         self.assertFalse((imbrique / "sommaire.md").exists())
@@ -134,9 +136,81 @@ class TestZonesDEcriture(unittest.TestCase):
         (memoire / "2026-10-02-agent-note.md").write_text(
             "# Note\n\nLe chapeau de la note.\n", encoding="utf-8")
 
-        RS.main()
+        RS.main([])
 
         self.assertTrue((memoire / "sommaire.md").is_file())
+
+
+class TestLigneDeCommande(unittest.TestCase):
+    """`--help` affiche l'usage et n'écrit rien — l'incident du 2026-10-12.
+
+    Le script lisait `sys.argv` à la main : `--help` passait pour une option
+    inconnue, était ignoré en silence, et la commande régénérait **tout** le
+    coffre, écrasant le travail non commité. Ces tests figent le contraire.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        base = Path(self.tmp.name)
+        self.racine = base / "OBSIA"
+        self.coffre = base
+        self.racine.mkdir()
+        self._avant = (RS.RACINE, RS.COFFRE, RS.ANCIENNE_MEMOIRE)
+        self.addCleanup(self._restaurer)
+        RS.RACINE = str(self.racine)
+        RS.COFFRE = str(self.coffre)
+        RS.ANCIENNE_MEMOIRE = str(self.racine / "mémoire")
+        gel = self.coffre / "0-MEMOIRES" / "assistant"
+        gel.mkdir(parents=True)
+        (gel / "2026-10-01-assistant-note.md").write_text(
+            "# Note\n\nLe chapeau du chantier.\n", encoding="utf-8")
+        # Un sommaire volontairement faux : s'il est réécrit, c'est que le
+        # script a bel et bien tourné au lieu de rendre la main.
+        self.sommaire = gel / "sommaire.md"
+        self.sommaire.write_text("À RAFRAÎCHIR\n", encoding="utf-8")
+
+    def _restaurer(self):
+        RS.RACINE, RS.COFFRE, RS.ANCIENNE_MEMOIRE = self._avant
+
+    def executer(self, argv):
+        """Lance `main(argv)` et rend `(code, sortie, erreurs)`.
+
+        `argparse` rend la main par `SystemExit` (0 pour `--help`, 2 pour un
+        argument refusé) ; un lancement normal retourne un entier.
+        """
+        sortie, erreurs = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(sortie), contextlib.redirect_stderr(erreurs):
+            try:
+                code = RS.main(argv)
+            except SystemExit as sortie_forcee:
+                code = sortie_forcee.code
+        return code, sortie.getvalue(), erreurs.getvalue()
+
+    def test_help_affiche_l_usage_et_ne_touche_aucun_fichier(self):
+        code, sortie, _ = self.executer(["--help"])
+        self.assertEqual(0, code)
+        self.assertIn("usage", sortie.lower())
+        self.assertEqual("À RAFRAÎCHIR\n", self.sommaire.read_text(encoding="utf-8"))
+
+    def test_h_court_affiche_l_usage_et_ne_touche_aucun_fichier(self):
+        code, sortie, _ = self.executer(["-h"])
+        self.assertEqual(0, code)
+        self.assertIn("usage", sortie.lower())
+        self.assertEqual("À RAFRAÎCHIR\n", self.sommaire.read_text(encoding="utf-8"))
+
+    def test_un_drapeau_inconnu_est_refuse_et_ne_touche_aucun_fichier(self):
+        """Une faute de frappe ne doit plus déclencher la régénération."""
+        code, _, erreurs = self.executer(["--verfier"])
+        self.assertNotEqual(0, code)
+        self.assertIn("--verfier", erreurs)
+        self.assertEqual("À RAFRAÎCHIR\n", self.sommaire.read_text(encoding="utf-8"))
+
+    def test_sans_option_le_sommaire_est_bien_regenere(self):
+        """Témoin : le même décor, sans option, écrit — sinon rien n'est prouvé."""
+        code, _, _ = self.executer([])
+        self.assertEqual(0, code)
+        self.assertNotEqual("À RAFRAÎCHIR\n", self.sommaire.read_text(encoding="utf-8"))
 
 
 class TestExclusionsPartagees(unittest.TestCase):
@@ -165,6 +239,65 @@ class TestExclusionsPartagees(unittest.TestCase):
                 self.assertTrue(AC.est_depot_imbrique(racine), forme)
                 self.assertTrue(RS.est_depot_imbrique(racine), forme)
 
+
+
+class TestVerification(unittest.TestCase):
+    """La forme `--verifier` : elle constate, elle n'écrit jamais.
+
+    Elle était appelée par la CI et la fiche `obsidian-manager` sans qu'aucun
+    test ne la nomme — une perte du mode aurait été prise pour un succès.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        base = Path(self.tmp.name)
+        self.racine = base / "OBSIA"
+        self.coffre = base
+        self.racine.mkdir()
+        self._avant = (RS.RACINE, RS.COFFRE, RS.ANCIENNE_MEMOIRE)
+        self.addCleanup(self._restaurer)
+        RS.RACINE = str(self.racine)
+        RS.COFFRE = str(self.coffre)
+        RS.ANCIENNE_MEMOIRE = str(self.racine / "mémoire")
+        gel = self.coffre / "0-MEMOIRES" / "assistant"
+        gel.mkdir(parents=True)
+        (gel / "2026-10-01-assistant-note.md").write_text(
+            "# Note\n\nLe chapeau du chantier.\n", encoding="utf-8")
+        self.sommaire = gel / "sommaire.md"
+
+    def _restaurer(self):
+        RS.RACINE, RS.COFFRE, RS.ANCIENNE_MEMOIRE = self._avant
+
+    def lancer(self, argv):
+        """Lance `main(argv)` en capturant sa sortie : `(code, erreurs)`."""
+        erreurs = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(erreurs):
+            code = RS.main(argv)
+        return code, erreurs.getvalue()
+
+    def test_verifier_signale_un_sommaire_perime_sans_le_reecrire(self):
+        self.sommaire.write_text("À RAFRAÎCHIR\n", encoding="utf-8")
+
+        code, erreurs = self.lancer(["--verifier"])
+
+        self.assertEqual(1, code)
+        self.assertIn("  - 0-MEMOIRES/assistant/sommaire.md", erreurs)
+        self.assertEqual("À RAFRAÎCHIR\n", self.sommaire.read_text(encoding="utf-8"))
+
+    def test_verifier_ne_signale_rien_quand_tout_est_a_jour(self):
+        self.assertEqual(0, self.lancer([])[0])          # écrit une première fois
+        a_jour = self.sommaire.read_text(encoding="utf-8")
+
+        code, erreurs = self.lancer(["--verifier"])
+
+        self.assertEqual(0, code)
+        # On n'exige pas un `stderr` vide : le script laisse des fichiers
+        # ouverts (`open(...).read()`, lignes 133, 338 et 345), et `unittest`
+        # promeut alors chaque ResourceWarning sur `stderr`. Constat à part,
+        # hors du périmètre de cette PR.
+        self.assertNotIn("périmé", erreurs)
+        self.assertEqual(a_jour, self.sommaire.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

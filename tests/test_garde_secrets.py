@@ -2,11 +2,10 @@
 # -*- coding: utf-8 -*-
 """`garde_secrets.py` : ce que le pre-commit du dépôt de données refuse d'ajouter.
 
-Le 2026-10-04, un mot de passe est entré en clair dans la mémoire du coffre
-(`_MAINTENANCE/opencode.md`), puis a été recopié par un index régénéré. Rien ne
-l'a arrêté : le motif « secret affecté » de `publier.py` ne voit qu'une valeur
-**nommée**, et un mot de passe collé seul, sans le mot « mot de passe », passe
-au travers.
+Le 2026-10-04, une note de `_MAINTENANCE/` a porté un mot de passe en clair,
+puis un index régénéré l'a recopié. Rien ne l'a arrêté : le motif « secret
+affecté » de `publier.py` ne voit qu'une valeur **nommée**, et un mot de passe
+collé seul, sans le mot « mot de passe », passe au travers.
 
 Ces tests fixent les deux refus — la valeur nommée, reprise à la source unique
 qu'est `publier.BLOQUANTS`, et le jeton isolé à forte entropie — ainsi que les
@@ -18,6 +17,7 @@ Les faux secrets sont recollés au moment du test (cf. `assemble`) : le contrôl
 de fuite de `publier.py` lit aussi ce fichier.
 """
 
+import base64
 import shutil
 import subprocess
 import sys
@@ -58,6 +58,84 @@ COMMIT = "a4867830d96a4ff68ad6d4b6f1f30f713b18d518"
 
 #: Un mot-note légitime, mais qui n'est qu'un mot : une seule famille.
 MOT = "anticonstitutionnellement"
+
+#: Un bloc de base64 — le corps d'une clé recopiée **sans son en-tête**
+#: (`-----BEGIN …`). Trois lignes de 48 caractères ou plus, aucune prose : la
+#: forme que `jeton_isole` ne peut pas voir, puisqu'il refuse tout espace.
+_BLOC = base64.b64encode(
+    b"ligne de base64 factice pour le test, aucune valeur reelle ici " * 2)
+BLOC_BASE64 = "\n".join(
+    _BLOC.decode()[i:i + 48] for i in range(0, len(_BLOC), 48))
+
+#: Trois empreintes à la suite — le journal d'une note, pas une clé. Un
+#: hexadécimal de 40 ou 64 caractères est dans l'alphabet du base64 **sans en
+#: être** : `bloc_base64` doit consulter `est_empreinte` avant de compter une
+#: ligne, sinon trois identifiants de commit deviennent un faux secret.
+TROIS_SHA1 = "\n".join([
+    "a4867830d96a4ff68ad6d4b6f1f30f713b18d518",
+    "b4867830d96a4ff68ad6d4b6f1f30f713b18d519",
+    "c4867830d96a4ff68ad6d4b6f1f30f713b18d51a",
+])
+TROIS_SHA256 = "\n".join(
+    "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abc%02x" % n
+    for n in range(3)
+)
+
+#: Le corps de base64 factice ci-dessus, bon pour bâtir les armures de test.
+CORPS_BASE64 = "\n".join(BLOC_BASE64.splitlines())
+
+#: Une clé PGP **publique** en armure — un bloc de base64 entre ses deux en-têtes,
+#: fait pour être recopié. Ce n'est le secret de personne.
+CLE_PGP_PUBLIQUE = "\n".join([
+    "-----BEGIN PGP PUBLIC KEY BLOCK-----",
+    "Version: GnuPG v2",
+    "",
+    CORPS_BASE64,
+    "=AbCd",
+    "-----END PGP PUBLIC KEY BLOCK-----",
+])
+
+#: Un certificat **public**, même forme encadrée : public lui aussi.
+CERTIFICAT_PUBLIC = "\n".join([
+    "-----BEGIN CERTIFICATE-----",
+    CORPS_BASE64,
+    "-----END CERTIFICATE-----",
+])
+
+#: L'en-tête et le pied d'une clé privée PGP, **composés** : le littéral d'un
+#: seul tenant serait lui-même un secret aux yeux de `publier.BLOQUANTS`
+#: (« clé privée »), une catégorie que `--forcer` ne franchit pas. Laissé entier
+#: dans le source, il rendrait le dépôt impubliable sans que la CI le voie —
+#: c'est ce que monte `test_publier`.
+DEBUT_ARMURE_PRIVEE = "-----BEGIN PGP PRIVATE KEY " "BLOCK-----"
+FIN_ARMURE_PRIVEE = "-----END PGP PRIVATE KEY " "BLOCK-----"
+
+#: Une clé **privée** en armure. Son en-tête ne doit l'exempter : seuls les deux
+#: en-têtes **publics** exemptent. Le secret recopié reste refusé.
+CLE_PGP_PRIVEE = "\n".join([
+    DEBUT_ARMURE_PRIVEE,
+    "",
+    CORPS_BASE64,
+    FIN_ARMURE_PRIVEE,
+])
+
+#: Le détournement prouvé à la relecture : une clé **privée** complète placée
+#: **dans** un cadre public. L'en-tête privé est un délimiteur *à l'intérieur* du
+#: cadre, et c'est ce qui doit faire tomber l'exemption.
+CLE_PRIVEE_DANS_UN_CADRE_PUBLIC = "\n".join([
+    "-----BEGIN CERTIFICATE-----",
+    CLE_PGP_PRIVEE,
+    "-----END CERTIFICATE-----",
+])
+
+#: Un corps de base64 **nu** entre deux faux délimiteurs publics. Aucune
+#: inspection ne peut le distinguer d'une vraie clé publique : c'est une **limite
+#: assumée** de la forme, consignée par un test exprès.
+CORPS_NU_ENTRE_FAUX_CADRES = "\n".join([
+    "-----BEGIN CERTIFICATE-----",
+    CORPS_BASE64,
+    "-----END CERTIFICATE-----",
+])
 
 
 def git(ou, *arguments):
@@ -131,6 +209,26 @@ class TestSourceUnique(unittest.TestCase):
                 GS.motifs_secrets()
         finally:
             PUB.BLOQUANTS = original
+
+
+class TestLesMotifsSontToujoursDemandes(BaseDepot):
+    """La source des motifs est sollicitée même quand rien n'est à juger (§7.1)."""
+
+    def test_un_commit_vide_demande_quand_meme_les_motifs(self):
+        # Le dépôt est propre : rien n'est indexé, rien n'est ajouté. Sans l'appel
+        # inconditionnel, `verifier` rendrait 0 sans jamais regarder
+        # `publier.BLOQUANTS`, et une étiquette disparue passerait sans bruit.
+        original = PUB.BLOQUANTS
+        PUB.BLOQUANTS = tuple(
+            (e, m) for e, m in original if e != "secret affecté")
+        try:
+            with self.assertRaises(RuntimeError):
+                GS.verifier(self.vault)
+        finally:
+            PUB.BLOQUANTS = original
+
+    def test_un_commit_propre_rend_zero(self):
+        self.assertEqual(GS.verifier(self.vault), 0)
 
 
 class TestValeurAffectee(unittest.TestCase):
@@ -258,6 +356,107 @@ class TestJetonIsole(unittest.TestCase):
         self.assertIsNone(GS.jeton_isole("https://exemple.fr/un/chemin/assez/long"))
 
 
+class TestBlocBase64(unittest.TestCase):
+    """Une clé recopiée **sans son en-tête** : `jeton_isole` ne peut pas la voir.
+
+    Le Contradicteur a écrit un secret dans le coffre sous cette forme — le
+    corps d'une clé sur plusieurs lignes, sans la ligne `-----BEGIN …` qui
+    l'annonce. `jeton_isole` refuse toute espace, donc un jeton réparti sur
+    trois lignes lui échappe. On reconnaît ici la forme « bloc », sans emporter
+    une note qui cite **une** ligne de base64 au milieu de sa prose.
+    """
+
+    def test_trois_lignes_consecutives_de_base64_sont_un_bloc(self):
+        self.assertIsNotNone(GS.bloc_base64(BLOC_BASE64))
+
+    def test_le_bloc_est_vu_au_milieu_d_un_texte(self):
+        texte = "La clé se recopie sans son en-tête :\n%s\nfin.\n" % BLOC_BASE64
+        self.assertIsNotNone(GS.bloc_base64(texte))
+
+    def test_deux_lignes_ne_suffisent_pas(self):
+        deux = "\n".join(BLOC_BASE64.splitlines()[:2])
+        self.assertIsNone(GS.bloc_base64(deux))
+
+    def test_des_lignes_separees_par_de_la_prose_ne_sont_pas_un_bloc(self):
+        lignes = BLOC_BASE64.splitlines()
+        texte = "\n".join([lignes[0], lignes[1], "Et la suite.", lignes[2]])
+        self.assertIsNone(GS.bloc_base64(texte))
+
+    def test_une_ligne_de_base64_noyee_dans_la_prose_n_est_pas_un_bloc(self):
+        """« sans autre prose » : une phrase et du base64 sur la même ligne ne comptent pas."""
+        texte = "\n".join("valeur %s" % ligne for ligne in BLOC_BASE64.splitlines())
+        self.assertIsNone(GS.bloc_base64(texte))
+
+    def test_des_lignes_trop_courtes_ne_sont_pas_un_bloc(self):
+        texte = "\n".join("QWxhdGVzdHJh" * 2 for _ in range(4))   # 24 caractères
+        self.assertIsNone(GS.bloc_base64(texte))
+
+    def test_trois_empreintes_consecutives_ne_sont_pas_un_bloc(self):
+        """Un hexadécimal de 40 ou 64 est dans l'alphabet du base64, pas du base64 de clé."""
+        self.assertIsNone(GS.bloc_base64(TROIS_SHA1))
+        self.assertIsNone(GS.bloc_base64(TROIS_SHA256))
+
+    def test_une_cle_pgp_publique_n_est_pas_un_bloc(self):
+        """Une clé **publique** est faite pour être recopiée : son armure l'exempte."""
+        self.assertIsNone(GS.bloc_base64(CLE_PGP_PUBLIQUE))
+
+    def test_un_certificat_public_n_est_pas_un_bloc(self):
+        self.assertIsNone(GS.bloc_base64(CERTIFICAT_PUBLIC))
+
+    def test_un_corps_sans_entete_reste_un_bloc(self):
+        """Le trou que la forme ferme : la clé recopiée nue doit rester refusée."""
+        self.assertIsNotNone(GS.bloc_base64(BLOC_BASE64))
+
+    def test_une_cle_privee_en_armure_reste_un_bloc(self):
+        """Seuls les deux en-têtes publics exemptent — jamais un en-tête privé."""
+        self.assertIsNotNone(GS.bloc_base64(CLE_PGP_PRIVEE))
+
+    def test_un_cadre_public_non_ferme_n_exempte_pas(self):
+        """Un `BEGIN` orphelin n'ouvre pas un trou où recopier une clé : la paire est requise."""
+        texte = "\n".join(["-----BEGIN CERTIFICATE-----", BLOC_BASE64])
+        self.assertIsNotNone(GS.bloc_base64(texte))
+
+    def test_un_en_tete_prive_dans_un_cadre_public_fait_tomber_l_exemption(self):
+        """Le détournement prouvé : une armure **privée** complète dans un cadre CERTIFICATE.
+
+        Un vrai certificat n'a que du base64 entre ses deux lignes : un délimiteur
+        **à l'intérieur** du cadre n'a rien à y faire, et l'exemption tombe.
+        """
+        self.assertIsNotNone(GS.bloc_base64(CLE_PRIVEE_DANS_UN_CADRE_PUBLIC))
+        self.assertIsNotNone(GS.bloc_base64("\n".join([
+            "-----BEGIN PGP PUBLIC KEY BLOCK-----",
+            DEBUT_ARMURE_PRIVEE,
+            CORPS_BASE64,
+            "-----END PGP PUBLIC KEY BLOCK-----",
+        ])))
+
+    def test_un_corps_nu_entre_deux_faux_delimiteurs_publics_passe(self):
+        """**Limite assumée** : un corps nu entre deux faux délimiteurs publics passe.
+
+        Aucune inspection ne peut distinguer ce corps de celui d'une **vraie** clé
+        publique : les deux sont du base64 entre deux lignes d'armure valides.
+        Le refus du secret recopié repose donc sur l'**en-tête privé**
+        (`secret_dans_une_ligne`), pas sur cette forme — c'est écrit ici pour que
+        personne ne croie la forme plus forte qu'elle n'est.
+        """
+        self.assertIsNone(GS.bloc_base64(CORPS_NU_ENTRE_FAUX_CADRES))
+
+    def test_l_exemption_d_empreinte_ne_vaut_que_pour_les_condensats_entiers(self):
+        """SHA-1 (40) et SHA-256 (64) seulement.
+
+        Les condensats abrégés (7 à 12) servent à citer un commit dans une phrase,
+        pas à remplir un bloc de trois lignes ; ils n'ont pas à exempter.
+        """
+        self.assertEqual((40, 64), tuple(GS.LONGUEURS_EMPREINTE_DE_BLOC))
+        self.assertTrue(GS.empreinte_de_bloc("a" * 40))
+        self.assertTrue(GS.empreinte_de_bloc("0" * 64))
+        self.assertFalse(GS.empreinte_de_bloc("a" * 41))
+        self.assertFalse(GS.empreinte_de_bloc("z" * 40))
+        for taille in (7, 8, 9, 10, 11, 12):
+            self.assertFalse(GS.empreinte_de_bloc("a" * taille),
+                             "condensat abrégé de %d caractères" % taille)
+
+
 class TestEmpreintes(unittest.TestCase):
     """Constat 3 — `_EMPREINTE` borné aux longueurs réelles, ou à sha/commit."""
 
@@ -311,6 +510,61 @@ class TestSurUnDepot(BaseDepot):
         self.assertEqual(1, code)
         self.assertIn("opencode.md", message)
         self.assertNotIn(JETON, message)
+
+    def test_un_bloc_de_base64_ajoute_est_refuse(self):
+        """La clé recopiée sans son en-tête : `jeton_isole` ne la voyait pas."""
+        self.poser("0-PROJETS/cle.md", "Corps.\n%s\n" % BLOC_BASE64)
+        code, message = self.juger()
+        self.assertEqual(1, code)
+        self.assertIn("cle.md", message)
+        self.assertIn("bloc de base64", message)
+        self.assertNotIn(BLOC_BASE64.splitlines()[0], message)
+
+    def test_une_cle_pgp_publique_ajoutee_passe(self):
+        """Une clé publique recopiée dans une note n'est pas un secret."""
+        self.poser("0-PROJETS/contact.md", "Corps.\n\n%s\n" % CLE_PGP_PUBLIQUE)
+        code, message = self.juger()
+        self.assertEqual(0, code, message)
+
+    def test_un_certificat_public_ajoute_passe(self):
+        self.poser("0-PROJETS/certificat.md", "Corps.\n\n%s\n" % CERTIFICAT_PUBLIC)
+        code, message = self.juger()
+        self.assertEqual(0, code, message)
+
+    def test_des_empreintes_consecutives_ajoutees_passent(self):
+        self.poser("0-PROJETS/versions.md",
+                   "Corps.\n%s\n%s\n" % (TROIS_SHA1, TROIS_SHA256))
+        code, message = self.juger()
+        self.assertEqual(0, code, message)
+
+    def test_une_cle_privee_en_armure_ajoutee_est_refusee(self):
+        """Seulement les en-têtes publics exemptent : une clé privée reste refusée."""
+        self.poser("0-PROJETS/cle-privee.md", "Corps.\n%s\n" % CLE_PGP_PRIVEE)
+        code, message = self.juger()
+        self.assertEqual(1, code)
+        self.assertIn("cle-privee.md", message)
+        self.assertIn("bloc de base64", message)
+
+    def test_un_en_tete_de_cle_privee_ajoute_est_refuse(self):
+        """L'en-tête privé manquait à la liste des secrets — trou indépendant de l'exemption.
+
+        La ligne seule n'a pas de corps de base64 : c'est bien le **motif** qui la
+        refuse, pas la forme « bloc ».
+        """
+        self.poser("0-PROJETS/cle.md",
+                   "Corps.\n\n%s\n" % DEBUT_ARMURE_PRIVEE)
+        code, message = self.juger()
+        self.assertEqual(1, code)
+        self.assertIn("cle.md", message)
+        self.assertIn("clé privée", message)
+
+    def test_une_cle_privee_dans_un_cadre_public_ajoutee_est_refusee(self):
+        """Le détournement prouvé : l'exemption ne couvre pas un délimiteur intérieur."""
+        self.poser("0-PROJETS/cle.md",
+                   "Corps.\n\n%s\n" % CLE_PRIVEE_DANS_UN_CADRE_PUBLIC)
+        code, message = self.juger()
+        self.assertEqual(1, code)
+        self.assertIn("cle.md", message)
 
     def test_une_valeur_nommee_ajoutee_est_refusee(self):
         self.poser("0-PROJETS/note.md",

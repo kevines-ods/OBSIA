@@ -27,7 +27,8 @@ if ! command -v python3 >/dev/null 2>&1; then
 fi
 
 if python3 scripts/verifier_coffre.py --silencieux; then
-    if python3 scripts/evaluer_routage.py >/dev/null; then
+    if python3 scripts/evaluer_routage.py >/dev/null \
+       && python3 scripts/evaluer_routage.py --index-compact >/dev/null; then
         exit 0
     fi
     cat >&2 <<'MSG'
@@ -36,6 +37,7 @@ Commit refusé : un skill ne se déclencherait pas sur une demande réaliste
 (cf. IA/system/VAULT-CONTRACT.md §11). Le détail :
 
     python3 scripts/evaluer_routage.py
+    python3 scripts/evaluer_routage.py --index-compact
 
 Corriger la `description` du skill — c'est elle qui décide du déclenchement.
 MSG

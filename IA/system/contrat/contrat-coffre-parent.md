@@ -277,16 +277,47 @@ toute action qui touche plusieurs fichiers, l'agent :
 
 `_MAINTENANCE/` ne porte que l'**entretien du coffre parent** : previews,
 actions consignées, registre, index. Le récit d'un chantier va dans son
-carnet (§6), pas ici. Une action menée dans un chantier se consigne au
-carnet ; `_MAINTENANCE/` ne reçoit que celles faites hors chantier. Un
+carnet (§6), pas ici. Une action se consigne au carnet — du chantier,
+ou du jour si la séance laisse un suspens ; à défaut, au journal des séances,
+`_MAINTENANCE/journal-des-seances.md` (`contrat-memoire`). Un
 carnet dont l'agent est l'auteur se met ensuite à jour sur place sans
-nouveau preview : exiger un preview à chaque étape pousserait à tout écrire
+nouveau preview, et une ligne ajoutée au journal n'en demande pas non plus :
+c'est de la consignation, pas une écriture de note. Exiger un preview à chaque étape pousserait à tout écrire
 en fin de séance, ce que le §6 interdit.
 
 **La correction du profil et des préférences ne demande aucun preview** : elle
 se fait directement, sur place (§6), et se relit dans le commit suivant du dépôt
 de données. Le preview protège une note qu'on ne possède pas ; celle-ci est faite
 pour être corrigée à mesure.
+
+**Une exception, bornée — l'écriture portée par un outil déclaré, pour un
+harnais pilotant un modèle local.** Un outil **déclaré comme MCP dans
+`IA/MCP/`** (§5), dont la **fiche dit qu'il écrit pour un harnais pilotant un
+modèle local**, et dont **chaque écriture est consignée au
+carnet de la session** (§9), peut rendre le preview **avec l'écriture** au lieu de
+l'afficher avant : l'**annonce et la trace** — fichiers concernés, contenu final,
+destination ; copie datée dans `_MAINTENANCE/` ; action consignée — accompagnent
+l'écriture accomplie.
+
+Cette exception tient à une **condition**, non à une conséquence : l'écriture doit
+être **annulable**, et elle ne l'est que si
+
+- **un acte = un commit ne portant que les fichiers de cet acte** — un acte peut en
+  toucher plusieurs (un déplacement et la ligne qu'il change au registre des notes
+  traitées) ; le commit est limité aux chemins de l'acte, **jamais
+  `git commit -a`** ;
+- l'outil **sérialise ses écritures** et n'y mêle jamais le travail d'un autre ;
+- si le commit est **refusé**, ou ne porte pas exactement l'acte, l'écriture est
+  **défaite** et l'échec **consigné** — et **l'exception tombe**.
+
+Le commit se **reconnaît à une marque dans son message** ; il se fait sur la
+**branche par défaut du dépôt de données** (§7.1), de sorte qu'un `git revert` du
+seul commit défait l'acte sans toucher au reste. « Annulable » n'est pas
+« effaçable » : un commit déjà poussé reste dans l'historique distant. Et la
+**garde des secrets reste avant l'écriture** : elle ne s'appuie jamais sur
+l'annulabilité.
+
+Hors de ce cas, le preview affiché avant exécution reste la règle, sans exception.
 
 Le registre des notes traitées est le fichier
 **`Mon coffre/_MAINTENANCE/notes_remplies.md`** — une note Markdown, pour
@@ -319,11 +350,11 @@ harness d'y répondre (7.6).
 
 ### 7.6 Accès du harness
 
-Le coffre ne nomme aucun harness (§3) : la manière de donner accès au coffre
-parent appartient à la configuration de chaque harness, **hors dépôt**. Le
-besoin est unique, et c'est la seule part qui relève de ce contrat — le harness
-doit pouvoir **lire et écrire dans la racine du coffre parent** (le dossier qui
-contient `OBSIA/`), pas seulement dans `OBSIA/`.
+Le coffre ne dépend d'aucun harness et n'en impose aucun (§3) : la manière de
+donner accès au coffre parent appartient à la configuration de chaque harness,
+**hors dépôt**. Le besoin est unique, et c'est la seule part qui relève de ce
+contrat — le harness doit pouvoir **lire et écrire dans la racine du coffre
+parent** (le dossier qui contient `OBSIA/`), pas seulement dans `OBSIA/`.
 
 Les voies possibles, le serveur MCP « fichiers » et les gabarits par harness
 vivent dans `IA/system/adaptateurs-harness/README.md`. Une limite ne s'y dilue

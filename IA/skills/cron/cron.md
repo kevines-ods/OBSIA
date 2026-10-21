@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: cron
-description: Gérer les tâches planifiées — registre `IA/tâches/`, instanciation outillée chez l'exécutant, réconciliation après un changement de harness ou de machine. À charger dès qu'une action doit se répéter à heure fixe, et toujours avant d'en créer une. Ne couvre ni le cron système ni les tâches root.
+description: Gérer les tâches planifiées dès qu'une action doit se répéter à heure fixe — tous les jours, tous les lundis matin — : registre `IA/tâches/`, instanciation outillée chez l'exécutant, réconciliation après un changement de harness ou de machine. À charger toujours avant d'en créer une. Ne couvre ni le cron système ni les tâches root.
 module: planification
 type: outil
 read_only: false
@@ -66,7 +66,7 @@ l'intention ne se supprime pas en aveugle.
 
 Deux choses qu'il ne fera pas à ta place :
 
-- **`mode: agent` exige une configuration locale.** Le coffre ne nomme aucun
+- **`mode: agent` exige une configuration locale.** Le coffre n'impose aucun
   harness (§3) : la commande qui lance un agent vit dans
   `~/.config/obsia/appliquer.conf`, hors dépôt. Sans elle, le script refuse
   d'instancier une tâche `mode: agent` plutôt que d'en poser une inerte.
@@ -241,7 +241,7 @@ un doublon : c'est la réconciliation elle-même qui casse alors la règle.
 
 Afficher le tableau des écarts **avant** d'agir : c'est une action
 multi-fichiers, le preview du §2 s'applique. Consigner ensuite les gestes
-effectués au carnet — du chantier, ou du jour hors chantier — (§9).
+effectués au carnet — du chantier ou du jour, à défaut le journal de `_MAINTENANCE/` — (§9).
 
 ## Syntaxe de `quand`
 

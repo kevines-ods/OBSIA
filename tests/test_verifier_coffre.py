@@ -15,11 +15,13 @@ from contextlib import redirect_stderr, redirect_stdout
 from datetime import date
 from io import StringIO
 from pathlib import Path
+from unittest import mock
 
 sys.dont_write_bytecode = True          # ne pas semer de __pycache__ dans le dépôt
 SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 sys.path.insert(0, str(SCRIPTS))        # `scripts/` n'est pas un paquet
 
+import regenerate_index as RI           # noqa: E402
 import verifier_coffre as VC            # noqa: E402
 
 DEFAUT = {"schema": "1", "read_only": "false", "module": "noyau"}
@@ -112,12 +114,28 @@ class BaseVerificateur(unittest.TestCase):
         return [{"name": n, "essentiel": n == "noyau",
                  "_chemin": "IA/system/modules/%s.md" % n} for n in noms]
 
+    def neutraliser_les_derives(self) -> None:
+        """Écarte le seul contrôle qui juge des fichiers hors du coffre du test.
+
+        `verifier_derives()` lance `regenerate_index.py --verifier` sur les
+        sources d'index du coffre : un coffre de test n'a ni agent ni skill à
+        indexer, il répondrait donc « Aucun agent ou aucun skill collecté —
+        index non régénéré » pour toutes les classes. Celles qui n'ont pas
+        peuplé ces sources le demandent **explicitement**, et une classe qui
+        veut prouver la vraie couture ne l'appelle pas.
+
+        Rien n'était demandé avant : `executer()` la neutralisait pour tout le
+        monde, et le seul contrôle qui regarde les index n'était exécuté nulle
+        part — un index périmé serait passé sans un mot.
+        """
+        avant = VC.verifier_derives
+        self.addCleanup(setattr, VC, "verifier_derives", avant)
+        VC.verifier_derives = lambda: None
+
     def executer(self, *arguments: str) -> int:
         """Lance le vérificateur entier, comme la CI : c'est lui qu'on juge."""
-        avant_derives, avant_argv = VC.verifier_derives, sys.argv
-        self.addCleanup(setattr, VC, "verifier_derives", avant_derives)
+        avant_argv = sys.argv
         self.addCleanup(setattr, sys, "argv", avant_argv)
-        VC.verifier_derives = lambda: None   # pas de dépôt git dans ce coffre
         sys.argv = ["verifier_coffre.py", "--silencieux", *arguments]
         # Le rapport final part sur stderr, même en silencieux : le compte rendu
         # du test n'a pas à le porter, les messages sont dans `VC.erreurs`.
@@ -129,6 +147,29 @@ class BaseVerificateur(unittest.TestCase):
 
     def avertissements_texte(self) -> str:
         return "\n".join(VC.avertissements)
+
+
+class TestMemoireEmprunteeAuMoteur(BaseVerificateur):
+    """« Qui est un agent » et les noms de mémoire n'ont qu'une définition (§6).
+
+    Deux copies finiraient par diverger sur les noms mêmes qui séparent la
+    mémoire vivante du chantier gelé : le vérificateur importe la copie unique
+    du moteur partagé au lieu de la réécrire.
+    """
+
+    def test_les_noms_et_la_liste_des_agents_viennent_du_moteur(self):
+        import convention_des_notes as MOTEUR
+        self.assertIs(VC.liste_des_agents, MOTEUR.liste_des_agents)
+        self.assertIs(VC.MEMOIRES, MOTEUR.MEMOIRES)
+        self.assertIs(VC.PREFERENCES, MOTEUR.PREFERENCES)
+        self.assertIs(VC.EXPERIENCES, MOTEUR.EXPERIENCES)
+
+    def test_un_agent_se_declare_en_fichier_plat_ou_en_dossier(self):
+        # Les deux formes du §5 comptent : un agent déclaré en dossier a lui
+        # aussi une mémoire vivante, à ne pas confondre avec un chantier gelé.
+        self.ecrire("IA/agents/plat.md", "---\nkind: agent\n---\n")
+        self.ecrire("IA/agents/dossier/dossier.md", "---\nkind: agent\n---\n")
+        self.assertEqual(VC.noms_d_agents_declares(), {"plat", "dossier"})
 
 
 class TestConsigneSkill(BaseVerificateur):
@@ -220,6 +261,10 @@ class TestFicheMcpSansModule(BaseVerificateur):
     vérificateur, sinon la fiche fautive ne se voit qu'en musique de fond.
     """
 
+    def setUp(self):
+        super().setUp()
+        self.neutraliser_les_derives()
+
     def decor(self, module: str | None) -> None:
         """Le même coffre, à une ligne près : celle du `module` de la fiche MCP."""
         self.ecrire("IA/system/modules/noyau.md", MODULE_NOYAU)
@@ -271,6 +316,10 @@ class TestProfilFautif(BaseVerificateur):
     voulu. Le dire, c'est éviter de chercher ailleurs pourquoi l'installation
     est amputée.
     """
+
+    def setUp(self):
+        super().setUp()
+        self.neutraliser_les_derives()
 
     def decor(self, profil: str | None) -> None:
         self.ecrire("IA/system/modules/noyau.md", MODULE_NOYAU)
@@ -330,6 +379,11 @@ class TestCarnets(BaseVerificateur):
         self._strict_avant = VC.MEMOIRE_STRICTE
         self.addCleanup(setattr, VC, "MEMOIRE_STRICTE", self._strict_avant)
         VC.MEMOIRE_STRICTE = True
+        # Deux cas de cette classe décrivent la tolérance de bascule, pas la date
+        # du jour : sans épinglage ils rougissent d'eux-mêmes le 2027-01-01, sans
+        # qu'une ligne de code ait bougé. Rendre l'horloge d'origine en sortie.
+        self._date_avant = VC.date
+        self.addCleanup(setattr, VC, "date", self._date_avant)
 
     def carnet(self, projet: str, nom: str, frontmatter: str) -> Path:
         return self.ecrire_coffre("0-PROJETS/%s/carnets/%s" % (projet, nom),
@@ -416,8 +470,11 @@ class TestCarnets(BaseVerificateur):
         """`archives/` n'existe plus : un chantier clos part dans `0-MEMOIRES/`.
 
         Tant que la bascule dure, l'ancienne forme avertit sans faire échouer :
-        le contrôle des carnets doit être utilisable pendant qu'on migre.
+        le contrôle des carnets doit être utilisable pendant qu'on migre. Le
+        dernier jour de la tolérance est épinglé : c'est le 2027-01-01 que la
+        forme tombe, et un cas qui interroge l'horloge sans le dire rougit seul.
         """
+        VC.date = FauxJour(date(2026, 12, 31))
         self.ecrire_coffre("0-PROJETS/un-projet/carnets/archives/vieux.md", "Corps.\n")
         self.ecrire_coffre("0-PROJETS/un-projet/archives/vieux.md", "Corps.\n")
 
@@ -437,6 +494,8 @@ class TestCarnets(BaseVerificateur):
         self.assertIn("`agent:` vide", self.erreurs_texte())
 
     def test_une_note_datee_a_plat_est_toleree(self):
+        """Tolérée jusqu'au dernier jour : la date est épinglée, pas lue."""
+        VC.date = FauxJour(date(2026, 12, 31))
         self.ecrire_coffre("0-PROJETS/ancien-projet/2026-09-18-une-note.md",
                            "---\nagent: assistant\n---\n\nCorps.\n")
         VC.verifier_carnets()
@@ -490,6 +549,7 @@ class TestNomsDeMemoire(BaseVerificateur):
 
     def setUp(self):
         super().setUp()
+        self.neutraliser_les_derives()
         self._strict_avant = VC.MEMOIRE_STRICTE
         self.addCleanup(setattr, VC, "MEMOIRE_STRICTE", self._strict_avant)
         VC.MEMOIRE_STRICTE = True
@@ -687,6 +747,10 @@ class TestLigneDeCommandeDuCoffre(BaseVerificateur):
     GABARIT = "IA/system/depot-de-donnees/gitignore-coffre"
     LISTE = "/*\n!/.gitignore\n!/0-*/\n!/_MAINTENANCE/\n"
 
+    def setUp(self):
+        super().setUp()
+        self.neutraliser_les_derives()
+
     def preparer(self):
         """Le coffre est outillé : gabarit présent, liste blanche conforme."""
         self.ecrire(self.GABARIT, self.LISTE)
@@ -870,6 +934,110 @@ class TestBasculeDatée(BaseVerificateur):
         self.assertIn("bascule non achevée", self.erreurs_texte())
 
 
+class TestBasculeDesFormesTolerees(BaseVerificateur):
+    """§11 : la tolérance des formes d'attente tombe le 2026-12-31, elle aussi.
+
+    `signaler_bascule` avertissait sans condition : une note datée à plat, un
+    dossier `archives/` restaient des avertissements éternels après le jour dit,
+    alors que le même vestige sous l'ancienne forme faisait échouer le contrôle.
+    Deux poids, deux mesures pour une seule échéance. Le jour est forcé par le
+    paramètre `aujourdhui`, ou par `FauxJour` quand c'est `verifier_carnets` qui
+    lit la date, pour que ces cas ne dépendent pas de l'horloge de la machine.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self._date_avant = VC.date
+        self.addCleanup(setattr, VC, "date", self._date_avant)
+
+    # --- le jour d'aujourd'hui : rien ne change, c'est interdit
+
+    def test_aujourd_hui_une_note_a_plat_reste_toleree(self):
+        """Le 2026-10-17, le coffre doit rester tolérant : avertir, pas refuser."""
+        VC.date = FauxJour(date(2026, 10, 17))
+        self.ecrire_coffre("0-PROJETS/essai/2026-09-01-note.md", "Note.\n")
+        VC.verifier_carnets()
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+        self.assertTrue(any("tolérance de bascule" in a for a in VC.avertissements),
+                        VC.avertissements)
+
+    # `main` n'est pas appelé ici, et c'est un choix de budget : chaque passage
+    # coûte un processus par `verifier_depot_de_donnees`, pour cinq de marge.
+    # Les trois points d'appel de `signaler_bascule` passent tous par
+    # `verifier_carnets`, qui est donc l'étage où la chaîne se prouve.
+
+    # --- les deux bords
+
+    def test_le_dernier_jour_la_tolerance_avertit_encore(self):
+        VC.signaler_bascule("x.md", "note datée", aujourdhui=date(2026, 12, 31))
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+        self.assertIn("tolérance de bascule", VC.avertissements[0])
+        self.assertIn("2026-12-31", VC.avertissements[0])
+
+    def test_le_premier_jour_apres_la_tolerance_est_une_erreur(self):
+        VC.signaler_bascule("x.md", "note datée", aujourdhui=date(2027, 1, 1))
+        self.assertEqual([], VC.avertissements)
+        self.assertIn("bascule non achevée", self.erreurs_texte())
+        self.assertIn("x.md", self.erreurs_texte())
+        self.assertIn("2026-12-31", self.erreurs_texte())
+        self.assertIn("§11", self.erreurs_texte())
+        self.assertIn("souverainete-des-donnees", self.erreurs_texte())
+
+    # --- les trois formes que `signaler_bascule` excuse
+
+    def test_une_note_a_plat_refusee_apres_le_jour_dit(self):
+        """Le message doit dire où la mémoire doit vivre, pas seulement quand.
+
+        Les trois assertions qui suivent sont nées d'une mutation : retirer
+        « (§6) » des trois points d'appel laissait la suite entièrement verte.
+        Le chemin était exercé, le message n'était épinglé par rien.
+        """
+        VC.date = FauxJour(date(2027, 1, 1))
+        self.ecrire_coffre("0-PROJETS/essai/2026-09-01-note.md", "Note.\n")
+        VC.verifier_carnets()
+        self.assertIn("bascule non achevée", self.erreurs_texte())
+        self.assertIn("2026-09-01-note.md", self.erreurs_texte())
+        # La §6 dit où la mémoire doit vivre, la §11 quand la tolérance tombe :
+        # n'en citer qu'une laisse le lecteur avec la moitié du chemin.
+        self.assertIn("§6", self.erreurs_texte())
+        self.assertIn("§11", self.erreurs_texte())
+        self.assertIn("à migrer vers `carnets/`", self.erreurs_texte())
+
+    def test_un_archives_de_projet_refuse_apres_le_jour_dit(self):
+        VC.date = FauxJour(date(2027, 1, 1))
+        self.ecrire_coffre("0-PROJETS/essai/archives/2026-09-01-vieux.md", "Vieux.\n")
+        VC.verifier_carnets()
+        self.assertIn("bascule non achevée", self.erreurs_texte())
+        self.assertIn("archives", self.erreurs_texte())
+        # Chaque point d'appel porte sa propre destination : ici `0-MEMOIRES/`,
+        # pas `carnets/`. Sans ces deux lignes, retirer « (§6) » de cet appel
+        # laissait la suite entièrement verte — la preuve ne couvrait qu'un appel.
+        self.assertIn("§6", self.erreurs_texte())
+        self.assertIn("0-MEMOIRES/", self.erreurs_texte())
+
+    def test_un_archives_de_projet_reste_tolere_avant_le_jour_dit(self):
+        VC.date = FauxJour(date(2026, 12, 31))
+        self.ecrire_coffre("0-PROJETS/essai/archives/2026-09-01-vieux.md", "Vieux.\n")
+        VC.verifier_carnets()
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+        self.assertTrue(any("tolérance de bascule" in a for a in VC.avertissements),
+                        VC.avertissements)
+
+    def test_un_archives_de_carnets_refuse_apres_le_jour_dit(self):
+        """Le troisième point d'appel : les archives sous `carnets/` du projet."""
+        VC.date = FauxJour(date(2027, 1, 1))
+        self.ecrire_coffre("0-PROJETS/essai/carnets/archives/2026-09-01-vieux.md",
+                           "Vieux.\n")
+        VC.verifier_carnets()
+        self.assertIn("bascule non achevée", self.erreurs_texte())
+        self.assertIn("carnets/archives", self.erreurs_texte())
+        # Le troisième appel a sa destination à lui, et sa propre §6 : c'est la
+        # même exigence que les deux autres, vérifiée séparément parce qu'une
+        # assertion posée sur un appel ne prouve rien des deux autres.
+        self.assertIn("§6", self.erreurs_texte())
+        self.assertIn("0-MEMOIRES/", self.erreurs_texte())
+
+
 class TestTailleDuFichierAgents(BaseVerificateur):
     """L'`AGENTS.md` écrit ne doit pas approcher le plafond de consignes de Codex.
 
@@ -1045,6 +1213,259 @@ class TestTailleDuFichierAgents(BaseVerificateur):
         self.assertIn("Codex", message)
         self.assertIn("laissé de côté", message)
         self.assertEqual([], VC.avertissements, self.avertissements_texte())
+
+
+class TestPlafondDuNoyau(BaseVerificateur):
+    """§11 : le noyau du contrat a un plafond, déclaré à un seul endroit.
+
+    Le noyau est lu **en entier** par tout agent au démarrage : le laisser
+    grossir, c'est payer ce poids à chaque séance. Le plafond vit dans son
+    unique endroit déclaré — la table de `CONSTRAINTS.md`, ligne « Noyau du
+    contrat », comme le plancher de tests — et le contrôle affiche à chaque
+    passage la taille, le plafond et l'écart.
+    """
+
+    LIGNE = ("| Noyau du contrat | **≤ 4 560 mots** — le plafond descend, il ne "
+             "monte pas en silence | `scripts/verifier_coffre.py` | chaque poussée |\n")
+
+    def declarer(self, ligne: str = LIGNE) -> None:
+        self.ecrire("CONSTRAINTS.md",
+                    "| Dimension | Règle | Vérifié par | Quand |\n"
+                    "| --- | --- | --- | --- |\n" + ligne)
+
+    def noyau_de(self, mots: int) -> Path:
+        """Un noyau de `mots` mots, sans avoir à calibrer un vrai texte."""
+        return self.ecrire("IA/system/VAULT-CONTRACT.md",
+                           " ".join("mot%d" % i for i in range(mots)) + "\n")
+
+    def test_le_plafond_est_lu_a_son_unique_endroit_declare(self):
+        self.declarer()
+        self.assertEqual(4560, VC.plafond_du_noyau())
+
+    def test_la_ligne_dit_la_taille_le_plafond_et_l_ecart(self):
+        self.declarer()
+        self.noyau_de(4553)
+
+        ligne = VC.verifier_taille_du_noyau()
+
+        self.assertIn("4553", ligne)      # la taille
+        self.assertIn("4560", ligne)      # le plafond
+        self.assertIn("marge 7", ligne)   # l'écart
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+
+    def test_au_dessus_du_plafond_le_verificateur_refuse(self):
+        self.declarer()
+        self.noyau_de(4600)
+
+        VC.verifier_taille_du_noyau()
+
+        self.assertEqual(1, len(VC.erreurs), self.erreurs_texte())
+        message = VC.erreurs[0]
+        self.assertIn("4600", message)             # la taille
+        self.assertIn("4560", message)             # le plafond
+        self.assertIn("40 au-dessus", message)     # l'écart
+        self.assertIn("VAULT-CONTRACT", message)   # où regarder
+
+    def test_un_plafond_non_declare_est_une_erreur(self):
+        """Sans la ligne déclarée, le noyau grossirait sans que rien ne le dise."""
+        self.declarer("")
+        self.noyau_de(10)
+
+        VC.verifier_taille_du_noyau()
+
+        self.assertEqual(1, len(VC.erreurs), self.erreurs_texte())
+        self.assertIn("Noyau du contrat", VC.erreurs[0])
+
+    def test_sans_noyau_rien_n_est_mesure(self):
+        """Un clone sans noyau — ou un dossier de mémoire — n'a rien à mesurer."""
+        self.declarer()
+
+        self.assertIsNone(VC.verifier_taille_du_noyau())
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+        self.assertEqual([], VC.avertissements, self.avertissements_texte())
+
+    def test_le_vrai_noyau_du_depot_tient_dans_son_plafond(self):
+        """La garantie du dépôt, sur ses vrais fichiers : déclaration et noyau d'accord."""
+        racine = Path(__file__).resolve().parent.parent
+        plafond = VC.plafond_du_noyau(racine / "CONSTRAINTS.md")
+        mots = VC.mots_du_noyau(racine / "IA" / "system" / "VAULT-CONTRACT.md")
+
+        self.assertIsNotNone(plafond, "le plafond du noyau doit être déclaré")
+        self.assertLessEqual(
+            mots, plafond,
+            "le noyau (%d mots) dépasse son plafond (%d)" % (mots, plafond))
+
+
+class TestRegleDesSecretsDuNoyau(BaseVerificateur):
+    """§4 : le bloc de la règle des secrets est là, entre ses repères.
+
+    `generer_prompt.regle_des_secrets` rend ``""`` quand les repères
+    `regle-secrets` quittent le noyau : le prompt engendré — et donc l'`AGENTS.md`
+    lu par l'agent — perdent alors la règle **en silence**. Le test du générateur
+    vit dans le dépôt produit ; ce contrôle-ci le dit depuis le coffre, là où
+    l'amendement du §4 atterrit.
+    """
+
+    NOYAU = "IA/system/VAULT-CONTRACT.md"
+
+    def noyau(self, texte: str) -> None:
+        self.ecrire(self.NOYAU, texte)
+
+    def test_un_bloc_vide_est_refuse(self):
+        self.noyau("<!-- regle-secrets: debut -->\n"
+                   "\n"
+                   "<!-- regle-secrets: fin -->\n")
+
+        ligne = VC.verifier_regle_des_secrets()
+
+        self.assertEqual(1, len(VC.erreurs), self.erreurs_texte())
+        self.assertIn("vide ou introuvable", VC.erreurs[0])
+        self.assertIn("AGENTS.md", VC.erreurs[0])
+        self.assertIn("rétablir le bloc", VC.erreurs[0])
+        self.assertEqual("Règle des secrets : bloc vide ou introuvable.", ligne)
+
+    def test_des_reperes_disparus_rendent_le_meme_refus(self):
+        """Sans repères, l'extraction rend le vide : même refus, même message."""
+        self.noyau("Le §4 est là, mais plus entre ses repères.\n")
+
+        VC.verifier_regle_des_secrets()
+
+        self.assertEqual(1, len(VC.erreurs), self.erreurs_texte())
+        self.assertIn("vide ou introuvable", VC.erreurs[0])
+
+    def test_un_bloc_present_est_compte_sans_erreur(self):
+        self.noyau("<!-- regle-secrets: debut -->\n"
+                   "Les secrets ne sortent jamais du coffre.\n"
+                   "<!-- regle-secrets: fin -->\n")
+
+        ligne = VC.verifier_regle_des_secrets()
+
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+        self.assertTrue(ligne.startswith("Règle des secrets : "), ligne)
+        self.assertIn("caractères", ligne)
+
+    def test_sans_noyau_le_controle_se_tait(self):
+        """Un clone sans contrat n'a rien à dire ici."""
+        self.assertIsNone(VC.verifier_regle_des_secrets())
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+
+
+class TestClausesDateesDuNoyau(BaseVerificateur):
+    """§11 : une clause datée du noyau ne survit pas à sa date.
+
+    Forme reconnue : une date ISO `AAAA-MM-JJ` écrite dans le noyau — la seule
+    admise pour y dater une échéance (« se retire au plus tard le 2026-12-31 »).
+    Passé le jour, l'avertissement dit la ligne et la date, parce qu'une
+    échéance dépassée laisse croire qu'un régime tient encore.
+    """
+
+    NOYAU = "IA/system/VAULT-CONTRACT.md"
+
+    def noyau(self, texte: str) -> None:
+        self.ecrire(self.NOYAU, texte)
+
+    def test_une_clause_datee_echue_avertit(self):
+        self.noyau("La tolérance se retire au plus tard le 2026-12-31.\n")
+
+        VC.verifier_clauses_datees_du_noyau(date(2027, 1, 1))
+
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+        self.assertEqual(1, len(VC.avertissements), self.avertissements_texte())
+        message = VC.avertissements[0]
+        self.assertIn("2026-12-31", message)       # la date
+        self.assertIn("ligne 1", message)          # où elle est
+        self.assertIn("VAULT-CONTRACT", message)
+
+    def test_une_clause_encore_valable_se_tait(self):
+        """Le jour dit compris, la clause tient encore : aucun avertissement."""
+        self.noyau("La tolérance se retire au plus tard le 2026-12-31.\n")
+
+        VC.verifier_clauses_datees_du_noyau(date(2026, 12, 31))
+
+        self.assertEqual([], VC.avertissements, self.avertissements_texte())
+
+    def test_chaque_echeance_depassee_est_dite(self):
+        self.noyau("Première, au plus tard le 2026-01-01.\n"
+                   "Deuxième, au plus tard le 2026-02-01.\n")
+
+        VC.verifier_clauses_datees_du_noyau(date(2027, 1, 1))
+
+        self.assertEqual(2, len(VC.avertissements), self.avertissements_texte())
+        self.assertIn("ligne 1", VC.avertissements[0])
+        self.assertIn("ligne 2", VC.avertissements[1])
+
+    def test_une_date_bien_ecrite_mais_inexistante_avertit(self):
+        """`2028-02-30` a la forme d'une date sans en être une.
+
+        `date.fromisoformat` lève ici une `ValueError` ; la laisser filer ferait
+        sortir le vérificateur en traceback, et un coffre par ailleurs cohérent
+        serait refusé pour une date mal écrite. On avertit, sans s'arrêter.
+        """
+        self.noyau("La tolérance se retire au plus tard le 2028-02-30.\n")
+
+        VC.verifier_clauses_datees_du_noyau(date(2029, 1, 1))
+
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+        self.assertEqual(1, len(VC.avertissements), self.avertissements_texte())
+        message = VC.avertissements[0]
+        self.assertIn("2028-02-30", message)       # la date montrée telle quelle
+        self.assertIn("ligne 1", message)          # où elle est
+        self.assertIn("illisible", message)
+
+    def test_une_date_inexistante_ne_masque_pas_la_suivante(self):
+        """Le mois 13 avertit « illisible », et la clause d'après garde son sort."""
+        self.noyau("D'abord le 2026-13-01, puis le 2026-01-01.\n")
+
+        VC.verifier_clauses_datees_du_noyau(date(2027, 1, 1))
+
+        self.assertEqual(2, len(VC.avertissements), self.avertissements_texte())
+        self.assertIn("ligne 1", VC.avertissements[0])
+        self.assertIn("2026-13-01", VC.avertissements[0])
+        self.assertIn("ligne 1", VC.avertissements[1])
+        self.assertIn("2026-01-01", VC.avertissements[1])
+
+    def test_sans_noyau_rien_n_est_signale(self):
+        VC.verifier_clauses_datees_du_noyau(date(2030, 1, 1))
+        self.assertEqual([], VC.avertissements, self.avertissements_texte())
+
+
+class TestLaCoutureDesDerives(BaseVerificateur):
+    """`verifier_derives` pour de vrai : un index périmé doit être vu.
+
+    Toute la suite la remplaçait par `lambda: None` — le seul contrôle qui
+    regarde les index dérivés n'était donc jamais exécuté, et un index périmé
+    serait passé sans un mot. Les classes qui peuplent un coffre sans sources
+    d'index la neutralisent explicitement (`neutraliser_les_derives()`) ;
+    celle-ci les peuple et la laisse réelle, sur son coffre temporaire.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.fiche("agent", "agent-verif", {})
+        self.fiche("skill", "skill-verif", {})
+        (self.racine / "IA" / "system").mkdir(parents=True, exist_ok=True)
+
+    def regenerer_les_index(self):
+        """Écrit les cinq index du coffre — par le générateur, pas à la main."""
+        with mock.patch.object(RI, "RACINE", self.racine), \
+                redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+            code = RI.main([])
+        self.assertEqual(0, code, "le générateur a échoué sur ce coffre")
+
+    def test_un_index_perime_est_une_erreur(self):
+        VC.verifier_derives()
+        self.assertIn("index périmés", self.erreurs_texte())
+        self.assertIn("IA/system/agents-index.md", self.erreurs_texte())
+
+    def test_un_index_a_jour_ne_dit_rien(self):
+        self.regenerer_les_index()
+        VC.verifier_derives()
+        self.assertEqual("", self.erreurs_texte())
+
+    def test_le_controle_remonte_par_la_ligne_de_commande(self):
+        self.executer()
+        self.assertIn("index périmés", self.erreurs_texte(),
+                      "la ligne de commande ne doit plus taire ce contrôle")
 
 
 if __name__ == "__main__":

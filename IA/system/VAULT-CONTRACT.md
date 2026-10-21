@@ -14,12 +14,16 @@ il les référence. En cas de contradiction entre ce contrat et un autre fichier
 **ce contrat fait foi**.
 
 Le contrat, c'est ce fichier — le **noyau**, toujours chargé — et ses annexes
-(`IA/system/contrat/`). **Une règle qu'on peut enfreindre sans avoir rien chargé
-vit ici ; le pourquoi, les exemples et les procédures vont dans une annexe ou un
-skill, qui n'ajoutent aucune règle.** En cas de contradiction, ce fichier fait
+(`IA/system/contrat/`). **Une règle n'entre au noyau qu'à trois conditions :
+aucun outil ne la fait déjà respecter ; l'enfreindre est grave ou irréversible
+(secret, données perdues, privé rendu public) ; elle ne dépend pas d'une action
+précise. Sinon elle va dans l'annexe que cette action fait charger ; le pourquoi,
+les exemples et les procédures aussi. Une règle qu'un outil fait respecter garde au
+plus une ligne au noyau (« le vérificateur refuse X »). Une annexe n'ajoute aucune
+règle.** En cas de contradiction, ce fichier fait
 foi et l'annexe est à corriger. **Modifier une règle ici, c'est reporter la
-modification dans son annexe dans la même PR.** Correspondance avec le contrat
-d'avant le découpage : `IA/system/contrat/registre.md` (non normatif).
+modification dans son annexe dans la même PR.** Où vit chaque règle :
+`IA/system/contrat/registre.md` (non normatif).
 
 | Annexe | À lire avant de… |
 | --- | --- |
@@ -28,7 +32,7 @@ d'avant le découpage : `IA/system/contrat/registre.md` (non normatif).
 | `contrat/contrat-coffre-parent.md` | écrire dans le coffre parent hors d'`0-EN-VRAC/` |
 | `contrat/contrat-verification.md` | toucher un script de vérification ou un fichier généré ; relâcher une attente de routage ; travailler sur un clone neuf |
 | `contrat/contrat-taches.md` | créer, modifier ou suspendre une tâche ; en instancier ou retirer une instance |
-| `contrat/contrat-distribution.md` | installer, publier, synchroniser ; toucher `installer.py` ou `publier.py` ; écrire un module ou une sonde ; écrire un skill qui charge le skill d'un autre module ; citer dans un fichier publié un chemin vers une zone non publiée |
+| `contrat/contrat-distribution.md` | nommer un harness dans un fichier du dépôt ; installer, publier, synchroniser ; toucher `installer.py` ou `publier.py` ; écrire un module ou une sonde ; écrire un skill qui charge le skill d'un autre module ; citer dans un fichier publié un chemin vers une zone non publiée |
 
 ---
 
@@ -65,7 +69,10 @@ skill, jamais un nom d'agent imaginaire. `scripts/verifier_coffre.py` le contrô
   données (§7.1) en tient lieu. `.archive/` reste **versionné** pour le reste du
   dépôt produit ; rien n'y est lu ni indexé — les dossiers en `.` sont écartés.
 - Toute action touchant plusieurs fichiers exige un **preview** affiché avant
-  exécution, listant les chemins — écriture directe ou patch.
+  exécution, listant les chemins — écriture directe ou patch. Une seule exception,
+  bornée : l'écriture portée par un **outil déclaré en MCP, pour un modèle local
+  piloté** (§7.4), où le preview est rendu avec l'écriture à condition que chaque
+  acte forme un commit annulable.
 - Les **fichiers générés** ne s'éditent jamais à la main ni par un agent :
   `sommaire.md`, `agents-index.md`, `skills-index.md`, `taches-index.md`,
   `modules-index.md`, `IA/README.md`.
@@ -73,9 +80,11 @@ skill, jamais un nom d'agent imaginaire. `scripts/verifier_coffre.py` le contrô
 
 ### 2.1 Plusieurs agents, un seul dépôt
 
-- **Jamais de commit dans l'arbre principal** : il reste sur la branche par
-  défaut et ne fait que se mettre à jour ; tout travail se fait dans un
-  *worktree* lié, propre à la séance, **jamais sous `/tmp`**.
+- **Jamais de commit dans l'arbre principal du dépôt produit** : il reste sur la
+  branche par défaut et ne fait que se mettre à jour ; tout travail se fait dans
+  un *worktree* lié, propre à la séance, **jamais sous `/tmp`**. Le **dépôt de
+  données du coffre** suit une autre règle : il s'écrit sur sa propre branche par
+  défaut (§7.1).
 - **Une branche porte le nom de son agent** : `<nom-agent>/<sujet>`. La branche
   et le worktree d'un autre agent ne se touchent pas — on le signale.
 - **Une PR s'ouvre sur la branche par défaut**, jamais sur la branche d'une
@@ -87,8 +96,14 @@ Les commandes : `IA/system/travail-en-parallele.md`.
 
 ## 3. Périmètre hors du coffre
 
-Le coffre ne dépend d'aucun harness et n'en nomme aucun, ni aucune base de
+Le coffre ne dépend d'aucun harness et n'en impose aucun, ni aucune base de
 code extérieure : il décrit *quoi* faire, le harness fournit *avec quoi*.
+
+Nommer un harness pour décrire, illustrer, mesurer ou installer est légitime ;
+s'y soumettre est interdit : aucun nom ni comportement propre à un harness ne
+conditionne les règles que le coffre applique à la mémoire, ni les consignes de
+ses agents et de ses skills. Les cas permis, notamment : `contrat-distribution`.
+
 Quand un agent `read_only: false` intervient sur un dépôt extérieur :
 
 - Toute modification passe par un **patch Git revu** — jamais de commit direct
@@ -115,31 +130,13 @@ Quand un agent `read_only: false` intervient sur un dépôt extérieur :
 ## 5. Frontmatter — format obligatoire
 
 Tout agent, skill, MCP, tâche, module et fichier du contrat commence par un
-frontmatter YAML valide. Champs communs : `schema` (`1`), `kind`, `name`,
-`description` (une ligne), `read_only`, `module` (le module du §13 ; un fichier
-sans module est refusé). **Exceptions** : un MCP n'a ni `read_only` ni `skills` ;
-une tâche n'a pas de `read_only` ; un fichier du contrat (`kind: contract`) non plus.
+frontmatter YAML valide, avec son `module` (`contrat-distribution`) ; le vérificateur refuse un
+fichier non conforme. Le format : `contrat-frontmatter`, à lire avant d'en
+écrire un. Un MCP n'est utilisable que **déclaré par un agent**, et
+passe en `permission: elevated` **dès qu'il touche un système externe**.
 
-- `read_only: true` : écriture interdite, la règle est au §2.
-- `name` = le nom du fichier, en minuscules avec tirets, **sans espaces**
-  (accents permis). Un skill vit en `IA/skills/<nom>.md` ou
-  `IA/skills/<nom>/<nom>.md` — **jamais `SKILL.md`** ; seul `references/`
-  contient des notes. On cite le contrat **en chemin relatif**, dont la
-  profondeur dépend de sa forme (`contrat-memoire`).
-- Les listes YAML s'écrivent **une entrée par ligne** (jamais `skills: a, b`) ;
-  les clés prennent l'underscore (`read_only`) ; un champ du frontmatter n'est
-  **pas répété** dans le corps.
-- MCP : `permission: elevated` **dès qu'un système externe est touché**
-  (réseau, dépôt distant, navigateur). Un MCP n'est utilisable que **déclaré
-  par un agent**.
-- Tâche : `quand` **entre guillemets** (cron à 5 champs), `fuseau` obligatoire,
-  `exécutant` (`local` | `harness`) dit qui a le droit de la déclencher,
-  le champ `agent:` quand le mode est `agent`, et une section `## Instruction` ou `## Commande`
-  obligatoire.
-
-**Une information vit à un seul endroit.** Une **règle** qu'un agent peut
-violer sans avoir rien chargé vit dans ce contrat ; une **procédure** qui ne
-s'applique qu'en faisant la chose vit dans un skill.
+**Une information vit à un seul endroit** : une règle dans ce contrat, une
+procédure dans un skill.
 
 ## 6. Nommage, rétroliens et mémoire
 
@@ -173,8 +170,9 @@ s'applique qu'en faisant la chose vit dans un skill.
   portent une date** ; dans le doute, écrire dans le carnet.
 - **Un chantier est un dossier à lui** sous son projet : ses `carnets/`, ses
   `documents/` et son ` — résumé`, un seul niveau — jamais de chantier imbriqué.
-- **Une séance sans chantier** écrit dans le carnet du jour du projet de domaine
-  qui la porte, sans créer de chantier. Un agent `read_only: true` n'écrit aucun
+- **Une séance sans chantier** n'a de carnet du jour, au projet qui la
+  porte, que si un travail reste en suspens ; sinon, le journal de
+  `_MAINTENANCE/` (§7.4). Un agent `read_only: true` n'écrit aucun
   carnet : l'agent qui reprend son travail consigne ses constats et ses appels.
 - **Reprise** : au démarrage, chercher — dans l'arbre principal **et dans chaque
   worktree lié** — ses carnets `statut: en cours` (par nom d'agent, jamais de
@@ -183,24 +181,12 @@ s'applique qu'en faisant la chose vit dans un skill.
   l'utilisateur choisit. Procédure : `cloture-de-session`.
 - **Le carnet se commite à chaque étape** : seul ce qui est commité survit à la
   coupure.
-- **Clôture** : le dossier entier du chantier quitte `0-PROJETS/` pour
-  `0-MEMOIRES/<projet>/<chantier>/` — le ` — résumé` devient un bilan avec une
-  section « État », les carnets passent `statut: clos`, les documents suivent. Le
-  durable a été distillé **avant** vers `0-SAVOIRS/`,
-  `0-MEMOIRES/préférences/` ou `0-MEMOIRES/<nom-agent>/expériences/`. Le dossier
-  gelé ne se modifie plus jamais.
-- **`0-MEMOIRES/` porte deux mémoires, et une seule est gelée** : la mémoire des
-  agents — `préférences/` et `<nom-agent>/expériences/` — y reste **vivante** et
-  se corrige **sur place**, comme le profil ; un chantier clos, lui, n'y est
-  **jamais** retouché. Un nom de premier niveau sous `0-MEMOIRES/` est donc, et
-  rien d'autre : `préférences`, le nom d'un agent, ou un projet gelé. **Un projet
-  ne peut porter ni `préférences` ni le nom d'un agent** — la collision rendrait
-  deux mémoires indistinguables — et le contrôle (§11) le refuse.
-- **Rouvrir** un chantier clos le ramène dans `0-PROJETS/`, `statut: en cours`,
-  **sans copie laissée** dans `0-MEMOIRES/`.
-- **Un domaine dormant n'est pas clos** : sans chantier actif, son dossier reste
-  dans `0-PROJETS/` et **sa vision reste** — on n'archive pas un domaine vivant
-  (§7.3).
+- **Clôture, réouverture, domaine dormant** : procédure dans `contrat-memoire`.
+  Le durable se distille **avant** la clôture ; un chantier clos ou un carnet
+  de séance clos, gelés dans `0-MEMOIRES/<projet>/<chantier>/` ou `carnets/`,
+  ne se modifient **plus jamais** — seules `préférences/` et
+  `<nom-agent>/expériences/` y restent vivantes, et le vérificateur refuse
+  qu'un projet porte ce nom (§11).
 - **Clause de transition** : pendant la bascule, la mémoire se cherche à tout
   emplacement qui existe, dans l'ordre détaillé par `contrat-memoire`, et la
   tolérance se retire au plus tard le 2026-12-31 (chantier
@@ -293,9 +279,17 @@ une copie datée dans `_MAINTENANCE/`**, exécuter, puis consigner l'action.
 **Une correction du profil, d'une préférence ou d'une expérience n'appelle pas de
 preview** : elle se fait directement, sur place (§6).
 
-Une action menée dans un chantier se consigne au carnet ; `_MAINTENANCE/` ne
-reçoit que celles faites hors chantier. Un carnet dont l'agent est l'auteur se
-met à jour sur place sans nouveau preview. Le registre des notes traitées est
+**Une exception, bornée** : l'outil déclaré qui écrit pour un modèle local
+piloté (`IA/MCP/ecrivain-du-coffre.md`), et qui consigne chaque écriture au carnet
+(§9), peut rendre le preview **avec** l'écriture, à condition qu'elle soit
+**annulable** — un acte, un commit limité à ses chemins, défait et consigné s'il
+est refusé ; détail : sa fiche et `contrat-coffre-parent`. La garde des secrets
+reste **avant** l'écriture.
+
+Hors de ce cas, le preview affiché avant exécution reste la règle, sans exception.
+
+Une action se consigne, sans nouveau preview, à son carnet ou, à défaut, au
+journal de `_MAINTENANCE/`. Le registre des notes traitées est
 `Mon coffre/_MAINTENANCE/notes_remplies.md` : une note qui y figure n'est pas à
 revérifier, et il se met à jour après chaque traitement.
 
@@ -330,12 +324,12 @@ regroupées en fin de fichier.
 
 ## 9. Trace des séances — le carnet
 
-La trace d'une séance est le **carnet** (§6), commité dans le dépôt de données du
+La trace d'une séance est le **carnet** (§6) ou, à défaut, le journal (§7.4), commité dans le dépôt de données du
 coffre (§7.1). Il n'entre pas dans la PR : le dépôt produit ne porte pas de
-mémoire, et **ce que porte la PR est dit au §6**. Il n'y a pas d'autre journal.
+mémoire, et **ce que porte la PR est dit au §6**.
 `brouillon/` ne sert pas de trace.
 
-**Les actions à effet externe figurent au carnet**, chacune sur une ligne
+**Les actions à effet externe figurent au carnet** ou au journal (§7.4), chacune sur une ligne
 horodatée — quoi, où, résultat : **tout appel de MCP, quel que soit son
 `permission`**, et toute correction appliquée à un système.
 
@@ -386,21 +380,27 @@ dans ta réponse, avec ce que tu as fait à la place. Ne présente jamais un
 résultat partiel comme complet, et ne remplace pas en silence un skill par ta
 propre méthode.
 
+**Ce qui n'a pas été vérifié se dit.** Une affirmation sur un fichier ou une
+donnée s'adosse à une lecture faite dans cette séance (§9) — **chemin, date ou
+commit** ; à défaut, dis-le avant d'affirmer, et si tu énonces quand même la
+donnée, marque-la « NON VÉRIFIÉ ». Ne cite jamais comme lu un fichier non ouvert,
+même évoqué plus tôt. Cela vaut même sans blocage : ne pas avoir vérifié n'est
+pas un échec.
+
 **Une tâche ne s'étire pas.** Après trois essais sans résultat nouveau, ou dès
-qu'un geste de l'utilisateur (commande `sudo`, réglage, clic) irait plus vite
-que de continuer, arrête-toi : dis où tu en es, ce qui reste, et demande « je
-continue, ou tu le fais ? ». Si personne ne peut répondre (tâche planifiée,
-sous-agent), écris où tu en es au carnet et rends le compte à qui t'a
-déclenché. Préfère la voie simple qui marche à la voie automatisée qui se
-débogue, sans sauter une porte déjà prévue, et rends compte par étapes
-courtes plutôt qu'en un seul long tour.
+qu'un geste de l'utilisateur (`sudo`, réglage, clic) irait plus vite, arrête-toi : dis où tu en es et
+demande « je continue, ou tu le fais ? ». Sans interlocuteur (tâche planifiée,
+sous-agent), écris où tu en es au carnet et rends le compte à qui t'a déclenché.
+Préfère la voie simple qui marche à la voie automatisée qui se débogue, sans
+sauter une porte déjà prévue, et rends compte par étapes courtes plutôt qu'en un
+seul long tour.
 
 ## 11. Fichiers générés et vérification
 
 - **Les index sont versionnés, donc canoniques.** `IA/README.md` et les quatre
   `IA/system/*-index.md` décrivent le catalogue **entier** : ils ne dépendent
-  pas de la machine et ne se réduisent **jamais** au profil (§13). Le profil ne
-  réduit que ce qui n'est pas versionné — le prompt système et `AGENTS.md`.
+  pas de la machine et ne se réduisent **jamais** au profil (§13), qui ne touche
+  que le non versionné — le prompt système et `AGENTS.md`.
 - Si un index et un frontmatter se contredisent, **le frontmatter a raison** :
   on corrige la source, puis on régénère — jamais l'inverse.
 - **Un échec de routage veut dire « corriger la description ».** Une attente
@@ -408,62 +408,36 @@ courtes plutôt qu'en un seul long tour.
   cela s'écrit dans `IA/system/routage-attendu.md` avec sa raison.
 - **Les exemptions vivent dans le script, jamais dans le frontmatter d'un
   skill.**
-- **Le sommaire du coffre parent** (`sommaire.md`) est généré par
-  `scripts/regenerate_sommaire.py` et s'écrit **dans le coffre parent** (dépôt
-  de données, §7.1), jamais dans `OBSIA/` : il ne se calcule que là où un
-  sommaire a un sens (`0-PROJETS/`, `0-MEMOIRES/`, et l'ancien `mémoire/` s'il
-  existe).
+- **Le sommaire du coffre parent** (`sommaire.md`), généré par
+  `scripts/regenerate_sommaire.py`, s'écrit **dans le coffre parent** (dépôt de
+  données, §7.1), jamais dans `OBSIA/` : il ne se calcule que là où un sommaire
+  a un sens (`0-PROJETS/`, `0-MEMOIRES/`, et l'ancien `mémoire/` s'il existe).
 - **Deux mémoires ne se confondent pas dans `0-MEMOIRES/`** : `verifier_coffre.py`
   refuse la collision (§6).
-- Le détail des fichiers, des deux contrôles, du crochet de pré-commit et la
-  séquence de commandes avant un commit : `contrat-verification`.
+- **Le noyau a un plafond contrôlé**, relevé seulement par PR, jamais en silence.
+- Le détail des fichiers, des contrôles, du crochet de pré-commit et la
+  séquence avant un commit : `contrat-verification`.
 
 ## 12. Tâches planifiées
 
-Une tâche se déclare **dans le coffre** (`IA/tâches/<nom>.md`, qui fait foi) ;
-le timer, le cron ou le planificateur du harness n'en est qu'une **instance**.
-
-- Le registre déclare une **intention, jamais un état**.
-- **Au plus une instance vivante par tâche**, tous exécutants confondus ; le
-  champ `exécutant` dit qui, et donc qui pas.
-- Une instance porte le nom de sa tâche, préfixé **`obsia-`**.
-- L'instruction d'une tâche est **auto-suffisante** : au déclenchement, il n'y
-  a plus de conversation.
-- Créer, modifier ou **suspendre** une tâche passe par **patch Git revu**.
-  **Instancier ou retirer une instance** est une action à effet externe : une
-  ligne horodatée au carnet (§9).
-- `IA/system/taches-index.md`, toujours en contexte : **savoir n'est pas
-  instancier**.
+Une tâche se déclare dans `IA/tâches/<nom>.md`, qui fait foi ; le planificateur
+n'en porte qu'une **instance**, préfixée `obsia-`, **au plus une** par tâche, tous exécutants confondus.
+Créer, modifier ou suspendre une tâche passe par **patch revu** ; instancier ou
+retirer une instance se consigne au carnet (§9). **Savoir n'est pas
+instancier.** Détail : `contrat-taches`.
 
 ## 13. Modules, installation et publication
 
-- **Tout agent, skill, MCP et tâche déclare son `module`** (§5).
-- Un module est libre de ses dépendances, **pas de ses renvois** : un renvoi vers
-  le module B s'accompagne d'une entrée `requiert` **ou** d'une consigne, au lieu
-  du renvoi, pour le cas où B n'est pas installé — en nommant le module B.
-- Une **sonde** est déclarative et tient en quatre formes (`commande:`,
-  `fichier:`, `distribution:`, `parent:`) : **aucune n'exécute de commande
-  arbitraire, aucune n'ouvre le réseau**, et une sonde ne décide jamais seule.
-- Le profil `obsia.local.yml` dit quels modules sont retenus sur la machine ;
-  il n'est pas versionné et seul l'installeur l'écrit. **Pas de profil =
-  catalogue complet**, et c'est sous cet état que la CI vérifie le coffre.
-- `scripts/installer.py` et `scripts/publier.py` n'écrivent qu'avec
-  `--appliquer`. Lire `IA/system/installation-et-publication.md` **avant** de
-  les lancer avec `--appliquer`.
-- **Le privé fait foi** : le dépôt public en est dérivé par `publier.py`, à
-  sens unique ; une correction faite sur le public se reporte à la main dans
-  le privé. **Les deux dépôts sont gardés** — le privé est l'atelier où une
-  fonctionnalité s'essaie, le public la distribution — et, la mémoire ayant
-  quitté l'outil, ils ne diffèrent plus que par les fonctionnalités encore à
-  l'essai, **jamais par des données** : la mémoire n'est ni dans l'un ni dans
-  l'autre (§7.1).
-- **Un fichier publié ne cite pas un chemin qui ne sera pas publié**
-  (`brouillon/`, `.archive/`) : nommer la note suffit. Le coffre parent n'est
-  jamais publié : aucun de ses chemins n'apparaît dans un fichier publié — pour
-  la description d'une PR, §6.
-- **Contrôle de fuite** : une valeur à forme reconnaissable (clé privée,
-  jeton, IP privée, courriel, nom d'hôte à domaine) refuse la publication ;
-  `--forcer` ne franchit **jamais** une clé privée ni un jeton connu. Un nom de
-  la liste locale **avertit sans bloquer**, et l'agent qui reçoit
-  l'avertissement le rapporte à l'utilisateur. Liste absente = aucun nom
-  contrôlé : « aucune trouvaille » ne dit alors rien des noms nus.
+- **Pas de profil = catalogue complet** : c'est l'état que vérifie la CI.
+- `installer.py` et `publier.py` n'écrivent qu'avec `--appliquer`, après lecture
+  de `IA/system/installation-et-publication.md`.
+- **Le privé fait foi** ; le public en est dérivé à sens unique, et les deux ne
+  portent **jamais de données** (§7.1).
+- **Un fichier publié ne cite aucun chemin non publié** (`brouillon/`,
+  `.archive/`, coffre parent).
+- **Contrôle de fuite** : une valeur à forme reconnaissable refuse la
+  publication, et `--forcer` ne franchit **jamais** une clé privée ni un
+  jeton ; un nom de la liste locale avertit, et l'agent le rapporte à
+  l'utilisateur.
+
+Le reste : `contrat-distribution`.

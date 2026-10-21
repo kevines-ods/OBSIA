@@ -152,5 +152,7 @@ mécanisme central :
   dans l'interface — c'est la synchronisation qu'on teste, pas la saisie ;
 - après suppression d'un service, vérifier qu'il a bien disparu côté agent.
 
-> Rappel §3 : OBSIA ne nomme aucune interface dans ses règles ; cette fiche est
-> un gabarit d'intégration.
+> Rappel §3 : aucun nom ni comportement propre à un harness ne conditionne le
+> fonctionnement des règles du coffre, de ses scripts partagés, de ses agents ni
+> de ses skills ; nommer une interface est le fait des fiches d'adaptation, comme
+> celle-ci.

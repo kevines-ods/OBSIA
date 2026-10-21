@@ -38,6 +38,7 @@ descriptions et tranche.
 | « quel langage et quelle base de données pour ce projet ? » | choix-de-la-stack | 3 | — |
 | « il faut choisir les couleurs et la typographie de l'interface » | systeme-de-design | 3 | — |
 | « découpe le projet en étapes livrables une par une » | plan-de-livraison | 3 | — |
+| « c'est juste un petit script d'un seul fichier, pas besoin de tout le cadrage » | voie-rapide | 3 | — |
 | « je reprends une application que je n'ai pas écrite, aide-moi à comprendre comment elle marche » | reprise-dun-projet | 3 | inventaire-de-lexistant |
 | « avant de toucher à ce vieux code sans tests, fige ce qu'il fait aujourd'hui » | tests-de-caracterisation | 3 | tests-dabord |
 | « ce module est devenu illisible, restructure-le sans rien casser » | refactoring-sur | 3 | — |

@@ -21,6 +21,7 @@ sys.path.insert(0, str(SCRIPTS))
 import publier as PUB                                          # noqa: E402
 
 PUBLIER = SCRIPTS / "publier.py"
+RACINE = SCRIPTS.parent
 ORIGINE_PRIVEE = "https://example.com/moi/coffre-prive.git"
 ORIGINE_PUBLIQUE = "https://example.com/moi/coffre-public.git"
 
@@ -65,39 +66,51 @@ class BasePublication(unittest.TestCase):
 class TestRefusDeSynchroniser(BasePublication):
     """`raison_de_refus` : ce qui doit arrêter la publication avant l'export."""
 
-    def test_refuse_la_source_elle_meme(self):
-        self.assertIsNotNone(PUB.raison_de_refus(self.source, self.source))
+    def test_refuse_une_cible_liee_a_la_source(self):
+        """Trois façons de se tromper de cible, une par rapport à la source.
 
-    def test_refuse_une_cible_qui_contient_la_source(self):
-        self.assertIsNotNone(PUB.raison_de_refus(self.source, self.parent))
+        La cible peut être la source, la contenir, ou être contenue : chacune
+        a son motif, et le refus doit nommer le bon.
+        """
+        cas = (
+            ("la source elle-même", self.source, "la cible est la source"),
+            ("une cible qui contient la source", self.parent,
+             "la cible contient la source"),
+            ("une cible sous la source", self.source / "dedans",
+             "la source contient la cible"),
+        )
+        for libelle, cible, motif in cas:
+            with self.subTest(cible=libelle):
+                raison = PUB.raison_de_refus(self.source, cible)
+                self.assertIsNotNone(raison, libelle)
+                self.assertIn(motif, raison, libelle)
 
-    def test_refuse_une_cible_sous_la_source(self):
-        self.assertIsNotNone(PUB.raison_de_refus(self.source,
-                                                 self.source / "dedans"))
+    def test_refuse_la_marque_d_un_coffre(self):
+        """Chaque marque de coffre suffit à refuser, et le refus la nomme.
 
-    def test_refuse_un_coffre_vivant(self):
-        (self.cible / "0-SAVOIRS").mkdir()
-        self.assertIsNotNone(PUB.raison_de_refus(self.source, self.cible))
-
-    def test_refuse_un_dossier_obsidian(self):
-        (self.cible / ".obsidian").mkdir()
-        self.assertIsNotNone(PUB.raison_de_refus(self.source, self.cible))
-
-    def test_refuse_un_coffre_dont_la_memoire_est_pleine(self):
-        """`0-PROJETS/` rempli : c'est un coffre de travail, pas un miroir."""
-        projets = self.cible / "0-PROJETS"
-        projets.mkdir()
-        (projets / "mon-projet").mkdir()
-        self.assertIsNotNone(PUB.raison_de_refus(self.source, self.cible))
-
-    def test_refuse_un_coffre_qui_garde_l_ancien_nom(self):
-        """Les deux noms du même dossier comptent, tant que la bascule dure (§7.1)."""
-        (self.cible / "-PROJETS").mkdir()
-        self.assertIsNotNone(PUB.raison_de_refus(self.source, self.cible))
-
-    def test_refuse_un_coffre_qui_a_une_archive_gelee(self):
-        (self.cible / "0-MEMOIRES").mkdir()
-        self.assertIsNotNone(PUB.raison_de_refus(self.source, self.cible))
+        `0-PROJETS/` rempli est le cas qui compte : c'est un coffre de travail,
+        pas un miroir. `-PROJETS` en est une marque, au même titre que les
+        autres : la liste est statique, elle ne connaît pas de date.
+        La marque est retirée entre deux cas : sans cela, la suivante serait
+        refusée pour la marque précédente restée en place.
+        """
+        cas = (
+            ("un coffre vivant", "0-SAVOIRS"),
+            ("un dossier Obsidian", ".obsidian"),
+            ("un coffre dont la mémoire est pleine", "0-PROJETS/mon-projet"),
+            ("un coffre qui garde l'ancien nom", "-PROJETS"),
+            ("un coffre qui a une archive gelée", "0-MEMOIRES"),
+        )
+        for libelle, chemin in cas:
+            marque = chemin.split("/")[0]
+            with self.subTest(marque=libelle):
+                (self.cible / chemin).mkdir(parents=True)
+                try:
+                    raison = PUB.raison_de_refus(self.source, self.cible)
+                    self.assertIsNotNone(raison, libelle)
+                    self.assertIn(marque, raison, libelle)
+                finally:
+                    shutil.rmtree(self.cible / marque)
 
     def test_accepte_une_cible_deja_publiee(self):
         """Republier sur sa propre publication ne doit pas se refuser.
@@ -110,10 +123,6 @@ class TestRefusDeSynchroniser(BasePublication):
                                                           encoding="utf-8")
         self.assertIsNone(PUB.raison_de_refus(self.source, self.cible))
 
-    def test_refuse_la_meme_origine_que_la_source(self):
-        git(self.cible, "remote", "set-url", "origin", ORIGINE_PRIVEE)
-        self.assertIsNotNone(PUB.raison_de_refus(self.source, self.cible))
-
     def test_l_origine_est_ramenee_a_lessentiel(self):
         """Une seule identité pour un même dépôt, quelle que soit son écriture."""
         self.assertEqual(PUB.url_origine(self.source),
@@ -124,9 +133,12 @@ class TestRefusDeSynchroniser(BasePublication):
 
         Comparer les URL brutes laisserait passer un clone du privé selon la
         façon dont il a été cloné — le refus ne vaut que s'il ne se contourne
-        pas en changeant de protocole.
+        pas en changeant de protocole. L'URL de la source, telle quelle, en
+        fait partie : c'est le cas d'origine, celui que la normalisation doit
+        d'abord reconnaître.
         """
-        for ecriture in ("git@example.com:moi/coffre-prive.git",
+        for ecriture in (ORIGINE_PRIVEE,
+                         "git@example.com:moi/coffre-prive.git",
                          "ssh://git@example.com/moi/coffre-prive",
                          "https://example.com/moi/coffre-prive/",
                          "HTTPS://Example.com/moi/coffre-prive.git"):
@@ -144,13 +156,21 @@ class TestRefusDeSynchroniser(BasePublication):
                 self.assertIsNone(
                     PUB.raison_de_refus(self.source, self.cible), ecriture)
 
-    def test_accepte_le_clone_du_depot_public(self):
-        self.assertIsNone(PUB.raison_de_refus(self.source, self.cible))
+    def test_accepte_un_depot_qui_porte_la_marque_du_miroir(self):
+        """Un clone de la publication se reconnaît au contrat qu'il porte.
 
-    def test_accepte_un_miroir_d_obsia(self):
-        """Un clone de la publication se reconnaît au contrat qu'il porte."""
-        miroir = self.depot("miroir", ORIGINE_PUBLIQUE, miroir=True)
-        self.assertIsNone(PUB.raison_de_refus(self.source, miroir))
+        `setUp` crée déjà `self.cible` ainsi : le miroir d'OBSIA fabriqué
+        ailleurs est le même objet, et les deux se reconnaissent pareil.
+        """
+        cas = (
+            ("le clone du dépôt public", self.cible),
+            ("un miroir d'OBSIA",
+             self.depot("miroir", ORIGINE_PUBLIQUE, miroir=True)),
+        )
+        for libelle, cible in cas:
+            with self.subTest(cible=libelle):
+                self.assertIsNone(PUB.raison_de_refus(self.source, cible),
+                                  libelle)
 
     def test_accepte_une_cible_vierge(self):
         """Un dépôt neuf n'a rien à perdre : rien que son `.git/`."""
@@ -173,29 +193,23 @@ class TestRefusDeSynchroniser(BasePublication):
         (presque / ".gitignore").write_text("brouillon/\n", encoding="utf-8")
         self.assertIsNotNone(PUB.raison_de_refus(self.source, presque))
 
-    def test_refuse_un_depot_etranger(self):
+    def test_refuse_un_depot_etranger_en_le_disant(self):
         """Un dépôt qui n'est pas un clone d'OBSIA : rien ne dit qu'il est à nous.
 
         `synchroniser` en effacerait tout le contenu suivi. C'est le cas que le
         seul refus d'origine laissait passer : un dépôt à personne, sans
         `origin` comparable, face auquel on n'avait aucune raison de refuser.
+        Le refus doit dire sur quoi il se fonde — le contrat qu'un miroir
+        porte — et ce qu'est un dépôt vierge : sans le dire, « dépôt vierge »
+        se devine, et se devine mal. On croit qu'un dépôt vide fait l'affaire ;
+        il faut qu'il porte son `.git/` et rien d'autre, sinon c'est un dépôt
+        qu'on s'apprête à vider.
         """
         etranger = self.depot("etranger", ORIGINE_PUBLIQUE)
-        self.assertIsNotNone(PUB.raison_de_refus(self.source, etranger))
-
-    def test_le_refus_d_un_depot_etranger_dit_sur_quoi_il_se_fonde(self):
-        etranger = self.depot("etranger", ORIGINE_PUBLIQUE)
-        self.assertIn("VAULT-CONTRACT",
-                      PUB.raison_de_refus(self.source, etranger))
-
-    def test_le_refus_d_un_depot_etranger_dit_ce_qu_est_un_depot_vierge(self):
-        """Sans le dire, « dépôt vierge » se devine — et se devine mal.
-
-        On croit qu'un dépôt vide fait l'affaire ; il faut qu'il porte son
-        `.git/` et rien d'autre, sinon c'est un dépôt qu'on s'apprête à vider.
-        """
-        etranger = self.depot("etranger", ORIGINE_PUBLIQUE)
-        self.assertIn("`.git/`", PUB.raison_de_refus(self.source, etranger))
+        raison = PUB.raison_de_refus(self.source, etranger)
+        self.assertIsNotNone(raison)
+        self.assertIn("VAULT-CONTRACT", raison)
+        self.assertIn("`.git/`", raison)
 
     def test_le_refus_rend_le_code_1_sans_rien_effacer(self):
         garde = self.cible / "0-PROJETS"
@@ -251,6 +265,65 @@ class TestVidageDeLaCible(BasePublication):
         self.assertIn("notes.md", supprimes)
         self.assertIn("README.md", supprimes)
         self.assertNotIn(".git", supprimes)
+
+
+class TestSuivisNonPublies(BasePublication):
+    """`exporter` : un fichier suivi peut être privé — lui seul ne part pas."""
+
+    def test_le_fichier_non_publie_ne_part_pas_avec_ses_voisins(self):
+        agents = self.source / "IA" / "agents"
+        agents.mkdir(parents=True)
+        (agents / "administrateur-mint.md").write_text(
+            "---\nkind: agent\n---\n# Un agent privé\n", encoding="utf-8")
+        (agents / "administrateur.md").write_text(
+            "---\nkind: agent\n---\n# Un agent public\n", encoding="utf-8")
+        git(self.source, "add", "-A")
+        git(self.source, "commit", "-m", "deux agents")
+
+        export = self.parent / "export"
+        PUB.exporter(self.source, export)
+
+        self.assertFalse((export / "IA" / "agents"
+                          / "administrateur-mint.md").exists(),
+                         "le fichier déclaré non publié est parti quand même")
+        self.assertTrue((export / "IA" / "agents"
+                        / "administrateur.md").is_file(),
+                        "un voisin publié a été emporté par erreur")
+
+    def test_une_source_sans_le_fichier_sexporte_quand_meme(self):
+        # Une source où le fichier privé n'existe pas (un vieux clone, la
+        # distribution) ne doit pas planter : le retrait se garde de crier.
+        export = self.parent / "export"
+        PUB.exporter(self.source, export)
+        self.assertTrue((export / "README.md").is_file())
+
+
+class TestLExcluNEstPasCite(BasePublication):
+    """§13 : l'exclu ne part pas, et le public ne le cite plus.
+
+    Deux gardes tiennent déjà ce lien au public — `verifier_coffre.py`
+    refuse un `.md` qui nomme un agent sans son fichier (§1), et un chemin
+    cité qui n'existe pas (§13) — mais elles n'y tombent qu'à la CI du
+    public, une fois publié. Ce test les éprouve sur l'export, avant :
+    régénération comprise, puisqu'elle seule retire l'agent des index. Les
+    `.py` ne sont pas relus ici : le vérificateur ne les scanne pas, et
+    l'exclusion doit bien se déclarer, quelque part, par son chemin.
+    """
+
+    def test_l_agent_exclu_n_est_ni_present_ni_cite(self):
+        export = self.parent / "export"
+        PUB.exporter(RACINE, export)
+        self.assertEqual(PUB.regenerer_et_verifier(export), 0,
+                         "l'export du dépôt réel doit rester cohérent")
+
+        for rel in PUB.NON_PUBLIES:
+            self.assertFalse((export / rel).exists(),
+                             "%s est parti quand même" % rel)
+
+        cites = [str(chemin.relative_to(export))
+                 for chemin in sorted(export.rglob("*.md"))
+                 if "administrateur-mint" in chemin.read_text(encoding="utf-8")]
+        self.assertEqual(cites, [], "des fichiers publiés citent l'exclu")
 
 
 def assemble(*morceaux: str) -> str:
@@ -319,58 +392,73 @@ class TestCeQuiNEstPasRelu(BaseControle):
         self.assertEqual(controle.non_relus, [])
 
     def test_un_domaine_admis_ne_couvre_pas_ses_sous_domaines(self):
-        """`exemple.fr.attaquant.net` n'est pas `exemple.fr`."""
-        self.ecrire("notes.md",
+        """`exemple.fr.attaquant.net` et `mail.exemple.fr` ne sont pas admis.
+
+        L'adresse du projet est admise **en entier** : ses sous-domaines ne le
+        sont pas, que le sous-domaine s'ajoute à droite ou à gauche.
+        """
+        self.ecrire("sous-domaine-ailleurs.md",
                     "écrire à %s\n" % assemble("jean@exemple.fr",
                                                ".attaquant.net"))
+        self.ecrire("sous-domaine-du-projet.md",
+                    "écrire à %s\n" % assemble("sept@mail", ".exemple.fr"))
 
-        self.assertIn("adresse de courriel", self.etiquettes(self.controler()))
+        par_fichier = {}
+        for rel, _ligne, etiquette, _extrait in self.controler().trouvailles:
+            par_fichier.setdefault(rel, []).append(etiquette)
+
+        self.assertEqual(par_fichier,
+                         {"sous-domaine-ailleurs.md": ["adresse de courriel"],
+                          "sous-domaine-du-projet.md": ["adresse de courriel"]})
 
     def test_les_adresses_du_projet_ne_sont_pas_des_fuites(self):
+        """Les adresses du projet restent publiables — à l'arbre comme au texte.
+
+        `noreply@github.com` et `@example.com` ne désignent personne : ni une
+        note, ni une description de PR ne doivent se faire arrêter pour elles.
+        """
         self.ecrire("notes.md", "écrire à noreply@github.com, ou à "
                                 "utilisateur@exemple.fr, ou à moi@example.com\n")
-
         self.assertEqual(self.etiquettes(self.controler()), [])
 
-    def test_les_domaines_reserves_ne_sont_pas_des_fuites(self):
-        """RFC 2606/6761 : ces domaines ne peuvent désigner personne.
+        texte = PUB.controler_texte("posé par noreply@github.com, relu par "
+                                    "moi@example.com\n", (),
+                                    "titre ou description de PR")
+        self.assertEqual(texte.trouvailles, [])
+
+    def test_un_domaine_reserve_ne_designe_personne(self):
+        """RFC 2606/6761 : ni les domaines réservés, ni leurs sous-domaines.
 
         `example.com/net/org` et les domaines de premier niveau `.test`,
         `.example`, `.invalid` sont réservés : rien ne s'y enregistre, donc une
-        adresse qui les porte ne dit rien d'un vrai correspondant.
+        adresse qui les porte ne dit rien d'un vrai correspondant. Le réservé
+        couvre ses sous-domaines — `mail.example.com` comme `mail.exemple.test`
+        — sinon la documentation ne pourrait pas citer l'adresse d'un service
+        sur un domaine réservé.
         """
-        self.ecrire("notes.md", "écrire à %s, ou à %s, ou à %s, ou à %s, "
-                                "ou à %s, ou à %s\n" % (
-            assemble("un@example", ".com"),
-            assemble("deux@example", ".net"),
-            assemble("trois@example", ".org"),
-            assemble("quatre@exemple", ".invalid"),
-            assemble("cinq@exemple", ".example"),
-            assemble("six@exemple", ".test")))
+        self.ecrire("domaines-reserves.md",
+                    "écrire à %s, ou à %s, ou à %s, ou à %s, ou à %s, ou à %s\n"
+                    % (assemble("un@example", ".com"),
+                       assemble("deux@example", ".net"),
+                       assemble("trois@example", ".org"),
+                       assemble("quatre@exemple", ".invalid"),
+                       assemble("cinq@exemple", ".example"),
+                       assemble("six@exemple", ".test")))
+        self.ecrire("sous-domaines-reserves.md",
+                    "écrire à %s, ou à %s\n" % (
+                        assemble("un@mail", ".example.com"),
+                        assemble("deux@mail", ".exemple.test")))
 
-        self.assertEqual(self.etiquettes(self.controler()), [])
+        par_fichier = {}
+        for rel, _ligne, etiquette, _extrait in self.controler().trouvailles:
+            par_fichier.setdefault(rel, []).append(etiquette)
 
-    def test_un_sous_domaine_d_un_domaine_reserve_est_admis(self):
-        """Le réservé couvre ses sous-domaines : `mail.example.com` comme
-        `mail.exemple.test` — sinon la documentation ne pourrait pas citer
-        l'adresse d'un service sur un domaine réservé."""
-        self.ecrire("notes.md", "écrire à %s, ou à %s\n" % (
-            assemble("un@mail", ".example.com"),
-            assemble("deux@mail", ".exemple.test")))
-
-        self.assertEqual(self.etiquettes(self.controler()), [])
+        self.assertEqual(par_fichier, {})
 
     def test_un_vrai_domaine_reste_bloque(self):
         """Le réservé s'arrête au réservé : un domaine réel reste une fuite."""
         self.ecrire("notes.md",
                     "écrire à %s\n" % assemble("six@monentreprise", ".fr"))
-
-        self.assertIn("adresse de courriel", self.etiquettes(self.controler()))
-
-    def test_le_sous_domaine_d_un_domaine_de_projet_n_est_pas_admis(self):
-        """`exemple.fr` est admis **en entier** : son sous-domaine ne l'est pas."""
-        self.ecrire("notes.md",
-                    "écrire à %s\n" % assemble("sept@mail", ".exemple.fr"))
 
         self.assertIn("adresse de courriel", self.etiquettes(self.controler()))
 
@@ -395,14 +483,24 @@ class TestCeQuiFuitEncore(BaseControle):
                          ["secret affecté"] * 4)
 
     def test_une_valeur_a_espaces_ou_a_symboles(self):
-        """`[A-Za-z0-9…]` ne lisait que l'alphanumérique : le reste passait."""
+        """`[A-Za-z0-9…]` ne lisait que l'alphanumérique : le reste passait.
+
+        Trois écritures de la même valeur : entre guillemets, à symboles, et
+        sans guillemets du tout — une phrase de passe se recopie aussi nue.
+        """
+        phrase = assemble("correct horse", " battery staple")
         self.ecrire("config.md",
                     "password: \"%s\"\nsecret = %s\n"
-                    % (assemble("correct horse", " battery staple"),
-                       assemble("Zq9!kD#mQ", "@7x4/%")))
+                    % (phrase, assemble("Zq9!kD#mQ", "@7x4/%")))
+        self.ecrire("config.yml", "secret: %s\n" % phrase)
 
-        self.assertEqual(self.etiquettes(self.controler()),
-                         ["secret affecté"] * 2)
+        par_fichier = {}
+        for rel, _ligne, etiquette, _extrait in self.controler().trouvailles:
+            par_fichier.setdefault(rel, []).append(etiquette)
+
+        self.assertEqual(par_fichier,
+                         {"config.md": ["secret affecté"] * 2,
+                          "config.yml": ["secret affecté"]})
 
     def test_un_identifiant_compose(self):
         """`password_hash`, `db_password` : la frontière de mot tombait sur `_`."""
@@ -433,13 +531,6 @@ class TestCeQuiFuitEncore(BaseControle):
                        assemble("\"SEARXNG", "_TOKEN\"")))
 
         self.assertEqual(self.etiquettes(self.controler()), [])
-
-    def test_une_valeur_a_espaces_sans_guillemets(self):
-        """Une phrase de passe se recopie aussi sans guillemets."""
-        self.ecrire("config.yml", "secret: %s\n"
-                    % assemble("correct horse", " battery staple"))
-
-        self.assertEqual(self.etiquettes(self.controler()), ["secret affecté"])
 
     def test_la_prose_apres_deux_points_ne_se_signale_pas(self):
         """Trois phrases du coffre : le mot-clé y est noyé dans la ligne."""
@@ -566,10 +657,14 @@ class TestNomsInterdits(BaseControle):
         self.assertEqual(noms, ["poste-atelier"])
         self.assertEqual(courts, ["ia"])
 
-    def test_sans_liste_rien_n_est_retenu(self):
-        self.assertEqual(PUB.charger_noms_interdits(self.parent / "absente"), ([], []))
-
     def test_un_nom_s_attrape_entier_et_sans_casse(self):
+        """Le nom s'attrape entier et sans casse — à l'arbre comme dans un texte.
+
+        `poste-atelier-2` et `poste-ateliers` ne sont pas lui : sans cette
+        borne, un nom déclaré signalerait sa propre famille. Et il avertit au
+        lieu de refuser — aucune trouvaille bloquante, ni d'un côté ni de
+        l'autre.
+        """
         self.ecrire("a.md", "À instancier sur Poste-Atelier seulement.\n")
         self.ecrire("b.md", "poste-atelier-2 et poste-ateliers ne sont pas lui.\n")
         controle = PUB.controler_fuites(self.racine, ["poste-atelier"])
@@ -577,20 +672,20 @@ class TestNomsInterdits(BaseControle):
         self.assertEqual([(t[0], t[2]) for t in controle.avertissements],
                          [("a.md", "nom interdit")])
 
-    def test_sans_noms_le_controle_ne_change_pas(self):
+        texte = PUB.controler_texte("lot signé par poste-atelier\n",
+                                    ["poste-atelier"],
+                                    "titre ou description de PR")
+        self.assertEqual(texte.trouvailles, [])
+        self.assertEqual([t[2] for t in texte.avertissements], ["nom interdit"])
+
+    def test_sans_liste_le_controle_ne_retient_rien(self):
+        """Sans liste, rien n'est retenu : ni à la lecture, ni au contrôle."""
+        self.assertEqual(PUB.charger_noms_interdits(self.parent / "absente"),
+                         ([], []))
         self.ecrire("a.md", "poste-atelier\n")
         controle = self.controler()
         self.assertEqual(controle.trouvailles, [])
         self.assertEqual(controle.avertissements, [])
-
-    def test_un_nom_interdit_n_a_rien_a_forcer(self):
-        """Un nom de la liste avertit : il ne refuse pas, il n'a rien à forcer.
-
-        Il n'est pas dans `SANS_FORCAGE` — ce qui y reste, ce sont les valeurs à
-        forme reconnaissable (clé privée, jeton), les seules que `--forcer` ne
-        franchit jamais.
-        """
-        self.assertNotIn("nom interdit", PUB.SANS_FORCAGE)
 
     def test_un_mot_banal_ne_bloque_ni_la_prose_ni_le_home(self):
         """Témoin négatif : un mot banal déclaré n'arrête pas la publication.
@@ -655,20 +750,6 @@ class TestTexteDePullRequest(BaseControle):
 
         self.assertEqual(controle.trouvailles, [])
         self.assertEqual(controle.relus, 0)
-
-    def test_les_adresses_du_projet_restent_publiables(self):
-        controle = self.juger("posé par noreply@github.com, relu par "
-                               "moi@example.com\n")
-
-        self.assertEqual(controle.trouvailles, [])
-
-    def test_un_nom_interdit_avertit_sans_bloquer(self):
-        controle = self.juger("lot signé par poste-atelier\n", ["poste-atelier"])
-
-        self.assertEqual(controle.trouvailles, [])
-        self.assertEqual(
-            [etiquette for _, _, etiquette, _ in controle.avertissements],
-            ["nom interdit"])
 
 
 class TestLeDepotReel(BasePublication):
@@ -776,25 +857,27 @@ class TestLeCheminDeLaMachine(BaseControle):
 
         self.assertEqual(self.etiquettes(self.controler()), [])
 
-    def test_une_url_ne_cache_que_son_propre_chemin(self):
-        """Le silence vaut pour l'URL, pas pour la ligne qui la porte."""
-        self.ecrire("fiche.md",
-                    "voir https://exemple.fr/a, puis %s\n" % self.COFFRE)
+    def test_le_silence_d_une_url_vaut_par_occurrence(self):
+        """Le silence vaut pour l'URL qu'il couvre, pas pour la ligne entière.
 
-        self.assertEqual(self.etiquettes(self.controler()), ["chemin du coffre"])
-
-    def test_une_url_ne_pardonne_pas_la_seconde_occurrence(self):
-        """Le silence vaut par occurrence, pas par ligne.
-
-        Examinée une seule fois, la ligne s'arrêtait à la première : le chemin
-        de l'URL — muet, à juste titre — blanchissait celui qui le suivait, écrit
-        en `file://`, qui est pourtant la fuite.
+        Une ligne n'est pas jugée une fois pour toutes : `https://…` est muet,
+        à juste titre, mais le chemin qui le suit — écrit en `file://`, ou
+        simplement posé après une URL — est la fuite. Examinée une seule fois,
+        la ligne s'arrêtait à la première occurrence et blanchissait la suite.
         """
-        self.ecrire("fiche.md",
+        self.ecrire("propre-chemin.md",
+                    "voir https://exemple.fr/a, puis %s\n" % self.COFFRE)
+        self.ecrire("seconde-occurrence.md",
                     "https://exemple.fr%s/depot puis file://%s/depot/y\n"
                     % (self.DEPOT, self.DEPOT))
 
-        self.assertEqual(self.etiquettes(self.controler()), ["chemin du dépôt"])
+        par_fichier = {}
+        for rel, _ligne, etiquette, _extrait in self.controler().trouvailles:
+            par_fichier.setdefault(rel, []).append(etiquette)
+
+        self.assertEqual(par_fichier,
+                         {"propre-chemin.md": ["chemin du coffre"],
+                          "seconde-occurrence.md": ["chemin du dépôt"]})
 
     def test_les_formes_generiques_restent_publiables(self):
         """La documentation doit pouvoir montrer des chemins d'exemple."""
@@ -811,12 +894,6 @@ class TestLeCheminDeLaMachine(BaseControle):
         self.ecrire("notes.md", "Le coffre vit dans %s\n" % self.COFFRE)
 
         self.assertEqual(self.etiquettes(PUB.controler_fuites(self.racine)), [])
-
-    def test_un_chemin_ne_se_force_pas(self):
-        """Publier malgré tout publierait l'arborescence privée."""
-        self.assertIn("chemin du coffre", PUB.SANS_FORCAGE)
-        self.assertIn("chemin du dépôt", PUB.SANS_FORCAGE)
-
 
 class TestLaFormeTilde(BaseControle):
     """`~/coffre` et `/home/moi/coffre` désignent la même arborescence.
@@ -1000,41 +1077,78 @@ class TestLeControlePorteSurLExportFinal(BasePublicationReelle):
 class TestCeQuiNeSeForcePas(BasePublicationReelle):
     """`--forcer` rattrape un faux positif, pas une fuite.
 
-    Une clé privée ne se révoque pas, un jeton connu se révoque — mais dans les
-    deux cas, publier d'abord revient à jeter ce qu'on voulait garder. Ces deux
-    catégories se réparent dans la source, et nulle part ailleurs.
+    Une clé privée ne se révoque pas, un jeton connu se révoque, une clé secrète
+    AWS aussi ; une adresse de courriel, une adresse IP privée et un nom d'hôte
+    interne désignent une personne ou l'infrastructure. Dans tous les cas,
+    publier d'abord revient à jeter ce qu'on voulait garder : ces catégories se
+    réparent dans la source, et nulle part ailleurs. Seul un « secret affecté » —
+    un mot de passe à changer — se force encore.
     """
 
-    def test_une_cle_privee_ne_se_force_pas(self):
-        self.ecrire("notes.md", assemble("-----BEGIN OPENSSH ",
-                                         "PRIVATE KEY-----\n"))
+    def test_ce_qui_ne_se_force_pas_ne_se_force_pas(self):
+        """Une publication, huit lignes : chacune arrête `--forcer`, à sa ligne.
+
+        Une clé privée ne se révoque pas, un jeton connu se révoque, une clé
+        secrète AWS aussi ; une adresse de courriel, une adresse IP privée et un
+        nom d'hôte interne désignent une personne ou l'infrastructure, et les
+        deux chemins de la machine la nomment. Dans tous les cas, publier
+        d'abord revient à jeter ce qu'on voulait garder : ces catégories se
+        réparent dans la source, et nulle part ailleurs.
+
+        Le contrôle est mené ligne par ligne : le refus doit nommer la bonne
+        catégorie **à la bonne ligne**, et la catégorie doit figurer dans
+        `SANS_FORCAGE` — sans quoi `--forcer` la publierait. Les deux chemins
+        sont ici tous les deux : la liste les porte, et une seule ligne ne peut
+        en porter qu'un (le motif du dépôt passe le premier).
+
+        La source des tests est un dossier temporaire ; c'est **ce** chemin-là
+        qui tient le rôle de la machine qui publie, et il ne s'écrit nulle part
+        ailleurs qu'ici — le chemin réel d'un poste n'a rien à faire dans un
+        fichier publié, pas même dans un test qui parle de lui.
+        """
+        depose = self.source.resolve()
+        lignes = (
+            ("clé privée", assemble("-----BEGIN OPENSSH ", "PRIVATE KEY-----")),
+            ("jeton d'API",
+             "jeton %s" % assemble("ghp_", "A1b2C3d4E5f6G7h8I9j0")),
+            ("clé secrète AWS",
+             "la clé aws_secret_access_key vaut %s"
+             % assemble("wJalrXUtnFEMI/K7MDENG", "/bPxRfiCYEXAMPLEKEY")),
+            ("adresse de courriel",
+             "Écrire à %s" % assemble("habitant", "@bourg-fictif", ".fr")),
+            ("adresse IP privée", "nas %s" % assemble("192.168.1.", "42")),
+            ("nom d'hôte interne", "hyperviseur %s" % assemble("rpve", ".lan")),
+            ("chemin du dépôt", "Le dépôt vit dans %s" % depose),
+            ("chemin du coffre", "Le coffre vit dans %s" % depose.parent),
+        )
+        self.ecrire("notes.md", "".join("%s\n" % texte for _, texte in lignes))
         self.committer()
 
         resultat = self.lancer("--appliquer", "--forcer")
 
-        self.assertEqual(resultat.returncode, 1, resultat.stdout + resultat.stderr)
-        self.assertIn("clé privée", resultat.stdout + resultat.stderr)
+        self.assertEqual(resultat.returncode, 1,
+                         resultat.stdout + resultat.stderr)
+        sortie = resultat.stdout + resultat.stderr
+        for numero, (libelle, _texte) in enumerate(lignes, start=1):
+            with self.subTest(ligne=libelle):
+                self.assertIn("notes.md:%d  [%s]" % (numero, libelle), sortie,
+                              "le refus doit nommer %s à sa ligne" % libelle)
+                self.assertIn(libelle, PUB.SANS_FORCAGE,
+                              "sans cette étiquette, --forcer la publierait")
         self.assertRegex(resultat.stdout,
                          r"\d+ fichier\(s\) relu\(s\), \d+ non relu\(s\)",
                          "le total s'affiche aussi quand le refus tombe")
         self.assertEqual(self.publies(), set(),
                          "rien ne doit être écrit dans la cible")
 
-    def test_un_jeton_connu_ne_se_force_pas(self):
-        self.ecrire("notes.md", "jeton %s\n" % assemble("ghp_",
-                                                        "A1b2C3d4E5f6G7h8I9j0"))
-        self.committer()
-
-        resultat = self.lancer("--appliquer", "--forcer")
-
-        self.assertEqual(resultat.returncode, 1, resultat.stdout + resultat.stderr)
-        self.assertIn("jeton d'API", resultat.stdout + resultat.stderr)
-        self.assertEqual(self.publies(), set(),
-                         "rien ne doit être écrit dans la cible")
-
     def test_forcer_ecrit_la_derogation_dans_le_commit(self):
-        """Une publication forcée doit laisser sa trace là où on la relira."""
-        self.ecrire("notes.md", "nas %s\n" % assemble("192.168.1.", "42"))
+        """Une publication forcée doit laisser sa trace là où on la relira.
+
+        Un « secret affecté » est le seul motif encore forçable : c'est un mot de
+        passe à changer, pas une cible nommée.
+        """
+        self.ecrire("notes.md",
+                    "mdp : %s\n" % assemble("cheval", "-bleu-42-rapide"))
         self.committer()
 
         resultat = self.lancer("--appliquer", "--forcer", "--commit")
@@ -1044,26 +1158,7 @@ class TestCeQuiNeSeForcePas(BasePublicationReelle):
             ["git", "-C", str(self.cible), "log", "-1", "--format=%B"],
             capture_output=True, text=True, check=True).stdout
         self.assertIn("--forcer", message)
-        self.assertIn("adresse IP privée", message)
-
-
-    def test_un_chemin_de_machine_ne_se_force_pas(self):
-        """De bout en bout : le chemin de la source arrête la publication.
-
-        La source des tests est un dossier temporaire ; c'est **ce** chemin-là qui
-        tient le rôle de la machine qui publie, et il ne s'écrit nulle part
-        ailleurs qu'ici — le chemin réel d'un poste n'a rien à faire dans un
-        fichier publié, pas même dans un test qui parle de lui.
-        """
-        self.ecrire("notes.md", "Le dépôt vit dans %s\n" % self.source.resolve())
-        self.committer()
-
-        resultat = self.lancer("--appliquer", "--forcer")
-
-        self.assertEqual(resultat.returncode, 1, resultat.stdout + resultat.stderr)
-        self.assertIn("chemin du dépôt", resultat.stdout + resultat.stderr)
-        self.assertEqual(self.publies(), set(),
-                         "rien ne doit être écrit dans la cible")
+        self.assertIn("secret affecté", message)
 
 
 class TestUnNomInterditAvertit(BasePublicationReelle):
@@ -1092,25 +1187,23 @@ class TestUnNomInterditAvertit(BasePublicationReelle):
                  "GIT_COMMITTER_EMAIL": "tests@example.com"})
 
     def test_un_mot_banal_n_arrete_pas_la_publication(self):
+        """L'avertissement n'arrête rien et n'exige pas `--forcer` : rien à forcer.
+
+        Un nom de la liste est une gêne, pas une fuite : la prose signalée se
+        publie quand même, et le message ne réclame pas `--forcer` — qui n'a
+        rien à franchir ici.
+        """
         self.ecrire("notes.md", "La table est mise, le repas est prêt.\n")
         self.committer()
 
         resultat = self.lancer_avec_liste("--appliquer")
 
-        self.assertEqual(resultat.returncode, 0, resultat.stdout + resultat.stderr)
+        self.assertEqual(resultat.returncode, 0,
+                         resultat.stdout + resultat.stderr)
         self.assertIn("nom interdit", resultat.stdout)
         self.assertIn("avertissement", resultat.stdout)
         self.assertIn("notes.md", self.publies(),
                       "la prose signalée doit quand même être publiée")
-
-    def test_un_nom_interdit_ne_demande_pas_forcer(self):
-        """L'avertissement n'exige pas `--forcer` : il n'y a rien à forcer."""
-        self.ecrire("notes.md", "Une simple table au milieu de la prose.\n")
-        self.committer()
-
-        resultat = self.lancer_avec_liste("--appliquer")
-
-        self.assertEqual(resultat.returncode, 0, resultat.stdout + resultat.stderr)
         self.assertNotIn("--forcer", resultat.stdout)
 
     def test_l_avertissement_du_nom_s_ecrit_dans_le_commit(self):
@@ -1213,6 +1306,64 @@ class TestLeTexteDeLaPREnLigneDeCommande(unittest.TestCase):
 
         self.assertEqual(resultat.returncode, 2)
         self.assertIn("--cible est requis", resultat.stderr)
+
+
+class TestLeDepotLuiMemeSePublie(unittest.TestCase):
+    """Le dépôt réel ne doit porter aucun secret publiable.
+
+    Un en-tête de clé privée écrit en clair dans un test, un jeton recopié dans
+    une fiche, un « secret affecté » dans un exemple : ces motifs vivent dans
+    `SANS_FORCAGE` — ou bloquent tout court — donc une telle PR rend le dépôt
+    **impubliable**, et `--forcer` lui-même n'y suffit pas. Le contrôle de
+    publication le verrait… le jour de publier, trop tard.
+
+    Ce test le voit à la CI. Il rejoue l'export public tel que `publier.py` le
+    fait — `git archive` à HEAD dans un dossier temporaire, sans réseau — puis
+    passe le contrôle de fuite dessus et exige **zéro trouvaille**. C'est ce qui
+    empêche une PR de rendre le dépôt impubliable sans que la CI s'en aperçoive.
+    """
+
+    def test_l_export_du_depot_ne_porte_aucune_trouvaille(self):
+        vers = Path(tempfile.mkdtemp(prefix="obsia-test-export-")) / "export"
+        self.addCleanup(shutil.rmtree, vers.parent, ignore_errors=True)
+
+        PUB.exporter(RACINE, vers)
+        controle = PUB.controler_fuites(vers)
+
+        detail = "\n".join("%s:%s [%s] %s" % t for t in controle.trouvailles)
+        self.assertEqual(
+            controle.trouvailles, [],
+            "l'export du dépôt porte des trouvailles : le dépôt serait "
+            "impubliable, même avec --forcer\n%s" % detail)
+
+
+class TestUneEtiquetteProtegeeExisteChezUnDetecteur(unittest.TestCase):
+    """`SANS_FORCAGE` est tenue à la main : rien ne l'oblige à suivre le reste.
+
+    Les refus de `--forcer` croisent les étiquettes **posées** sur un texte avec
+    `SANS_FORCAGE`. Renommer une étiquette d'un seul côté ne casse donc rien de
+    visible : le croisement ne trouve plus rien, la valeur passe, et la suite
+    reste verte. C'est le fail-open silencieux que ces deux listes séparées
+    peuvent produire — ce test tient la jonction entre elles.
+    """
+
+    def test_chaque_etiquette_protegee_est_posee_par_un_detecteur(self):
+        racine = Path(tempfile.mkdtemp(prefix="obsia-test-forcage-"))
+        self.addCleanup(shutil.rmtree, racine, ignore_errors=True)
+        depot = racine / "depot"
+        depot.mkdir()
+
+        chemins = {etiquette for etiquette, _ in PUB.motifs_de_machine(depot)}
+        self.assertEqual(chemins, {"chemin du dépôt", "chemin du coffre"},
+                         "le détecteur de chemins doit poser ses deux étiquettes, "
+                         "sans quoi ce test ne prouverait rien")
+
+        posees = {etiquette for etiquette, _ in PUB.BLOQUANTS} | chemins
+
+        self.assertEqual(
+            set(PUB.SANS_FORCAGE) - posees, set(),
+            "une étiquette de SANS_FORCAGE que personne ne pose ne protège "
+            "rien : --forcer publierait la valeur sans le moindre avertissement")
 
 
 if __name__ == "__main__":

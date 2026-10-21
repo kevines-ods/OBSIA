@@ -16,10 +16,15 @@ système et `AGENTS.md`, produits par `generer_prompt.py` / `installer.py`.
 Usage :
     python3 scripts/regenerate_index.py
     python3 scripts/regenerate_index.py --verifier   # n'écrit rien, sort 1 si périmé
+    python3 scripts/regenerate_index.py --racine DOSSIER  # indexe un autre coffre
+    python3 scripts/regenerate_index.py --help       # affiche l'usage, n'écrit rien
 """
 
+import re
+import argparse
 import os
 import sys
+from pathlib import Path
 
 sys.dont_write_bytecode = True                    # pas de __pycache__ dans le coffre
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -49,23 +54,53 @@ def rendre_agents(agents: list[dict]) -> str:
     return "\n".join(L)
 
 
+#: Les abréviations après lesquelles un point ne finit pas la phrase. Sans
+#: elles, « p. ex. » ou « cf. » amputeraient la ligne de l'index en silence.
+ABREVIATIONS = ("p. ex.", "p.", "ex.", "cf.", "etc.", "c.-à-d.", "env.", "resp.",
+                "vol.", "chap.", "fig.", "M.", "Mme.", "n°.")
+
+
+def premiere_phrase(description: str) -> str:
+    """Première phrase d'une description — ce que l'index montre d'office.
+
+    Le reste se lit à la demande dans le frontmatter du skill : l'index chargé
+    à chaque séance doit tenir dans le contexte d'un modèle local. Un point qui
+    clôt une abréviation (`ABREVIATIONS`) ne coupe pas : mieux vaut une ligne
+    un peu plus longue qu'une phrase amputée.
+    """
+    texte = description.strip()
+    for m in re.finditer(r"[.!?](?=\s|$)", texte):
+        avant = texte[:m.end()]
+        if not finit_par_abreviation(avant):
+            return avant
+    return texte
+
+
+def finit_par_abreviation(texte: str) -> bool:
+    """Vrai si `texte` se termine par une abréviation de `ABREVIATIONS` prise
+    comme mot entier — « index. » ne finit pas par « ex. »."""
+    return any(texte.endswith(a) and (len(texte) == len(a)
+                                      or not texte[-len(a) - 1].isalnum())
+               for a in ABREVIATIONS)
+
+
 def rendre_skills(agents: list[dict], skills: list[dict]) -> str:
     L = ["# skills-index.md — Index des skills", "",
-         "| Skill | Type | Description — quoi, quand, quand pas | Utilisé par |",
+         "| Skill | Type | Quoi — première phrase de la description | Utilisé par |",
          "|---|---|---|---|"]
     for s in skills:
         par = ", ".join(a["name"] for a in agents if s["name"] in a.get("skills", [])) or "—"
         L.append("| [%s](../skills/%s) | %s | %s | %s |"
                  % (s["name"], s["_fichier"], s.get("type", "?"),
-                    s.get("description", ""), par))
+                    premiere_phrase(s.get("description", "")), par))
     L += ["",
           "> `core` = indispensable au fonctionnement du coffre ; `outil` = compétence",
           "> ponctuelle. (cf. `VAULT-CONTRACT.md` §5 et `contrat/contrat-frontmatter.md`)",
           "",
-          "> Fichier **généré** par `scripts/regenerate_index.py`. La colonne description",
-          "> reproduit mot pour mot le champ `description` du frontmatter, qui fait foi :",
-          "> c'est le seul élément toujours présent en contexte, il doit suffire à décider",
-          "> d'ouvrir le skill sans le lire. Ne pas éditer à la main (§11).",
+          "> Fichier **généré** par `scripts/regenerate_index.py`. La colonne reprend la",
+          "> première phrase du champ `description` du frontmatter, qui fait foi ; le",
+          "> quand et le quand-pas se lisent dans le frontmatter avant d'ouvrir le skill.",
+          "> Ne pas éditer à la main (§11).",
           ""]
     return "\n".join(L)
 
@@ -247,14 +282,40 @@ def lire_mcp(dossier) -> list[dict]:
     return resultats
 
 
-def main() -> int:
-    verifier = "--verifier" in sys.argv
+def analyser_arguments(argv=None):
+    """Lit la ligne de commande.
 
-    agents = collecter(RACINE / "IA" / "agents", "agent")
-    skills = collecter(RACINE / "IA" / "skills", "skill")
-    mcp = lire_mcp(RACINE / "IA" / "MCP")
-    taches = lire_taches(RACINE / "IA" / "tâches")
-    modules = lire_modules_locaux(RACINE)
+    Un analyseur explicite plutôt qu'une lecture à la main de `sys.argv` : un
+    drapeau inconnu doit être refusé, jamais ignoré en silence. Sans lui,
+    `--help` — ou une simple faute de frappe — passait pour une absence
+    d'option et les cinq index étaient réécrits (même bug que dans
+    `regenerate_sommaire.py`, corrigé par la PR #179).
+    """
+    analyseur = argparse.ArgumentParser(
+        description="Régénère les index dérivés de `IA/` — agents, skills, "
+                    "tâches, modules et le README de `IA/`. Sans option, il "
+                    "écrit les cinq fichiers.")
+    analyseur.add_argument(
+        "--verifier", action="store_true",
+        help="n'écrit rien et sort 1 si un index est périmé, 0 sinon")
+    analyseur.add_argument(
+        "--racine", metavar="DOSSIER",
+        help="coffre dont on régénère les index (défaut : la racine de ce "
+             "script). `verifier_coffre.verifier_derives()` s'en sert pour "
+             "juger le coffre qu'on lui donne plutôt que celui de la machine.")
+    return analyseur.parse_args(argv)
+
+
+def main(argv=None) -> int:
+    options = analyser_arguments(argv)
+    verifier = options.verifier
+    racine = Path(options.racine) if options.racine else RACINE
+
+    agents = collecter(racine / "IA" / "agents", "agent")
+    skills = collecter(racine / "IA" / "skills", "skill")
+    mcp = lire_mcp(racine / "IA" / "MCP")
+    taches = lire_taches(racine / "IA" / "tâches")
+    modules = lire_modules_locaux(racine)
 
     # Le catalogue entier alimente les compteurs : les index montrent tout ce
     # que le coffre déclare, sans jamais le réduire au profil (§13).
@@ -268,11 +329,11 @@ def main() -> int:
         return 1
 
     attendus = {
-        RACINE / "IA" / "system" / "agents-index.md": rendre_agents(agents),
-        RACINE / "IA" / "system" / "skills-index.md": rendre_skills(agents, skills),
-        RACINE / "IA" / "system" / "taches-index.md": rendre_taches(taches),
-        RACINE / "IA" / "system" / "modules-index.md": rendre_modules(modules, contenu),
-        RACINE / "IA" / "README.md": rendre_ia_readme(agents, skills, mcp, taches),
+        racine / "IA" / "system" / "agents-index.md": rendre_agents(agents),
+        racine / "IA" / "system" / "skills-index.md": rendre_skills(agents, skills),
+        racine / "IA" / "system" / "taches-index.md": rendre_taches(taches),
+        racine / "IA" / "system" / "modules-index.md": rendre_modules(modules, contenu),
+        racine / "IA" / "README.md": rendre_ia_readme(agents, skills, mcp, taches),
     }
 
     perimes, ecrits = [], 0
@@ -280,7 +341,7 @@ def main() -> int:
         ancien = chemin.read_text(encoding="utf-8") if chemin.is_file() else None
         if ancien == neuf:
             continue
-        rel = chemin.relative_to(RACINE)
+        rel = chemin.relative_to(racine)
         if verifier:
             perimes.append(str(rel))
             continue
