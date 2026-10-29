@@ -130,7 +130,7 @@ brctl show 2>/dev/null || bridge link
 | Point | Pourquoi |
 | --- | --- |
 | Dépôt d'entreprise non souscrit | Bandeau d'avertissement à chaque connexion. Basculer sur le dépôt `no-subscription` est normal en usage personnel |
-| VM Nextcloud et VM Docker sur le même pool | Une saturation du pool les arrête toutes les deux |
+| Plusieurs VM critiques sur le même pool de stockage | Une saturation du pool les arrête toutes ensemble |
 | Ollama sans passage GPU | Vérifier `qm config <VMID>` pour `hostpci` — sinon inférence sur processeur, très lente |
 | Home Assistant | Demande souvent un passage USB (clé Zigbee/Z-Wave) : `qm config` doit montrer une entrée `usb` |
 | Instantanés anciens | Les lister à chaque contrôle, ils sont vite oubliés |

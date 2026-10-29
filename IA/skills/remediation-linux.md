@@ -142,8 +142,9 @@ sudo dnf upgrade --refresh               # Fedora et dérivées
 > Sur Arch, une mise à jour partielle (`pacman -Sy paquet`) casse le système.
 > C'est `-Syu` ou rien.
 
-Sur les VM Debian du NAS, vérifier après mise à jour du noyau que les modules
-nécessaires sont toujours présents avant de redémarrer.
+Sur une machine virtuelle dont le noyau diffère de celui de l'hôte, vérifier
+après mise à jour du noyau que les modules nécessaires sont toujours présents
+avant de redémarrer.
 
 ## Commandes longues
 

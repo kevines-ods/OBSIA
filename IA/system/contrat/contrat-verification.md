@@ -139,6 +139,9 @@ coffre ne doit dépendre d'aucune installation pour être vérifiable.
 un clone neuf. Mais **ce n'est plus lui qui archive la mémoire** : elle vit dans
 le dépôt de données du coffre (§7.1), dont l'historique en tient lieu — un
 fichier de mémoire supprimé s'y retrouve, sans recopie préalable.
+Rien de `.archive/` n'est lu ni indexé : les dossiers dont le nom commence
+par un point sont écartés partout, par les générateurs comme par le
+vérificateur. Cette règle a quitté le noyau parce que l'outil la tient.
 
 Plusieurs agents travaillent **en même temps** sur ce dépôt, chacun dans sa
 conversation. L'arbre de travail principal est donc une ressource commune :

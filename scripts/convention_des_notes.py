@@ -643,6 +643,13 @@ def regle_de_zone(chemin):
     if tete == "0-PROJETS":
         if len(seg) < 2:
             return None                      # `0-PROJETS/` seul n'accueille rien
+        if seg[1] == "tâches-planifiées":
+            # Pas un projet : le registre privé des tâches propres à cette
+            # installation (§12 du contrat). Un fichier par tâche, à plat —
+            # pas de chantier, pas de `carnets/`.
+            if len(seg) == 3 and seg[2].endswith(".md"):
+                return Regle(_TOUS, _TENUE_SUR_PLACE, "une tâche planifiée du coffre")
+            return None
         regle = _regle_du_projet(seg)
         if regle is not None:
             return regle

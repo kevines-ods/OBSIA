@@ -160,6 +160,10 @@ pour une revue ; la mémoire se relit dans l'historique du dépôt de données. 
   `carnets/`, ses `documents/` et son `<chantier> — résumé.md` ; un seul
   niveau. **Plus aucun `archives/`** : un
   chantier clos part, dossier entier, dans `0-MEMOIRES/` (§6) ;
+- `0-PROJETS/tâches-planifiées/` — **le registre privé des tâches planifiées**
+  propres à cette installation — une machine précise du parc de l'utilisateur,
+  ou son mainteneur (§12 du contrat, `contrat-taches`) : un fichier par tâche,
+  créé ou corrigé sur place, jamais publié ;
 - `0-PROJETS/<projet>/code/` — **le dépôt git d'un projet construit ici** :
   l'agent y écrit le code et ses documents, y commite. C'est un dépôt à part
   entière, versionné pour lui-même, et la seule zone du coffre parent où du
@@ -204,7 +208,7 @@ pour une revue ; la mémoire se relit dans l'historique du dépôt de données. 
 
 Une **note** de `0-PROJETS/` que l'agent n'a pas écrite n'est pas à lui : elle reste protégée
 comme le reste. Hors des dossiers de projet ci-dessus (note de suivi, vision, carnets,
-`code/`) et des
+`code/`), du registre `0-PROJETS/tâches-planifiées/` et des
 notes de référence ci-dessus, une écriture dans `0-PROJETS/`, `0-DOCUMENTS/` ou `0-PERSONNELS/` se limite au
 **dépôt d'une note classée venue d'`0-EN-VRAC/`**, et à rien d'autre. On n'y
 modifie **jamais** une note existante, même à la demande de l'utilisateur :
@@ -212,15 +216,16 @@ une note à enrichir repasse d'abord par `0-EN-VRAC/`, puis est classée. On n'y
 déplace ni n'y supprime rien.
 
 La note de suivi, la note de vision, les carnets, le profil, les préférences,
-les `expériences/` de l'agent et la note de référence sont les seules
-exceptions, et elles tiennent à la même raison : **ce sont les seules notes de
+les `expériences/` de l'agent, le registre des tâches planifiées et la note de
+référence sont les seules exceptions, et elles tiennent à la même raison : **ce sont les seules notes de
 ces dossiers dont l'agent est l'auteur ou le correcteur attitré.** Il les a
 créées, il les met à jour, personne d'autre n'écrit dedans. La règle générale
 protège les notes de l'utilisateur d'une réécriture silencieuse ; elle ne
 protège de rien quand l'agent corrige son propre texte, ou un fait sur son
 utilisateur. Ce qui rend la distinction visible sans ouvrir la note, c'est le
 suffixe ` — résumé` ou ` — vision`, le dossier `carnets/`, un chemin sous
-`0-PERSONNELS/`, ou le champ `auteur:` : une note qui ne porte rien de tout cela
+`0-PERSONNELS/`, le champ `auteur:`, ou un fichier à plat sous
+`0-PROJETS/tâches-planifiées/` : une note qui ne porte rien de tout cela
 n'est pas à l'agent.
 
 **Dans `0-MEMOIRES/`, seule la moitié gelée fait exception à tout** : un dossier

@@ -271,9 +271,13 @@ class TestSuivisNonPublies(BasePublication):
     """`exporter` : un fichier suivi peut être privé — lui seul ne part pas."""
 
     def test_le_fichier_non_publie_ne_part_pas_avec_ses_voisins(self):
+        avant = PUB.NON_PUBLIES
+        self.addCleanup(lambda: setattr(PUB, "NON_PUBLIES", avant))
+        PUB.NON_PUBLIES = ("IA/agents/agent-prive-de-test.md",)
+
         agents = self.source / "IA" / "agents"
         agents.mkdir(parents=True)
-        (agents / "administrateur-mint.md").write_text(
+        (agents / "agent-prive-de-test.md").write_text(
             "---\nkind: agent\n---\n# Un agent privé\n", encoding="utf-8")
         (agents / "administrateur.md").write_text(
             "---\nkind: agent\n---\n# Un agent public\n", encoding="utf-8")
@@ -284,7 +288,7 @@ class TestSuivisNonPublies(BasePublication):
         PUB.exporter(self.source, export)
 
         self.assertFalse((export / "IA" / "agents"
-                          / "administrateur-mint.md").exists(),
+                          / "agent-prive-de-test.md").exists(),
                          "le fichier déclaré non publié est parti quand même")
         self.assertTrue((export / "IA" / "agents"
                         / "administrateur.md").is_file(),
@@ -299,30 +303,59 @@ class TestSuivisNonPublies(BasePublication):
 
 
 class TestLExcluNEstPasCite(BasePublication):
-    """§13 : l'exclu ne part pas, et le public ne le cite plus.
+    """§13 : un fichier déclaré `NON_PUBLIES` ne part pas, et le public ne le
+    cite plus.
 
     Deux gardes tiennent déjà ce lien au public — `verifier_coffre.py`
     refuse un `.md` qui nomme un agent sans son fichier (§1), et un chemin
     cité qui n'existe pas (§13) — mais elles n'y tombent qu'à la CI du
     public, une fois publié. Ce test les éprouve sur l'export, avant :
-    régénération comprise, puisqu'elle seule retire l'agent des index. Les
-    `.py` ne sont pas relus ici : le vérificateur ne les scanne pas, et
-    l'exclusion doit bien se déclarer, quelque part, par son chemin.
+    régénération comprise, puisqu'elle seule retire l'agent des index.
+
+    `NON_PUBLIES` est vide dans ce dépôt (`depanneur-accompagne`, seul
+    membre jusqu'ici, a été neutralisé puis publié) : le test se donne donc
+    son propre exclu plutôt que de rester vacueusement vrai sur une liste
+    vide.
     """
 
     def test_l_agent_exclu_n_est_ni_present_ni_cite(self):
+        # `NON_PUBLIES` est vide dans ce dépôt — `depanneur-accompagne`, seul
+        # membre jusqu'ici, a été neutralisé puis publié : plus aucun fichier
+        # réel n'a la propriété qui rendait l'ancien test possible (un nom
+        # qu'aucun autre fichier ne cite jamais). On clone donc le dépôt réel
+        # pour y fabriquer un cas synthétique, plutôt que de rester
+        # vacueusement vrai sur une liste vide, ou de risquer un faux échec
+        # en choisissant un vrai agent cité ailleurs par son rôle.
+        clone = self.parent / "clone-reel"
+        git(self.parent, "clone", "-q", str(RACINE), str(clone))
+
+        nom_test = "agent-prive-synthetique-de-test"
+        agents = clone / "IA" / "agents"
+        (agents / f"{nom_test}.md").write_text(
+            "---\nschema: 1\nkind: agent\nname: %s\n"
+            "description: Agent de test, privé.\nread_only: true\n---\n"
+            "# Un agent privé\n" % nom_test, encoding="utf-8")
+        git(clone, "add", "-A")
+        git(clone, "commit", "-q", "-m", "un agent privé synthétique")
+
+        avant = PUB.NON_PUBLIES
+        self.addCleanup(lambda: setattr(PUB, "NON_PUBLIES", avant))
+        PUB.NON_PUBLIES = (f"IA/agents/{nom_test}.md",)
+
         export = self.parent / "export"
-        PUB.exporter(RACINE, export)
+        PUB.exporter(clone, export)
         self.assertEqual(PUB.regenerer_et_verifier(export), 0,
-                         "l'export du dépôt réel doit rester cohérent")
+                         "l'export du clone doit rester cohérent")
 
-        for rel in PUB.NON_PUBLIES:
-            self.assertFalse((export / rel).exists(),
-                             "%s est parti quand même" % rel)
+        self.assertFalse((export / "IA" / "agents" / f"{nom_test}.md").exists(),
+                         "l'agent exclu est parti quand même")
 
+        # `regenerate_index.py`, tourné sur l'export, dérive des fichiers
+        # présents sur disque : un agent absent ne peut plus apparaître dans
+        # les index qu'il régénère.
         cites = [str(chemin.relative_to(export))
                  for chemin in sorted(export.rglob("*.md"))
-                 if "administrateur-mint" in chemin.read_text(encoding="utf-8")]
+                 if nom_test in chemin.read_text(encoding="utf-8")]
         self.assertEqual(cites, [], "des fichiers publiés citent l'exclu")
 
 

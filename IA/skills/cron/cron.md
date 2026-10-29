@@ -16,12 +16,18 @@ Deux objets, à ne jamais confondre :
 
 | | Où | Ce que c'est | Durée de vie |
 | --- | --- | --- | --- |
-| **la tâche** | `IA/tâches/<nom>.md` | l'intention : quoi, quand, pour quel agent | versionnée, suit le coffre |
+| **la tâche générique** | `IA/tâches/<nom>.md` | l'intention : quoi, quand, pour quel agent | versionnée, suit le dépôt produit, patch revu |
+| **la tâche propre à cette installation** | `Mon coffre/0-PROJETS/tâches-planifiées/<nom>.md` | la même chose, pour une tâche qui sert ou nomme une machine du parc de l'utilisateur, ou n'a de sens que pour son mainteneur | versionnée, suit le dépôt de données du coffre, écriture directe tracée |
 | **l'instance** | timer systemd, planificateur du harness… | ce qui déclenche réellement | jetable, propre à une machine |
 
-Le registre fait foi (§12 du contrat). Une instance perdue se recrée depuis le
-registre ; une tâche qui n'existe que sous forme d'instance est perdue au
-premier changement de harness ou de machine.
+**Deux registres, un seul invariant.** `IA/tâches/` est publié avec le dépôt ;
+`Mon coffre/0-PROJETS/tâches-planifiées/` ne l'est jamais (`publier.py` n'atteint
+pas le coffre parent) — c'est pourquoi une tâche propre à cette installation va
+là, jamais dans le dépôt produit (garde-fous ci-dessous). Chacun
+fait foi pour ses propres tâches ; aucun nom ne se déclare aux deux endroits à
+la fois. Le registre fait foi (§12 du contrat). Une instance perdue se recrée
+depuis le registre qui la déclare ; une tâche qui n'existe que sous forme
+d'instance est perdue au premier changement de harness ou de machine.
 
 **Clé de rapprochement : `obsia-<name>`.** Toute instance porte ce nom, quel
 que soit l'exécutant. C'est ce qui rend la réconciliation possible.
@@ -57,7 +63,21 @@ seul exécutant `local` :
 python3 IA/skills/cron/scripts/appliquer_taches.py             # aperçu, n'écrit rien
 python3 IA/skills/cron/scripts/appliquer_taches.py --appliquer  # exécute
 python3 IA/skills/cron/scripts/appliquer_taches.py --config     # gabarit de config
+python3 IA/skills/cron/scripts/appliquer_taches.py --tache NOM [--appliquer]  # une seule tâche
 ```
+
+L'outil lit **les deux registres** — `IA/tâches/` et, s'il le trouve,
+`Mon coffre/0-PROJETS/tâches-planifiées/` — et refuse (sortie 2, rien écrit) un
+nom présent aux deux à la fois : c'est un doublon de déclaration, à corriger
+par patch avant de continuer.
+
+**Sur une machine qui ne porte pas tout le registre, nommer la tâche.** Sans
+`--tache`, `--appliquer` pose toutes les tâches actives `exécutant: local`,
+y compris celles qui en visent une autre — une tâche propre à une machine du
+parc ne tourne que sur celle qu'elle sert. Avec `--tache NOM`, l'aperçu comme
+l'application ne voient que cette tâche ; un nom ni dans l'un ou l'autre
+registre ni parmi les instances `obsia-*` est refusé (sortie 2), sans rien
+écrire — de même qu'un `--tache` répété : une seule tâche par passage.
 
 L'aperçu **est** le preview du §2 : le lancer d'abord, montrer le tableau,
 n'appliquer qu'ensuite. Il ne touche que les unités préfixées `obsia-`, et
@@ -85,29 +105,40 @@ Lire le tableau de l'étape 6 pour interpréter ses verdicts : ce sont les même
 
 ### 1. Lister — toujours en premier
 
-Le registre :
+Le registre du dépôt :
 
 ```bash
 ls IA/tâches/
 grep -H -E '^(name|quand|fuseau|mode|actif):' IA/tâches/*.md
 ```
 
-Puis les instances réelles sur cette machine :
+Le registre privé, lui, ne se devine pas par `..` : depuis un *worktree* lié,
+`..` mène au hangar à worktrees, pas au coffre parent (même piège documenté
+dans `scripts/publier.py`, fonction `depot_reel`). Ne pas le lister à la
+main : `appliquer_taches.py` le résout correctement et affiche les deux
+registres, confrontés aux instances réelles de cette machine :
 
 ```bash
 systemctl --user list-timers --all 'obsia-*'
-python3 IA/skills/cron/scripts/appliquer_taches.py    # registre et instances confrontés
+python3 IA/skills/cron/scripts/appliquer_taches.py    # les deux registres, et les instances
 ```
 
 Si le harness a son propre planificateur, lister aussi de son côté — c'est la
 moitié de l'inventaire qu'on oublie. Ne jamais créer avant d'avoir regardé les
 deux : un doublon déclenche deux fois, et rien ne le signale.
 
-### 2. Créer la tâche — patch Git
+### 2. Créer la tâche
 
-`IA/tâches/<nom>.md`, frontmatter conforme au §5 du contrat — le détail des
-champs d'une tâche est dans l'annexe
-`../../system/contrat/contrat-frontmatter.md` :
+**Choisir l'emplacement avant d'écrire.** La tâche est-elle propre à cette
+installation — sert ou nomme une machine précise du parc de l'utilisateur (ex.
+« poste secondaire »), ou n'a de sens que pour le mainteneur de ce coffre (une
+publication depuis son dépôt privé, par exemple) — rien qui vaudrait pour
+toute installation d'OBSIA ? Elle va dans
+`Mon coffre/0-PROJETS/tâches-planifiées/<nom>.md`, écriture directe tracée
+(§7.4 du contrat coffre-parent) — ce registre ne se publie jamais. Sinon,
+générique, elle va dans `IA/tâches/<nom>.md`, patch Git revu. Frontmatter
+conforme au §5 du contrat dans les deux cas — le détail des champs est dans
+l'annexe `../../system/contrat/contrat-frontmatter.md` :
 
 ```yaml
 ---
@@ -132,12 +163,15 @@ Puis le corps : `## Intention`, et `## Instruction` (mode agent) ou
 
 **Le corps et le frontmatter nomment des rôles, jamais des machines.** Un nom
 d'hôte, une adresse IP privée, un VMID nommé, un domaine interne ou un nom de
-dépôt privé vient de l'inventaire (`0-PERSONNELS/Homelab/`) et n'a rien à faire
-ici : `IA/tâches/` est publié (§9). Écrire « poste secondaire », « serveur
-principal », « dépôt privé ». Ce qui doit désigner une machine précise se lit à
-l'exécution dans une configuration hors dépôt — voir les garde-fous.
+dépôt privé vient de l'inventaire du parc (note de référence sous
+`0-PERSONNELS/`) et n'a rien à faire ici : `IA/tâches/` est publié (§9).
+Écrire « poste secondaire », « serveur principal », « dépôt privé ». Ce qui
+doit désigner une machine précise se lit à l'exécution dans une configuration
+hors dépôt — voir les garde-fous.
 
 `IA/tâches/` n'est pas une zone d'écriture directe : patch soumis à revue.
+`Mon coffre/0-PROJETS/tâches-planifiées/` suit, elle, le preview et la copie
+datée dans `_MAINTENANCE/` (§7.4).
 
 ### 3. Instancier — **à l'endroit déclaré, et nulle part ailleurs**
 
@@ -291,9 +325,10 @@ correctement.
   se lisent en clair, et `IA/tâches/` est versionné dans un dépôt public.
 - **Aucun nom de l'infrastructure non plus, dans une tâche comme dans son
   script.** Nom d'hôte, adresse IP privée, VMID nommé, domaine interne, nom de
-  dépôt privé : ces noms vivent dans l'inventaire (`0-PERSONNELS/Homelab/`),
-  jamais dans le dépôt, qui est public (§9). Le fichier parle de **rôles** —
-  « poste secondaire », « serveur principal », « dépôt privé ». Ce qui doit
+  dépôt privé : ces noms vivent dans l'inventaire du parc (note de référence
+  sous `0-PERSONNELS/`), jamais dans le dépôt, qui est public (§9). Le
+  fichier parle de **rôles** — « poste secondaire », « serveur principal »,
+  « dépôt privé ». Ce qui doit
   désigner une machine précise est lu à l'exécution dans une configuration hors
   dépôt sous `~/.config/obsia/`, sur le modèle de la clé `commande_agent` (voir
   `IA/skills/cron/scripts/appliquer_taches.py`) : sans elle, le script sort sans

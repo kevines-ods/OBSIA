@@ -2,12 +2,14 @@
 
 Un poste distant ne porte ni le dépôt OBSIA ni le coffre parent : son prompt
 n'a ni index à afficher ni noyau à désigner. Il doit donc porter l'en-tête qui
-dit où l'agent opère, la règle des secrets, et le corps intégral du fichier
-de l'agent — sa méthode tient en lui seul, sans renvoi vers ce que la machine
-ne porte pas. Et comme il voyage, il ne doit porter **aucun chemin absolu**,
+dit où l'agent opère, la règle des secrets, le corps intégral du fichier de
+l'agent, et le corps de chaque skill qu'il déclare — un skill ne se charge
+pas à la demande sur une machine sans coffre, donc son corps s'inline
+d'avance, sans quoi la méthode qu'il porte n'existerait nulle part sur le
+poste. Et comme il voyage, il ne doit porter **aucun chemin absolu**,
 exactement comme l'AGENTS.md du coffre.
 
-L'agent qui fonde le déploiement embarqué — `administrateur-mint` — est
+L'agent qui fonde le déploiement embarqué — `depanneur-accompagne` — est
 versionné : les tests le lisent tel quel, plutôt que de fabriquer un coffre
 de circonstance.
 """
@@ -23,7 +25,7 @@ from generer_prompt import (RACINE_DEFAUT, chemins_absolus,     # noqa: E402
                             corps_declaratif, prompt_embarque,
                             regle_des_secrets)
 
-AGENT = "administrateur-mint"
+AGENT = "depanneur-accompagne"
 FICHIER_AGENT = RACINE_DEFAUT / "IA" / "agents" / f"{AGENT}.md"
 
 
@@ -42,10 +44,18 @@ class TestLePromptEmbarque(unittest.TestCase):
         self.assertIsNotNone(corps)
         self.assertIn(corps, self.prompt)
 
+    def test_il_porte_le_corps_des_skills_declares(self):
+        # L'agent n'a pas accès au coffre : un skill qu'il déclare doit être
+        # inliné d'avance, ou sa méthode n'existe nulle part sur le poste.
+        fichier_skill = RACINE_DEFAUT / "IA" / "skills" / "depannage-accompagne.md"
+        corps_skill = corps_declaratif(fichier_skill)
+        self.assertIsNotNone(corps_skill)
+        self.assertIn(corps_skill, self.prompt)
+
     def test_le_frontmatter_n_y_entre_pas(self):
         self.assertNotIn("kind: agent", self.prompt)
         self.assertNotIn("read_only", self.prompt)
-        self.assertIn("# Administrateur-mint", self.prompt)
+        self.assertIn("# Dépanneur accompagné (embarqué)", self.prompt)
 
     def test_il_porte_la_regle_des_secrets(self):
         regle = regle_des_secrets(RACINE_DEFAUT)
@@ -80,6 +90,25 @@ class TestLesGardesDuModeEmbarque(unittest.TestCase):
             (agents / "sans-frontmatter.md").write_text(
                 "Pas de frontmatter ici.\n", encoding="utf-8")
             self.assertIsNone(prompt_embarque(racine, "sans-frontmatter"))
+
+    def test_un_skill_declare_mais_absent_avertit_sans_echouer(self):
+        import io
+        import tempfile
+        from contextlib import redirect_stderr
+        with tempfile.TemporaryDirectory() as tmp:
+            racine = Path(tmp)
+            agents = racine / "IA" / "agents"
+            agents.mkdir(parents=True)
+            (agents / "sans-skill.md").write_text(
+                "---\nschema: 1\nkind: agent\nname: sans-skill\n"
+                "description: Test.\nskills:\n  - introuvable\n---\n\n"
+                "# Agent de test\n", encoding="utf-8")
+            erreur = io.StringIO()
+            with redirect_stderr(erreur):
+                prompt = prompt_embarque(racine, "sans-skill")
+            self.assertIsNotNone(prompt)
+            self.assertIn("# Agent de test", prompt)
+            self.assertIn("introuvable", erreur.getvalue())
 
     def test_aucun_chemin_absolu_de_machine(self):
         # `contradicteur` plutôt que l'agent fondateur : cette garde doit

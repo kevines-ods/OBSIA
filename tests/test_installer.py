@@ -32,7 +32,7 @@ import installer as INS                 # noqa: E402
 #: Le motif et le repère du §4 vivent dans le générateur, pas ici :
 #: `verifier_coffre.py` s'en sert pour contrôler le prompt réel du catalogue, et
 #: deux copies finiraient par diverger.
-from generer_prompt import chemins_absolus, regle_des_secrets   # noqa: E402
+from generer_prompt import chemins_absolus, charte_de_concision, regle_des_secrets, regle_ecriture  # noqa: E402
 
 GENERATEUR = SCRIPTS / "generer_prompt.py"
 INSTALLATEUR = SCRIPTS / "installer.py"
@@ -333,7 +333,17 @@ class TestEcritureAgentsMd(BaseInstalleur):
             self.assertTrue(regle.strip(),
                             "la règle des secrets du §4 n'est plus repérable : "
                             "le test voisin dit pourquoi cela compte")
-            return coupe.replace(regle, "")
+            coupe = coupe.replace(regle, "")
+            charter = charte_de_concision(SCRIPTS.parent)
+            self.assertTrue(charter.strip(),
+                            "la charte de concision du §10 n'est plus repérable : "
+                            "même mécanique que la règle des secrets")
+            coupe = coupe.replace(charter, "")
+            ecriture = regle_ecriture(SCRIPTS.parent)
+            self.assertTrue(ecriture.strip(),
+                            "la règle d'écriture du §2 n'est plus repérable : "
+                            "même mécanique que la règle des secrets")
+            return coupe.replace(ecriture, "")
 
         sources = [sans_les_copies((racine / "VAULT-CONTRACT.md")
                                    .read_text(encoding="utf-8")),
@@ -376,6 +386,82 @@ class TestEcritureAgentsMd(BaseInstalleur):
         self.assertNotIn("## 4. Exécution de code", texte,
                          "seule la règle se pose, pas le contrat autour")
         self.assertEqual([], chemins_absolus(texte))
+
+    def test_l_agents_md_extrait_la_charte_de_concision_du_noyau(self):
+        """Même constat que la règle des secrets, pour la charte du §10 : elle
+        doit être **dans** l'`AGENTS.md` engendré, extraite entre ses repères
+        du noyau — pas recopiée en dur (§5), pas déduite du prompt.
+        """
+        self.ecrire("IA/system/VAULT-CONTRACT.md",
+                    "## 10. Méthode d'exécution\n\n"
+                    "<!-- charte-concision: debut -->\n"
+                    "Écrire le résultat, pas le chemin.\n"
+                    "<!-- charte-concision: fin -->\n")
+        self.profil()
+
+        self.lancer("--appliquer")
+
+        texte = self.agents_md().read_text(encoding="utf-8")
+        self.assertIn("Écrire le résultat, pas le chemin.", texte)
+        self.assertNotIn("charte-concision", texte, "le repère ne se pose pas")
+        self.assertNotIn("## 10. Méthode d'exécution", texte,
+                         "seule la charte se pose, pas le contrat autour")
+        self.assertEqual([], chemins_absolus(texte))
+
+    def test_l_agents_md_extrait_la_regle_d_ecriture_du_noyau(self):
+        """Même constat que la règle des secrets, pour l'écriture du §2 : un
+        agent qui n'ouvre jamais le contrat écrit de toute façon — la règle
+        (où écrire, le preview, les générés) doit être **dans** l'`AGENTS.md`
+        engendré, extraite entre ses repères du noyau, pas recopiée (§5).
+        """
+        self.ecrire("IA/system/VAULT-CONTRACT.md",
+                    "## 2. Écriture dans le coffre\n\n"
+                    "<!-- regle-ecriture: debut -->\n"
+                    "- Écrire dans le coffre n'est pas libre.\n"
+                    "<!-- regle-ecriture: fin -->\n")
+        self.profil()
+
+        self.lancer("--appliquer")
+
+        texte = self.agents_md().read_text(encoding="utf-8")
+        self.assertIn("- Écrire dans le coffre n'est pas libre.", texte)
+        self.assertNotIn("regle-ecriture", texte, "le repère ne se pose pas")
+        self.assertNotIn("## 2. Écriture dans le coffre", texte,
+                         "seule la règle se pose, pas le contrat autour")
+        self.assertEqual([], chemins_absolus(texte))
+
+    def test_le_vrai_contrat_arme_la_regle_d_ecriture_et_elle_reste_courte(self):
+        """Sans les repères dans le §2 du vrai contrat, la règle quitterait
+        tous les `AGENTS.md` engendrés sans que rien ne le dise — même garde
+        que pour les secrets et la charte. Elle liste les zones de §7.3 :
+        c'est ce qu'un modèle qui ne lit pas le noyau porterait à voix, le
+        restant (§7.3, §7.4) dépendant d'une lecture que l'incident a vu
+        sauter. Et elle reste courte : le noyau a un plafond de mots (§11).
+        """
+        regle = regle_ecriture(SCRIPTS.parent)
+
+        self.assertTrue(regle.strip(),
+                        "le §2 du contrat ne porte plus les repères de la règle d'écriture")
+        self.assertIn("0-EN-VRAC/", regle)
+        self.assertIn("_MAINTENANCE/", regle)
+        self.assertEqual([], chemins_absolus(regle))
+        self.assertLess(len(regle.encode()), 900,
+                        "la règle d'écriture s'allonge : le noyau tient en 4016 mots")
+
+    def test_le_vrai_contrat_arme_la_charte_et_elle_reste_courte(self):
+        """Sans le repère dans le §10 du vrai contrat, la charte quitterait
+        tous les `AGENTS.md` engendrés sans que rien ne le dise — même garde
+        que pour la règle des secrets. Et elle reste courte : le noyau a un
+        plafond de mots (§11), et l'`AGENTS.md` approche du plafond Codex.
+        """
+        charter = charte_de_concision(SCRIPTS.parent)
+
+        self.assertTrue(charter.strip(),
+                        "le §10 du contrat ne porte plus le repère de la charte")
+        self.assertIn("Écrire le résultat", charter)
+        self.assertEqual([], chemins_absolus(charter))
+        self.assertLess(len(charter.encode()), 1200,
+                        "la charte s'allonge : à trimer, pas à relever")
 
     def test_le_vrai_contrat_arme_le_repere_et_la_regle_reste_courte(self):
         """Sans le repère dans le §4 du vrai contrat, la règle disparaîtrait de

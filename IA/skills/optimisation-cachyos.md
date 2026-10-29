@@ -3,7 +3,7 @@ schema: 1
 kind: skill
 name: optimisation-cachyos
 description: Diagnostiquer et optimiser un poste CachyOS (base Arch) — noyau et ordonnanceur (BORE, sched-ext), mémoire et zram, disques et btrfs, réseau, services, jeu, nettoyage des caches et des instantanés snapper. À charger pour optimiser, nettoyer ou accélérer une machine CachyOS, ou quand l'espace disque ne revient pas après une suppression.
-module: poste-cachyos
+module: linux-poste
 type: outil
 read_only: false
 ---

@@ -482,6 +482,18 @@ class TestLaCompletion(BaseDesNotes):
         self.assertIsNone(acte.refus, acte.refus)
         self.assertEqual(tenu, self.lire(relatif))
 
+    def test_completer_tient_une_tache_planifiee_au_fil_de_l_eau(self):
+        """§12 — le registre privé des tâches se tient au même titre qu'un carnet :
+        la matrice §7.3 l'ouvre à `compléter`, et le geste doit le rejoindre."""
+        relatif = "0-PROJETS/tâches-planifiées/maj-exemple.md"
+        base = note(front="kind: tâche\nactif: true\n---",
+                    corps="\n\n## Commande\n\n```bash\ntrue\n```\n")
+        self.poser_note(relatif, base)
+        tenue = base + "\n\n## Intention\n\nUne précision ajoutée.\n"
+        acte = self._completer(relatif, tenue)
+        self.assertIsNone(acte.refus, acte.refus)
+        self.assertEqual(tenue, self.lire(relatif))
+
     def test_completer_une_note_rangee_dans_un_sous_dossier_de_savoirs(self):
         """Constat 3 du contradicteur sur #154 — la matrice juge sur la **tête** de zone.
 

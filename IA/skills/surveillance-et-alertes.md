@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: surveillance-et-alertes
-description: Mettre en place et dépanner la surveillance d'une infrastructure — sondes de disponibilité Uptime Kuma, moniteurs push, vérificateurs de fraîcheur des sauvegardes, alerte SMART, notification Telegram, témoin externe qui détecte une panne totale. À charger quand une alerte manque, arrive à tort, ou qu'une tâche importante tourne sans que personne ne sache si elle a réussi.
+description: Mettre en place et dépanner la surveillance d'une infrastructure — sondes de disponibilité (Uptime Kuma par exemple), moniteurs push, vérificateurs de fraîcheur des sauvegardes, alerte SMART, notification (Telegram par exemple), témoin externe qui détecte une panne totale. À charger quand une alerte manque, arrive à tort, ou qu'une tâche importante tourne sans que personne ne sache si elle a réussi.
 module: administration-homelab
 type: outil
 read_only: false

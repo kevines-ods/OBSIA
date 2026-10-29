@@ -112,10 +112,11 @@ def git(*arguments, racine=RACINE):
 def charge_machine():
     """Rend le nom du poste que cette tâche concerne, ou None.
 
-    Le nom réel de la machine reste dans l'inventaire, sous
-    `0-PERSONNELS/Homelab/` : il n'a rien à faire dans un dépôt publié. Il est
-    donc lu à l'exécution dans un fichier plat, hors dépôt, sur le modèle de la
-    clé `commande_agent` (voir `IA/skills/cron/scripts/appliquer_taches.py`).
+    Le nom réel de la machine reste dans l'inventaire du parc, note de
+    référence sous `0-PERSONNELS/` : il n'a rien à faire dans un dépôt
+    publié. Il est donc lu à l'exécution dans un fichier plat, hors dépôt,
+    sur le modèle de la clé `commande_agent` (voir
+    `IA/skills/cron/scripts/appliquer_taches.py`).
     Sans fichier, ou sans la clé `machine_cible`, on rend None — et l'appelant
     sort sans rien faire, comme sur un poste inattendu.
     """

@@ -8,9 +8,13 @@ Usage :
     ./generer_prompt.py --mcp                    # affiche aussi la config MCP à faire
     ./generer_prompt.py --sans-profil            # ignore obsia.local.yml (pire cas)
     ./generer_prompt.py --racine /chemin/OBSIA
-    ./generer_prompt.py --embarque contradicteur -o AGENTS-embarque.md
+    ./generer_prompt.py --embarque depanneur-accompagne -o AGENTS-embarque.md
     ./generer_prompt.py --compact assistant      # prompt court, modèle à petit contexte
     ./generer_prompt.py --compact batisseur --phase cadrage
+
+`--embarque` reprend le corps intégral de l'agent, **et** celui de chaque
+skill qu'il déclare : un poste sans coffre ne peut charger un skill à la
+demande, donc sa méthode doit être inlinée d'avance dans le prompt engendré.
 
 Aucune dépendance externe : le frontmatter est lu par un analyseur minimal,
 suffisant pour le format strict défini dans VAULT-CONTRACT.md.
@@ -39,6 +43,65 @@ REPERE_SECRETS_DEBUT = re.compile(r"^<!--\s*regle-secrets\s*:\s*debut\s*-->\s*$"
                                   re.MULTILINE)
 REPERE_SECRETS_FIN = re.compile(r"^<!--\s*regle-secrets\s*:\s*fin\s*-->\s*$",
                                 re.MULTILINE)
+
+#: Le repère du §10 autour de la charte de concision. Même mécanique que la
+#: règle des secrets : le prompt l'obtient entre les deux repères, la seule
+#: copie vivante reste le noyau (§5). Commentaire HTML seul sur sa ligne, muet.
+REPERE_CHARTE_DEBUT = re.compile(r"^<!--\s*charte-concision\s*:\s*debut\s*-->\s*$",
+                                 re.MULTILINE)
+REPERE_CHARTE_FIN = re.compile(r"^<!--\s*charte-concision\s*:\s*fin\s*-->\s*$",
+                               re.MULTILINE)
+
+
+#: Le repère du §2 autour de la règle d'écriture. Même mécanique que les deux
+#: autres : le prompt l'obtient entre les repères, la seule copie vivante
+#: reste le noyau (§5). Ce qu'il porte — où écrire, le preview, les générés —
+#: n'arrive au prompt compact que par le §2 entier ; le prompt du coffre,
+#: lui, ne porte pas le noyau : sans extraction, un agent qui ne l'ouvre pas
+#: écrit de toute façon.
+REPERE_ECRITURE_DEBUT = re.compile(r"^<!--\s*regle-ecriture\s*:\s*debut\s*-->\s*$",
+                                    re.MULTILINE)
+REPERE_ECRITURE_FIN = re.compile(r"^<!--\s*regle-ecriture\s*:\s*fin\s*-->\s*$",
+                                  re.MULTILINE)
+
+
+def regle_ecriture(racine: Path = RACINE_DEFAUT) -> str:
+    """La règle d'écriture du §2 du contrat, entre ses repères, telle quelle.
+
+    Rend "" quand le coffre n'a pas de noyau — les coffres des tests n'en
+    ont pas — ou quand les repères ont disparu. Ce second cas n'est pas
+    avalé en silence : un test tient le vrai contrat armé, sinon la règle
+    quitterait tous les `AGENTS.md` engendrés sans que rien ne le dise.
+    """
+    try:
+        contrat = (Path(racine) / NOYAU).read_text(encoding="utf-8")
+    except OSError:
+        return ""
+    debut = REPERE_ECRITURE_DEBUT.search(contrat)
+    fin = REPERE_ECRITURE_FIN.search(contrat)
+    if debut is None or fin is None or fin.start() < debut.end():
+        return ""
+    return contrat[debut.end():fin.start()].strip("\n")
+
+
+def charte_de_concision(racine: Path = RACINE_DEFAUT) -> str:
+    """La charte de concision du §10, entre ses repères, telle quelle.
+
+    Une seule copie vivante : le noyau (§5). Rend "" quand le coffre n'a pas
+    de noyau — les coffres des tests n'en ont pas — ou quand les repères ont
+    disparu ; ce second cas n'est pas avalé en silence : un test tient le
+    vrai contrat armé, sinon la charte quitterait tous les `AGENTS.md`
+    engendrés sans que rien ne le dise.
+    """
+    try:
+        contrat = (Path(racine) / NOYAU).read_text(encoding="utf-8")
+    except OSError:
+        return ""
+    debut = REPERE_CHARTE_DEBUT.search(contrat)
+    fin = REPERE_CHARTE_FIN.search(contrat)
+    if debut is None or fin is None or fin.start() < debut.end():
+        return ""
+    return contrat[debut.end():fin.start()].strip("\n")
 
 
 def regle_des_secrets(racine: Path = RACINE_DEFAUT) -> str:
@@ -240,7 +303,8 @@ def reduire_aux_actifs(agents: list[dict], skills: list[dict],
 # --------------------------------------------------------------------- rendu
 
 def construire_prompt(agents: list[dict], skills: list[dict],
-                      taches: list[dict] | None = None, regle: str = "") -> str:
+                      taches: list[dict] | None = None, regle: str = "",
+                      charter: str = "", ecriture: str = "") -> str:
     lignes: list[str] = []
     a = lignes.append
 
@@ -276,10 +340,29 @@ def construire_prompt(agents: list[dict], skills: list[dict],
     # au contrat, mais aucun agent n'ouvre le contrat pour ce cas. Elle vient du
     # contrat (`regle_des_secrets`), elle n'est pas écrite ici : une information
     # vit à un seul endroit (§5).
+    # §2 et §7.3 : la règle d'écriture se pose avant les autres — un agent
+    # qui n'ouvre jamais le noyau écrit de toute façon, et c'est sur les
+    # emplacements qu'une séance dévoyée fait le plus de dégâts (constat au
+    # coffre : un journal posé dans un projet, sans le contrat relu).
+    if ecriture:
+        a("## Écriture dans le coffre (§2, §7.3)")
+        a("")
+        a(ecriture)
+        a("")
+
     if regle:
         a("## Secrets (§4)")
         a("")
         a(regle)
+        a("")
+
+    # §10 : la charte de concision se pose au même endroit, extraite du noyau
+    # plutôt que recopiée — le constat de la phase 2 vaut pour elle aussi, et
+    # la verbosité coûte à chaque réponse, pas une fois par séance.
+    if charter:
+        a("## Concision (§10)")
+        a("")
+        a(charter)
         a("")
 
     if agents:
@@ -303,20 +386,28 @@ def construire_prompt(agents: list[dict], skills: list[dict],
         a("")
         a("Un skill se lit dans `IA/skills/` du dépôt, jamais dans le dossier")
         a("de skills du harness ; il ne se recopie ni ne se lie ailleurs.")
+        a("Ici, la première phrase seulement : le quand et le quand-pas se lisent")
+        a("dans le frontmatter du skill avant de l'ouvrir.")
         a("")
+        from regenerate_index import premiere_phrase   # import tardif : regenerate_index importe ce module
         for sk in skills:
             marque = " [lecture seule]" if sk.get("read_only") else ""
-            desc = sk.get("description", "(sans description)")
+            desc = premiere_phrase(sk.get("description", "(sans description)"))
             a(f"- **{sk['name']}**{marque} — {desc}")
         a("")
 
     if taches:
         a("## Tâches planifiées déclarées")
         a("")
-        a("Registre : IA/tâches/ — il fait foi. Les timers ou planificateurs qui")
-        a("les déclenchent ne sont que des instances reconstructibles (§12).")
-        a("Une tâche = au plus UNE instance vivante : `exécutant` dit qui a le")
-        a("droit de la déclencher, donc qui pas.")
+        a("Registre : IA/tâches/ — il fait foi pour les tâches génériques. Un")
+        a("second registre, privé et non publié, vit dans le coffre parent pour")
+        a("les tâches propres à cette installation — une machine du parc de")
+        a("l'utilisateur, ou son mainteneur ; les deux")
+        a("comptent ensemble pour l'invariant ci-dessous (§12). Les timers ou")
+        a("planificateurs qui les déclenchent ne sont que des instances")
+        a("reconstructibles. Une tâche = au plus UNE instance vivante, tous")
+        a("registres confondus : `exécutant` dit qui a le droit de la")
+        a("déclencher, donc qui pas.")
         a("")
         for ta in taches:
             etat = "" if ta.get("actif") else " [suspendue]"
@@ -403,7 +494,9 @@ def prompt_du_coffre(racine: Path = RACINE_DEFAUT,
                                                       sans_profil=sans_profil)
     if not agents and not skills:
         return None
-    return construire_prompt(agents, skills, taches, regle_des_secrets(racine))
+    return construire_prompt(agents, skills, taches, regle_des_secrets(racine),
+                             charter=charte_de_concision(racine),
+                             ecriture=regle_ecriture(racine))
 
 
 # ------------------------------------------------------------- mode embarqué
@@ -436,9 +529,11 @@ def prompt_embarque(racine: Path = RACINE_DEFAUT,
     §10 : pas de noyau à lire, pas d'index à consulter, pas de skills sur le
     disque. Le prompt porte donc tout ce dont l'agent dispose : un en-tête
     qui dit où il opère, la règle des secrets (même repère que partout,
-    `regle_des_secrets`), et le **corps intégral** du fichier de l'agent —
-    c'est lui, seul, qui doit porter sa méthode, sans renvoi vers ce que la
-    machine ne porte pas.
+    `regle_des_secrets`), le **corps intégral** du fichier de l'agent, et le
+    corps de chaque skill qu'il déclare (`skills:` du frontmatter) — sur une
+    machine sans coffre, un skill ne se charge pas à la demande : son corps
+    doit être inliné d'avance, ou la méthode qu'il porte n'existe nulle part
+    sur le poste.
 
     Le contexte propre au poste — qui le tient, sous quel nom lui parler,
     où vit le carnet — vit dans l'AGENTS.md du carnet, côté coffre parent :
@@ -451,6 +546,7 @@ def prompt_embarque(racine: Path = RACINE_DEFAUT,
     corps = corps_declaratif(chemin)
     if corps is None:
         return None
+    fm_agent = lire_frontmatter(chemin) or {}
 
     lignes: list[str] = []
     a = lignes.append
@@ -474,6 +570,21 @@ def prompt_embarque(racine: Path = RACINE_DEFAUT,
         a("")
 
     a(corps)
+
+    for nom_skill in fm_agent.get("skills") or []:
+        chemin_skill = Path(racine) / "IA" / "skills" / f"{nom_skill}.md"
+        if not chemin_skill.is_file():
+            chemin_skill = Path(racine) / "IA" / "skills" / nom_skill / f"{nom_skill}.md"
+        corps_skill = corps_declaratif(chemin_skill)
+        if corps_skill is None:
+            print(f"  ! skill déclaré mais introuvable, non inliné : {nom_skill}",
+                  file=sys.stderr)
+            continue
+        a("")
+        a("---")
+        a("")
+        a(corps_skill)
+
     return "\n".join(lignes)
 
 
@@ -743,7 +854,9 @@ def main() -> int:
         print("Aucun agent ni skill trouvé. Vérifie --racine.", file=sys.stderr)
         return 1
 
-    prompt = construire_prompt(agents, skills, taches, regle_des_secrets(racine))
+    prompt = construire_prompt(agents, skills, taches, regle_des_secrets(racine),
+                               charter=charte_de_concision(racine),
+                               ecriture=regle_ecriture(racine))
     if args.sortie:
         args.sortie.write_text(prompt + "\n", encoding="utf-8")
         print(f"Écrit : {args.sortie}", file=sys.stderr)

@@ -3,16 +3,17 @@
 Ce dépôt est l'outil OBSIA : agents, skills, tâches planifiées et scripts y
 vivent comme fichiers Markdown. La mémoire, elle, vit dans le coffre parent
 (`Mon coffre/`), sous `0-PROJETS/`, `0-SAVOIRS/`, `0-PERSONNELS/`… (§6, §7.1).
-Applique le contrat et l'index ci-dessous à chaque demande, en plus de ton
+Applique le contrat et l'index des agents ci-dessous à chaque demande, en plus de ton
 comportement habituel de Claude Code.
 
 @IA/system/VAULT-CONTRACT.md
 
 @IA/system/agents-index.md
 
-@IA/system/skills-index.md
-
-@IA/system/taches-index.md
+Les index des skills (`IA/system/skills-index.md`) et des tâches
+(`IA/system/taches-index.md`) ne sont pas chargés d'office : ta fiche d'agent
+liste tes skills. Lis l'index des skills pour un skill hors de ta liste, celui
+des tâches pour une tâche planifiée.
 
 Pour un harness autre que Claude Code (aider, goose, opencode…), régénérer le
 prompt système complet avec `python3 scripts/generer_prompt.py`.

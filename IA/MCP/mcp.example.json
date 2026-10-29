@@ -96,6 +96,13 @@
         "NEXTCLOUD_USERNAME": "compte-personnel",
         "NEXTCLOUD_PASSWORD": "${NEXTCLOUD_APP_PASSWORD}"
       }
+    },
+    "proposer-un-sous-agent": {
+      "type": "http",
+      "url": "http://127.0.0.1:8081/mcp",
+      "headers": {
+        "Authorization": "Bearer ${OBSIA_UI_TOKEN}"
+      }
     }
   }
 }

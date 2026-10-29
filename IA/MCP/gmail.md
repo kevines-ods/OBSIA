@@ -58,17 +58,24 @@ Dans la console Google Cloud, « Google Auth Platform » :
    d'abord l'accès de l'application sur la page des autorisations du compte
    Google, sinon aucun nouveau jeton de rafraîchissement n'est délivré.
 
-## Réautoriser depuis une machine sans navigateur
+## Réautoriser
 
 La commande `auth` du serveur écoute sur `localhost:3000`, **sur la machine où
-elle tourne**, et Google y renvoie le navigateur. Depuis une VM :
+elle tourne**, et Google y renvoie le navigateur.
 
-1. lancer `npx @gongrzhe/server-gmail-autoauth-mcp auth` sur la VM, en
-   arrière-plan ;
-2. ouvrir l'URL affichée sur son poste et autoriser ;
+**Même machine, navigateur disponible** : lancer
+`npx @gongrzhe/server-gmail-autoauth-mcp auth`, suivre le lien ouvert, et
+autoriser — rien de plus.
+
+**Machine distincte de celle où s'ouvre le navigateur** (serveur sans
+interface, machine distante) :
+
+1. lancer `npx @gongrzhe/server-gmail-autoauth-mcp auth` sur la machine qui
+   porte le serveur, en arrière-plan ;
+2. ouvrir l'URL affichée sur son propre poste et autoriser ;
 3. le navigateur échoue sur `http://localhost:3000/oauth2callback?code=…` :
-   c'est attendu. Rejouer cette URL **sur la VM**, avec `curl`, avant
-   l'expiration du code (quelques minutes).
+   c'est attendu. Rejouer cette URL **sur la machine qui porte le serveur**,
+   avec `curl`, avant l'expiration du code (quelques minutes).
 
 Vérifier ensuite que le jeton écrit contient bien un `refresh_token`, puis
 faire un appel réel.

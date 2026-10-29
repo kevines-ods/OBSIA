@@ -59,7 +59,10 @@ JAMAIS = ("obsia.local.yml", "prompt-systeme.md", ".env", "mcp.json", ".mcp.json
 #: tient sans rien ajouter : `regenerate_index.py` tourne sur l'export, donc
 #: les index n'y citent jamais un fichier absent — et `verifier_coffre.py`
 #: refuserait au public un chemin vers lui.
-NON_PUBLIES = ("IA/agents/administrateur-mint.md",)
+#:
+#: Aucun fichier n'est exclu aujourd'hui ; le mécanisme reste, éprouvé par
+#: un cas synthétique.
+NON_PUBLIES: tuple[str, ...] = ()
 
 #: Ce qui trahit un coffre vivant du côté de la cible. `synchroniser` efface
 #: tout ce que la cible contient hors `.git/` : lui donner un coffre de travail,

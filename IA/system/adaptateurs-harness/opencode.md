@@ -193,6 +193,24 @@ sans compactage. **Prévoir 65 536 déclarés au minimum** pour un modèle local
 gpt-oss-20b qui porte le prompt OBSIA — et lire la fenêtre **servie**
 (`/v1/models`), pas celle espérée.
 
+### Délégation en lecture — le profil du skill `delegation-locale`
+
+Le profil « le modèle lit lui-même » de `delegation-locale` se pose ainsi,
+dans la configuration **globale** (la v2 ignore `OPENCODE_CONFIG`, §9) :
+un fournisseur local, et un agent dédié dont `bash`, `edit`, `write`,
+`patch`, `task` et `webfetch` sont à `false`, avec `permission` à `deny`.
+Constaté le 2026-10-23 :
+
+- le champ `model` de l'agent est **ignoré** : lancer avec `--agent <agent>`
+  **et** `-m <fournisseur>/<modèle>`, sinon le modèle par défaut répond —
+  éventuellement distant ;
+- la ligne `> <agent> · <modèle>` de `opencode run` dit quel modèle a servi :
+  la lire à chaque appel ;
+- modifier la configuration demande de **redémarrer** le service
+  d'arrière-plan (`opencode serve --service`) avant de conclure ;
+- privé de l'outil d'écriture, un petit modèle **boucle** au lieu de refuser :
+  ne jamais lui demander d'écrire.
+
 ## 6. Mode serveur et accès distant
 
 ```bash
