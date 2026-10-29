@@ -142,7 +142,7 @@ module: noyau
   en attente. Un carnet écrit après coup ne sert pas à reprendre : entre la
   dernière ligne et la coupure, il y a un trou que rien ne comble. Un
   chantier qui touche plusieurs projets écrit dans le carnet du projet
-  `obsia`.
+  `obsia`, sauf ce qui décrit un projet de l'utilisateur.
 
 - **Un chantier est un dossier à lui.** Sous son projet :
   `0-PROJETS/<projet>/<chantier>/`, avec ses `carnets/`, ses `documents/` et son

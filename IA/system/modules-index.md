@@ -11,15 +11,15 @@
 | [deploiement](modules/deploiement.md) | non | 1 | — | noyau, construction, conteneurs, controle-des-sauvegardes | Empaqueter une application et la mettre en ligne derrière un reverse proxy — image, compose, labels de routage, secrets hors dépôt, retour arrière écrit d'avance. |
 | [diagrammes](modules/diagrammes.md) | non | 1 | `commande:docker`, `commande:podman`, `commande:npx`, `commande:mmdc` | noyau | Rendu de diagrammes Mermaid en SVG — flux, séquences, états, classes, entités. |
 | [documents](modules/documents.md) | non | 2 | — | noyau | Documents bureautiques et PDF — lire, produire, convertir, extraire, remplir des formulaires, appliquer l'OCR. |
-| [linux-poste](modules/linux-poste.md) | non | 2 | `commande:systemctl`, `commande:journalctl` | noyau | Diagnostiquer et corriger un système Linux — services, journaux, charge, disque, mémoire, réseau. |
+| [linux-poste](modules/linux-poste.md) | non | 5 | `commande:systemctl`, `commande:journalctl`, `distribution:cachyos` | noyau | Diagnostiquer et corriger un système Linux — services, journaux, charge, disque, mémoire, réseau ; optimisation et entretien propres à CachyOS. |
 | [messagerie](modules/messagerie.md) | non | 1 | — | noyau | Lire, chercher et envoyer des courriels depuis une boîte Gmail — documents produits joints, envoi toujours confirmé. |
 | [modeles-locaux](modules/modeles-locaux.md) | non | 2 | `commande:llama-server`, `commande:llama-swap`, `commande:ollama` | noyau | Délégation de tâches simples à un modèle local servi par une API compatible OpenAI, sans lui transmettre le contexte du coffre. |
 | [navigateur](modules/navigateur.md) | non | 2 | `commande:chromium`, `commande:google-chrome`, `commande:google-chrome-stable` | noyau, construction | Vérifier une interface dans un vrai navigateur — DOM rendu, erreurs de console, requêtes réseau, capture d'écran, arbre d'accessibilité. |
-| [planification](modules/planification.md) | non | 5 | `commande:systemctl` | noyau | Tâches planifiées — registre `IA/tâches/`, instanciation en timers, réconciliation après un changement de machine ou de harness. |
-| [poste-cachyos](modules/poste-cachyos.md) | non | 1 | `distribution:cachyos` | noyau, linux-poste | Optimiser un poste CachyOS — noyau et ordonnanceur, mémoire, btrfs et snapper, réseau, jeu, nettoyage. |
+| [planification](modules/planification.md) | non | 3 | `commande:systemctl` | noyau | Tâches planifiées — registre `IA/tâches/`, instanciation en timers, réconciliation après un changement de machine ou de harness. |
 | [recherche-web](modules/recherche-web.md) | non | 1 | — | noyau | Recherche web par un méta-moteur auto-hébergé — SearXNG, sans compte ni traçage. |
 | [revue](modules/revue.md) | non | 4 | — | noyau | Relecture adverse en lecture seule absolue — chercher ce qui cloche dans un diff, auditer la sécurité d'un projet entier, et cross-examiner une décision avant qu'elle tienne. |
 | [services-nextcloud](modules/services-nextcloud.md) | non | 1 | — | noyau | Agenda, tâches, notes et contacts sur une instance Nextcloud auto-hébergée — consulter, planifier et noter sans dépendre d'un service tiers. |
+| [sous-agents](modules/sous-agents.md) | non | 1 | — | noyau | Proposer, depuis OBSIA-UI, un sous-agent à contexte minimal qui lit pour l'agent appelant et ne part qu'après validation de l'utilisateur. |
 | [virtualisation](modules/virtualisation.md) | non | 2 | `commande:pvesh`, `fichier:/etc/pve` | noyau, linux-poste | Inspecter un hôte Proxmox en lecture seule — VM, conteneurs LXC, stockage, ressources — puis y agir sous annonce — créer des machines, régler le démarrage, poser des hookscripts. |
 
 > Ce fichier montre le **catalogue complet** : versionné, il ne dépend

@@ -217,11 +217,13 @@ GENRES_TENUS_A_PART = frozenset((
 
 #: Les genres ouverts à la **tenue au fil de l'eau** (§7.3, phase 5) : les carnets,
 #: que le contrat reconnaît comme des notes que l'agent **tient sur place** au même
-#: titre que son `` — résumé`` ou sa `` — vision``. On peut donc y ajouter une étape
+#: titre que son `` — résumé`` ou sa `` — vision``, et le registre privé des tâches
+#: planifiées, à plat, ouvert à tout agent (§12). On peut donc y ajouter une étape
 #: par ``compléter``, sous les mêmes garanties qu'ailleurs (ajout en fin seulement,
 #: frontmatter intact, tags du vocabulaire).
 GENRES_TENUS_AU_FIL_DE_L_EAU = frozenset((
     "un carnet de projet", "un carnet de chantier",
+    "une tâche planifiée du coffre",
 ))
 
 
@@ -360,7 +362,8 @@ def completer_une_note(coffre, *, auteur: str, source: str, texte: str,
             and _libelle_de_zone(zone, nom) not in GENRES_TENUS_AU_FIL_DE_L_EAU):
         return refuse("compléter n'est pas encore ouvert à la zone `%s` : la complétion "
                       "se limite au vrac, aux savoirs, au registre de maintenance et à "
-                      "la tenue au fil de l'eau des carnets (§7.3)" % zone, chemin)
+                      "la tenue au fil de l'eau des carnets et des tâches planifiées "
+                      "(§7.3)" % zone, chemin)
 
     impossible, dossier_git = _prealable(coffre)
     if impossible is not None:

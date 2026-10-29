@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: administration-proxmox
-description: Agir sur un hôte Proxmox — créer une VM ou un conteneur LXC, régler le démarrage automatique et son ordre, poser un hookscript, monter un partage NFS dans un conteneur, injecter une clé ou exécuter une commande dans un invité, épingler des vCPU. À charger après un constat de `proxmox`, dès qu'une commande `qm`, `pct` ou `pvesm` doit modifier l'état.
+description: Agir sur un hôte Proxmox — créer une VM ou un conteneur LXC, régler le démarrage automatique et son ordre, poser un hookscript, monter un partage NFS dans un conteneur, exécuter une commande dans un invité (annoncée, accordée, jamais un accréditif), épingler des vCPU. À charger après un constat de `proxmox`, dès qu'une commande `qm`, `pct` ou `pvesm` doit modifier l'état.
 module: virtualisation
 type: outil
 read_only: false
@@ -123,6 +123,11 @@ qm set <id> -hookscript local:snippets/mon-hook.sh      # ou pct set
 
 ## Agir dans un invité sans SSH
 
+Ces canaux exécutent **en root** dans l'invité : chaque commande y passe
+annoncée, validée par l'utilisateur, une à une — et ils ne réparent jamais
+un accès qui refuse (politique de l'administrateur, tableau
+d'autorisation). Aucun d'eux ne pose ni ne change un accréditif.
+
 - **LXC** : `pct push <id> <fichier> <chemin> --perms 600`, puis
   `pct exec <id> -- bash -c "…"`, ou `pct enter <id>`.
 - **VM** : agent QEMU —
@@ -133,10 +138,10 @@ qm set <id> -hookscript local:snippets/mon-hook.sh      # ou pct set
   L'agent **ré-encode en base64** l'`input-data` : lui passer du brut.
 - Sur une VM Fedora avec **SELinux en `Enforcing`**, l'agent tourne en
   `virt_qemu_ga_t` et **ne peut pas lire `/home`**, même en root : passer par SSH.
-- Injecter une clé SSH ainsi, sans mot de passe ni redémarrage : l'ajouter à
-  `/root/.ssh/authorized_keys`, puis compter les clés avec
-  `ssh-keygen -lf <fichier> | wc -l` (un fichier sans saut de ligne final
-  trompe `wc -l`).
+- **Une clé SSH dans `authorized_keys`, un mot de passe** sont des
+  **accréditifs** : ne jamais les poser, même à la demande — en écrire la
+  commande exacte, l'utilisateur l'exécute lui-même. Rien à y faire par ces
+  canaux, quelle que soit la panne.
 - La **console du nœud** et celle de l'**invité** sont distinctes dans l'UI et
   l'application mobile : vérifier où l'on tape avant de coller une clé.
 

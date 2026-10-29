@@ -57,7 +57,7 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | 2.1 | Un agent `read_only: true` n'écrit nulle part. | N |
 | 2.2 | Trois zones en écriture directe : `brouillon/` ; la mémoire du coffre parent (`0-PERSONNELS/`, `0-SAVOIRS/`, le résumé et les carnets de son chantier) sauf le dossier d'un autre agent ; `IA/skills/` si `createur-de-skill` est déclaré. | N |
 | 2.3 | Tout le reste du dépôt passe par un patch Git revu. | N |
-| 2.4 | Aucune suppression sans archivage : pour la mémoire, **l'historique Git du dépôt de données tient lieu d'archive** ; pour le reste du dépôt produit, un fichier retiré part dans `.archive/`, qui reste **versionné** (jamais ignoré par Git). Rien de `.archive/` n'est lu ni indexé ; les dossiers commençant par un point sont écartés partout. | N |
+| 2.4 | Aucune suppression sans archivage : pour la mémoire, **l'historique Git du dépôt de données tient lieu d'archive** ; pour le reste du dépôt produit, un fichier retiré part dans `.archive/`, qui reste **versionné** (jamais ignoré par Git). Rien de `.archive/` n'est lu ni indexé ; les dossiers commençant par un point sont écartés partout. | Relecture 2026-10-21 : A·verification — un outil la tient (les dossiers en `.` sont écartés partout) |
 | 2.5 | Le pourquoi de `.archive/` versionné (sinon il ne survit pas à un clone neuf). | A·verification |
 | 2.6 | Un aperçu listant les chemins, avant toute action qui touche plusieurs fichiers — hors l'écriture portée par un outil déclaré en MCP, pour un harnais pilotant un modèle local, à condition que chaque acte forme un commit annulable (§7.4). | N |
 | 2.7 | Les fichiers générés ne s'éditent jamais à la main. La liste : `sommaire.md`, `agents-index.md`, `skills-index.md`, `taches-index.md`, `modules-index.md`, `IA/README.md`. | N (liste complète gardée, M10) |
@@ -109,14 +109,14 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | 6.4 | Tableau « où écrire selon la nature de l'information ». | A·memoire (le noyau renvoie à l'annexe) |
 | 6.5 | Profil, préférences et expériences ne se datent pas ; seuls les carnets portent une date. Dans le doute, on écrit dans le carnet. | N |
 | 6.6 | `0-PROJETS/` porte **tout** projet — du coffre comme de l'utilisateur ; `code/` y est exclu du dépôt de mémoire. | N |
-| 6.7 | Un projet du coffre passe par une PR, demande comprise : la description porte la demande et le résumé de séance, jamais la mémoire ni un chemin du coffre parent ; relecture à trois. | N |
-| 6.8 | Le carnet : son nom, son frontmatter (`agent`, `projet`, `statut`), son contenu, l'étape écrite **avant** d'agir, son dossier — celui du chantier, ou celui du projet pour une séance sans chantier —, un chantier transverse dans `obsia` sauf la part personnelle. | N |
-| 6.9 | Une séance sans chantier n'a de carnet du jour que si un travail reste en suspens ; sinon, ses actions vont au journal de `_MAINTENANCE/`. Un agent en lecture seule n'écrit aucun carnet. | N ; détail `A·memoire` |
-| 6.10 | Reprise : chercher dans l'arbre principal et dans chaque worktree lié, par nom d'agent, rapprocher le carnet de l'état réel, laisser l'utilisateur choisir ; pendant la bascule, aux anciens emplacements aussi. | N |
+| 6.7 | Un projet du coffre passe par une PR, demande comprise : la description porte la demande et le résumé de séance, jamais la mémoire ni un chemin du coffre parent ; relecture à trois. | Relecture 2026-10-21 : N pour « demande et résumé, jamais un chemin du coffre parent ni un nom de personne ou de client » et pour la relecture à trois d'un changement qui touche la base (décision de l'utilisateur) ; le reste (carnet hors PR) `A·memoire` |
+| 6.8 | Le carnet : son nom, son frontmatter (`agent`, `projet`, `statut`), son contenu, l'étape écrite **avant** d'agir, son dossier — celui du chantier, ou celui du projet pour une séance sans chantier —, un chantier transverse dans `obsia` sauf la part personnelle. | Relecture 2026-10-21 : N pour « un par chantier, au fil de l'eau, étape écrite avant d'agir » ; nom, frontmatter, contenu, dossier et chantier transverse `A·memoire` |
+| 6.9 | Une séance sans chantier n'a de carnet du jour que si un travail reste en suspens ; sinon, ses actions vont au journal de `_MAINTENANCE/`. Un agent en lecture seule n'écrit aucun carnet. | Relecture 2026-10-21 : N pour « un agent en lecture seule n'écrit aucun carnet » ; la séance sans chantier `A·memoire` |
+| 6.10 | Reprise : chercher dans l'arbre principal et dans chaque worktree lié, par nom d'agent, rapprocher le carnet de l'état réel, laisser l'utilisateur choisir ; pendant la bascule, aux anciens emplacements aussi. | Relecture 2026-10-21 : N au §10, étape 0 (worktrees liés et rapprochement avec l'état réel) ; le §6 n'y renvoie plus qu'en une ligne ; procédure `cloture-de-session` |
 | 6.11 | Le carnet se commite à chaque étape. | N |
 | 6.12 | Transition : l'ancienne forme ne veut pas dire « sans historique », et pendant la bascule carnets, projets et notes personnelles se cherchent à tout emplacement qui existe, dans l'ordre — `0-PROJETS/`, l'ancien nom `-PROJETS/`, l'ancien `mémoire/projets/` du dépôt ; le profil sous `0-PERSONNELS/`, `-PERSONNELS/`, `mémoire/` ; les préférences et les expériences sous `0-MEMOIRES/`, puis `0-PERSONNELS/`, `-PERSONNELS/`, `mémoire/`. | A·memoire (l'ordre détaillé ; le noyau garde la clause datée — chantier `souverainete-des-donnees`, au plus tard le 2026-12-31 — et le renvoi) |
-| 6.13 | Clôture : le résumé devient un bilan avec une section « État », le dossier entier du chantier gèle dans `0-MEMOIRES/`, le durable remonte avant. | N pour le gel et la distillation avant ; le bilan « État » et le déplacement A·memoire (2026-10-10) |
-| 6.14 | Rien de ce qui décrit l'utilisateur ne vit chez un agent ; tout agent `read_only: false` corrige sur place le profil (`0-PERSONNELS/`) et les préférences (`0-MEMOIRES/préférences/`, dossier commun, jamais sous le nom d'un agent). | N |
+| 6.13 | Clôture : le résumé devient un bilan avec une section « État », le dossier entier du chantier gèle dans `0-MEMOIRES/`, le durable remonte avant. | Relecture 2026-10-21 : N pour le gel et la distillation avant ; réouverture et domaine dormant `A·memoire` |
+| 6.14 | Rien de ce qui décrit l'utilisateur ne vit chez un agent ; tout agent `read_only: false` corrige sur place le profil (`0-PERSONNELS/`) et les préférences (`0-MEMOIRES/préférences/`, dossier commun, jamais sous le nom d'un agent). | Relecture 2026-10-21 : N, mot pour mot pour la correction sur place ; « dossier commun, jamais sous le nom d'un agent » passe au §7.3 |
 | 6.15 | Pourquoi un projet ne vit pas chez un agent ; agent en lecture seule sans espace mémoire (`0-MEMOIRES/<nom-agent>/`). | A·memoire (règle gardée au 6.9) |
 | 6.16 | Le nom d'une note dit son sujet. | N |
 | 6.17 | Noms de projets explicites ; jamais `agent 1` ni `projets 1`. Un projet ne peut porter ni `préférences` ni le nom d'un agent : la collision rendrait la mémoire des agents indistinguable d'un chantier gelé, et le contrôle refuse. | N (revue N2) |
@@ -146,6 +146,7 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | 7.18 | Accès du harness : il doit lire et écrire à la racine du coffre parent. Lire la fiche `IA/MCP/coffre-parent.md` avant d'appeler ses outils. | N |
 | 7.19 | `0-EN-VRAC/` est un tampon, vidé à chaque rangement. Une note d'`0-EN-VRAC/` n'est jamais une cible de rétrolien stable. | N (M : rétabli) |
 | 7.20 | Le pourquoi de chaque zone, le lien avec les skills `traitement-des-notes` et `adaptateurs-harness`. | A·coffre-parent |
+| 7.21 | Dans `0-MEMOIRES/`, seule la moitié gelée est intouchable : un dossier de chantier clos y entre tel quel et n'en bouge plus. | Relecture 2026-10-21 : A·coffre-parent — doublon du §6 (Clôture), qui garde la règle |
 
 ## §8 Sources
 
@@ -186,6 +187,7 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | 11.6 | Le crochet de pré-commit s'active une fois par clone — `installer.py --appliquer` l'arme (`git config core.hooksPath .githooks`). | A·verification (le noyau renvoie à l'annexe) |
 | 11.7 | CI, `--no-verify`, `evaluer_modele.py`, bibliothèque standard seule. | A·verification |
 | 11.8 | Le noyau a un plafond en mots, déclaré à un **seul** endroit (`CONSTRAINTS.md`, ligne « Noyau du contrat ») et contrôlé à chaque passage : sa taille, le plafond et l'écart s'affichent ; le relever se décide dans une PR. Une clause datée du noyau est signalée — **échue** comme **illisible** (`2028-02-30`). | N (nouveau) ; motifs A·verification |
+| 11.9 | Les index sont versionnés, donc canoniques : ils décrivent le catalogue entier et ne se réduisent jamais au profil, qui ne touche que le non versionné. | Relecture 2026-10-21 : N en une ligne (le catalogue entier, jamais réduit au profil ; le vérificateur refuse un index pas à jour) ; le pourquoi `A·verification` |
 
 ## §12 Tâches planifiées
 

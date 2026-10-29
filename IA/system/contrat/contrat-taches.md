@@ -17,9 +17,21 @@ module: noyau
 ## 12. Tâches planifiées
 
 Une tâche planifiée est déclarée **dans le coffre**, jamais seulement chez
-celui qui l'exécute. Le fichier `IA/tâches/<nom>.md` est la source de vérité ;
+celui qui l'exécute. Deux emplacements, selon ce que la tâche fait :
+
+| La tâche… | Vit dans | Écriture |
+| --- | --- | --- |
+| est générique — elle vaudrait pour toute installation d'OBSIA | `IA/tâches/<nom>.md` (dépôt produit) | patch Git revu |
+| est **propre à cette installation** — elle sert, nomme un rôle d'une machine précise du parc de l'utilisateur, ou n'a de sens que pour le mainteneur de ce coffre (une publication depuis son dépôt privé, par exemple) — rien qui vaudrait pour toute installation d'OBSIA | `Mon coffre/0-PROJETS/tâches-planifiées/<nom>.md` (coffre parent) | écriture directe tracée (§7.4) |
+
+Le fichier retrouvé, où qu'il soit, est la source de vérité pour cette tâche ;
 le timer systemd, le planificateur du harness ou le cron de la machine n'en
-sont que des **instances** — jetables, reconstructibles.
+sont que des **instances** — jetables, reconstructibles. Le registre du coffre
+ne se publie pas (`publier.py` n'atteint pas le coffre parent, §13.5) : il fait
+foi pour ses propres tâches sans jamais apparaître dans le miroir public.
+`IA/system/taches-index.md`, généré et versionné, ne liste donc que
+`IA/tâches/` ; une ligne y signale qu'un registre privé existe, sans nommer ses
+tâches.
 
 Le motif est le même qu'au §11 pour les index : ce qui n'existe qu'à un seul
 endroit se perd sans que rien ne le signale. Sans registre, changer de harness
@@ -27,7 +39,7 @@ ou de machine efface silencieusement des tâches dont plus personne ne connaît
 l'existence. Avec registre, la perte se répare : on relit le registre et on
 ré-instancie.
 
-Trois règles en découlent :
+Cinq règles en découlent :
 
 - **Le registre déclare une intention, jamais un état.** Ni identifiant
   d'instance, ni nom de machine, ni date du dernier déclenchement : ces
@@ -41,6 +53,11 @@ Trois règles en découlent :
   fois — et la réconciliation, qui ne regarderait qu'un seul exécutant,
   fabriquerait elle-même le doublon en croyant réparer un manque. Le champ
   `exécutant` du §5 tranche d'avance : il dit qui, et donc qui pas.
+- **Un même nom ne se déclare pas aux deux emplacements.** Les deux registres
+  comptent ensemble pour l'invariant ci-dessus : un nom présent à la fois dans
+  `IA/tâches/` et dans le registre du coffre est un doublon de déclaration,
+  même sans instance — le skill `cron` le signale en listant les deux côtés
+  avant d'agir.
 - **Une instance porte le nom de sa tâche, préfixé `obsia-`.** C'est la seule
   clé qui permette de rapprocher registre et exécutant quel que soit ce
   dernier ; le préfixe distingue au passage ce qui vient du coffre de ce que
@@ -48,9 +65,12 @@ Trois règles en découlent :
 - **L'instruction d'une tâche est auto-suffisante.** Au déclenchement il n'y a
   plus de conversation : le corps du fichier est tout ce qui sera reçu.
 
-Créer, modifier ou suspendre une tâche touche `IA/tâches/` : **patch Git revu**
-(§2). Instancier ou retirer une instance chez l'exécutant est une action à
-effet externe : une ligne horodatée au carnet (§9).
+Créer, modifier ou suspendre une tâche du dépôt touche `IA/tâches/` : **patch
+Git revu** (§2) ; une tâche propre à cette installation touche le registre
+privé du coffre :
+**écriture directe tracée** (§7.4 de `contrat-coffre-parent`). Instancier ou
+retirer une instance chez l'exécutant est une action à effet externe : une
+ligne horodatée au carnet (§9).
 
 `IA/system/taches-index.md` en est l'index généré, toujours présent en
 contexte : c'est par lui qu'un harness neuf apprend qu'une tâche existe.

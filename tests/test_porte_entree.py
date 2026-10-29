@@ -491,6 +491,13 @@ class TestMatriceDuContratALaPorte(unittest.TestCase):
         self.assertFalse(v.accepte)
         self.assertIn("visionnaire", v.refus.constat)
 
+    def test_une_tache_planifiee_du_coffre_est_acceptee_a_tout_agent(self):
+        # §12 : le registre privé des tâches liées au parc de machines, pas
+        # un projet — à plat, ouvert à tout agent qui écrit.
+        v = self.juger("0-PROJETS/tâches-planifiées", "tache-exemple",
+                       "assistant", nature=NATURE_CREER)
+        self.assertTrue(v.accepte, v.refus)
+
     def test_les_experiences_d_un_agent_sont_refusees_a_un_autre(self):
         v = self.juger("0-MEMOIRES/batisseur/expériences", "lecon-docker",
                        "assistant", nature=NATURE_CREER)

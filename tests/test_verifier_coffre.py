@@ -22,6 +22,7 @@ SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 sys.path.insert(0, str(SCRIPTS))        # `scripts/` n'est pas un paquet
 
 import regenerate_index as RI           # noqa: E402
+import regenerate_sommaire as RS        # noqa: E402
 import verifier_coffre as VC            # noqa: E402
 
 DEFAUT = {"schema": "1", "read_only": "false", "module": "noyau"}
@@ -306,6 +307,141 @@ class TestFicheMcpSansModule(BaseVerificateur):
         VC.verifier_appartenance(modules, [], [], mcp, [])
 
         self.assertTrue(VC.erreurs, "aucune erreur levée pour une fiche sans module")
+
+
+TACHE_TEST = """---
+schema: 1
+kind: tâche
+name: %s
+description: Tâche de test.
+module: noyau
+mode: commande
+quand: "0 * * * *"
+fuseau: Europe/Paris
+exécutant: local
+actif: true
+---
+
+## Commande
+
+```bash
+true
+```
+"""
+
+
+class TestTachesCoffre(BaseVerificateur):
+    """§12 : le registre privé du coffre, et son invariant avec `IA/tâches/`."""
+
+    def test_le_sommaire_genere_est_ignore(self):
+        # `regenerate_sommaire.py` pose un `sommaire.md` sans frontmatter sous
+        # tout dossier de `0-PROJETS/` (§11) — le registre n'y échappe pas,
+        # et ce n'est pas une tâche à juger, à condition qu'il porte sa
+        # marque de fichier généré.
+        self.ecrire_coffre(
+            "0-PROJETS/tâches-planifiées/sommaire.md",
+            "# Sommaire — tâches-planifiées\n\n"
+            "> Généré par `scripts/regenerate_sommaire.py` depuis le contenu "
+            "des notes.\n")
+        resultats = VC.verifier_taches_coffre([], [])
+        self.assertEqual(resultats, [])
+        self.assertEqual(VC.erreurs, [])
+
+    def test_un_sommaire_md_sans_sa_marque_nest_pas_exempte(self):
+        # Un fichier nommé `sommaire.md` mais sans la marque du générateur
+        # n'est pas forcément ce qu'il prétend être : il reste jugé comme
+        # une tâche, et refusé pour de bonnes raisons.
+        self.ecrire_coffre("0-PROJETS/tâches-planifiées/sommaire.md",
+                          "# Pas vraiment un sommaire généré\n")
+        VC.verifier_taches_coffre([], [])
+        self.assertTrue(VC.erreurs, "sommaire.md sans marque jugé exempté à tort")
+
+    def test_sommaire_et_deux_taches_une_valide_une_malformee(self):
+        self.ecrire_coffre(
+            "0-PROJETS/tâches-planifiées/sommaire.md",
+            "# Sommaire — tâches-planifiées\n\n"
+            "> Généré par `scripts/regenerate_sommaire.py` depuis le contenu "
+            "des notes.\n")
+        self.ecrire_coffre("0-PROJETS/tâches-planifiées/gamma.md", TACHE_TEST % "gamma")
+        # Frontmatter non fermé : `lire_frontmatter` rend `None`, et c'est le
+        # seul cas où `verifier_taches` exclut le fichier de ses résultats
+        # plutôt que de l'y garder malgré l'erreur.
+        self.ecrire_coffre("0-PROJETS/tâches-planifiées/delta.md",
+                          "---\nschema: 1\nkind: tâche\nname: delta\n")
+        resultats = VC.verifier_taches_coffre([], [])
+        self.assertEqual([t["name"] for t in resultats], ["gamma"])
+        self.assertEqual(len(VC.erreurs), 1)
+        self.assertIn("delta", VC.erreurs[0])
+
+    def test_le_vrai_generateur_produit_un_sommaire_exempte(self):
+        """Relie le générateur et le vérificateur : pas un sommaire écrit à la
+        main pour simuler la marque, mais celui que `regenerate_sommaire.py`
+        produit réellement sur le registre privé du coffre."""
+        self.ecrire_coffre("0-PROJETS/tâches-planifiées/gamma.md", TACHE_TEST % "gamma")
+        avant = (RS.RACINE, RS.COFFRE, RS.ANCIENNE_MEMOIRE)
+        self.addCleanup(lambda: setattr(RS, "RACINE", avant[0]))
+        self.addCleanup(lambda: setattr(RS, "COFFRE", avant[1]))
+        self.addCleanup(lambda: setattr(RS, "ANCIENNE_MEMOIRE", avant[2]))
+        RS.RACINE = str(self.racine)
+        RS.COFFRE = str(self.parent)
+        RS.ANCIENNE_MEMOIRE = str(self.racine / "mémoire")
+        code = RS.main([])
+        self.assertEqual(code, 0, "le générateur a échoué")
+        sommaire = self.parent / "0-PROJETS" / "tâches-planifiées" / "sommaire.md"
+        self.assertTrue(sommaire.is_file(), "le générateur n'a pas écrit de sommaire")
+
+        resultats = VC.verifier_taches_coffre([], [])
+        self.assertEqual([t["name"] for t in resultats], ["gamma"])
+        self.assertEqual(VC.erreurs, [])
+
+    def test_une_tache_du_coffre_sans_doublon_passe(self):
+        self.ecrire_coffre("0-PROJETS/tâches-planifiées/gamma.md", TACHE_TEST % "gamma")
+        resultats = VC.verifier_taches_coffre([{"name": "alpha"}], [])
+        self.assertEqual([t["name"] for t in resultats], ["gamma"])
+        self.assertEqual(VC.erreurs, [])
+
+    def test_un_nom_declare_aux_deux_registres_est_refuse(self):
+        self.ecrire_coffre("0-PROJETS/tâches-planifiées/alpha.md", TACHE_TEST % "alpha")
+        VC.verifier_taches_coffre([{"name": "alpha"}], [])
+        self.assertTrue(VC.erreurs, "doublon de nom non signalé")
+        self.assertIn("alpha", self.erreurs_texte())
+
+    def test_module_reste_exige_dans_le_registre_du_coffre(self):
+        # §5 : `module` est obligatoire sur toute déclaration, celle-ci
+        # comprise — seule la confrontation au catalogue installable (§13)
+        # ne s'y applique pas.
+        self.ecrire_coffre("0-PROJETS/tâches-planifiées/gamma.md",
+                          TACHE_TEST.replace("module: noyau\n", "") % "gamma")
+        VC.verifier_taches_coffre([], [])
+        self.assertTrue(VC.erreurs, "`module` manquant non signalé")
+        self.assertIn("module", self.erreurs_texte())
+
+    def test_module_n_est_pas_confronte_au_catalogue(self):
+        # `verifier_taches_coffre` ne passe jamais ses résultats à
+        # `verifier_appartenance` : un `module` qui n'existe dans aucun
+        # catalogue de IA/system/modules/ n'est donc pas une erreur ici.
+        self.ecrire_coffre("0-PROJETS/tâches-planifiées/gamma.md",
+                          TACHE_TEST.replace("module: noyau", "module: inexistant") % "gamma")
+        VC.verifier_taches_coffre([], [])
+        self.assertEqual(VC.erreurs, [])
+
+    def test_absent_rend_une_liste_vide_sans_erreur(self):
+        # Pas de coffre parent sur cette machine (CI, démo) : aucun
+        # avertissement — il n'y a rien à y chercher.
+        resultats = VC.verifier_taches_coffre([], [])
+        self.assertEqual(resultats, [])
+        self.assertEqual(VC.erreurs, [])
+        self.assertEqual(VC.avertissements, [])
+
+    def test_coffre_present_sans_registre_avertit(self):
+        # Le coffre parent existe (marqueurs présents), mais sans
+        # `0-PROJETS/tâches-planifiées/`.
+        (self.parent / "0-SAVOIRS").mkdir(parents=True)
+        resultats = VC.verifier_taches_coffre([], [])
+        self.assertEqual(resultats, [])
+        self.assertEqual(VC.erreurs, [])
+        self.assertTrue(VC.avertissements, "aucun avertissement pour un registre absent")
+        self.assertIn("tâches-planifiées", self.avertissements_texte())
 
 
 class TestProfilFautif(BaseVerificateur):

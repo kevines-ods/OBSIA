@@ -10,7 +10,7 @@ read_only: false
 
 # Skill — Traefik
 
-Reverse proxy de la VM Debian. Composant qui casse silencieusement : quand
+Reverse proxy de la machine. Composant qui casse silencieusement : quand
 Traefik échoue, il renvoie une erreur HTTP propre sans rien écrire d'évident
 dans les journaux.
 

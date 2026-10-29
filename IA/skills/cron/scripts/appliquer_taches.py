@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Applique le registre `IA/tâches/` aux timers systemd utilisateur.
+Applique les registres `IA/tâches/` et, s'il existe, celui du coffre parent
+(`Mon coffre/0-PROJETS/tâches-planifiées/`) aux timers systemd utilisateur.
 
-Le registre fait foi (VAULT-CONTRACT.md §12) ; ce script en tire les instances
+Les deux registres font foi, ensemble (VAULT-CONTRACT.md §12) ; ce script en tire les instances
 locales et rapporte les écarts. Il ne touche QUE les unités préfixées
 `obsia-` : ce que l'utilisateur a planifié par ailleurs ne le regarde pas.
 
@@ -17,6 +18,7 @@ dans l'outillage du coffre, qui doit rester vérifiable sans rien installer.
 Usage :
     python3 IA/skills/cron/scripts/appliquer_taches.py             # aperçu
     python3 IA/skills/cron/scripts/appliquer_taches.py --appliquer
+    python3 IA/skills/cron/scripts/appliquer_taches.py --tache NOM [--appliquer]
     python3 IA/skills/cron/scripts/appliquer_taches.py --config    # gabarit
 """
 
@@ -33,8 +35,42 @@ RACINE = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(RACINE / "scripts"))
 
 from generer_prompt import lire_frontmatter          # noqa: E402  (après sys.path)
+from modules import MARQUEURS_COFFRE                 # noqa: E402  (même liste que l'installeur)
+
+
+def _est_un_coffre_parent(chemin: Path) -> bool:
+    try:
+        noms = set(os.listdir(chemin))
+    except OSError:
+        return False
+    return bool(noms & set(MARQUEURS_COFFRE))
+
+
+def _coffre_parent(racine: Path) -> Path:
+    """Le coffre parent, même lancé depuis un worktree lié.
+
+    `racine.parent` suffit dans un clone ordinaire, mais vaut le hangar à
+    worktrees (`~/obsia-worktrees/`) depuis un worktree lié — même piège que
+    documenté dans `scripts/publier.depot_reel`. On retrouve d'abord le clone
+    principal via le dossier git commun à tous les worktrees, puis son parent.
+    """
+    try:
+        res = subprocess.run(["git", "-C", str(racine), "rev-parse", "--git-common-dir"],
+                             capture_output=True, text=True, check=True)
+        commun = Path(res.stdout.strip())
+        if not commun.is_absolute():
+            commun = racine / commun
+        return commun.resolve().parent.parent
+    except (subprocess.CalledProcessError, OSError):
+        return racine.parent
+
 
 TACHES = RACINE / "IA" / "tâches"
+#: Registre privé, dans le coffre parent — tâches propres à cette installation :
+#: une machine précise du parc de l'utilisateur, ou son mainteneur (§12 du
+#: contrat).
+COFFRE_PARENT = _coffre_parent(RACINE)
+TACHES_COFFRE = COFFRE_PARENT / "0-PROJETS" / "tâches-planifiées"
 UNITES = Path.home() / ".config" / "systemd" / "user"
 ENVELOPPES = Path.home() / ".local" / "share" / "obsia" / "taches"
 ARCHIVE = Path.home() / ".local" / "share" / "obsia" / "archive"
@@ -68,15 +104,42 @@ def corps_section(chemin: Path, titre: str) -> str:
 
 
 def lire_registre() -> list[dict]:
+    """Les deux registres (§12) — `IA/tâches/` puis le registre privé du coffre.
+
+    Un nom présent aux deux est un doublon de déclaration : `main()` le
+    refuse avant d'écrire quoi que ce soit, plutôt que de laisser le second
+    silencieusement écraser le premier.
+
+    Si le coffre parent existe mais n'a pas ce registre, c'est signalé sur
+    `stderr` plutôt que silencieusement ignoré — sans quoi une tâche propre à
+    cette installation, déplacée là et jamais relue, disparaîtrait sans que
+    personne ne le remarque.
+    """
+    if not TACHES_COFFRE.is_dir() and _est_un_coffre_parent(COFFRE_PARENT):
+        print("Avertissement : coffre parent trouvé (%s), mais aucun registre "
+              "`0-PROJETS/tâches-planifiées/` — aucune tâche propre à cette "
+              "installation ne sera lue." % COFFRE_PARENT, file=sys.stderr)
     taches = []
-    for chemin in sorted(TACHES.glob("*.md")) if TACHES.is_dir() else []:
-        fm = lire_frontmatter(chemin)
-        if not fm or fm.get("kind") != "tâche":
-            continue
-        fm["_chemin"] = chemin
-        titre = "Instruction" if fm.get("mode") == "agent" else "Commande"
-        fm["_corps"] = corps_section(chemin, titre)
-        taches.append(fm)
+    vus: dict[str, Path] = {}
+    doublons = []
+    for dossier in (TACHES, TACHES_COFFRE):
+        for chemin in sorted(dossier.glob("*.md")) if dossier.is_dir() else []:
+            fm = lire_frontmatter(chemin)
+            if not fm or fm.get("kind") != "tâche":
+                continue
+            nom = fm.get("name")
+            if nom in vus:
+                doublons.append((nom, vus[nom], chemin))
+                continue
+            vus[nom] = chemin
+            fm["_chemin"] = chemin
+            titre = "Instruction" if fm.get("mode") == "agent" else "Commande"
+            fm["_corps"] = corps_section(chemin, titre)
+            taches.append(fm)
+    if doublons:
+        raise ValueError("\n".join(
+            "%s : déclarée aux deux registres (%s et %s)" % (n, a, b)
+            for n, a, b in doublons))
     return taches
 
 
@@ -317,6 +380,25 @@ def afficher(lignes: list[tuple]) -> int:
     return a_faire
 
 
+def tache_demandee(argv: list[str]) -> tuple[bool, str | None]:
+    """(présente, nom) pour `--tache NOM` ou `--tache=NOM`.
+
+    Présente sans nom — `--tache` en dernier, ou suivi d'une autre option —
+    rend (True, None) : l'appelant refuse plutôt que de tout poser. Répétée,
+    elle lève `ValueError` : une seule tâche à la fois, jamais la dernière
+    nommée en silence.
+    """
+    if sum(a == "--tache" or a.startswith("--tache=") for a in argv) > 1:
+        raise ValueError("--tache ne se répète pas")
+    for i, arg in enumerate(argv):
+        if arg.startswith("--tache="):
+            return True, arg.split("=", 1)[1] or None
+        if arg == "--tache":
+            suite = argv[i + 1] if i + 1 < len(argv) else ""
+            return True, (suite if suite and not suite.startswith("-") else None)
+    return False, None
+
+
 def main() -> int:
     if "--config" in sys.argv:
         print("# Gabarit à écrire dans %s\n" % CONFIG)
@@ -324,9 +406,32 @@ def main() -> int:
         return 0
 
     appliquer = "--appliquer" in sys.argv
-    registre = lire_registre()
+    try:
+        registre = lire_registre()
+    except ValueError as exc:
+        print("Doublon de déclaration — rien n'a été écrit :\n%s" % exc)
+        return 2
     locales = instances_locales()
     lignes = ecarts(registre, locales)
+
+    # `--tache NOM` : une seule tâche, posée, corrigée ou retirée — une tâche
+    # réservée à une autre machine ne se pose plus avec le reste.
+    try:
+        filtre, nom_vise = tache_demandee(sys.argv[1:])
+    except ValueError:
+        print("--tache ne se donne qu'une fois : une seule tâche par passage. "
+              "Rien n'a été écrit.")
+        return 2
+    if filtre:
+        if nom_vise is None:
+            print("--tache attend un nom de tâche du registre.")
+            return 2
+        lignes = [l for l in lignes if l[0] == nom_vise]
+        if not lignes:
+            print("Tâche inconnue : %s — ni au registre `IA/tâches/`, ni au "
+                  "registre du coffre, ni parmi les instances `obsia-*`. "
+                  "Rien n'a été écrit." % nom_vise)
+            return 2
 
     print("Registre : %d tâche(s) · instances locales `obsia-*` : %d\n"
           % (len(registre), len(locales)))

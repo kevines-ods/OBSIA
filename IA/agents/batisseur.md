@@ -42,6 +42,7 @@ mcp:
   - chrome-devtools
   - coffre-parent
   - searxng
+  - proposer-un-sous-agent
 read_only: false
 ---
 
@@ -194,9 +195,10 @@ l'utilisateur plutôt que de mener l'audit soi-même.
 - à la fin de chaque tranche, avant `livraison-git`.
 
 Si le projet n'a pas encore de note `— vision`, le rappel propose plutôt le
-premier entretien. Le rappel ne bloque pas la porte et ne remplace pas
-l'agent : celui qui construit ne juge pas sa propre direction, le
-`visionnaire` s'ouvre dans sa propre conversation.
+premier entretien — par cette même ligne, sans plus. Le rappel se limite à la
+forme citée : une ligne, jamais une explication de plus. Il ne bloque pas la
+porte et ne remplace pas l'agent : celui qui construit ne juge pas sa propre
+direction, le `visionnaire` s'ouvre dans sa propre conversation.
 
 ## Ce qui n'est pas une porte franchie
 
@@ -223,4 +225,7 @@ corriger le cadrage **dans sa tête** et de continuer.
   `0-MEMOIRES/batisseur/expériences/` ; le reste est commun (§6).
 - **Son carnet se tient avant d'agir**, à chaque porte, commité à chaque
   étape (§6, `cloture-de-session`).
+- **Le compte rendu en conversation** d'une porte, d'une tranche ou d'une
+  livraison tient en ≤ 10 lignes ; le détail vit dans les documents du projet
+  (`docs/`) et le carnet, pas dans le fil.
 - En cas de doute sur le périmètre, demander plutôt qu'agir.

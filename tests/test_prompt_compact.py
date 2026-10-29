@@ -24,7 +24,7 @@ from generer_prompt import (PLAFOND_COMPACT, RACINE_DEFAUT,       # noqa: E402
 
 SCRIPT = RACINE_DEFAUT / "scripts" / "generer_prompt.py"
 #: Les agents dont la fiche tient aujourd'hui sous le plafond.
-SOUS_LE_PLAFOND = ("assistant", "contradicteur", "visionnaire", "administrateur-mint")
+SOUS_LE_PLAFOND = ("assistant", "contradicteur", "visionnaire", "depanneur-accompagne")
 
 
 def compact_ou_saut(test, nom):

@@ -65,14 +65,11 @@ skill, jamais un nom d'agent imaginaire. `scripts/verifier_coffre.py` le contrô
   seule zone d'écriture libre ; la mémoire n'y a plus d'emplacement.
 - Tout le reste du dépôt (`IA/agents/`, `IA/system/`, `IA/tâches/`, la
   structure) passe par un **patch Git** soumis à revue humaine.
-- **La mémoire ne s'archive plus dans un dossier** : l'historique Git du dépôt de
-  données (§7.1) en tient lieu. `.archive/` reste **versionné** pour le reste du
-  dépôt produit ; rien n'y est lu ni indexé — les dossiers en `.` sont écartés.
 - Toute action touchant plusieurs fichiers exige un **preview** affiché avant
-  exécution, listant les chemins — écriture directe ou patch. Une seule exception,
-  bornée : l'écriture portée par un **outil déclaré en MCP, pour un modèle local
-  piloté** (§7.4), où le preview est rendu avec l'écriture à condition que chaque
-  acte forme un commit annulable.
+  exécution, listant les chemins — écriture directe ou patch. Sauf l'écriture
+  par un **outil déclaré en MCP, pour un modèle local piloté** (§7.4) : le
+  preview se rend avec l'écriture, à condition que chaque acte forme un
+  commit annulable.
 - Les **fichiers générés** ne s'éditent jamais à la main ni par un agent :
   `sommaire.md`, `agents-index.md`, `skills-index.md`, `taches-index.md`,
   `modules-index.md`, `IA/README.md`.
@@ -93,6 +90,18 @@ skill, jamais un nom d'agent imaginaire. `scripts/verifier_coffre.py` le contrô
   distante, fichiers générés régénérés, vérifications passées.
 
 Les commandes : `IA/system/travail-en-parallele.md`.
+
+<!-- Repris dans l'AGENTS.md engendré : generer_prompt.regle_ecriture — testé, pas de copie (§5). -->
+<!-- regle-ecriture: debut -->
+- Écrire dans le coffre n'est pas libre : `0-EN-VRAC/`, `0-SAVOIRS/`
+  (compléter), `_MAINTENANCE/` (previews, journal), le carnet de son
+  projet, le profil sur place ; tout le reste par patch revu — rien ne se
+  modifie ni déplace localement (§7.3).
+- Toute écriture hors carnet : preview d'abord, copie datée en
+  `_MAINTENANCE/`, action consignée (§7.4).
+- Les générés (`AGENTS.md`, sommaires, index) ne s'éditent jamais à la
+  main (§11).
+<!-- regle-ecriture: fin -->
 
 ## 3. Périmètre hors du coffre
 
@@ -117,9 +126,7 @@ Quand un agent `read_only: false` intervient sur un dépôt extérieur :
 
 - Toute exécution de code se fait en **sandbox**, sans exception.
 - Aucun accès réseau implicite : il doit être demandé explicitement.
-<!-- Le bloc ci-dessous est repris mot pour mot en tête de l'AGENTS.md engendré,
-     par scripts/generer_prompt.py (`regle_des_secrets`) : ne l'édite pas sans
-     passer les tests, et ne le recopie pas ailleurs (§5). -->
+<!-- Repris dans l'AGENTS.md engendré : generer_prompt.regle_des_secrets — testé, pas de copie (§5). -->
 <!-- regle-secrets: debut -->
 - Les secrets ne sortent jamais du coffre et ne sont jamais écrits dans une note.
 - Un secret ne se recopie **jamais** dans une réponse ni dans une sortie (journal,
@@ -153,49 +160,31 @@ procédure dans un skill.
   écrire » sont dans `contrat-memoire`.
 - **Tout projet vit dans `0-PROJETS/`** : le projet du coffre comme celui de
   l'utilisateur. Le test qui les sépare est le §7.3.1.
-- **Un projet du coffre passe par une PR, la demande comprise** : la description
-  de la PR porte la **demande** et le **résumé de séance**, jamais un chemin du
-  coffre parent ni un nom de personne ou de client. Le carnet, le résumé et la
-  vision vivent dans le dépôt de données (§7.1) et ne voyagent pas dans la PR :
-  ce qui a été décidé s'y relit avec le diff. Un changement qui touche la base se
-  fait relire par l'utilisateur, le `visionnaire` (cap) et le `contradicteur`
-  (relecture).
-- **Le carnet** : un par chantier, nommé avec le chantier, frontmatter `agent:`,
-  `projet:`, `statut: en cours | en attente | clos`. Il vit dans le `carnets/`
-  du dossier du chantier — ou du projet pour une séance sans chantier — et se
-  tient **au fil de l'eau** : la demande, le plan, l'**étape en cours écrite
-  avant d'agir**, les actions horodatées (§9), les worktrees et branches, les
-  questions en attente. Un chantier transverse écrit dans le carnet du projet
-  `obsia`, sauf ce qui décrit un projet de l'utilisateur. **Seuls les carnets
-  portent une date** ; dans le doute, écrire dans le carnet.
-- **Un chantier est un dossier à lui** sous son projet : ses `carnets/`, ses
-  `documents/` et son ` — résumé`, un seul niveau — jamais de chantier imbriqué.
-- **Une séance sans chantier** n'a de carnet du jour, au projet qui la
-  porte, que si un travail reste en suspens ; sinon, le journal de
-  `_MAINTENANCE/` (§7.4). Un agent `read_only: true` n'écrit aucun
-  carnet : l'agent qui reprend son travail consigne ses constats et ses appels.
-- **Reprise** : au démarrage, chercher — dans l'arbre principal **et dans chaque
-  worktree lié** — ses carnets `statut: en cours` (par nom d'agent, jamais de
-  harness), les rapprocher de l'état réel (`git status`, `git worktree list`,
-  fichiers cités) avant de proposer de reprendre ; s'il y en a plusieurs,
-  l'utilisateur choisit. Procédure : `cloture-de-session`.
+- **Un projet du coffre passe par une PR** : sa description porte la demande
+  et le résumé de séance, **jamais un chemin du coffre parent ni un nom de
+  personne ou de client** ; le reste : `contrat-memoire`. Un changement qui
+  touche la base se fait relire par l'utilisateur, le `visionnaire` (cap) et le
+  `contradicteur` (relecture).
+- **Le carnet** : un par chantier, tenu **au fil de l'eau**, l'**étape en cours
+  écrite avant d'agir** ; sa forme : `contrat-memoire`. **Seuls les carnets
+  portent une date** ; dans le doute, écrire dans le carnet. Un agent
+  `read_only: true` n'écrit aucun carnet : l'agent qui reprend son travail
+  consigne ses constats et ses appels.
+- **Reprise** : §10, étape 0 ; procédure : `cloture-de-session`.
 - **Le carnet se commite à chaque étape** : seul ce qui est commité survit à la
   coupure.
-- **Clôture, réouverture, domaine dormant** : procédure dans `contrat-memoire`.
-  Le durable se distille **avant** la clôture ; un chantier clos ou un carnet
-  de séance clos, gelés dans `0-MEMOIRES/<projet>/<chantier>/` ou `carnets/`,
-  ne se modifient **plus jamais** — seules `préférences/` et
+- **Clôture** (procédure : `contrat-memoire`) : le durable se distille
+  **avant** ; un chantier clos ou un carnet de séance clos, gelé dans
+  `0-MEMOIRES/`, ne se modifie **plus jamais** — seules `préférences/` et
   `<nom-agent>/expériences/` y restent vivantes, et le vérificateur refuse
   qu'un projet porte ce nom (§11).
-- **Clause de transition** : pendant la bascule, la mémoire se cherche à tout
-  emplacement qui existe, dans l'ordre détaillé par `contrat-memoire`, et la
-  tolérance se retire au plus tard le 2026-12-31 (chantier
-  `souverainete-des-donnees`).
-- **Rien de ce qui décrit l'utilisateur ne vit chez un agent** : le profil
-  (`0-PERSONNELS/`) et les préférences (`0-MEMOIRES/préférences/`, un dossier
-  commun, jamais sous le nom d'un agent) sont partagés, et tout agent
-  `read_only: false` les corrige **directement, sur place**. Un agent
-  `read_only: true` n'écrit pas d'expériences ; il lit la mémoire commune.
+- **Clause de transition** : pendant la bascule, la mémoire se cherche aussi
+  aux anciens emplacements (`contrat-memoire`), et la tolérance se retire au
+  plus tard le 2026-12-31 (chantier `souverainete-des-donnees`).
+- **Rien de ce qui décrit l'utilisateur ne vit chez un agent** : le profil et
+  les préférences sont communs (§7.3), et tout agent `read_only: false` les
+  corrige **directement, sur place**. Un agent `read_only: true` n'écrit pas
+  d'expériences ; il lit la mémoire commune.
 
 ## 7. Le coffre parent — la base de connaissances
 
@@ -241,24 +230,25 @@ entre.
 - le **classement** d'une note d'`0-EN-VRAC/` vers sa destination ;
 - `0-PROJETS/<projet>/` — le projet et ses chantiers : ` — résumé`, `carnets/`,
   `documents/`, et `code/` où le §3 s'applique intégralement ;
+- `0-PROJETS/tâches-planifiées/` — le registre privé des tâches propres à
+  cette installation : une machine du parc de l'utilisateur, ou son
+  mainteneur (§12) ;
 - `0-PROJETS/<projet>/<projet> — vision.md` — **le `visionnaire` seul**, après
   validation de l'utilisateur ;
 - `0-PERSONNELS/profil-utilisateur.md` et `0-MEMOIRES/préférences/` — communs à
-  tous, **corrigés sur place** par tout agent `read_only: false` ;
+  tous, jamais sous le nom d'un agent, **corrigés sur place** par tout agent
+  `read_only: false` ;
 - `0-MEMOIRES/<nom-agent>/expériences/` — les leçons **du seul agent nommé**,
   qu'il corrige sur place et lui seul ; une note de référence dont l'agent est
   l'auteur (`auteur: <nom-agent>`) se met aussi à jour sur place, par lui seul.
 
-**Dans `0-MEMOIRES/`, seule la moitié gelée est intouchable** : un dossier de
-chantier clos y entre tel quel à la clôture et n'en bouge plus.
-
 Hors des notes qu'un agent tient sur place — suffixe ` — résumé` ou ` — vision`,
-un dossier `carnets/`, le profil, `0-MEMOIRES/préférences/` et les
-`expériences/` de son propre agent —, une écriture dans `0-PROJETS/`,
-`0-DOCUMENTS/` ou `0-PERSONNELS/` se limite au **dépôt d'une note classée venue
-d'`0-EN-VRAC/`**. On n'y modifie **jamais** une note existante, même à la demande
-de l'utilisateur : elle repasse par `0-EN-VRAC/`. On n'y déplace ni n'y supprime
-rien.
+un dossier `carnets/`, le profil, `0-MEMOIRES/préférences/`, les
+`expériences/` de son propre agent et le registre `0-PROJETS/tâches-planifiées/`
+—, une écriture dans `0-PROJETS/`, `0-DOCUMENTS/` ou `0-PERSONNELS/` se limite
+au **dépôt d'une note classée venue d'`0-EN-VRAC/`**. On n'y modifie **jamais**
+une note existante, même à la demande de l'utilisateur : elle repasse par
+`0-EN-VRAC/`. On n'y déplace ni n'y supprime rien.
 
 ### 7.3.1 Où va la note d'un projet
 
@@ -395,12 +385,24 @@ Préfère la voie simple qui marche à la voie automatisée qui se débogue, san
 sauter une porte déjà prévue, et rends compte par étapes courtes plutôt qu'en un
 seul long tour.
 
+<!-- charte-concision: debut -->
+**Style de réponse — la concision n'est pas une politesse, c'est un coût.**
+Écrire le résultat, pas le chemin : ce qui a changé, le résultat vérifié, la
+prochaine étape — jamais l'historique de la séance. Une explication tient en
+une phrase, et seulement si l'action ne va pas de soi. Ni annonce préalable de
+ce qu'on va faire, ni reformulation de la demande, ni rappel de ce contrat, ni
+section « Résumé ». Un tableau dès trois lignes sur trois colonnes de données
+réelles, jamais avant. Pas d'alternative au fil de la réponse : un choix à
+plusieurs candidats (stack, design, outil) se rend quand il est demandé. Une
+question à l'utilisateur tranche en une phrase ce que dix lectures
+devineraient mal : la poser avant d'étendre un constat. Les cibles chiffrées
+propres à chaque agent vivent dans sa fiche.
+<!-- charte-concision: fin -->
+
 ## 11. Fichiers générés et vérification
 
-- **Les index sont versionnés, donc canoniques.** `IA/README.md` et les quatre
-  `IA/system/*-index.md` décrivent le catalogue **entier** : ils ne dépendent
-  pas de la machine et ne se réduisent **jamais** au profil (§13), qui ne touche
-  que le non versionné — le prompt système et `AGENTS.md`.
+- **Les index décrivent le catalogue entier**, jamais réduit au profil (§13) ;
+  le vérificateur refuse un index pas à jour.
 - Si un index et un frontmatter se contredisent, **le frontmatter a raison** :
   on corrige la source, puis on régénère — jamais l'inverse.
 - **Un échec de routage veut dire « corriger la description ».** Une attente
@@ -420,11 +422,17 @@ seul long tour.
 
 ## 12. Tâches planifiées
 
-Une tâche se déclare dans `IA/tâches/<nom>.md`, qui fait foi ; le planificateur
-n'en porte qu'une **instance**, préfixée `obsia-`, **au plus une** par tâche, tous exécutants confondus.
-Créer, modifier ou suspendre une tâche passe par **patch revu** ; instancier ou
-retirer une instance se consigne au carnet (§9). **Savoir n'est pas
-instancier.** Détail : `contrat-taches`.
+Une tâche se déclare dans `IA/tâches/<nom>.md` — ou, pour une tâche propre à
+cette installation (une machine précise du parc de l'utilisateur, ou son
+mainteneur), dans `Mon coffre/0-PROJETS/tâches-planifiées/<nom>.md` — l'un ou
+l'autre fait foi, jamais les deux à la fois pour un même nom ; le
+planificateur n'en porte qu'une **instance**,
+préfixée `obsia-`, **au plus une** par tâche, tous exécutants confondus,
+**les deux registres comptant ensemble pour cet invariant**. Créer, modifier
+ou suspendre une tâche du dépôt passe par **patch revu** ; une tâche du
+coffre suit l'écriture directe tracée du §7.4. Instancier ou retirer une
+instance se consigne au carnet (§9). **Savoir n'est pas instancier.**
+Détail : `contrat-taches`.
 
 ## 13. Modules, installation et publication
 

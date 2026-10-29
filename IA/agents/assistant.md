@@ -28,6 +28,7 @@ mcp:
   - modele-local
   - gmail
   - nextcloud
+  - proposer-un-sous-agent
 read_only: false
 ---
 

@@ -10,7 +10,7 @@ read_only: false
 
 # Skill — Conteneurs Docker
 
-Inspection et gestion des conteneurs de la VM Debian.
+Inspection et gestion des conteneurs de la machine.
 
 ## Règles
 

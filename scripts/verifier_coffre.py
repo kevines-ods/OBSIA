@@ -158,7 +158,8 @@ sys.path.insert(0, str(SCRIPTS))
 from generer_prompt import (RACINE_DEFAUT, chemins_absolus,
                             fichiers_declaratifs, lire_frontmatter,
                             prompt_du_coffre, regle_des_secrets)
-from installer import contenu_agents
+from installer import contenu_agents, est_un_coffre_parent as _est_un_coffre_parent
+from publier import depot_reel
 
 #: Les noms de la mémoire du coffre, et « qui est un agent », n'ont **qu'une**
 #: définition : le moteur partagé `convention_des_notes`, que l'applicateur du
@@ -171,11 +172,22 @@ import modules as MOD
 
 RACINE = RACINE_DEFAUT
 
+def _coffre_par_defaut(racine: Path) -> Path:
+    """`racine.parent` suffit dans un clone ordinaire, mais vaut le hangar à
+    worktrees (`~/obsia-worktrees/`) depuis un worktree lié — même piège que
+    documenté dans `publier.depot_reel`, dont on se sert ici pour retrouver le
+    clone principal avant de prendre son parent."""
+    try:
+        return depot_reel(racine).parent
+    except (RuntimeError, OSError):
+        return racine.parent
+
+
 #: Racine du coffre parent — là où vit la mémoire (§7.1). Le dépôt produit n'y
 #: touche pas : ce n'est plus son coffre, et un dépôt produit n'a pas à échouer
 #: parce qu'un carnet du coffre est mal formé (M5). `--coffre` la déplace pour
 #: un contrôle explicite, ou depuis le pre-commit du dépôt de données.
-COFFRE = RACINE.parent
+COFFRE = _coffre_par_defaut(RACINE)
 
 #: Les constats qui portent sur la **mémoire du coffre** ne sont des erreurs que
 #: lorsqu'on vérifie le coffre lui-même. Depuis le dépôt produit, ils
@@ -501,8 +513,22 @@ EXECUTANTS = ("local", "harness")
 CORPS_ATTENDU = {"agent": "## Instruction", "commande": "## Commande"}
 
 
-def verifier_taches(dossier: Path, agents: list[dict]) -> list[dict]:
-    """Frontmatter et corps des fichiers de IA/tâches/ (§5, §12).
+def verifier_taches(dossier: Path, agents: list[dict], *,
+                    exclure: frozenset = frozenset()) -> list[dict]:
+    """Frontmatter et corps des fichiers d'un registre de tâches (§5, §12).
+
+    Sert aux deux registres : `IA/tâches/` et le registre privé du coffre
+    (`verifier_taches_coffre`) — `module` reste obligatoire dans les deux
+    (§5), mais seul celui du dépôt produit est confronté au catalogue
+    installable (`verifier_appartenance`, §13) : le registre privé n'en fait
+    pas partie.
+
+    `exclure` nomme des fichiers à ignorer — vide pour `IA/tâches/`, qui n'en
+    porte jamais ; `verifier_taches_coffre` y pose `sommaire.md` quand il
+    porte la marque d'un fichier généré, pour ce seul appel. La décision
+    reste chez l'appelant : cette fonction ne connaît rien de la mémoire du
+    coffre ni des fichiers que `scripts/regenerate_sommaire.py`,
+    `regenerate_index.py` ou `installer.py` écrivent (§11).
 
     Une tâche déclare une intention planifiée. Trois erreurs la rendent
     silencieusement inopérante — d'où trois contrôles :
@@ -514,8 +540,13 @@ def verifier_taches(dossier: Path, agents: list[dict]) -> list[dict]:
     resultats = []
     noms_agents = {a["name"] for a in agents if a.get("name")}
     for chemin in sorted(dossier.glob("*.md")) if dossier.is_dir() else []:
+        if chemin.name in exclure:
+            continue
         fm = lire_frontmatter(chemin)
-        rel = chemin.relative_to(RACINE)
+        try:
+            rel = chemin.relative_to(RACINE)
+        except ValueError:
+            rel = chemin.relative_to(COFFRE) if COFFRE.is_dir() else chemin
         if fm is None:
             erreur(rel, "frontmatter absent ou non fermé")
             continue
@@ -590,10 +621,51 @@ def verifier_taches(dossier: Path, agents: list[dict]) -> list[dict]:
                    % attendu)
 
         if not fm.get("module"):
-            erreur(rel, "champ obligatoire manquant : `module` (§13)")
+            erreur(rel, "champ obligatoire manquant : `module` (§5)")
 
         fm["_chemin"] = rel
         resultats.append(fm)
+    return resultats
+
+
+def verifier_taches_coffre(taches_produit: list[dict], agents: list[dict]) -> list[dict]:
+    """Registre privé du coffre (`Mon coffre/0-PROJETS/tâches-planifiées/`,
+    §12) — tâches propres à cette installation. Mêmes règles que
+    `verifier_taches`, `module` compris (§5) — mais sans le confronter au
+    catalogue : ce registre ne fait pas partie des modules installables du
+    dépôt produit (§13), aussi n'est-il jamais passé à `verifier_appartenance`.
+    Rend silencieusement une liste vide si le coffre parent n'a pas ce dossier
+    (CI, clone sans coffre) — avec un avertissement si le coffre, lui, existe.
+
+    Un nom déclaré aux deux registres est un doublon (§12) : l'invariant d'une
+    seule instance vivante ne tient pas si la même tâche existe deux fois.
+    """
+    dossier = COFFRE / "0-PROJETS" / "tâches-planifiées"
+    if not dossier.is_dir():
+        if _est_un_coffre_parent(COFFRE):
+            avertir(COFFRE, "coffre parent trouvé, mais aucun registre "
+                            "`0-PROJETS/tâches-planifiées/` — aucune tâche liée "
+                            "au parc n'est lue (§12)")
+        return []
+
+    # Ce dossier vit sous `0-PROJETS/` : `regenerate_sommaire.py` y pose un
+    # `sommaire.md` sans frontmatter comme à tout projet (§11). On ne
+    # l'exempte que s'il porte bien sa marque de fichier généré — un fichier
+    # nommé ainsi mais sans cette marque reste jugé comme une tâche, et donc
+    # refusé pour de bonnes raisons.
+    MARQUE_SOMMAIRE = "Généré par `scripts/regenerate_sommaire.py`"
+    sommaire = dossier / "sommaire.md"
+    exclure = frozenset({"sommaire.md"}) if (
+        sommaire.is_file() and MARQUE_SOMMAIRE in sommaire.read_text(encoding="utf-8")
+    ) else frozenset()
+
+    resultats = verifier_taches(dossier, agents, exclure=exclure)
+    noms_produit = {t["name"] for t in taches_produit if t.get("name")}
+    for t in resultats:
+        if t.get("name") in noms_produit:
+            erreur(t["_chemin"], "nom `%s` déclaré aussi dans IA/tâches/ — un "
+                                 "même nom ne vit pas aux deux registres (§12)"
+                   % t["name"])
     return resultats
 
 
@@ -1735,6 +1807,7 @@ def main(argv=None) -> int:
 
     mcp = verifier_mcp(RACINE / "IA" / "MCP")
     taches = verifier_taches(RACINE / "IA" / "tâches", agents)
+    verifier_taches_coffre(taches, agents)
     modules = verifier_modules(RACINE / "IA" / "system" / "modules")
     verifier_annexes_contrat(RACINE / "IA" / "system" / "contrat", modules)
     verifier_profil(modules)

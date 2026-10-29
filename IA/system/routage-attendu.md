@@ -61,6 +61,8 @@ descriptions et tranche.
 | « est-ce que mes sauvegardes se restaurent vraiment ? » | sauvegardes | 2 | — |
 | « le disque est plein et un service est tombé, constate l'état » | diagnostic-linux | 3 | — |
 | « redémarre le service et libère de la place » | remediation-linux | 3 | — |
+| « mon imprimante ne marche plus, tu peux me dépanner ? je ne suis pas très technique » (la personne aidée) | depannage-accompagne | 3 | diagnostic-linux |
+| « sur mon serveur, un service Linux est en échec, constate l'état avant de toucher à quoi que ce soit » | diagnostic-linux | 3 | depannage-accompagne |
 | « retrouve la note où j'avais décidé ça » | obsidian-manager | 3 | — |
 | « où est-ce que je dois chercher cette information ? » | recherche | 3 | — |
 | « fais-moi un schéma de l'enchaînement » | mermaid | 2 | — |
@@ -80,13 +82,13 @@ descriptions et tranche.
 | « combien de ressources restent sur l'hôte de virtualisation ? » | proxmox | 3 | — |
 | « crée-moi un nouveau conteneur LXC et fais-le démarrer tout seul avec l'hôte » | administration-proxmox | 3 | — |
 | « je n'ai reçu aucune alerte Telegram alors que la sauvegarde n'a pas tourné » | surveillance-et-alertes | 3 | — |
-| « optimise les performances de mon CachyOS pour le jeu » | optimisation-cachyos | 2 | — |
+| « optimise mon poste CachyOS pour le jeu » | optimisation-cachyos | 2 | — |
 | « les photos du téléphone arrivent en double dans Nextcloud » | nextcloud-aio | 3 | — |
 | « Home Assistant ne répond plus, et je n'arrive pas à m'y connecter en SSH » | home-assistant-os | 3 | — |
 | « on refait la même erreur alors qu'une note la documente déjà » | compilation-des-lecons | 3 | — |
 | « fais redescendre les leçons de la mémoire dans les skills » | compilation-des-lecons | 3 | createur-de-skill |
 | « file ce résumé au petit modèle local, pas besoin de lui donner tout le contexte » | delegation-locale | 3 | — |
-| « délègue le tri de ces notes au modèle qui tourne sur la VM » | delegation-locale | 3 | traitement-des-notes |
+| « délègue le tri de ces notes au modèle local » | delegation-locale | 3 | traitement-des-notes |
 
 ## Une attente qui a été corrigée, et pourquoi
 
