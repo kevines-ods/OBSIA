@@ -67,6 +67,10 @@ ou supprime un dossier de premier niveau. Les agents ne modifient jamais cette
 structure : ils travaillent dans les dossiers existants, sans y créer de
 sous-structure de premier niveau.
 
+**Trois noms, trois choses** : le **coffre** est ce dossier-ci, la mémoire de
+l'utilisateur ; le **dépôt de données** est le dépôt git qui la versionne, à sa
+racine ; le **dépôt produit** est `OBSIA/`, l'outil, versionné à part et publié.
+
 Les dossiers de premier niveau s'écrivent **en majuscules**, tels qu'ils sont
 sur le disque : `_MAINTENANCE/`, `0-PROJETS/`… Linux distingue la casse, et un
 agent qui cherche `_maintenance/` conclut à tort que le dossier manque.

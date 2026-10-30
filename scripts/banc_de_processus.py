@@ -134,7 +134,7 @@ def main(argv=None):
     compteur = Compteur().installer()
     try:
         # La suite n'a pas de paquet `tests` : elle s'importe par nom de module,
-        # comme le fait `python3 -m unittest discover -s tests`.
+        # comme le fait `python3 -m unittest discover -b -s tests`.
         sys.path.insert(0, str(RACINE / "tests"))
         sys.path.insert(0, str(RACINE))
         suite = unittest.TestLoader().discover(str(RACINE / "tests"))

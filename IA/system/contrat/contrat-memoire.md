@@ -270,6 +270,22 @@ module: noyau
   sujet (`licences-et-logiciel-libre.md`, pas `notes.md`) et respecte la règle
   d'unicité ci-dessus.
 
+## 8. Sources et citations
+
+Une note durable distingue **évidence** (avec son URL source),
+**interprétation** et **synthèse produite par un agent**. Les URLs sont
+regroupées en fin de fichier.
+
+## 9. Trace des séances — les limites du carnet
+
+Le carnet **n'est pas un journal d'audit infalsifiable** : ce qui le rend
+contradictoire, c'est l'historique du dépôt de données et, pour le produit, la
+relecture de la PR. On y consigne la **nature** d'une action, pas
+nécessairement sa cible ; les interdits (adresse IP privée, nom d'hôte interne,
+URL interne, identifiant) sont au noyau, §9.
+Une trace qu'on ne pourrait pas publier ne s'écrit pas davantage dans le
+privé. Le carnet d'un projet de l'utilisateur n'a que l'aperçu du §7.4.
+
 ## Pourquoi — repris des sections restées au noyau
 
 ### §1 — d'où vient la règle des agents nommés

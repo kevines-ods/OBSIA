@@ -26,6 +26,8 @@ import re
 import sys
 from pathlib import Path
 
+from convention_des_notes import extraire_frontmatter
+
 RACINE_DEFAUT = Path(__file__).resolve().parent.parent
 
 #: Le noyau du coffre : le contrat, seule source des règles. Le prompt engendré
@@ -175,47 +177,7 @@ def lire_frontmatter(chemin: Path) -> dict | None:
         print(f"  ! illisible : {chemin.name} ({err})", file=sys.stderr)
         return None
 
-    if not texte.startswith("---"):
-        return None
-
-    fin = texte.find("\n---", 3)
-    if fin == -1:
-        return None
-
-    donnees: dict = {}
-    cle_liste: str | None = None
-
-    for ligne in texte[3:fin].splitlines():
-        nu = ligne.strip()
-        if not nu or nu.startswith("#"):
-            continue
-
-        # élément de liste
-        if nu.startswith("- ") and cle_liste:
-            donnees[cle_liste].append(nu[2:].strip())
-            continue
-
-        if ":" not in nu:
-            continue
-
-        cle, _, valeur = nu.partition(":")
-        cle = cle.strip()
-        valeur = valeur.strip()
-
-        if not valeur:                      # une liste commence à la ligne suivante
-            donnees[cle] = []
-            cle_liste = cle
-            continue
-
-        cle_liste = None
-        if valeur.lower() in ("true", "false"):
-            donnees[cle] = valeur.lower() == "true"
-        elif valeur.isdigit():
-            donnees[cle] = int(valeur)
-        else:
-            donnees[cle] = valeur.strip("\"'")
-
-    return donnees
+    return extraire_frontmatter(texte)[0]
 
 
 def fichiers_declaratifs(dossier: Path) -> list[Path]:

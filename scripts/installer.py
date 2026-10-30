@@ -45,6 +45,8 @@ SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS))
 
 import modules as MOD
+from commun import (MARQUEUR_AGENTS, MARQUEURS_AGENTS, contenu_agents,  # noqa: F401
+                    est_un_coffre_parent)
 from generer_prompt import (RACINE_DEFAUT, fichiers_declaratifs, lire_frontmatter,
                             prompt_du_coffre)
 
@@ -496,32 +498,6 @@ def regenerer(racine: Path) -> int:
 
 # ------------------------------------------------------------------ AGENTS.md
 
-#: Les débuts de marqueur qu'on reconnaît comme nôtres. Le premier est le libellé
-#: courant ; un fichier posé par une version antérieure porte le même début suivi
-#: d'une autre fin, et reste donc à nous. Changer de marqueur un jour, c'est
-#: ajouter ici le nouveau libellé, puis l'écrire ci-dessous : les installations
-#: déjà faites ne se retrouvent pas orphelines pour autant.
-MARQUEURS_AGENTS = (
-    "<!-- généré par OBSIA/scripts/installer.py",
-)
-
-#: La ligne réellement écrite en tête du fichier. Sans elle, le fichier est celui
-#: de quelqu'un d'autre : on n'y touche pas, même sous --appliquer.
-MARQUEUR_AGENTS = ("%s — ne pas éditer, relancer installer.py --appliquer -->"
-                   % MARQUEURS_AGENTS[0])
-
-
-def contenu_agents(prompt: str) -> str:
-    """Le texte exact d'AGENTS.md : le marqueur, une ligne vide, le prompt.
-
-    Nommé et réutilisé plutôt que recomposé ailleurs : c'est **ce texte-là** que
-    le harness lit, et `verifier_coffre.py` doit en mesurer les octets, marqueur
-    compris. Mesurer le prompt seul laisserait passer un fichier déjà au-delà du
-    plafond de Codex.
-    """
-    return "%s\n\n%s\n" % (MARQUEUR_AGENTS, prompt)
-
-
 def chemin_agents(coffre: Path) -> Path:
     """AGENTS.md se pose **à côté** du coffre, jamais dedans.
 
@@ -765,21 +741,6 @@ def parent_est_le_dossier_personnel(produit: Path) -> bool:
         return parent in candidats
     except (OSError, RuntimeError):
         return False
-
-
-def est_un_coffre_parent(chemin: Path) -> bool:
-    """Vrai si `chemin` porte un marqueur de coffre (§7.1) — `.obsidian/`,
-    `_MAINTENANCE/`, une zone `0-…` ou son ancien nom `-…`.
-
-    La mémoire s'installe là, et nulle part ailleurs : un clone de
-    développement n'a pas de coffre parent autour de lui, et l'installeur ne
-    doit pas y faire naître un dépôt git.
-    """
-    try:
-        noms = set(os.listdir(chemin))
-    except OSError:
-        return False
-    return bool(noms & set(MOD.MARQUEURS_COFFRE))
 
 
 def _git(chemin: Path, *arguments: str) -> subprocess.CompletedProcess | None:

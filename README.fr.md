@@ -1,5 +1,7 @@
 # OBSIA
 
+![OBSIA](logo/banniere.svg)
+
 [English](README.md) | **Français**
 
 OBSIA donne à ton assistant IA une équipe d'agents spécialisés — un pour
@@ -179,7 +181,7 @@ détail (mode copie, sondes, ce qui est réduit ou non) est dans
 Avant de committer :
 
 ```bash
-python3 -m unittest discover -s tests
+python3 -m unittest discover -b -s tests
 python3 scripts/regenerate_sommaire.py
 python3 scripts/regenerate_index.py
 python3 scripts/verifier_coffre.py

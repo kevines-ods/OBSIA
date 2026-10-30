@@ -200,22 +200,17 @@ def listes_en_ligne(texte: str) -> list:
     return trouvees
 
 
-def extraire_frontmatter(texte: str) -> tuple:
-    """Frontmatter YAML minimal (scalaires et listes à tirets).
+def lire_yaml_simple(texte: str) -> dict:
+    """Scalaires et listes à tirets, rien d'autre — le sous-ensemble du §5.
 
-    Renvoie ``(dict, fin)`` où ``fin`` est l'index de la première ligne après le
-    bloc, ou ``(None, 0)`` si le fichier ne commence pas par un frontmatter.
-
-    Les scalaires reçoivent leur type : ``true``/``false`` deviennent des
-    booléens, un entier reste un entier. Les guillemets qui entourent une valeur
-    ou une puce de liste sont retirés.
+    Seul lecteur de ce sous-ensemble dans les scripts : ``extraire_frontmatter``
+    l'applique au bloc, ``modules.py`` à ``obsia.local.yml``. Les scalaires
+    reçoivent leur type (``true``/``false``, entier) ; les guillemets qui
+    entourent une valeur ou une puce de liste sont retirés.
     """
-    fin = _fin_du_frontmatter(texte)
-    if fin == -1:
-        return None, 0
     donnees: dict = {}
     cle_liste = None
-    for ligne in texte[3:fin].splitlines():
+    for ligne in texte.splitlines():
         nu = ligne.strip()
         if not nu or nu.startswith("#"):
             continue
@@ -238,6 +233,23 @@ def extraire_frontmatter(texte: str) -> tuple:
             donnees[cle] = int(valeur)
         else:
             donnees[cle] = valeur.strip("\"'")
+    return donnees
+
+
+def extraire_frontmatter(texte: str) -> tuple:
+    """Frontmatter YAML minimal (scalaires et listes à tirets).
+
+    Renvoie ``(dict, fin)`` où ``fin`` est l'index de la première ligne après le
+    bloc, ou ``(None, 0)`` si le fichier ne commence pas par un frontmatter.
+
+    Les scalaires reçoivent leur type : ``true``/``false`` deviennent des
+    booléens, un entier reste un entier. Les guillemets qui entourent une valeur
+    ou une puce de liste sont retirés.
+    """
+    fin = _fin_du_frontmatter(texte)
+    if fin == -1:
+        return None, 0
+    donnees = lire_yaml_simple(texte[3:fin])
     # `fin` pointe sur le « --- » de clôture : passer après cette ligne.
     retour = texte.find("\n", fin + 1)
     return donnees, (retour + 1 if retour != -1 else len(texte))

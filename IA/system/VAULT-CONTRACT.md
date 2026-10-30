@@ -20,15 +20,12 @@ aucun outil ne la fait déjà respecter ; l'enfreindre est grave ou irréversibl
 précise. Sinon elle va dans l'annexe que cette action fait charger ; le pourquoi,
 les exemples et les procédures aussi. Une règle qu'un outil fait respecter garde au
 plus une ligne au noyau (« le vérificateur refuse X »). Une annexe n'ajoute aucune
-règle.** En cas de contradiction, ce fichier fait
-foi et l'annexe est à corriger. **Modifier une règle ici, c'est reporter la
-modification dans son annexe dans la même PR.** Où vit chaque règle :
-`IA/system/contrat/registre.md` (non normatif).
+règle** ; si elle en contredit une, c'est elle qui est à corriger.
 
 | Annexe | À lire avant de… |
 | --- | --- |
 | `contrat/contrat-frontmatter.md` | écrire ou modifier un agent, un skill, un MCP, une tâche, un module ou un fichier du contrat |
-| `contrat/contrat-memoire.md` | créer, renommer ou déplacer un projet, un carnet ou une note durable ; changer la forme d'un skill |
+| `contrat/contrat-memoire.md` | écrire, créer, renommer ou déplacer un projet, un carnet ou une note durable ; changer la forme d'un skill |
 | `contrat/contrat-coffre-parent.md` | écrire dans le coffre parent hors d'`0-EN-VRAC/` |
 | `contrat/contrat-verification.md` | toucher un script de vérification ou un fichier généré ; relâcher une attente de routage ; travailler sur un clone neuf |
 | `contrat/contrat-taches.md` | créer, modifier ou suspendre une tâche ; en instancier ou retirer une instance |
@@ -66,10 +63,7 @@ skill, jamais un nom d'agent imaginaire. `scripts/verifier_coffre.py` le contrô
 - Tout le reste du dépôt (`IA/agents/`, `IA/system/`, `IA/tâches/`, la
   structure) passe par un **patch Git** soumis à revue humaine.
 - Toute action touchant plusieurs fichiers exige un **preview** affiché avant
-  exécution, listant les chemins — écriture directe ou patch. Sauf l'écriture
-  par un **outil déclaré en MCP, pour un modèle local piloté** (§7.4) : le
-  preview se rend avec l'écriture, à condition que chaque acte forme un
-  commit annulable.
+  exécution, listant les chemins — écriture directe ou patch. Exception bornée : §7.4.
 - Les **fichiers générés** ne s'éditent jamais à la main ni par un agent :
   `sommaire.md`, `agents-index.md`, `skills-index.md`, `taches-index.md`,
   `modules-index.md`, `IA/README.md`.
@@ -201,10 +195,10 @@ Seul l'utilisateur crée, renomme, déplace ou supprime un dossier de premier
 niveau ; les noms s'écrivent en majuscules, tels qu'ils sont sur le disque, et
 commencent par `0-` (ou `_` pour l'entretien) : `_MAINTENANCE/`, `0-PROJETS/`,
 `0-MEMOIRES/`, `0-DOCUMENTS/`, `0-PERSONNELS/`, `0-SAVOIRS/`, `0-EN-VRAC/`,
-`OBSIA/`. **Trois noms, trois choses** : le **coffre** est ce dossier-ci, la
-mémoire de l'utilisateur ; le **dépôt de données** est le dépôt git qui la
-versionne, à sa racine ; le **dépôt produit** est `OBSIA/`, l'outil, versionné à
-part et publié. Rôles et gabarit `.gitignore` : `contrat-coffre-parent`.
+`OBSIA/`.
+
+**Le rôle de chacun** (coffre, dépôt de données, dépôt produit) et le gabarit
+`.gitignore` : `contrat-coffre-parent`.
 
 - **Un seul dépôt de données**, à la racine du coffre parent, versionne la mémoire
   et rien d'autre : `OBSIA/` compris reste dehors, sans gitlink ni couplage.
@@ -308,9 +302,7 @@ d'`0-EN-VRAC/` n'est **jamais une cible de rétrolien stable**.
 
 ## 8. Sources et citations
 
-Une note durable distingue **évidence** (avec son URL source),
-**interprétation** et **synthèse produite par un agent**. Les URLs sont
-regroupées en fin de fichier.
+Forme d'une note durable (évidence, interprétation, synthèse) : `contrat-memoire`.
 
 ## 9. Trace des séances — le carnet
 
@@ -323,41 +315,31 @@ mémoire, et **ce que porte la PR est dit au §6**.
 horodatée — quoi, où, résultat : **tout appel de MCP, quel que soit son
 `permission`**, et toute correction appliquée à un système.
 
-Deux limites : le carnet **n'est pas un journal d'audit infalsifiable** — ce qui
-le rend contradictoire, c'est l'historique du dépôt de données et, pour le
-produit, la relecture de la PR ; et l'on consigne la **nature** de l'action, pas
-nécessairement sa cible — **jamais d'adresse IP privée, de nom d'hôte interne,
-d'URL interne ni d'identifiant**, même dans le privé. La liste locale des noms
+Le carnet ne porte **jamais d'adresse IP privée, de nom d'hôte interne, d'URL
+interne ni d'identifiant**, même dans le privé ; ses limites : `contrat-memoire`. La liste locale des noms
 interdits est `~/.config/obsia/noms-interdits`, hors dépôt.
 
 ## 10. Méthode d'exécution
 
-Ce contrat lu, l'ordre à suivre pour toute demande — un harness peut le
-citer ou l'injecter, il ne le redéfinit jamais :
+Ce contrat lu, l'ordre à suivre pour toute demande — un harness peut le citer
+ou l'injecter, il ne le redéfinit jamais :
 
 0. Au démarrage, cherche tes carnets `statut: en cours` — dans l'arbre principal
    **et dans chaque worktree lié** — rapproche-les de l'état réel (§6) et propose
    de reprendre. Pendant la bascule, cherche aussi aux anciens emplacements
    (§6). Un agent `read_only: true` n'a pas de carnet : il saute cette étape.
-1. Choisis l'agent pertinent pour la demande, via `IA/system/agents-index.md`
-   ou l'index fourni par le harness. S'il n'y en a qu'un, c'est lui par
-   défaut. Lis `IA/agents/<nom>.md` pour son rôle et ses règles propres.
-2. Identifie, PARMI les skills et les MCP déclarés par cet agent, ce qui est
-   nécessaire à la demande — et seulement ça.
-   - Skill : lis `IA/skills/<nom>.md`, applique la procédure décrite.
-   - MCP : lis `IA/MCP/<nom>.md` avant d'appeler un de ses outils — il donne
-     les permissions et les règles de sécurité propres à cet outil.
-   - Annexe : lis-la avant l'acte que sa ligne nomme (tableau du préambule).
-3. Mémoire — dès qu'une décision est prise ou qu'une information mérite
-   d'être retrouvée plus tard : écris-la à l'emplacement que le §6 assigne à
-   sa nature. L'étape en cours s'écrit au carnet **avant** d'agir. Crée le
-   dossier s'il n'existe pas. Vérifie au §2 si l'écriture est directe ou passe
-   par patch.
-
-   Avant d'écrire une note durable, **lis celle qui existe déjà** sur le même
-   sujet : un fait qui change se corrige sur place, il ne se réécrit pas à
-   côté. Ne touche JAMAIS un fichier généré à la main.
-4. Cite les chemins des fichiers utilisés dans ta réponse.
+1. Choisis l'agent (`IA/system/agents-index.md` ; s'il n'y en a qu'un, c'est
+   lui) et lis `IA/agents/<nom>.md`.
+2. Parmi ses skills et MCP, prends ce qu'il faut à la demande, et seulement ça.
+   Skill : lis `IA/skills/<nom>.md` et applique-le. MCP : lis `IA/MCP/<nom>.md`
+   avant d'appeler un de ses outils. Annexe : lis-la avant l'acte que sa ligne
+   nomme (tableau du préambule).
+3. Mémoire : ce qui mérite d'être retrouvé s'écrit où le §6 l'assigne, l'étape
+   en cours **avant** d'agir, dossier créé s'il manque ; directe ou par patch : §2. Avant d'écrire une note
+   durable, **lis celle qui existe déjà** sur le même sujet : un fait qui change
+   se corrige sur place, il ne se réécrit pas à côté. Ne touche JAMAIS un fichier
+   généré à la main.
+4. Cite les chemins des fichiers utilisés.
 
 Ne charge pas de fichier « pour voir ». Si aucun skill ne correspond, réponds
 directement en le signalant. Un skill `read_only: true` n'exécute aucune
@@ -422,30 +404,22 @@ propres à chaque agent vivent dans sa fiche.
 
 ## 12. Tâches planifiées
 
-Une tâche se déclare dans `IA/tâches/<nom>.md` — ou, pour une tâche propre à
-cette installation (une machine précise du parc de l'utilisateur, ou son
-mainteneur), dans `Mon coffre/0-PROJETS/tâches-planifiées/<nom>.md` — l'un ou
-l'autre fait foi, jamais les deux à la fois pour un même nom ; le
-planificateur n'en porte qu'une **instance**,
-préfixée `obsia-`, **au plus une** par tâche, tous exécutants confondus,
-**les deux registres comptant ensemble pour cet invariant**. Créer, modifier
-ou suspendre une tâche du dépôt passe par **patch revu** ; une tâche du
-coffre suit l'écriture directe tracée du §7.4. Instancier ou retirer une
-instance se consigne au carnet (§9). **Savoir n'est pas instancier.**
+Une tâche se déclare dans `IA/tâches/` ou, propre à cette installation, dans
+`Mon coffre/0-PROJETS/tâches-planifiées/` — jamais les deux pour un même nom.
+Le planificateur en porte **au plus une instance**, préfixée `obsia-`, tous
+exécutants et les deux registres confondus. **Savoir n'est pas instancier.**
 Détail : `contrat-taches`.
 
 ## 13. Modules, installation et publication
 
-- **Pas de profil = catalogue complet** : c'est l'état que vérifie la CI.
+- **Pas de profil = catalogue complet** : l'état que vérifie la CI.
 - `installer.py` et `publier.py` n'écrivent qu'avec `--appliquer`, après lecture
   de `IA/system/installation-et-publication.md`.
-- **Le privé fait foi** ; le public en est dérivé à sens unique, et les deux ne
-  portent **jamais de données** (§7.1).
-- **Un fichier publié ne cite aucun chemin non publié** (`brouillon/`,
-  `.archive/`, coffre parent).
-- **Contrôle de fuite** : une valeur à forme reconnaissable refuse la
-  publication, et `--forcer` ne franchit **jamais** une clé privée ni un
-  jeton ; un nom de la liste locale avertit, et l'agent le rapporte à
-  l'utilisateur.
+- **Le privé fait foi** : le dépôt public est dérivé d'`OBSIA/` à sens unique,
+  et ni l'un ni l'autre ne porte **de données** (§7.1). Un fichier publié ne
+  cite aucun chemin non publié (`brouillon/`, `.archive/`, coffre parent).
+- **Contrôle de fuite** : une forme reconnaissable refuse la publication, et
+  `--forcer` ne franchit **jamais** une clé privée ni un jeton ; un nom de la
+  liste locale ne fait qu'avertir — l'agent le rapporte à l'utilisateur.
 
 Le reste : `contrat-distribution`.

@@ -25,6 +25,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from convention_des_notes import lire_yaml_simple
 from generer_prompt import (RACINE_DEFAUT, collecter, fichiers_declaratifs,
                             lire_frontmatter)
 
@@ -248,47 +249,6 @@ def ecrire_memoire_du_coffre(coffre: Path, produit: Path | None = None) -> list[
 
 
 # ------------------------------------------------------------ YAML minimal
-
-def lire_yaml_simple(texte: str) -> dict:
-    """Scalaires et listes à tirets, rien d'autre.
-
-    Même sous-ensemble que le frontmatter du §5, sans les délimiteurs `---`.
-    Suffisant pour `obsia.local.yml`, qu'un script écrit et qu'un humain
-    relit — pas pour du YAML quelconque, qu'on n'écrit jamais ici.
-    """
-    donnees: dict = {}
-    cle_liste: str | None = None
-
-    for ligne in texte.splitlines():
-        nu = ligne.strip()
-        if not nu or nu.startswith("#"):
-            continue
-
-        if nu.startswith("- ") and cle_liste:
-            donnees[cle_liste].append(nu[2:].strip().strip("\"'"))
-            continue
-
-        if ":" not in nu:
-            continue
-
-        cle, _, valeur = nu.partition(":")
-        cle, valeur = cle.strip(), valeur.strip()
-
-        if not valeur:
-            donnees[cle] = []
-            cle_liste = cle
-            continue
-
-        cle_liste = None
-        if valeur.lower() in ("true", "false"):
-            donnees[cle] = valeur.lower() == "true"
-        elif valeur.isdigit():
-            donnees[cle] = int(valeur)
-        else:
-            donnees[cle] = valeur.strip("\"'")
-
-    return donnees
-
 
 # ------------------------------------------------------------------ modules
 
