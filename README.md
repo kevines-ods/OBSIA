@@ -1,5 +1,8 @@
 # OBSIA
 
+![OBSIA](logo/banner.svg)
+
+
 **English** | [Français](README.fr.md)
 
 OBSIA gives your AI assistant a team of specialised agents — one to tidy your

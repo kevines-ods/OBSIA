@@ -1,5 +1,8 @@
 # OBSIA
 
+![OBSIA](logo/banniere.svg)
+
+
 [English](README.md) | **Français**
 
 OBSIA donne à ton assistant IA une équipe d'agents spécialisés — un pour
