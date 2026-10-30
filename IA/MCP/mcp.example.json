@@ -57,7 +57,7 @@
       ],
       "env": {
         "OBSIA_LOCAL_URL": "http://127.0.0.1:8080/v1",
-        "OBSIA_LOCAL_MODEL": "nom-du-modele"
+        "OBSIA_LOCAL_MODEL": "${OBSIA_LOCAL_MODEL}"
       }
     },
     "ecrivain-du-coffre": {
@@ -93,7 +93,7 @@
       ],
       "env": {
         "NEXTCLOUD_HOST": "https://nextcloud.example.tld",
-        "NEXTCLOUD_USERNAME": "compte-personnel",
+        "NEXTCLOUD_USERNAME": "${NEXTCLOUD_USERNAME}",
         "NEXTCLOUD_PASSWORD": "${NEXTCLOUD_APP_PASSWORD}"
       }
     },

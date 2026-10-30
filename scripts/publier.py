@@ -38,6 +38,7 @@ SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS))
 
 import modules as MOD
+from commun import depot_reel
 from generer_prompt import RACINE_DEFAUT
 
 #: Ce qui décrit une personne ou une machine, et ne franchit jamais la
@@ -433,23 +434,6 @@ def controler_texte(texte: str, noms_interdits=(), etiquette="texte") -> Control
     _balayer(texte.splitlines(), etiquette, trouvailles, avertissements,
              motif_des_noms(noms_interdits))
     return Controle(trouvailles, [], 1 if texte.strip() else 0, avertissements)
-
-
-def depot_reel(source: Path) -> Path:
-    """Le clone principal du dépôt, même quand on lance depuis un worktree.
-
-    Les motifs de machine nomment le coffre **de cette machine** : c'est le clone
-    principal qu'il faut lire, pas le dossier d'où l'on parle. Un worktree vit
-    ailleurs — `~/obsia-worktrees/<nom-agent>-<sujet>` — et son dossier parent
-    n'est pas le coffre : c'est un hangar à worktrees, dont le nom se lit dans la
-    documentation du dépôt. Prendre ce parent pour le coffre ferait signaler
-    cette documentation à chaque aperçu lancé depuis un worktree, et la
-    publication y resterait bloquée — un chemin de machine ne se force pas.
-    """
-    commun = Path(git(source, "rev-parse", "--git-common-dir").strip())
-    if not commun.is_absolute():
-        commun = source / commun
-    return commun.resolve().parent
 
 
 def controler_fuites(racine: Path, noms_interdits=(), machine: Path = None,

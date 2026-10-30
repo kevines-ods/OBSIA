@@ -266,3 +266,28 @@ class TestModeEnfantSansTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestFauxJourDansLesClausesDatees(unittest.TestCase):
+    """Les clauses datées vivent dans `verif_contrat`, mais le jour se lit dans
+    `verifier_coffre` : le faux jour doit les atteindre."""
+
+    def test_le_faux_jour_atteint_les_clauses_datees(self):
+        racine = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, racine)
+        noyau = racine / VC.NOYAU
+        noyau.parent.mkdir(parents=True)
+        noyau.write_text("Se retire au plus tard le 2026-12-31.\n", encoding="utf-8")
+        for attribut in ("date", "RACINE"):
+            self.addCleanup(setattr, VC, attribut, getattr(VC, attribut))
+        self.addCleanup(VC.avertissements.clear)
+        VC.RACINE = racine
+
+        VC.date = VD.faux_jour(date(2026, 12, 31))
+        VC.avertissements.clear()
+        VC.verifier_clauses_datees_du_noyau()
+        self.assertEqual(VC.avertissements, [])
+
+        VC.date = VD.faux_jour(date(2027, 1, 1))
+        VC.verifier_clauses_datees_du_noyau()
+        self.assertEqual(len(VC.avertissements), 1)

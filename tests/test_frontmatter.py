@@ -238,3 +238,24 @@ class TestCollecter(BaseCoffreTemporaire):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LecteurUnique(unittest.TestCase):
+    """Un seul lecteur du sous-ensemble YAML du §5 : les trois points d'entrée
+    lisent pareil, puce de liste entre guillemets comprise — la forme sur
+    laquelle `generer_prompt.py` divergeait des deux autres."""
+
+    TEXTE = '---\nname: "essai"\nskills:\n  - "recherche"\n  - \'mermaid\'\nread_only: true\n---\ncorps\n'
+
+    def test_trois_points_d_entree_concordent(self):
+        from convention_des_notes import extraire_frontmatter, lire_yaml_simple
+        import modules
+        dossier = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, dossier)
+        chemin = dossier / "essai.md"
+        chemin.write_text(self.TEXTE, encoding="utf-8")
+        attendu = {"name": "essai", "skills": ["recherche", "mermaid"], "read_only": True}
+        self.assertEqual(lire_frontmatter(chemin), attendu)
+        self.assertEqual(extraire_frontmatter(self.TEXTE)[0], attendu)
+        self.assertEqual(modules.lire_yaml_simple(self.TEXTE.split("---")[1]), attendu)
+

@@ -32,7 +32,7 @@ jobs:
       # bibliothèque standard, à dessein — y compris leurs tests (unittest,
       # jamais pytest, qui n'est pas installé).
       - name: Tests des scripts
-        run: python3 -m unittest discover -s tests
+        run: python3 -m unittest discover -b -s tests
 
       - name: Cohérence du coffre
         run: python3 scripts/verifier_coffre.py

@@ -142,24 +142,20 @@ Usage :
         # du coffre déclenche (§7.1).
 """
 
-import contextlib
-import io
 import os
 import re
 import subprocess
 import sys
 from datetime import date
 from pathlib import Path
+from types import SimpleNamespace
 
 sys.dont_write_bytecode = True
 SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS))
 
-from generer_prompt import (RACINE_DEFAUT, chemins_absolus,
-                            fichiers_declaratifs, lire_frontmatter,
-                            prompt_du_coffre, regle_des_secrets)
-from installer import contenu_agents, est_un_coffre_parent as _est_un_coffre_parent
-from publier import depot_reel
+from generer_prompt import RACINE_DEFAUT, fichiers_declaratifs, lire_frontmatter
+from commun import depot_reel, est_un_coffre_parent as _est_un_coffre_parent
 
 #: Les noms de la mémoire du coffre, et « qui est un agent », n'ont **qu'une**
 #: définition : le moteur partagé `convention_des_notes`, que l'applicateur du
@@ -169,6 +165,41 @@ from convention_des_notes import (EXPERIENCES, MEMOIRES, PREFERENCES,
                                   STATUTS_CARNET, carnet_a_la_forme,
                                   carnet_du_dossier, liste_des_agents)
 import modules as MOD
+import verif_contrat as VCT
+import verif_catalogue as VCA
+from verif_catalogue import (  # noqa: F401
+    AGENT_NOMME,
+    CHAMPS_COMMUNS,
+    CHAMPS_CONTRAT,
+    CHEMIN_CITE,
+    CHEMIN_RELATIF,
+    COFFRE_PARENT,
+    CONSIGNE_SKILL,
+    CORPS_ATTENDU,
+    EXECUTANTS,
+    GABARIT,
+    LIEN_MD,
+    MODES_TACHE,
+    NOM_EXEMPT_CONTRAT,
+    NOM_VALIDE,
+    PERMISSIONS,
+    PREFIXES_SONDE,
+    RENVOIS_ADMIS,
+    SCRIPT_APPELE,
+    TRANSPORTS,
+    TYPES_SKILL,
+    ZONES_PRIVEES,
+    cloture,
+    dans_zone_privee,
+    ligne_description_brute,
+    ligne_frontmatter_brute,
+    vise_le_coffre_parent)
+import verif_memoire as VM
+from verif_memoire import NOTE_DATEE_A_PLAT, RESERVES_PROJET  # noqa: F401
+from verif_memoire import _git_dans  # noqa: F401
+from verif_contrat import (CLAUSE_DATEE, LIBELLE_PLAFOND_NOYAU, NOYAU,  # noqa: F401
+                           TAILLE_FICHIER_AGENTS_AVERTISSEMENT,
+                           TAILLE_FICHIER_AGENTS_ERREUR)
 
 RACINE = RACINE_DEFAUT
 
@@ -195,35 +226,6 @@ COFFRE = _coffre_par_defaut(RACINE)
 #: produit ne doit pas être refusé pour elle (§7.1).
 MEMOIRE_STRICTE = False
 
-CHAMPS_COMMUNS = ("schema", "kind", "name", "description", "read_only")
-CHAMPS_CONTRAT = ("schema", "kind", "name", "description")   # ni read_only, ni type
-NOM_EXEMPT_CONTRAT = "registre.md"      # l'index du dossier, pas une annexe
-NOM_VALIDE = re.compile(r"^[^\W_]+(?:-[^\W_]+)*$", re.UNICODE)   # minuscules-et-tirets, accents admis
-TYPES_SKILL = ("core", "outil")
-
-# AGENTS.md est lu par Codex, qui ne retient en tout que 32 Kio de consignes :
-# le fichier global (~/.codex/AGENTS.md) et ceux du projet comptent **ensemble**.
-# Au-delà, le surplus est laissé de côté — sans erreur, sans avertissement ;
-# l'agent perd des agents et des skills entiers sans que rien ne le dise.
-# On mesure le pire cas — le catalogue entier, sans profil, comme la CI — et on
-# avertit dès 28 Kio : les 4 Kio de marge couvrent un fichier global, et
-# laissent le temps de réduire avant que le surplus ne soit écarté.
-TAILLE_FICHIER_AGENTS_AVERTISSEMENT = 28 * 1024     # 28 672 o
-TAILLE_FICHIER_AGENTS_ERREUR = 32 * 1024            # 32 768 o
-
-# Le noyau du contrat (`IA/system/VAULT-CONTRACT.md`) est lu **en entier** par
-# tout agent au démarrage : c'est un coût payé à chaque séance, pas un détail.
-# Son plafond en mots vit dans son **unique** endroit déclaré — la table de
-# `CONSTRAINTS.md`, ligne « Noyau du contrat », comme le plancher de tests. La
-# mesure est `len(texte.split())`, identique à `wc -w`. Relever le plafond se
-# décide dans une PR (§11), jamais en silence.
-NOYAU = Path("IA") / "system" / "VAULT-CONTRACT.md"
-LIBELLE_PLAFOND_NOYAU = "Noyau du contrat"
-
-# Une échéance datée dans le noyau s'écrit en ISO `AAAA-MM-JJ` — la seule forme
-# admise. Passé le jour, le contrôle avertit : une clause périmée laisse croire
-# qu'un régime tient encore.
-CLAUSE_DATEE = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 erreurs: list[str] = []
 avertissements: list[str] = []
@@ -373,1347 +375,166 @@ def verifier_bascule(aujourdhui=None):
 
 # ------------------------------------------------------------------ frontmatter
 
-def ligne_frontmatter_brute(chemin: Path, cle: str) -> str | None:
-    """La ligne `<cle>:` telle qu'écrite dans le frontmatter.
+# Contrôles du catalogue : leur code vit dans `verif_catalogue.py`.
 
-    `lire_frontmatter()` normalise (déquote, convertit) ; certains contrôles
-    portent au contraire sur l'écriture littérale — un scalaire replié, des
-    guillemets absents.
-    """
-    dans_fm = False
-    prefixe = cle + ":"
-    for ligne in chemin.read_text(encoding="utf-8").splitlines():
-        if ligne.strip() == "---":
-            if dans_fm:
-                return None
-            dans_fm = True
-            continue
-        if dans_fm and ligne.startswith(prefixe):
-            return ligne
-    return None
-
-
-def ligne_description_brute(chemin: Path) -> str | None:
-    """La ligne `description:` telle qu'écrite, pour détecter un scalaire replié."""
-    return ligne_frontmatter_brute(chemin, "description")
+def _contexte_catalogue():
+    """L'état que les contrôles du catalogue lisent, pris au moment de l'appel."""
+    return SimpleNamespace(racine=RACINE, coffre=COFFRE, reduite=REDUITE,
+                           erreur=erreur, avertir=avertir, signaler=signaler)
 
 
 def verifier_fichier(chemin: Path, genre: str, champs_requis: tuple = CHAMPS_COMMUNS,
-                     emplacement: str | None = None) -> dict | None:
-    """Frontmatter d'une fiche déclarative — agent, skill ou annexe du contrat.
-
-    `champs_requis` dit quels champs doivent être **présents** : les annexes du
-    contrat n'ont ni `read_only` — elles ne s'exécutent pas — ni `type`, réservé
-    aux skills. Tout le reste est vérifié dans tous les cas, quel que soit
-    l'appelant : `kind` égal au genre, `name` qui suit le nom du fichier et
-    `NOM_VALIDE`, `schema` entier, `description` non vide et d'une seule ligne
-    physique, `skills` et `mcp` en listes si elles sont là. Un `module` non vide
-    est également exigé, hors `champs_requis` : il se vérifie pour toute fiche
-    (§13). Réutiliser cette garde vaut mieux que la réécrire — deux copies d'un
-    contrôle finissent par diverger.
-    """
-    fm = lire_frontmatter(chemin)
-    rel = chemin.relative_to(RACINE)
-
-    if fm is None:
-        erreur(rel, "frontmatter absent ou non fermé")
-        return None
-
-    for champ in champs_requis:
-        if champ not in fm:
-            erreur(rel, "champ obligatoire manquant : `%s` (§5)" % champ)
-
-    if fm.get("kind") != genre:
-        erreur(rel, "`kind: %s` alors que le fichier est dans %s (§5)"
-               % (fm.get("kind"),
-                  emplacement or ("le dossier des %ss" % genre)))
-
-    nom = fm.get("name")
-    if nom:
-        if nom != chemin.stem:
-            erreur(rel, "`name: %s` ≠ nom du fichier `%s` (§5)" % (nom, chemin.stem))
-        if not NOM_VALIDE.match(nom):
-            erreur(rel, "`name: %s` — attendu : minuscules et tirets, sans espace (§5)" % nom)
-
-    if "read_only" in champs_requis and not isinstance(fm.get("read_only"), bool):
-        erreur(rel, "`read_only` doit valoir true ou false (§5)")
-
-    if not isinstance(fm.get("schema"), int):
-        erreur(rel, "`schema` doit être un entier (§5)")
-
-    # description : présente, sur une seule ligne physique
-    desc = fm.get("description")
-    brute = ligne_description_brute(chemin)
-    if not desc:
-        erreur(rel, "`description` vide ou absente (§5)")
-    elif desc.strip() in (">", "|", ">-", "|-"):
-        erreur(rel, "`description` est un scalaire replié YAML — non géré par "
-                    "lire_frontmatter(), la valeur devient « %s ». Une seule ligne physique."
-               % desc.strip())
-    elif brute and brute.rstrip().endswith((":", ">", "|")):
-        erreur(rel, "`description` semble se poursuivre sur la ligne suivante — "
-                    "une seule ligne physique est acceptée")
-
-    if not fm.get("module"):
-        erreur(rel, "champ obligatoire manquant : `module` (§13)")
-
-    if genre == "skill" and fm.get("type") not in TYPES_SKILL:
-        erreur(rel, "`type: %s` — attendu `core` ou `outil` (§5)" % fm.get("type"))
-
-    for champ in ("skills", "mcp"):
-        if champ in fm and not isinstance(fm[champ], list):
-            erreur(rel, "`%s` vaut une chaîne, pas une liste — une entrée par ligne "
-                        "précédée d'un tiret (§5)" % champ)
-
-    if fm:
-        fm["_chemin"] = rel
-    return fm
+                     emplacement: str | None = None):
+    return VCA.verifier_fichier(_contexte_catalogue(), chemin, genre, champs_requis, emplacement)
 
 
-# ---------------------------------------------------------------------- checks
-
-TRANSPORTS = ("stdio", "http")
-PERMISSIONS = ("normal", "elevated")
-
-
-def verifier_mcp(dossier: Path) -> list[dict]:
-    """Frontmatter des fichiers de IA/MCP/ (§5).
-
-    Format distinct de celui des agents et des skills : pas de `read_only`,
-    mais `transport` et `permission`.
-    """
-    resultats = []
-    for chemin in sorted(dossier.glob("*.md")) if dossier.is_dir() else []:
-        fm = lire_frontmatter(chemin)
-        rel = chemin.relative_to(RACINE)
-        if fm is None:
-            erreur(rel, "frontmatter absent ou non fermé")
-            continue
-        for champ in ("schema", "kind", "name", "description", "type",
-                      "transport", "permission"):
-            if champ not in fm:
-                erreur(rel, "champ obligatoire manquant : `%s` (§5)" % champ)
-        if fm.get("kind") != "mcp":
-            erreur(rel, "`kind: %s` attendu `mcp` (§5)" % fm.get("kind"))
-        if fm.get("name") and fm["name"] != chemin.stem:
-            erreur(rel, "`name: %s` ≠ nom du fichier `%s` (§5)" % (fm["name"], chemin.stem))
-        if fm.get("transport") not in TRANSPORTS:
-            erreur(rel, "`transport: %s` — attendu %s (§5)"
-                   % (fm.get("transport"), " ou ".join(TRANSPORTS)))
-        if fm.get("permission") not in PERMISSIONS:
-            erreur(rel, "`permission: %s` — attendu %s (§5)"
-                   % (fm.get("permission"), " ou ".join(PERMISSIONS)))
-        fm["_chemin"] = rel
-        resultats.append(fm)
-    return resultats
-
-
-MODES_TACHE = ("agent", "commande")
-EXECUTANTS = ("local", "harness")
-CORPS_ATTENDU = {"agent": "## Instruction", "commande": "## Commande"}
+def verifier_mcp(dossier: Path):
+    return VCA.verifier_mcp(_contexte_catalogue(), dossier)
 
 
 def verifier_taches(dossier: Path, agents: list[dict], *,
-                    exclure: frozenset = frozenset()) -> list[dict]:
-    """Frontmatter et corps des fichiers d'un registre de tâches (§5, §12).
-
-    Sert aux deux registres : `IA/tâches/` et le registre privé du coffre
-    (`verifier_taches_coffre`) — `module` reste obligatoire dans les deux
-    (§5), mais seul celui du dépôt produit est confronté au catalogue
-    installable (`verifier_appartenance`, §13) : le registre privé n'en fait
-    pas partie.
-
-    `exclure` nomme des fichiers à ignorer — vide pour `IA/tâches/`, qui n'en
-    porte jamais ; `verifier_taches_coffre` y pose `sommaire.md` quand il
-    porte la marque d'un fichier généré, pour ce seul appel. La décision
-    reste chez l'appelant : cette fonction ne connaît rien de la mémoire du
-    coffre ni des fichiers que `scripts/regenerate_sommaire.py`,
-    `regenerate_index.py` ou `installer.py` écrivent (§11).
-
-    Une tâche déclare une intention planifiée. Trois erreurs la rendent
-    silencieusement inopérante — d'où trois contrôles :
-      · `quand` non quoté : `*/15 * * * *` est une ancre YAML invalide, tout
-        lecteur YAML réel refuse le fichier ;
-      · corps sans `## Instruction` (ou `## Commande`) : rien à déclencher ;
-      · `agent` inconnu : la tâche vise quelqu'un qui n'existe pas (§1).
-    """
-    resultats = []
-    noms_agents = {a["name"] for a in agents if a.get("name")}
-    for chemin in sorted(dossier.glob("*.md")) if dossier.is_dir() else []:
-        if chemin.name in exclure:
-            continue
-        fm = lire_frontmatter(chemin)
-        try:
-            rel = chemin.relative_to(RACINE)
-        except ValueError:
-            rel = chemin.relative_to(COFFRE) if COFFRE.is_dir() else chemin
-        if fm is None:
-            erreur(rel, "frontmatter absent ou non fermé")
-            continue
-
-        for champ in ("schema", "kind", "name", "description",
-                      "mode", "quand", "fuseau", "exécutant", "actif"):
-            if champ not in fm:
-                erreur(rel, "champ obligatoire manquant : `%s` (§5)" % champ)
-
-        if fm.get("kind") != "tâche":
-            erreur(rel, "`kind: %s` attendu `tâche` (§5)" % fm.get("kind"))
-        if fm.get("name") and fm["name"] != chemin.stem:
-            erreur(rel, "`name: %s` ≠ nom du fichier `%s` (§5)" % (fm["name"], chemin.stem))
-        if fm.get("name") and not NOM_VALIDE.match(fm["name"]):
-            erreur(rel, "`name: %s` — attendu : minuscules et tirets, sans espace (§5)"
-                   % fm["name"])
-        if not isinstance(fm.get("schema"), int):
-            erreur(rel, "`schema` doit être un entier (§5)")
-        if not isinstance(fm.get("actif"), bool):
-            erreur(rel, "`actif` doit valoir true ou false (§5)")
-        if not fm.get("description"):
-            erreur(rel, "`description` vide ou absente (§5)")
-
-        mode = fm.get("mode")
-        if mode not in MODES_TACHE:
-            erreur(rel, "`mode: %s` — attendu %s (§5)" % (mode, " ou ".join(MODES_TACHE)))
-
-        # `quand` : cron à 5 champs, écrit entre guillemets
-        brute = ligne_frontmatter_brute(chemin, "quand")
-        if brute:
-            valeur = brute.partition(":")[2].strip()
-            if not (valeur.startswith(('"', "'")) and valeur.endswith(('"', "'"))):
-                erreur(rel, "`quand` doit être écrit entre guillemets (§5) — sans eux, "
-                            "une expression comme */15 * * * * est une ancre YAML invalide")
-        quand = fm.get("quand")
-        if isinstance(quand, str) and len(quand.split()) != 5:
-            erreur(rel, "`quand: %s` — attendu cron à 5 champs "
-                        "(minute heure jour-du-mois mois jour-de-semaine) (§5)" % quand)
-        elif isinstance(quand, int):
-            erreur(rel, "`quand` doit être une chaîne entre guillemets, pas un nombre (§5)")
-
-        executant = fm.get("exécutant")
-        if executant not in EXECUTANTS:
-            erreur(rel, "`exécutant: %s` — attendu %s (§5). Sans lui, la "
-                        "réconciliation ne sait pas où la tâche doit tourner et "
-                        "peut créer un doublon (§12)."
-                   % (executant, " ou ".join(EXECUTANTS)))
-        elif executant == "harness" and mode == "commande":
-            avertir(rel, "`mode: commande` avec `exécutant: harness` — un "
-                         "planificateur distant n'atteint pas les fichiers de la "
-                         "machine. Vérifier que ce harness tourne bien en local.")
-
-        fuseau = fm.get("fuseau")
-        if isinstance(fuseau, str) and "/" not in fuseau and fuseau != "UTC":
-            avertir(rel, "`fuseau: %s` — attendu un identifiant IANA (`Europe/Paris`) "
-                         "ou `UTC`" % fuseau)
-
-        if mode == "agent":
-            vise = fm.get("agent")
-            if not vise:
-                erreur(rel, "`mode: agent` sans champ `agent` (§5)")
-            elif vise not in noms_agents:
-                erreur(rel, "vise l'agent `%s`, qui n'a pas de fichier dans "
-                            "IA/agents/ (§1)" % vise)
-        elif mode == "commande" and fm.get("agent"):
-            avertir(rel, "`mode: commande` avec un champ `agent` — ignoré au "
-                         "déclenchement, à retirer")
-
-        attendu = CORPS_ATTENDU.get(mode)
-        if attendu and attendu not in chemin.read_text(encoding="utf-8"):
-            erreur(rel, "corps sans section `%s` — la tâche ne déclenche rien (§5)"
-                   % attendu)
-
-        if not fm.get("module"):
-            erreur(rel, "champ obligatoire manquant : `module` (§5)")
-
-        fm["_chemin"] = rel
-        resultats.append(fm)
-    return resultats
+                    exclure: frozenset = frozenset()):
+    return VCA.verifier_taches(_contexte_catalogue(), dossier, agents, exclure=exclure)
 
 
-def verifier_taches_coffre(taches_produit: list[dict], agents: list[dict]) -> list[dict]:
-    """Registre privé du coffre (`Mon coffre/0-PROJETS/tâches-planifiées/`,
-    §12) — tâches propres à cette installation. Mêmes règles que
-    `verifier_taches`, `module` compris (§5) — mais sans le confronter au
-    catalogue : ce registre ne fait pas partie des modules installables du
-    dépôt produit (§13), aussi n'est-il jamais passé à `verifier_appartenance`.
-    Rend silencieusement une liste vide si le coffre parent n'a pas ce dossier
-    (CI, clone sans coffre) — avec un avertissement si le coffre, lui, existe.
-
-    Un nom déclaré aux deux registres est un doublon (§12) : l'invariant d'une
-    seule instance vivante ne tient pas si la même tâche existe deux fois.
-    """
-    dossier = COFFRE / "0-PROJETS" / "tâches-planifiées"
-    if not dossier.is_dir():
-        if _est_un_coffre_parent(COFFRE):
-            avertir(COFFRE, "coffre parent trouvé, mais aucun registre "
-                            "`0-PROJETS/tâches-planifiées/` — aucune tâche liée "
-                            "au parc n'est lue (§12)")
-        return []
-
-    # Ce dossier vit sous `0-PROJETS/` : `regenerate_sommaire.py` y pose un
-    # `sommaire.md` sans frontmatter comme à tout projet (§11). On ne
-    # l'exempte que s'il porte bien sa marque de fichier généré — un fichier
-    # nommé ainsi mais sans cette marque reste jugé comme une tâche, et donc
-    # refusé pour de bonnes raisons.
-    MARQUE_SOMMAIRE = "Généré par `scripts/regenerate_sommaire.py`"
-    sommaire = dossier / "sommaire.md"
-    exclure = frozenset({"sommaire.md"}) if (
-        sommaire.is_file() and MARQUE_SOMMAIRE in sommaire.read_text(encoding="utf-8")
-    ) else frozenset()
-
-    resultats = verifier_taches(dossier, agents, exclure=exclure)
-    noms_produit = {t["name"] for t in taches_produit if t.get("name")}
-    for t in resultats:
-        if t.get("name") in noms_produit:
-            erreur(t["_chemin"], "nom `%s` déclaré aussi dans IA/tâches/ — un "
-                                 "même nom ne vit pas aux deux registres (§12)"
-                   % t["name"])
-    return resultats
+def verifier_taches_coffre(taches_produit: list[dict], agents: list[dict]):
+    return VCA.verifier_taches_coffre(_contexte_catalogue(), taches_produit, agents)
 
 
 def verifier_references(agents, skills):
-    """Un agent ne déclare que des skills et des MCP qui existent."""
-    connus = {s["name"] for s in skills if s.get("name")}
-    mcp_connus = {p.stem for p in (RACINE / "IA" / "MCP").glob("*.md")} \
-        if (RACINE / "IA" / "MCP").is_dir() else set()
-
-    for a in agents:
-        for s in a.get("skills", []):
-            if s not in connus:
-                erreur(a["_chemin"], "déclare le skill `%s`, qui n'existe pas dans IA/skills/" % s)
-        for m in a.get("mcp", []):
-            if m not in mcp_connus:
-                erreur(a["_chemin"], "déclare le MCP `%s`, qui n'existe pas dans IA/MCP/" % m)
-
-    utilises = {s for a in agents for s in a.get("skills", [])}
-    for s in skills:
-        if s.get("name") and s["name"] not in utilises:
-            avertir(s["_chemin"], "skill déclaré par aucun agent")
-
-    actifs = {m for a in agents for m in a.get("mcp", [])}
-    for p in sorted((RACINE / "IA" / "MCP").glob("*.md")) if (RACINE / "IA" / "MCP").is_dir() else []:
-        if p.stem not in actifs:
-            avertir(p.relative_to(RACINE),
-                    "MCP déclaré par aucun agent — inutilisable en l'état (§10.2)")
-
-
-# « charger X », « relève de X » : une consigne, pas une simple mention.
-# Insensible à la casse : une consigne s'écrit aussi bien en tête de phrase
-# (« Charger `x`. ») qu'en cours de ligne, et le verbe y garde son sens.
-CONSIGNE_SKILL = re.compile(r"(?:charger|c'est|relève de)\s+`([^\W_][\w-]{2,39})`",
-                            re.IGNORECASE)
-
-# Frontières assumées : le skill visé est volontairement hors de portée de cet
-# agent, et le skill qui renvoie vers lui l'énonce. Les exemptions vivent ici,
-# dans le vérificateur, jamais dans le frontmatter du fichier contrôlé : un
-# fichier qui se déclare lui-même dispensé annule le contrôle.
-RENVOIS_ADMIS = {
-    ("diagnostic-linux", "remediation-linux", "batisseur"):
-        "constater n'implique pas le droit de corriger la machine ; "
-        "diagnostic-linux énonce la frontière et rend la main",
-}
+    return VCA.verifier_references(_contexte_catalogue(), agents, skills)
 
 
 def verifier_portee_des_renvois(agents, skills):
-    """Un skill renvoie-t-il vers un skill hors de portée de son agent ?
-
-    Le §10.2 fait choisir PARMI les skills déclarés par l'agent. Un skill qui
-    dit « charger `X` » alors que l'agent qui le déclare n'a pas `X` donne une
-    consigne inapplicable : la procédure s'arrête là sans que rien ne le dise.
-
-    Avertissement et non erreur : la détection repose sur le verbe employé,
-    donc sur une heuristique. Et l'absence peut être **voulue** — une
-    frontière de périmètre plutôt qu'un oubli ; c'est alors au skill de
-    l'énoncer.
-    """
-    connus = {s["name"]: s for s in skills if s.get("name")}
-    for nom, fm in connus.items():
-        proprios = [a for a in agents if nom in a.get("skills", [])]
-        if not proprios:
-            continue
-        chemin = RACINE / fm["_chemin"]
-        try:
-            texte = chemin.read_text(encoding="utf-8")
-        except OSError:
-            continue
-        vises = {m.group(1) for m in CONSIGNE_SKILL.finditer(texte)} & set(connus)
-        for vise in sorted(vises - {nom}):
-            hors = [a["name"] for a in proprios if vise not in a.get("skills", [])]
-            hors = [h for h in hors
-                    if (nom, vise, h) not in RENVOIS_ADMIS]
-            if hors:
-                avertir(fm["_chemin"],
-                        "dit de charger `%s`, que %s ne déclare pas — consigne "
-                        "inapplicable pour lui, ou frontière à énoncer (§10.2)"
-                        % (vise, " et ".join("`%s`" % h for h in hors)))
+    return VCA.verifier_portee_des_renvois(_contexte_catalogue(), agents, skills)
 
 
 def verifier_forme_dossier(dossier: Path, genre: str):
-    """Un skill en forme dossier doit porter son point d'entrée (§5).
-
-    Vérifie aussi que les fichiers extraits dans `references/` sont bien cités
-    depuis le corps : un fichier qu'on ne sait pas exister n'est jamais lu —
-    c'est la règle de `createur-de-skill`.
-    """
-    if not dossier.is_dir():
-        return
-    for sous in sorted(dossier.iterdir()):
-        if not sous.is_dir() or sous.name.startswith("."):
-            continue
-        entree = sous / (sous.name + ".md")
-        rel = sous.relative_to(RACINE)
-        if not entree.is_file():
-            erreur(rel, "dossier de %s sans point d'entrée `%s.md` (§5). "
-                        "Le point d'entrée porte le nom du dossier, pas `SKILL.md`."
-                   % (genre, sous.name))
-            continue
-
-        corps = entree.read_text(encoding="utf-8")
-        for annexe in sorted((sous / "references").glob("**/*")):
-            if not annexe.is_file():
-                continue
-            if annexe.name not in corps:
-                avertir(rel, "`references/%s` n'est cité nulle part dans `%s.md` — "
-                             "un fichier qu'on ne sait pas exister n'est jamais lu"
-                        % (annexe.relative_to(sous / "references").as_posix(), sous.name))
-
-
-# Formes réelles sous lesquelles un nom d'agent apparaît dans le coffre :
-#   l'agent `assistant`   ·   un agent « untel »   ·   agent[untel] --> …
-# Le nom capturé doit ressembler à un nom : lettres, chiffres, tirets, espaces.
-# Exclure « : » et « | » écarte `read_only: false` et les séparateurs de tableau.
-AGENT_NOMME = re.compile(
-    r"agents?\s*[«\"`\[]\s*([^\W\d_][\w \-]{1,39}?)\s*[»\"`\]]", re.UNICODE)
+    return VCA.verifier_forme_dossier(_contexte_catalogue(), dossier, genre)
 
 
 def verifier_agents_nommes(agents):
-    """§1 : seul un agent qui a son fichier dans IA/agents/ peut être nommé.
-
-    Nommer un agent avant qu'il existe le fait exister dans les têtes — c'est
-    ainsi qu'un agent fantôme s'est installé dans ce coffre pendant des mois.
-    """
-    declares = {a["name"] for a in agents if a.get("name")}
-    for chemin in sorted(RACINE.rglob("*.md")):
-        if any(part.startswith(".") for part in chemin.relative_to(RACINE).parts):
-            continue
-        rel = chemin.relative_to(RACINE)
-        try:
-            texte = chemin.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
-            continue
-        for cite in {m.group(1) for m in AGENT_NOMME.finditer(texte)}:
-            if cite in declares:
-                continue
-            # contre-exemples de nommage de dossier : ne désignent personne
-            if re.fullmatch(r"agents?\s*\d+", cite) or cite.startswith(("nom-", "<")):
-                continue
-            signaler(rel, "nomme l'agent `%s`, qui n'a pas de fichier dans "
-                          "IA/agents/ (§1 : seul un agent existant peut être nommé)" % cite)
-
-
-# Un chemin cité entre accents graves, ou une cible de lien Markdown.
-# La mémoire est sortie du dépôt (§7.1) : elle ne s'y cite plus — sauf l'ancien
-# `mémoire/`, resté le temps de la bascule, dont les chemins cités restent donc
-# contrôlés. Cette ligne disparaît avec le dossier, à la fin de la migration du
-# chantier `souverainete-des-donnees`.
-CHEMIN_CITE = re.compile(
-    r"`((?:IA|scripts|brouillon|mémoire)/[^`\s]+\.(?:md|py|json|yml|sh))`")
-# Un chemin relatif cité — `../system/VAULT-CONTRACT.md`. C'est la forme
-# employée partout dans le coffre, et celle qui casse quand un skill passe de
-# la forme plate à la forme dossier (§6) : elle se résout depuis le fichier
-# qui la cite, pas depuis la racine.
-CHEMIN_RELATIF = re.compile(r"`(\.\.?/[^`\s]+\.(?:md|py|json|yml|sh))`")
-# Un script réellement appelé dans un bloc de code. Le reste d'un bloc n'est
-# pas contrôlé — on y écrit des arborescences d'exemple — mais une commande,
-# elle, s'exécute : c'est ce que l'instruction d'une tâche fera au
-# déclenchement.
-SCRIPT_APPELE = re.compile(r"(?:python3?|bash|sh)\s+([\w./\-]+\.(?:py|sh))")
-LIEN_MD = re.compile(r"\]\(([^)]+)\)")
-GABARIT = re.compile(r"[<>*…{]|AAAA|MM-JJ")          # chemins d'exemple, pas des cibles
-
-# Dossiers du coffre parent (§7.1) : hors du dépôt, donc invisibles d'ici.
-# Un chemin qui les vise n'est pas cassé, il désigne autre chose. Source unique :
-# `modules.MARQUEURS_COFFRE`, partagée avec `publier.py`.
-COFFRE_PARENT = MOD.MARQUEURS_COFFRE
-
-
-def vise_le_coffre_parent(chemin: str) -> bool:
-    """Le chemin désigne-t-il un dossier du coffre parent plutôt que le dépôt ?"""
-    segments = [s for s in chemin.split("/") if s not in ("", ".", "..")]
-    return bool(segments) and segments[0] in COFFRE_PARENT
+    return VCA.verifier_agents_nommes(_contexte_catalogue(), agents)
 
 
 def verifier_chemins_cites():
-    """Un chemin cité dans `IA/` ou à la racine doit exister.
-
-    Déplacer un skill en forme dossier laisse derrière lui des chemins qui ne
-    mènent plus nulle part — dont, une fois, celui que l'instruction d'une
-    tâche demandait d'ouvrir au déclenchement. Rien ne le signalait.
-
-    Le contrôle s'arrête à `IA/` et aux documents de la racine : là, un chemin
-    faux **agit**. La mémoire est hors du dépôt (§7.1) : ses chemins n'y sont
-    plus cités, et un récit y cite de toute façon légitimement un état révolu
-    ou reproduit un extrait d'index.
-
-    `IA/system/session-log/` est écarté pour la même raison, bien qu'il vive
-    sous `IA/` : un log dit ce qui a été fait ce jour-là, aux chemins de ce
-    jour-là. Le corriger après un déplacement lui ferait annoncer la création
-    d'un fichier à un endroit qui n'existait pas encore — on falsifierait le
-    récit pour faire taire le contrôle. Un log n'agit jamais : personne ne
-    l'ouvre pour exécuter ce qu'il décrit.
-
-    Trois formes sont contrôlées, parce que trois formes cassent :
-
-      · le chemin depuis la racine du dépôt — `IA/skills/x.md` ;
-      · le chemin **relatif**, résolu depuis le fichier qui le cite — c'est
-        celui qui casse quand un skill change de forme (§6), et il est resté
-        des mois hors du filet ;
-      · le **script appelé dans un bloc de code** — le reste d'un bloc est
-        illustratif, mais une commande s'exécute.
-
-    Les chemins du coffre parent (§7.1) sont écartés : ils désignent des
-    dossiers hors du dépôt, que ce script ne peut pas voir.
-    """
-    cibles = list((RACINE / "IA").rglob("*.md")) + list(RACINE.glob("*.md"))
-    for chemin in sorted(cibles):
-        rel = chemin.relative_to(RACINE)
-        if any(part.startswith(".") for part in rel.parts):
-            continue
-        if rel.parts[:3] == ("IA", "system", "session-log"):
-            continue
-        texte = chemin.read_text(encoding="utf-8")
-        hors_code = re.sub(r"```.*?```", "", texte, flags=re.S)
-
-        for cite in sorted({m.group(1) for m in CHEMIN_CITE.finditer(hors_code)}):
-            if GABARIT.search(cite) or (RACINE / cite).exists():
-                continue
-            signaler(rel, "cite le chemin `%s`, qui n'existe pas" % cite)
-
-        # chemins relatifs : résolus depuis le fichier qui les cite
-        for cite in sorted({m.group(1) for m in CHEMIN_RELATIF.finditer(hors_code)}):
-            if GABARIT.search(cite) or vise_le_coffre_parent(cite):
-                continue
-            if (chemin.parent / cite).exists():
-                continue
-            signaler(rel, "cite le chemin relatif `%s`, qui ne mène nulle part "
-                        "depuis ce fichier (§6)" % cite)
-
-        # scripts appelés dans un bloc de code : eux s'exécutent
-        for bloc in re.findall(r"```.*?```", texte, flags=re.S):
-            for script in sorted({m.group(1) for m in SCRIPT_APPELE.finditer(bloc)}):
-                if GABARIT.search(script) or vise_le_coffre_parent(script):
-                    continue
-                depuis_racine = (RACINE / script).exists()
-                depuis_fichier = (chemin.parent / script).exists()
-                if depuis_racine or depuis_fichier:
-                    continue
-                signaler(rel, "appelle le script `%s` dans un bloc de code, "
-                            "et ce fichier n'existe pas (§11)" % script)
-
-        for m in LIEN_MD.finditer(hors_code):
-            cible = m.group(1).split("#")[0].strip()
-            if (not cible or "://" in cible or cible.startswith("mailto:")
-                    or GABARIT.search(cible)):
-                continue
-            if not (chemin.parent / cible).exists():
-                signaler(rel, "lien Markdown cassé : `%s`" % cible)
-
-
-#: Ce que `publier.py` vide au passage vers le public (§13.5). Un fichier
-#: publié qui cite un chemin d'ici mènerait nulle part dans la distribution.
-#: La mémoire est sortie du dépôt (§7.1) : elle n'est plus citée — sauf l'ancien
-#: `mémoire/`, resté le temps de la bascule, qui reste donc dans la liste des
-#: zones qu'un fichier publié ne cite pas. Ces deux lignes disparaissent avec le
-#: dossier, à la fin de la migration du chantier `souverainete-des-donnees`.
-ZONES_PRIVEES = ("brouillon", ".archive", "IA/system/session-log", "mémoire")
-
-
-def dans_zone_privee(chemin: str) -> bool:
-    return any(chemin == zone or chemin.startswith(zone + "/")
-               for zone in ZONES_PRIVEES)
+    return VCA.verifier_chemins_cites(_contexte_catalogue())
 
 
 def verifier_citations_de_memoire():
-    """§13.5 : un fichier publié ne cite pas un chemin qui ne sera pas publié.
-
-    `publier.py` vide `brouillon/`, `.archive/` et `IA/system/session-log/` au
-    passage vers le public. Un chemin qui les vise depuis `IA/` ou depuis la
-    racine mène donc nulle part dans la distribution — et l'export échoue, loin
-    de l'endroit où la faute a été écrite. Autant la voir ici.
-
-    Ce n'est pas une interdiction de *renvoyer* à une note privée : la nommer
-    suffit, et c'est déjà la règle du §7.5 pour les rétroliens — un lien par
-    nom survit aux déplacements, un lien par chemin casse.
-    """
-    for chemin in sorted(RACINE.rglob("*.md")):
-        rel = chemin.relative_to(RACINE)
-        if any(part.startswith(".") for part in rel.parts):
-            continue
-        if len(rel.parts) > 1 and rel.parts[0] != "IA":
-            continue                      # même portée que le contrôle des chemins
-        if rel.parts[:3] == ("IA", "system", "session-log"):
-            continue                      # un log dit les chemins de son jour (§11)
-        try:
-            texte = chemin.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
-            continue
-        for cite in sorted({m.group(1) for m in CHEMIN_CITE.finditer(texte)}):
-            if GABARIT.search(cite):      # chemin d'exemple, pas une cible
-                continue
-            if not dans_zone_privee(cite):
-                continue
-            if cite.endswith("/README.md"):
-                continue
-            erreur(rel, "cite le chemin `%s`, qui ne sera pas publié : cette "
-                        "zone est vidée à la publication. Nommer la note "
-                        "suffit (§13.5)." % cite)
+    return VCA.verifier_citations_de_memoire(_contexte_catalogue())
 
 
-def verifier_unicite_des_noms():
-    """§6 : les noms de notes doivent être uniques dans tout le coffre parent.
-
-    On ne peut pas voir le coffre parent depuis ici ; on vérifie donc l'unicité
-    à l'intérieur d'OBSIA, qui en est la condition nécessaire.
-    """
-    banals = {"sommaire.md", "README.md"}          # légitimement répétés
-    vus: dict[str, list[str]] = {}
-    for chemin, sous, fichiers in os.walk(RACINE):
-        sous[:] = [d for d in sous
-                   if not d.startswith(".") and d not in ("scripts", "assets")]
-        for f in fichiers:
-            if f.endswith(".md") and f not in banals:
-                vus.setdefault(f, []).append(
-                    str(Path(chemin).joinpath(f).relative_to(RACINE)))
-    for nom, chemins in sorted(vus.items()):
-        if len(chemins) > 1:
-            erreur(nom, "nom de note en double, les rétroliens deviennent ambigus (§6) : %s"
-                   % ", ".join(chemins))
+def verifier_modules(dossier: Path):
+    return VCA.verifier_modules(_contexte_catalogue(), dossier)
 
 
-# ------------------------------------------------------------------- carnets
-# La forme d'un carnet n'a qu'un exemplaire, et il vit dans le moteur partagé :
-# c'est lui qui nomme (`nom_de_carnet`), c'est lui qui reconnaît
-# (`carnet_a_la_forme`, `carnet_du_dossier`). La date et les statuts se lisent là
-# aussi — deux listes de statuts finiraient par diverger.
-
-NOTE_DATEE_A_PLAT = re.compile(r"^\d{4}-\d{2}-\d{2}-.*\.md$")
-RESERVES_PROJET = ("carnets", "documents", "code")
+def verifier_profil(modules: list[dict]):
+    return VCA.verifier_profil(_contexte_catalogue(), modules)
 
 
-def designation(chemin: Path) -> Path:
-    """Chemin affiché : relatif au dépôt produit s'il y est, relatif au coffre
-    parent sinon — la mémoire vit là (§7.1), et un rapport doit rester lisible."""
-    bases = []
-    for base in (RACINE, COFFRE, RACINE.parent):
-        if base not in bases:
-            bases.append(base)
-    for base in bases:
-        try:
-            return chemin.relative_to(base)
-        except ValueError:
-            continue
-    return chemin
-
-
-def emplacements_de_projets():
-    """Les dossiers de projets à contrôler, dans l'ordre : le coffre parent
-    (`0-PROJETS/`, et son ancien nom `-PROJETS/`), puis l'ancien
-    `mémoire/projets` du dépôt tant que la bascule dure (§6, transition).
-
-    Ne rend que ce qui existe : un clone de la CI n'a pas de coffre parent."""
-    candidats = [COFFRE / "0-PROJETS", COFFRE / "-PROJETS",
-                 RACINE / "mémoire" / "projets"]
-    return [c for c in candidats if c.is_dir()]
-
-def verifier_carnets():
-    """§6 : forme des carnets, un seul niveau de chantier, transition.
-
-    - un carnet est `0-PROJETS/<projet>/carnets/AAAA-MM-JJ-<projet>-<sujet>.md`,
-      avec `agent:`, `projet:` et `statut:` — trois chaînes non vides, le
-      `projet:` égal au nom du dossier, et un `statut:` dans
-      `en cours | en attente | clos` ;
-    - un chantier est un dossier de plus, avec **ses** `carnets/`, `documents/`
-      et son résumé ; ses carnets portent son nom dans `projet:` — jamais de
-      vision, jamais de chantier dans un chantier ;
-    - les carnets du jour hors chantier restent dans `0-PROJETS/<projet>/carnets/`,
-      et s'y nomment du nom du projet ;
-    - un sous-dossier dans un `carnets/` est refusé : un carnet est un fichier ;
-    - la mémoire vit dans le coffre parent (§7.1) : on la contrôle là où elle
-      est — `0-PROJETS/` du coffre parent, son ancien nom `-PROJETS/`, et
-      l'ancien `mémoire/projets` du dépôt tant que la bascule dure. Un clone de
-      la CI n'a aucun de ces dossiers : il n'y a alors rien à contrôler ;
-    - tant que la bascule dure (§11), une note datée à plat et un dossier
-      `archives/` (au niveau du projet comme sous `carnets/`) restent tolérés :
-      avertissement, jamais erreur — même sur le coffre lui-même, sans quoi la
-      migration serait impossible à finir. **Passé le 2026-12-31, la tolérance
-      tombe** : les mêmes formes font échouer le contrôle, comme l'ancienne
-      mémoire de `verifier_bascule` — une échéance, un seul traitement.
-    """
-    for projets in emplacements_de_projets():
-        for projet in sorted(projets.iterdir()):
-            if not projet.is_dir() or projet.name.startswith("."):
-                continue
-            parcourir_projet(projet, projet.name, 0)
-
-def parcourir_projet(dossier: Path, projet: str, niveau: int):
-    """`niveau` 0 pour un projet, 1 pour un de ses chantiers ; au-delà, refus (§6).
-
-    Au niveau 0, `carnets/` porte les carnets du jour écrits hors chantier. Au
-    niveau 1, le dossier est un **chantier** : il a ses propres `carnets/`, ses
-    `documents/`, son résumé, et rien de plus — pas de vision, et pas un
-    chantier dans un chantier.
-    """
-    for entree in sorted(dossier.iterdir()):
-        if entree.name in ("sommaire.md", "README.md"):
-            continue
-        if entree.is_file():
-            if NOTE_DATEE_A_PLAT.match(entree.name):
-                signaler_bascule(designation(entree),
-                        "ancienne forme : note datée à plat, à migrer vers "
-                        "`carnets/` (§6)")
-            continue
-        if entree.name == "carnets":
-            verifier_carnets_dun_projet(entree, projet)
-        elif entree.name == "archives":
-            signaler_bascule(designation(entree),
-                    "`archives/` n'existe plus : un chantier clos part, dossier "
-                    "entier, dans `0-MEMOIRES/` (§6)")
-        elif entree.name in RESERVES_PROJET:
-            continue
-        elif niveau >= 1:
-            erreur(designation(entree),
-                   "chantier imbriqué — un chantier ne contient pas de chantier (§6)")
-        else:
-            parcourir_projet(entree, entree.name, 1)
-
-def verifier_carnets_dun_projet(dossier: Path, projet: str):
-    for carnet in sorted(dossier.iterdir()):
-        if carnet.name in ("sommaire.md", "README.md"):
-            continue
-        if carnet.is_dir():
-            if carnet.name == "archives":
-                signaler_bascule(designation(carnet),
-                        "`carnets/archives/` n'existe plus : un chantier clos "
-                        "part dans `0-MEMOIRES/` (§6)")
-            else:
-                erreur(designation(carnet),
-                       "sous-dossier dans `carnets/` — un carnet est un fichier (§6)")
-            continue
-        if carnet.is_file() and carnet.name.endswith(".md"):
-            verifier_carnet(carnet, projet)
-
-def verifier_carnet(chemin: Path, projet: str):
-    rel = designation(chemin)
-    if not carnet_a_la_forme(chemin.name):
-        signaler_memoire(rel, "carnet mal nommé — attendu "
-                              "`AAAA-MM-JJ-<projet>-<sujet>.md` (§6)")
-    elif not carnet_du_dossier(chemin.name, projet):
-        signaler_memoire(rel, "carnet mal nommé : `<projet>` ne correspond pas au "
-                              "dossier `%s` (§6)" % projet)
-    fm = lire_frontmatter(chemin)
-    if fm is None:
-        signaler_memoire(rel, "carnet sans frontmatter fermé (§6)")
-        return
-    for champ in ("agent", "projet", "statut"):
-        valeur = fm.get(champ)
-        if not isinstance(valeur, str) or not valeur.strip():
-            signaler_memoire(rel, "carnet `%s:` vide ou absent (§6)" % champ)
-    statut = fm.get("statut")
-    if isinstance(statut, str) and statut.strip() and statut not in STATUTS_CARNET:
-        signaler_memoire(rel, "carnet `statut: %s` — attendu `en cours`, "
-                              "`en attente` ou `clos` (§6)" % statut)
-    projet_fm = fm.get("projet")
-    if isinstance(projet_fm, str) and projet_fm.strip() and projet_fm != projet:
-        signaler_memoire(rel, "carnet `projet: %s` ne correspond pas au dossier "
-                              "`%s` (§6)" % (projet_fm, projet))
-
-
-# --------------------------------------------------------- dépôt de données
-
-def _git_dans(chemin: Path, *arguments: str) -> subprocess.CompletedProcess:
-    return subprocess.run(["git", "-C", str(chemin), *arguments],
-                          capture_output=True, text=True)
-
-
-# ------------------------------------------------------- noms de 0-MEMOIRES
-
-def noms_d_agents_declares() -> set:
-    """Le nom de chaque agent déclaré : sous `0-MEMOIRES/`, il est réservé (§6).
-
-    « Qui est un agent » n'a **qu'une** définition : `liste_des_agents` du moteur
-    partagé, qui voit les deux formes de déclaration (§5) — un agent déclaré en
-    dossier compte autant qu'un agent déclaré d'un fichier plat.
-    """
-    return set(liste_des_agents(RACINE))
-
-
-def verifier_noms_de_memoire():
-    """§6 : dans `0-MEMOIRES/`, deux mémoires ne se confondent pas.
-
-    Le dossier porte la mémoire des agents — `préférences/`, vivante, et
-    `<nom-agent>/expériences/`, vivante aussi — **et** les chantiers clos, gelés.
-    Un projet qui s'appellerait `préférences` ou porterait le nom d'un agent
-    rendrait les deux indistinguables : c'est une erreur de nommage, pas un
-    détail de rangement.
-
-    Faute de lire une intention, la règle se contrôle par la **forme** :
-    `préférences/` ne contient que des notes, la mémoire d'un agent n'a qu'un
-    `expériences/` de notes, et tout autre dossier est un projet gelé — donc il
-    porte au moins un chantier. Le contrôle ne tourne que sur le coffre parent
-    (§7.1) : un clone de la CI n'a pas de `0-MEMOIRES/`.
-    """
-    racine_memoires = COFFRE / MEMOIRES
-    if not racine_memoires.is_dir():
-        return
-    reserves = {PREFERENCES} | noms_d_agents_declares()
-    for entree in sorted(racine_memoires.iterdir()):
-        if entree.name.startswith("."):
-            continue
-        if not entree.is_dir():
-            if entree.name not in ("README.md", "sommaire.md"):
-                signaler_memoire(entree, "`%s/` n'accueille que des dossiers : "
-                                         "`%s/`, la mémoire d'un agent, ou un projet gelé (§6)"
-                                 % (MEMOIRES, PREFERENCES))
-            continue
-        if entree.name == PREFERENCES:
-            for intrus in sorted(entree.iterdir()):
-                if intrus.is_dir():
-                    signaler_memoire(intrus, "`%s/%s/` est la mémoire des agents : elle ne contient "
-                                             "que des notes `<sujet>.md`. Un projet ne peut pas porter "
-                                             "ce nom (§6)" % (MEMOIRES, PREFERENCES))
-            continue
-        if entree.name in reserves:
-            lecons = entree / EXPERIENCES
-            if not lecons.is_dir():
-                signaler_memoire(entree, "`%s/%s/` est l'espace mémoire de cet agent : il ne contient "
-                                         "que `%s/`. Un projet ne peut pas porter le nom d'un agent (§6)"
-                                 % (MEMOIRES, entree.name, EXPERIENCES))
-            elif [e for e in sorted(lecons.iterdir()) if e.is_dir()]:
-                signaler_memoire(lecons, "`%s/` ne contient que des notes `<sujet>.md` (§6)"
-                                 % EXPERIENCES)
-            continue
-        if not [e for e in sorted(entree.iterdir())
-                if e.is_dir() and not e.name.startswith(".")]:
-            signaler_memoire(entree, "projet gelé sans chantier : sous `%s/`, un projet est "
-                                     "`<projet>/<chantier>/` (§6)" % MEMOIRES)
-
-
-# --------------------------------------------------------- dépôt de données
-
-def verifier_depot_de_donnees():
-    """§7.1 : la liste blanche du coffre est le gabarit, et `OBSIA/` n'y est pas suivi.
-
-    Le `.gitignore` du coffre parent n'est pas écrit à la main : c'est le gabarit
-    `IA/system/depot-de-donnees/gitignore-coffre`, posé par l'installeur et jamais
-    écrasé. Un écart veut dire que quelqu'un a retouché la liste blanche sur la
-    machine — la prochaine installation ne le verra pas, et `OBSIA/` peut se
-    retrouver versionné dans la mémoire sans que personne ne s'en aperçoive.
-
-    Ne s'exécute que sur un coffre parent désigné (`--coffre`) : un clone de la
-    CI n'en a pas.
-    """
-    gabarit = RACINE / "IA" / "system" / "depot-de-donnees" / "gitignore-coffre"
-    if not gabarit.is_file():
-        erreur(designation(gabarit),
-               "gabarit de la liste blanche du coffre absent (§7.1)")
-        return
-    gitignore = COFFRE / ".gitignore"
-    if not gitignore.is_file():
-        signaler_memoire(Path(".gitignore"),
-                         "le coffre parent n'a pas de liste blanche : le dépôt de "
-                         "données n'est pas initialisé — l'installeur la pose (§7.1)")
-        return
-    try:
-        ecrit = gitignore.read_text(encoding="utf-8")
-    except (OSError, UnicodeDecodeError):
-        signaler_memoire(Path(".gitignore"), "liste blanche illisible (§7.1)")
-        return
-    if ecrit != gabarit.read_text(encoding="utf-8"):
-        signaler_memoire(Path(".gitignore"),
-                         "diffère du gabarit `IA/system/depot-de-donnees/gitignore-coffre` "
-                         "— la liste blanche est le gabarit, sans retouche (§7.1)")
-    if _git_dans(COFFRE, "rev-parse", "--git-dir").returncode != 0:
-        return
-    suivis = [ligne for ligne in
-              _git_dans(COFFRE, "ls-files", "--", RACINE.name).stdout.splitlines()
-              if ligne.strip()]
-    if suivis:
-        signaler_memoire(Path(suivis[0]),
-                         "le dépôt produit est suivi par le dépôt de données du "
-                         "coffre — `%s/` n'entre jamais dans la mémoire (§7.1)"
-                         % RACINE.name)
-
-
-PREFIXES_SONDE = ("commande", "fichier", "distribution", "parent")
-
-
-def verifier_modules(dossier: Path) -> list[dict]:
-    """§13 : le catalogue de modules — frontmatter, sondes, dépendances.
-
-    Un module mal formé ne casse rien tant qu'on installe tout ; il casse
-    l'installation partielle, c'est-à-dire précisément le cas qu'on ne teste
-    jamais avant de le vivre.
-    """
-    modules: list[dict] = []
-    if not dossier.is_dir():
-        erreur("IA/system/modules/", "catalogue de modules absent (§13)")
-        return modules
-
-    for chemin in sorted(dossier.glob("*.md")):
-        fm = lire_frontmatter(chemin)
-        rel = chemin.relative_to(RACINE)
-        if fm is None:
-            erreur(rel, "frontmatter absent ou non fermé")
-            continue
-        if fm.get("kind") != "module":
-            erreur(rel, "`kind: %s` alors que le fichier est dans IA/system/modules/ (§13)"
-                   % fm.get("kind"))
-            continue
-
-        nom = fm.get("name")
-        if nom != chemin.stem:
-            erreur(rel, "`name: %s` ≠ nom du fichier `%s` (§5)" % (nom, chemin.stem))
-        if nom and not NOM_VALIDE.match(nom):
-            erreur(rel, "`name: %s` — attendu : minuscules et tirets, sans espace (§5)" % nom)
-        if not isinstance(fm.get("schema"), int):
-            erreur(rel, "`schema` doit être un entier (§5)")
-        if not fm.get("description"):
-            erreur(rel, "`description` vide ou absente (§5)")
-        if not isinstance(fm.get("essentiel"), bool):
-            erreur(rel, "`essentiel` doit valoir true ou false (§13)")
-
-        for champ in ("requiert", "sondes"):
-            if champ in fm and not isinstance(fm[champ], list):
-                erreur(rel, "`%s` doit être une liste à tirets, pas « %s » (§5)"
-                       % (champ, fm[champ]))
-
-        if not fm.get("essentiel") and not fm.get("question"):
-            erreur(rel, "module non essentiel sans `question` — l'installeur "
-                        "n'aurait rien à demander (§13)")
-
-        for sonde in fm.get("sondes", []) if isinstance(fm.get("sondes"), list) else []:
-            prefixe = sonde.split(":", 1)[0]
-            if prefixe not in PREFIXES_SONDE:
-                erreur(rel, "sonde `%s` — préfixe inconnu, attendu %s (§13)"
-                       % (sonde, " | ".join(PREFIXES_SONDE)))
-            elif ":" not in sonde or not sonde.split(":", 1)[1].strip():
-                erreur(rel, "sonde `%s` — valeur vide (§13)" % sonde)
-
-        fm["_chemin"] = rel
-        fm.setdefault("requiert", [])
-        fm.setdefault("sondes", [])
-        modules.append(fm)
-
-    noms = {m.get("name") for m in modules}
-    if "noyau" not in noms:
-        erreur("IA/system/modules/", "aucun module `noyau` — le socle doit exister (§13)")
-
-    for m in modules:
-        for besoin in m["requiert"] if isinstance(m["requiert"], list) else []:
-            if besoin not in noms:
-                erreur(m["_chemin"], "`requiert: %s` — module inexistant (§13)" % besoin)
-
-    # Un cycle de dépendances boucle la résolution de l'installeur.
-    par_nom = {m["name"]: m for m in modules if m.get("name")}
-    for depart in sorted(par_nom):
-        vus, pile = set(), [depart]
-        while pile:
-            courant = pile.pop()
-            for besoin in par_nom.get(courant, {}).get("requiert", []):
-                if besoin == depart:
-                    erreur(par_nom[depart]["_chemin"],
-                           "cycle de dépendances entre modules : %s → … → %s (§13)"
-                           % (depart, depart))
-                    pile = []
-                    break
-                if besoin not in vus:
-                    vus.add(besoin)
-                    pile.append(besoin)
-
-    return modules
-
-
-def verifier_profil(modules: list[dict]) -> None:
-    """§13 : le profil ne doit citer que des modules du catalogue.
-
-    Avertissement et non erreur. Sans profil — le cas de la CI — il n'y a rien
-    à dire. Avec un profil fautif, le coffre n'est pas incohérent : il est plus
-    maigre que voulu, et c'est justement ce qu'on ne comprend pas quand on le
-    découvre après l'installation.
-    """
-    import modules as _mod                       # tardif, comme dans generer_prompt
-
-    profil = _mod.lire_profil(RACINE)
-    if profil is None:
-        return
-
-    for nom in sorted(_mod.modules_inconnus(modules, profil.get("modules", []))):
-        avertir(_mod.NOM_PROFIL,
-                "`%s` ne correspond à aucun module du catalogue — sans effet, "
-                "le coffre sera plus maigre que prévu (§13)" % nom)
-
-
-def cloture(modules: list[dict], nom: str) -> set[str]:
-    """Le module et tout ce qu'il entraîne, essentiels compris."""
-    par_nom = {m["name"]: m for m in modules if m.get("name")}
-    resolu = {nom} | {m["name"] for m in modules if m.get("essentiel")}
-    pile = list(resolu)
-    while pile:
-        for besoin in par_nom.get(pile.pop(), {}).get("requiert", []):
-            if besoin not in resolu:
-                resolu.add(besoin)
-                pile.append(besoin)
-    return resolu
-
-
-def module_declare(chemin, module, noms: set) -> bool:
-    """Le `module` d'une déclaration existe-t-il dans le catalogue (§13) ?"""
-    if not module:
-        erreur(chemin, "ne déclare aucun `module` — inclassable à "
-                       "l'installation (§13)")
-        return False
-    if module not in noms:
-        erreur(chemin, "`module: %s` — module inexistant dans "
-                       "IA/system/modules/ (§13)" % module)
-        return False
-    return True
+def module_declare(chemin, module, noms: set):
+    return VCA.module_declare(_contexte_catalogue(), chemin, module, noms)
 
 
 def verifier_appartenance(modules, agents, skills, mcp, taches):
-    """§13 : tout ce qui se déclare appartient à un module du catalogue."""
-    noms = {m.get("name") for m in modules}
-    peuples = set()
-
-    for fm in list(agents) + list(skills) + list(mcp) + list(taches):
-        chemin = fm.get("_chemin", fm.get("name", "?"))
-        if module_declare(chemin, fm.get("module"), noms):
-            peuples.add(fm["module"])
-
-    if REDUITE:
-        return              # ici, un module sans déclaration est un module écarté
-    for m in modules:
-        if m.get("name") not in peuples:
-            avertir(m["_chemin"], "module qu'aucun agent, skill, MCP ou tâche "
-                                  "ne rejoint — il n'installerait rien (§13)")
+    return VCA.verifier_appartenance(_contexte_catalogue(), modules, agents, skills, mcp, taches)
 
 
-def verifier_annexes_contrat(dossier: Path, modules: list[dict]) -> list[dict]:
-    """Les annexes du noyau, `IA/system/contrat/*.md` (§5, §13).
-
-    Une annexe est un document déclaratif : elle se définit **par son dossier**,
-    pas par son nom. Tout `*.md` de `IA/system/contrat/` est donc contrôlé comme
-    une annexe, à une seule exception, `registre.md`, nommée ici : c'est l'index
-    du dossier, sans frontmatter. Définir l'annexe par le préfixe `contrat-`
-    laisserait une annexe renommée sortir du filet sans que rien ne le dise.
-
-    Le frontmatter est vérifié par `verifier_fichier()`, appelé avec
-    `CHAMPS_CONTRAT = (schema, kind, name, description)` : une annexe n'a ni
-    `read_only` — elle ne s'exécute pas — ni `type`, réservé aux skills. Le
-    contrôle exige en plus un `module` non vide (comme pour toute fiche), et
-    `module_declare()` vérifie que ce module existe au catalogue.
-
-    Les chemins qu'une annexe cite sont, eux, déjà contrôlés par
-    `verifier_chemins_cites()` : tout `IA/**/*.md` y passe, le dossier compris,
-    et les chemins **relatifs** sont résolus depuis le fichier qui les cite —
-    `../VAULT-CONTRACT.md` depuis ici mène bien à `IA/system/VAULT-CONTRACT.md`.
-    Aucune cible de ce dossier n'échappe au filet.
-
-    Une annexe ne peuple pas son module : une déclaration dit à quoi elle
-    appartient, elle n'installe rien. Seuls agents, skills, MCP et tâches
-    comptent comme occupants (§13), sans quoi une annexe suffirait à faire
-    passer un module vide pour un module habité.
-    """
-    if not dossier.is_dir():
-        avertir(dossier.relative_to(RACINE),
-                "dossier des annexes du contrat absent — aucune annexe contrôlée "
-                "(§5, §13)")
-        return []
-    noms = {m.get("name") for m in modules}
-    annexes: list[dict] = []
-    for chemin in sorted(dossier.glob("*.md")):
-        if chemin.name == NOM_EXEMPT_CONTRAT:
-            continue
-        fm = verifier_fichier(chemin, "contract", CHAMPS_CONTRAT,
-                              "le dossier des annexes du contrat")
-        if fm is None:
-            continue
-        module_declare(fm["_chemin"], fm.get("module"), noms)
-        annexes.append(fm)
-    return annexes
+def verifier_annexes_contrat(dossier: Path, modules: list[dict]):
+    return VCA.verifier_annexes_contrat(_contexte_catalogue(), dossier, modules)
 
 
 def verifier_renvois_entre_modules(modules, skills):
-    """Un skill renvoie-t-il vers un skill qu'une installation partielle n'aura pas ?
-
-    Pendant du contrôle de portée par agent (§10.2), mais au niveau du
-    catalogue : si `A` dit « charger `B` » et que le module de `B` n'est pas
-    entraîné par celui de `A`, la consigne tombe dans le vide chez qui n'a
-    installé que le premier. Avertissement, pas erreur : la détection repose
-    sur le verbe, et la frontière peut être voulue.
-    """
-    if REDUITE:
-        return              # le contrôle porte sur le catalogue, pas sur une copie
-    par_nom = {s["name"]: s for s in skills if s.get("name")}
-    for nom, fm in par_nom.items():
-        mien = fm.get("module")
-        if not mien:
-            continue
-        entraines = cloture(modules, mien)
-        try:
-            texte = (RACINE / fm["_chemin"]).read_text(encoding="utf-8")
-        except OSError:
-            continue
-        vises = {m.group(1) for m in CONSIGNE_SKILL.finditer(texte)} & set(par_nom)
-        for vise in sorted(vises - {nom}):
-            sien = par_nom[vise].get("module")
-            if sien and sien not in entraines:
-                avertir(fm["_chemin"],
-                        "dit de charger `%s`, du module `%s` que `%s` n'entraîne "
-                        "pas — consigne absente d'une installation partielle (§13)"
-                        % (vise, sien, mien))
+    return VCA.verifier_renvois_entre_modules(_contexte_catalogue(), modules, skills)
 
 
 def verifier_derives():
-    """Les index doivent être à jour vis-à-vis de leurs sources.
+    return VCA.verifier_derives(_contexte_catalogue())
 
-    Les sommaires de `mémoire/` n'en font plus partie : ils ne sont pas
-    versionnés (§11), donc un clone neuf — celui de la CI — n'en a pas, et
-    les exiger reviendrait à refuser tout clone propre.
 
-    `--racine` dit quel coffre juger : sans lui, le générateur indexe la racine
-    du produit, c'est-à-dire la machine, quel que soit le `--coffre` reçu. Un
-    contrôle qui juge un autre coffre que celui qu'on lui donne ne prouve rien ;
-    c'est pourtant ce qu'il faisait, et aucun test ne pouvait le voir.
-    """
-    for script, quoi in (("regenerate_index.py", "index"),):
-        res = subprocess.run([sys.executable, str(SCRIPTS / script),
-                              "--racine", str(RACINE), "--verifier"],
-                             capture_output=True, text=True, cwd=str(RACINE))
-        if res.returncode != 0:
-            detail = (res.stderr or res.stdout).strip().replace("\n", " / ")
-            erreur("scripts/%s" % script, "%s périmés — %s" % (quoi, detail))
+# Contrôles de la mémoire : leur code vit dans `verif_memoire.py`.
 
+def _contexte():
+    """L'état que les contrôles de la mémoire lisent, pris au moment de l'appel :
+    les tests remplacent `RACINE`, `COFFRE` ou `date` dans ce module."""
+    return SimpleNamespace(racine=RACINE, coffre=COFFRE, erreur=erreur,
+                           avertir=avertir, signaler_memoire=signaler_memoire,
+                           signaler_bascule=signaler_bascule)
+
+
+def verifier_unicite_des_noms():
+    return VM.verifier_unicite_des_noms(_contexte())
+
+
+def designation(chemin: Path):
+    return VM.designation(_contexte(), chemin)
+
+
+def emplacements_de_projets():
+    return VM.emplacements_de_projets(_contexte())
+
+
+def verifier_carnets():
+    return VM.verifier_carnets(_contexte())
+
+
+def parcourir_projet(dossier: Path, projet: str, niveau: int):
+    return VM.parcourir_projet(_contexte(), dossier, projet, niveau)
+
+
+def verifier_carnets_dun_projet(dossier: Path, projet: str):
+    return VM.verifier_carnets_dun_projet(_contexte(), dossier, projet)
+
+
+def verifier_carnet(chemin: Path, projet: str):
+    return VM.verifier_carnet(_contexte(), chemin, projet)
+
+
+def noms_d_agents_declares():
+    return VM.noms_d_agents_declares(_contexte())
+
+
+def verifier_noms_de_memoire():
+    return VM.verifier_noms_de_memoire(_contexte())
+
+
+def verifier_depot_de_donnees():
+    return VM.verifier_depot_de_donnees(_contexte())
+
+
+# Contrôles du contrat : leur code vit dans `verif_contrat.py` ; ces relais
+# leur passent la racine et les deux compteurs du vérificateur.
 
 def verifier_taille_du_fichier_agents():
-    """Le fichier AGENTS.md doit rester loin du plafond de consignes de Codex.
-
-    Codex ne retient en tout que 32 Kio de consignes — le fichier global
-    (~/.codex/AGENTS.md) et ceux du projet comptent ensemble. Au-delà, le
-    surplus est laissé de côté, sans erreur ni avertissement : l'agent perd des
-    agents et des skills entiers sans que rien ne le dise.
-
-    On mesure le pire cas — le catalogue entier, profil ignoré, comme la CI —
-    avec la même fonction que l'installeur (`prompt_du_coffre(sans_profil=True)`,
-    pour ne pas dépendre d'un `obsia.local.yml` qui n'est pas versionné). Et on
-    mesure ce que l'installeur écrit vraiment, marqueur compris : le prompt seul
-    laisserait passer un fichier déjà au-delà. Un avertissement dès 28 Kio laisse
-    le temps de réduire et couvre le fichier global ; au-delà de 32 Kio c'est
-    une erreur, parce que la perte est réelle et muette.
-
-    Ce contrôle ne s'assouplit pas sous `mode: copie` : un surplus écarté reste
-    écarté, quelle que soit l'installation.
-    """
-    # `collecter` commente bruyamment ce qu'il écarte — dossier absent, frontmatter
-    # illisible, description vide. Le vérificateur le dit déjà fichier par fichier,
-    # mieux et au bon endroit : on tait ce bavardage le temps de la mesure. Il est
-    # surtout gênant sous `mode: copie`, où un dossier amputé est normal.
-    with contextlib.redirect_stderr(io.StringIO()):
-        prompt = prompt_du_coffre(RACINE, sans_profil=True)
-    if prompt is None:
-        return                                   # coffre vide : rien à mesurer
-    taille = len(contenu_agents(prompt).encode("utf-8"))
-
-    if taille > TAILLE_FICHIER_AGENTS_ERREUR:
-        erreur("AGENTS.md",
-               "le fichier écrit (catalogue entier, sans profil, marqueur "
-               "compris) pèse %d o, au-delà du plafond total de Codex "
-               "(%d o, 32 Kio) : le surplus est laissé de côté et l'agent perd "
-               "des déclarations entières sans que rien ne le dise — réduire "
-               "le catalogue avant d'y arriver"
-               % (taille, TAILLE_FICHIER_AGENTS_ERREUR))
-    elif taille > TAILLE_FICHIER_AGENTS_AVERTISSEMENT:
-        avertir("AGENTS.md",
-                "le fichier écrit (catalogue entier, sans profil, marqueur "
-                "compris) pèse %d o ; au-delà de %d o (28 Kio) la marge se "
-                "réduit avant le plafond total de Codex (%d o, 32 Kio), que le "
-                "fichier global partage — réduire le catalogue avant d'y arriver"
-                % (taille,
-                   TAILLE_FICHIER_AGENTS_AVERTISSEMENT, TAILLE_FICHIER_AGENTS_ERREUR))
+    VCT.verifier_taille_du_fichier_agents(RACINE, erreur, avertir)
 
 
 def plafond_du_noyau(chemin=None):
-    """Le plafond du noyau, lu à son **unique** endroit déclaré : `CONSTRAINTS.md`.
-
-    Le nombre ne vit qu'ici — dans la table, ligne « Noyau du contrat », comme le
-    plancher de tests — et nulle part ailleurs : une seconde copie finirait par
-    diverger de la première, et c'est celle qu'on croit qui ment. Rend ``None``
-    quand le document ou la ligne manquent : c'est à l'appelant de dire si cela
-    doit être une erreur.
-    """
-    chemin = Path(chemin) if chemin else RACINE / "CONSTRAINTS.md"
-    if not chemin.is_file():
-        return None
-    for ligne in chemin.read_text(encoding="utf-8").splitlines():
-        nue = ligne.strip()
-        if not nue.startswith("|"):
-            continue
-        champs = [champ.strip() for champ in nue.strip("|").split("|")]
-        if len(champs) < 2 or champs[0] != LIBELLE_PLAFOND_NOYAU:
-            continue
-        trouve = re.search(r"≤\s*\**\s*(\d[\d\s]*)", nue)
-        if trouve:
-            return int(re.sub(r"\s", "", trouve.group(1)))
-    return None
+    return VCT.plafond_du_noyau(RACINE, chemin)
 
 
 def mots_du_noyau(chemin=None) -> int:
-    """Le nombre de mots du noyau, à la manière de `wc -w`.
-
-    `len(texte.split())` compte les suites de caractères non blancs exactement
-    comme `wc -w` : la mesure annoncée est celle qu'on peut rejouer en ligne de
-    commande, sans outil du dépôt.
-    """
-    chemin = Path(chemin) if chemin else RACINE / NOYAU
-    return len(chemin.read_text(encoding="utf-8").split())
+    return VCT.mots_du_noyau(RACINE, chemin)
 
 
 def verifier_taille_du_noyau():
-    """Le noyau du contrat tient sous son plafond, et on le dit à chaque passage.
-
-    Le noyau est lu **en entier** par tout agent au démarrage : sa taille est un
-    coût payé à chaque séance, pas un détail. Le plafond vit dans son unique
-    endroit déclaré (`CONSTRAINTS.md`, ligne « Noyau du contrat ») ; le relever
-    se décide dans une PR (§11), jamais en silence. La mesure est celle de
-    `wc -w` ; l'écart est la marge restante avant le plafond.
-
-    Rend la ligne à afficher — taille, plafond, écart — ou ``None`` s'il n'y a
-    pas de noyau à mesurer : un clone sans noyau, ou un dossier de mémoire, n'a
-    rien à dire ici (le second n'a pas non plus de `CONSTRAINTS.md`).
-    """
-    chemin_noyau = RACINE / NOYAU
-    chemin_plafond = RACINE / "CONSTRAINTS.md"
-    if not chemin_noyau.is_file() or not chemin_plafond.is_file():
-        return None
-
-    mots = mots_du_noyau(chemin_noyau)
-    plafond = plafond_du_noyau(chemin_plafond)
-    if plafond is None:
-        erreur("CONSTRAINTS.md",
-               "le plafond du noyau du contrat n'est pas déclaré : la table doit "
-               "porter une ligne « %s » avec un nombre de mots (`≤ N mots`) — "
-               "sans elle, le noyau peut grossir sans que rien ne le dise"
-               % LIBELLE_PLAFOND_NOYAU)
-        return "Noyau du contrat : %d mots, plafond non déclaré." % mots
-
-    if mots > plafond:
-        erreur("IA/system/VAULT-CONTRACT.md",
-               "le noyau pèse %d mots, %d au-dessus du plafond de %d : le noyau "
-               "est lu en entier à chaque séance — le ramener sous le plafond, "
-               "ou relever le plafond dans une PR (§11), jamais en silence"
-               % (mots, mots - plafond, plafond))
-    return ("Noyau du contrat : %d mots sur %d (marge %d)."
-            % (mots, plafond, plafond - mots))
+    return VCT.verifier_taille_du_noyau(RACINE, erreur)
 
 
 def verifier_regle_des_secrets():
-    """Le bloc de la règle des secrets (§4) est là, entre ses repères.
-
-    `generer_prompt.regle_des_secrets` rend ``""`` quand les repères
-    `regle-secrets` disparaissent du noyau : le prompt engendré — et donc
-    l'`AGENTS.md` lu par l'agent — perdent alors la règle **en silence**, alors
-    qu'elle est la seule porte qui protège les secrets (§4, §5). Le générateur a
-    beau être tenu par un test, ce test vit dans le dépôt produit ; ce contrôle-ci
-    le dit depuis le coffre, là où l'amendement du §4 atterrit.
-
-    Rend la ligne à afficher, ou ``None`` s'il n'y a pas de noyau à lire : un
-    clone sans contrat n'a rien à dire ici.
-    """
-    chemin_noyau = RACINE / NOYAU
-    if not chemin_noyau.is_file():
-        return None
-
-    bloc = regle_des_secrets(RACINE)
-    if not bloc.strip():
-        erreur("IA/system/VAULT-CONTRACT.md",
-               "le bloc de la règle des secrets (§4, repères `regle-secrets`) est "
-               "vide ou introuvable : le prompt engendré — et l'`AGENTS.md` lu par "
-               "l'agent — perdent la règle en silence ; rétablir le bloc entre ses "
-               "repères (§4, §5)")
-        return "Règle des secrets : bloc vide ou introuvable."
-
-    return ("Règle des secrets : %d caractères, entre ses repères."
-            % len(bloc))
+    return VCT.verifier_regle_des_secrets(RACINE, erreur)
 
 
 def verifier_clauses_datees_du_noyau(aujourdhui=None):
-    """Une clause datée du noyau ne survit pas à sa date.
-
-    Forme reconnue : une date ISO `AAAA-MM-JJ` écrite dans le noyau — la seule
-    admise pour y dater une échéance (« se retire au plus tard le 2026-12-31 »).
-    Passé le jour, l'avertissement dit la ligne et la date : une échéance
-    dépassée laisse croire qu'un régime tient encore, et le contrat doit être
-    nettoyé ou la clause redatée. Un avertissement suffit — toutes les dates du
-    noyau ne sont pas des échéances, et la relecture humaine tranche.
-
-    Une date **bien formée mais inexistante** (`2028-02-30`, `2026-13-01`) est
-    dite « illisible » : `date.fromisoformat` lèverait une `ValueError`, qui
-    sortirait le vérificateur en traceback et refuserait un coffre cohérent pour
-    une faute de frappe. On avertit, on ne s'arrête pas.
-
-    `aujourdhui` n'existe que pour le test.
-    """
-    chemin = RACINE / NOYAU
-    if not chemin.is_file():
-        return
+    # Le jour se lit ici : `verifier_dates.py` ne remplace `date` que dans ce module.
     if aujourdhui is None:
         aujourdhui = date.today()
-    for numero, ligne in enumerate(chemin.read_text(encoding="utf-8").splitlines(), 1):
-        for trouve in CLAUSE_DATEE.finditer(ligne):
-            ecrite = trouve.group(0)
-            try:
-                echeance = date.fromisoformat(ecrite)
-            except ValueError:
-                avertir("IA/system/VAULT-CONTRACT.md",
-                        "date illisible, ligne %d : « %s » a la forme d'une date "
-                        "sans en être une — la corriger, ou l'écrire autrement "
-                        "si ce n'est pas une échéance" % (numero, ecrite))
-                continue
-            if echeance >= aujourdhui:
-                continue
-            avertir("IA/system/VAULT-CONTRACT.md",
-                    "clause datée périmée, ligne %d : la date %s est passée — "
-                    "retirer la clause ou la redater, une échéance dépassée "
-                    "laisse croire qu'un régime tient encore"
-                    % (numero, ecrite))
+    VCT.verifier_clauses_datees_du_noyau(RACINE, avertir, aujourdhui)
 
 
 def verifier_chemins_du_prompt():
-    """Le prompt engendré ne doit porter aucun chemin absolu de machine.
-
-    L'`AGENTS.md` est synchronisé (Syncthing) entre des postes où le coffre n'a ni
-    le même chemin ni le même nom : un `/srv/…` écrit ici est faux là-bas, et rien
-    ne le dit — l'agent cherche un dossier qui n'existe pas. Le fichier posé est
-    engendré du catalogue : un chemin peut donc entrer par la description d'un
-    agent, d'un skill ou d'une tâche, et pas seulement par l'en-tête. On contrôle
-    le prompt réel du catalogue, celui que la CI engendre et que l'installeur
-    écrit, marqueur compris.
-
-    Le motif vient du générateur (`generer_prompt.chemins_absolus`) : c'est lui qui
-    promet ce texte, et deux copies du motif finiraient par diverger.
-    """
-    with contextlib.redirect_stderr(io.StringIO()):
-        prompt = prompt_du_coffre(RACINE, sans_profil=True)
-    if prompt is None:
-        return                                   # coffre vide : rien à contrôler
-    fautives = chemins_absolus(contenu_agents(prompt))
-    if not fautives:
-        return
-    montre = " | ".join(ligne.strip()[:120] for ligne in fautives[:5])
-    suite = "" if len(fautives) <= 5 else " (+%d autre(s))" % (len(fautives) - 5)
-    erreur("AGENTS.md",
-           "le prompt engendré porte %d chemin(s) absolu(s) de machine%s : %s — "
-           "le fichier est synchronisé entre des postes où le coffre n'a ni le "
-           "même chemin ni le même nom ; désigner la racine par son sous-dossier "
-           "OBSIA/, ou par le dossier qui le contient"
-           % (len(fautives), suite, montre))
+    VCT.verifier_chemins_du_prompt(RACINE, erreur)
 
 
 # ----------------------------------------------------------------------- main

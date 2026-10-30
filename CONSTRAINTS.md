@@ -68,14 +68,14 @@ un échec.
 
 | Dimension | Règle | Vérifié par | Quand |
 | --- | --- | --- | --- |
-| Suite de tests | **0 échec, 0 erreur** | `python3 -m unittest discover -s tests` (et la CI) | chaque poussée |
+| Suite de tests | **0 échec, 0 erreur** | `python3 -m unittest discover -b -s tests` (et la CI) | chaque poussée |
 | Nombre de tests | **≥ 981** — le plancher monte, il ne descend pas | `tests/test_plancher_du_projet.py`, sur le compte de la suite | chaque poussée |
 | Contrôles de la porte | **100 %** couverts : chaque contrôle a **≥ 1** test qui le nomme | `tests/test_plancher_du_projet.py`, contrôle par contrôle | chaque poussée |
 | Dépendances | **0 paquet tiers** — bibliothèque standard seule | `tests/test_plancher_du_projet.py` (imports) et la CI, qui n'installe rien | chaque poussée |
 | Écritures disque | **0 écriture** pendant le jugement et la carte | `tests/test_porte_entree.py` (`TestAucunOctetSurLeDisque`, `TestPuretePositive`) | chaque poussée |
 | Noms de harnais | **0** dans `serveur/` et le moteur partagé (§3) | `tests/test_plancher_du_projet.py` | chaque poussée |
 | Chemins de machine | **0** chemin absolu ou personnel dans `serveur/` et le moteur partagé (§13) | `tests/test_plancher_du_projet.py` | chaque poussée |
-| Noyau du contrat | **≤ 4 016 mots** — le plafond descend, il ne monte pas en silence | `scripts/verifier_coffre.py`, sur `IA/system/VAULT-CONTRACT.md` | chaque poussée |
+| Noyau du contrat | **≤ 3 800 mots** — le plafond descend, il ne monte pas en silence | `scripts/verifier_coffre.py`, sur `IA/system/VAULT-CONTRACT.md` | chaque poussée |
 | Processus de la suite | **≤ 5 287** processus enfants — la mesure plus 2 % (5 183 le 2026-10-17, pour 1 098 tests) | `scripts/banc_de_processus.py` | chaque tranche qui touche la suite |
 | Lectures du garde | **≤ 2 × modifiés + 1 × (ajoutés + supprimés) + 2** fichiers lus, et le garde **imprime** son compte | `garde_plancher.py` lui-même, constat `budget-de-lectures` | chaque *diff* |
 

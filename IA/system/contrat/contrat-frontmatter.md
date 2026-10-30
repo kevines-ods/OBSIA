@@ -133,3 +133,9 @@ Elle est obligatoire et contrôlée — une tâche sans elle ne déclenche rien.
   Les accents sont autorisés (`sauvegardes-chiffrées`, `diagnostic-réseau`).
 - Un champ déclaré dans le frontmatter n'est **pas** répété dans le corps du
   fichier : le frontmatter est la vérité machine.
+
+## Modifier le contrat
+
+**Modifier une règle du noyau, c'est reporter la modification dans son annexe
+dans la même PR.** Où vit chaque règle : `registre.md` (non normatif), à tenir
+à jour dans la même PR.

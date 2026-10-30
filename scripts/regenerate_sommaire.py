@@ -132,7 +132,8 @@ def lire_note(chemin: str) -> dict:
     """Extrait d'une note son titre, sa date, son statut et son résumé."""
     nom = os.path.basename(chemin)
     try:
-        lignes = open(chemin, encoding="utf-8").read().splitlines()
+        with open(chemin, encoding="utf-8") as f:
+            lignes = f.read().splitlines()
     except (OSError, UnicodeDecodeError) as err:
         print("  ! illisible : %s (%s)" % (nom, err), file=sys.stderr)
         return {"nom": nom, "date": "", "titre": nom, "statut": "—", "resume": "—"}
@@ -362,7 +363,8 @@ def main(argv=None) -> int:
         if verifier:
             perimes.append(rel)
             continue
-        open(cible, "w", encoding="utf-8").write(neuf)
+        with open(cible, "w", encoding="utf-8") as f:
+            f.write(neuf)
         print("  %s %s" % ("~" if ancien is not None else "+", rel))
         ecrits += 1
 

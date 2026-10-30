@@ -59,7 +59,7 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | 2.3 | Tout le reste du dépôt passe par un patch Git revu. | N |
 | 2.4 | Aucune suppression sans archivage : pour la mémoire, **l'historique Git du dépôt de données tient lieu d'archive** ; pour le reste du dépôt produit, un fichier retiré part dans `.archive/`, qui reste **versionné** (jamais ignoré par Git). Rien de `.archive/` n'est lu ni indexé ; les dossiers commençant par un point sont écartés partout. | Relecture 2026-10-21 : A·verification — un outil la tient (les dossiers en `.` sont écartés partout) |
 | 2.5 | Le pourquoi de `.archive/` versionné (sinon il ne survit pas à un clone neuf). | A·verification |
-| 2.6 | Un aperçu listant les chemins, avant toute action qui touche plusieurs fichiers — hors l'écriture portée par un outil déclaré en MCP, pour un harnais pilotant un modèle local, à condition que chaque acte forme un commit annulable (§7.4). | N |
+| 2.6 | Un aperçu listant les chemins, avant toute action qui touche plusieurs fichiers — hors l'écriture portée par un outil déclaré en MCP, pour un harnais pilotant un modèle local, à condition que chaque acte forme un commit annulable (§7.4). | N, détail de l'exception au §7.4 seul (lot E, 2026-10-30) |
 | 2.7 | Les fichiers générés ne s'éditent jamais à la main. La liste : `sommaire.md`, `agents-index.md`, `skills-index.md`, `taches-index.md`, `modules-index.md`, `IA/README.md`. | N (liste complète gardée, M10) |
 | 2.8 | Hors du dépôt : un dépôt extérieur suit le §3, le coffre parent le §7. | N |
 | 2.9 | Plusieurs agents (§2.1) : jamais de commit dans l'arbre principal du dépôt produit ; un worktree par séance ; branche `<nom-agent>/<sujet>` ; ne pas toucher la branche ni le worktree d'un autre agent ; se resynchroniser avant de pousser. | N |
@@ -152,7 +152,7 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 
 | # | Règle | Dest. |
 | --- | --- | --- |
-| 8.1 | Une note durable distingue évidence (avec URL), interprétation et synthèse, et regroupe ses URL en fin de fichier. | N |
+| 8.1 | Une note durable distingue évidence (avec URL), interprétation et synthèse, et regroupe ses URL en fin de fichier. | A·memoire (lot E, 2026-10-30 : le noyau garde le titre et le renvoi) |
 
 ## §9 Le carnet comme trace
 
@@ -161,8 +161,8 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | 9.1 | La trace d'une séance, c'est le carnet, écrit au fil de l'eau dans le dépôt du coffre parent (§7.1) ; la PR du produit ne porte que la demande et le résumé de séance, et se relit avec le diff. Hors chantier sans suspens, le journal de `_MAINTENANCE/` (§7.4) en tient lieu. | N |
 | 9.2 | `IA/system/session-log/` est des notes de séance — donc de la **mémoire** : on n'y écrit plus, ses notes ne se réécrivent pas, et elles quittent le dépôt à la bascule. | Hors du noyau ; `A·memoire` (transition) — destination `0-MEMOIRES/obsia/session-log/`, gelé ; `verifier_coffre.py` refuse leur survie après le 2026-12-31 (§11). |
 | 9.3 | **Tout appel de MCP, quel que soit son `permission`**, et toute correction appliquée à un système, s'inscrivent au carnet sur une ligne horodatée (quoi, où, résultat). | N (perte relevée en B1, rétablie mot pour mot) |
-| 9.4 | Première limite : le carnet n'est pas un journal d'audit infalsifiable, et celui d'un projet de l'utilisateur n'a que l'aperçu du §7.4. | N |
-| 9.4b | Seconde limite : on consigne la **nature** de l'action, pas nécessairement sa cible. Une trace qu'on ne pourrait pas publier ne s'écrit pas davantage dans le privé. | N (B1 de N0, rétablie) |
+| 9.4 | Première limite : le carnet n'est pas un journal d'audit infalsifiable, et celui d'un projet de l'utilisateur n'a que l'aperçu du §7.4. | A·memoire (lot E, 2026-10-30) |
+| 9.4b | Seconde limite : on consigne la **nature** de l'action, pas nécessairement sa cible. Une trace qu'on ne pourrait pas publier ne s'écrit pas davantage dans le privé. | A·memoire (lot E, 2026-10-30) |
 | 9.5 | Jamais d'adresse IP privée, de nom d'hôte interne, d'URL interne ni d'identifiant, même dans le privé. La liste locale des noms interdits est `~/.config/obsia/noms-interdits`. | N (A4 : emplacement de la liste gardé) |
 | 9.6 | Pourquoi l'horodatage ; pourquoi `normal` ne dispense pas de consigner. | A·memoire |
 | 9.7 | `brouillon/` ne sert pas de trace. | N |
@@ -193,7 +193,7 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 
 | # | Règle | Dest. |
 | --- | --- | --- |
-| 12.1 | Une tâche se déclare dans `IA/tâches/`, qui fait foi ; un timer ou un cron n'en est qu'une instance. Créer, modifier ou **suspendre** une tâche passe par PR. **Instancier ou retirer une instance est une action à effet externe : une ligne horodatée au carnet.** | N (B2 de N0) |
+| 12.1 | Une tâche se déclare dans `IA/tâches/`, qui fait foi ; un timer ou un cron n'en est qu'une instance. Créer, modifier ou **suspendre** une tâche passe par PR. **Instancier ou retirer une instance est une action à effet externe : une ligne horodatée au carnet.** | N pour la déclaration et l'unicité ; patch revu et consignation au carnet : A·taches (lot E, 2026-10-30) |
 | 12.2 | Au plus une instance vivante par tâche, tous exécutants confondus. Une instance s'appelle `obsia-<tâche>`. L'instruction se suffit à elle-même. Le registre déclare une intention, jamais un état. | N pour « au plus une instance, tous exécutants confondus » et le préfixe `obsia-` ; le reste A·taches (2026-10-10) |
 | 12.3 | `taches-index.md` est toujours en contexte ; savoir qu'une tâche existe n'est pas l'instancier. | N pour « savoir n'est pas instancier » ; « toujours en contexte » A·taches (2026-10-10) |
 | 12.4 | Pourquoi, et la procédure (skill `cron`). | A·taches |
@@ -206,7 +206,7 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | 13.2 | Frontmatter d'un module ; renvois entre modules ; les sondes, purement déclaratives, sans commande arbitraire ni réseau. | A·distribution (2026-10-10) |
 | 13.3 | Profil `obsia.local.yml` non versionné, écrit par l'installeur ; pas de profil = catalogue complet. | N pour « pas de profil = catalogue complet » ; le reste A·distribution (2026-10-10) |
 | 13.4 | `installer.py` et `publier.py` n'écrivent qu'avec `--appliquer`. Lire `installation-et-publication.md` avant de les lancer avec `--appliquer`. | N |
-| 13.5 | Le privé fait foi ; la publication va à sens unique ; une correction faite sur le public se reporte à la main dans le privé. | N, resserré ; le pourquoi : A·distribution |
+| 13.5 | Le privé fait foi ; la publication va à sens unique ; une correction faite sur le public se reporte à la main dans le privé. | N pour le sens unique ; le report à la main d'une correction du public : A·distribution (lot E, 2026-10-30) |
 | 13.6 | Un fichier publié ne cite pas un chemin non publié (`brouillon/`, `.archive/`, et coffre parent), sauf leurs `README.md` et `profil-utilisateur.md`. | N (s'enfreint en écrivant un skill) |
 | 13.7 | Contrôle de fuite : les valeurs à forme reconnaissable refusent la publication ; `--forcer` ne franchit jamais une clé privée ni un jeton ; les noms de la liste locale avertissent sans bloquer, et un agent rapporte l'avertissement. Liste absente = aucun nom contrôlé : « aucune trouvaille » ne dit alors rien des noms nus. | N pour le refus par défaut, `--forcer` et l'avertissement de la liste locale ; motifs et noms A·distribution (2026-10-10) |
 

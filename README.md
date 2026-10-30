@@ -1,5 +1,7 @@
 # OBSIA
 
+![OBSIA](logo/banner.svg)
+
 **English** | [Français](README.fr.md)
 
 OBSIA gives your AI assistant a team of specialised agents — one to tidy your
@@ -180,7 +182,7 @@ Details (copy mode, probes, what is reduced or not) are in
 Before committing:
 
 ```bash
-python3 -m unittest discover -s tests
+python3 -m unittest discover -b -s tests
 python3 scripts/regenerate_sommaire.py
 python3 scripts/regenerate_index.py
 python3 scripts/verifier_coffre.py
