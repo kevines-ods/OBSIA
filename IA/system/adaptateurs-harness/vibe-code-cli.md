@@ -78,6 +78,18 @@ transport = "http"
 url = "https://searxng.exemple.org/mcp"
 ```
 
+```toml
+# Gmail — bloc du gabarit traduit en TOML ; le serveur garde lui-même son
+# jeton OAuth sur disque, ce n'est donc pas un serveur « OAuth » au sens de la
+# limite ci-dessous : il se branche en stdio comme un autre.
+[[mcp_servers]]
+name = "gmail"
+transport = "stdio"
+command = "npx"
+args = ["-y", "@klodr/gmail-mcp@3.0.0"]
+env = { GMAIL_MCP_RECIPIENT_PAIRING = "true", GMAIL_MCP_AUDIT_LOG = "/chemin/absolu/hors-depot/gmail-audit.jsonl" }
+```
+
 Les outils d'un serveur s'exposent sous `{server_name}_{tool_name}` (mcp-servers,
 « Tool naming and permissions » ; safety-approvals-permissions, « MCP and
 connector tools » : « MCP tools are addressed as `{server_name}_{tool_name}` »). En

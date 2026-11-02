@@ -79,8 +79,11 @@ MARQUES_DE_COFFRE = (".obsidian", "_MAINTENANCE", "Mon coffre",
 #: mot qui la nomme : le contrat parle de jetons et de mots de passe à longueur
 #: de page, et il doit pouvoir continuer.
 BLOQUANTS = (
+    # Le domaine finit par un nom de premier niveau fait de **lettres**
+    # (Unicode comprises : `.рф` reste bloqué) : sans cela, une version de
+    # paquet npm (`@editeur/paquet@3.0.0`) passait pour une adresse.
     ("adresse de courriel",
-     re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]{2,}\b")),
+     re.compile(r"\b[\w.+-]+@(?:[\w-]+\.)+[^\W\d_]{2,}\b")),
     ("adresse IP privée",
      re.compile(r"\b(?:10\.\d{1,3}|192\.168|172\.(?:1[6-9]|2\d|3[01]))"
                 r"\.\d{1,3}\.\d{1,3}\b")),
@@ -141,10 +144,12 @@ BLOQUANTS = (
                 r"\.(?:lan|local|internal|home\.arpa|ts\.net)\b(?!\.\w)")),
 )
 
-#: Boîtes génériques et domaines réservés : ils désignent un projet, pas une
-#: personne. Le domaine se compare **en entier** — `exemple.fr.attaquant.net`
-#: n'est pas `exemple.fr`, et rien n'empêche d'enregistrer le second.
-BOITES_ADMISES = ("noreply", "utilisateur")
+#: Adresses de service et domaines réservés : ils désignent un projet, pas une
+#: personne. Une adresse de service s'admet **entière** : admettre la boîte seule
+#: (`noreply@`) laissait passer `noreply@` de n'importe quelle société réelle.
+#: Le domaine se compare **en entier** — `exemple.fr.attaquant.net` n'est pas
+#: `exemple.fr`, et rien n'empêche d'enregistrer le second.
+ADRESSES_ADMISES = ("noreply@github.com",)
 DOMAINES_ADMIS = ("exemple.fr",)
 
 #: Domaines que la RFC 2606 réserve à la documentation. Personne ne peut les
@@ -209,17 +214,16 @@ BINAIRES = (".png", ".jpg", ".jpeg", ".gif", ".pdf", ".zip", ".woff",
 
 
 def courriel_admis(adresse: str) -> bool:
-    """Vrai pour une adresse de projet : boîte générique, ou domaine réservé.
+    """Vrai pour une adresse de projet : adresse de service connue, ou domaine réservé.
 
     Un vrai domaine reste bloqué : seul ce que la RFC 2606/6761 réserve à la
     documentation est admis, parce que rien ne peut y être enregistré. Le
     réservé couvre ses sous-domaines, dans les deux formes — `mail.example.com`
     comme `mail.exemple.test`.
     """
-    boite, _, domaine = adresse.partition("@")
-    if boite.lower() in BOITES_ADMISES:
+    if adresse.lower() in ADRESSES_ADMISES:
         return True
-    domaine = domaine.lower()
+    domaine = adresse.partition("@")[2].lower()
     if domaine in DOMAINES_ADMIS or domaine.endswith(TLD_RESERVES):
         return True
     return any(domaine == reserve or domaine.endswith("." + reserve)

@@ -459,6 +459,29 @@ class TestCeQuiNEstPasRelu(BaseControle):
                                     "titre ou description de PR")
         self.assertEqual(texte.trouvailles, [])
 
+    def test_une_version_de_paquet_npm_n_est_pas_une_adresse(self):
+        """`npx -y @editeur/paquet@3.0.0` épingle une version : rien à voir avec
+        un courriel, et la publication ne doit pas s'y arrêter."""
+        self.ecrire("notes.md", 'lancer `npx -y @klodr/gmail-mcp@3.0.0`\n'
+                                '"args": ["-y", "@scope/outil@12.4.1-beta.2"]\n')
+        self.assertEqual(self.etiquettes(self.controler()), [])
+
+    def test_un_domaine_de_premier_niveau_non_ascii_reste_une_fuite(self):
+        """Le motif exige des lettres au bout du domaine, pas de l'ASCII seul."""
+        self.ecrire("notes.md", "écrire à %s\n" % assemble("contact@exemple", ".рф"))
+        self.assertEqual(self.etiquettes(self.controler()), ["adresse de courriel"])
+
+    def test_une_boite_de_service_sur_un_vrai_domaine_reste_une_fuite(self):
+        """`noreply@` ou `utilisateur@` d'une société réelle désigne cette société :
+        seule l'adresse de service connue entière, ou un domaine réservé, passe."""
+        adresses = (assemble("noreply@societe", "-reelle.fr"),
+                    assemble("utilisateur@societe", "-reelle.fr"))
+        self.ecrire("notes.md", "écrire à %s ou à %s\n" % adresses)
+        self.assertEqual(self.etiquettes(self.controler()), ["adresse de courriel"])
+        for adresse in adresses:
+            self.assertFalse(PUB.courriel_admis(adresse), adresse)
+        self.assertTrue(PUB.courriel_admis("noreply@github.com"))
+
     def test_un_domaine_reserve_ne_designe_personne(self):
         """RFC 2606/6761 : ni les domaines réservés, ni leurs sous-domaines.
 

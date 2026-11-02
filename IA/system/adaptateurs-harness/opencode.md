@@ -177,6 +177,31 @@ le fichier (§4).
 Le couple `tools: false` global / `true` par agent est la traduction fidèle du
 §10.2 : un MCP n'est utilisable que **déclaré par l'agent** qui s'en sert.
 
+### Brancher Gmail
+
+Le bloc vient du gabarit (`IA/MCP/mcp.example.json`, entrée `gmail`) ; opencode en
+change trois clés : `type: "local"`, `command` en **tableau** (commande et
+arguments ensemble), et **`environment`** au lieu de `env`. Écrites sous `env`,
+les variables de garde de la fiche `IA/MCP/gmail.md` ne parviennent pas au
+serveur, et `opencode mcp list` le montre pourtant **connected** : la preuve est
+l'envoi refusé vers une adresse non appairée, pas le voyant.
+
+```json
+{
+  "mcp": {
+    "gmail": {
+      "type": "local",
+      "command": ["npx", "-y", "@klodr/gmail-mcp@3.0.0"],
+      "enabled": true,
+      "environment": {
+        "GMAIL_MCP_RECIPIENT_PAIRING": "true",
+        "GMAIL_MCP_AUDIT_LOG": "/chemin/absolu/hors-depot/gmail-audit.jsonl"
+      }
+    }
+  }
+}
+```
+
 ## 5. Modèles
 
 Un serveur local et un service distant se déclarent côte à côte, et se
