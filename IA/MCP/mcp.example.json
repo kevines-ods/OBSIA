@@ -73,13 +73,10 @@
     "gmail": {
       "type": "stdio",
       "command": "npx",
-      "args": [
-        "-y",
-        "@gongrzhe/server-gmail-autoauth-mcp"
-      ],
+      "args": ["-y", "@klodr/gmail-mcp@3.0.0"],
       "env": {
-        "GMAIL_OAUTH_PATH": "/chemin/absolu/hors-depot/gcp-oauth.keys.json",
-        "GMAIL_CREDENTIALS_PATH": "/chemin/absolu/hors-depot/credentials.json"
+        "GMAIL_MCP_RECIPIENT_PAIRING": "true",
+        "GMAIL_MCP_AUDIT_LOG": "/chemin/absolu/hors-depot/gmail-audit.jsonl"
       }
     },
     "nextcloud": {
