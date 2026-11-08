@@ -300,5 +300,17 @@ class TestVerification(unittest.TestCase):
         self.assertEqual(a_jour, self.sommaire.read_text(encoding="utf-8"))
 
 
+class TestConflitsSyncthing(unittest.TestCase):
+    """Une copie de conflit de Syncthing n'est pas une note."""
+
+    def test_copie_de_conflit_ignoree(self):
+        with tempfile.TemporaryDirectory() as d:
+            for nom in ("vraie-note.md", "sommaire.md",
+                        "sommaire.sync-conflict-20261007-101010-ABCDEFG.md",
+                        "vraie-note.sync-conflict-20261007-101010-ABCDEFG.md"):
+                Path(d, nom).write_text("x\n", encoding="utf-8")
+            self.assertEqual(RS.notes_de(d), ["vraie-note.md"])
+
+
 if __name__ == "__main__":
     unittest.main()

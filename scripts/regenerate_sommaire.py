@@ -210,9 +210,15 @@ def racines_de_memoire():
 # les lit pour vérifier que les marcheurs ne divergent pas.
 
 
+#: Les copies de conflit de Syncthing (`<nom>.sync-conflict-<date>-<id>.md`) ne
+#: sont pas des notes : les compter faisait se lister un sommaire lui-même.
+CONFLIT_SYNCTHING = ".sync-conflict-"
+
+
 def notes_de(dossier: str):
     return sorted(f for f in os.listdir(dossier)
                   if f.endswith(".md") and f != "sommaire.md"
+                  and CONFLIT_SYNCTHING not in f
                   and os.path.isfile(os.path.join(dossier, f)))
 
 
