@@ -1092,6 +1092,36 @@ class TestRegenerationSansLien(BaseInstalleur):
                 self.assertIn("sans régénération", resultat.stdout)
 
 
+    def test_un_lien_hors_memoire_n_arrete_pas_la_regeneration(self):
+        """Un lien sous `code/` ou un dossier caché ne bloque pas la régénération.
+
+        Aucun générateur ne descend dans un dossier hors mémoire (§7.3,
+        `convention_des_notes.dossier_hors_memoire`) : le `.venv` d'un projet,
+        avec ses `lib64 -> lib`, ne peut pas faire écrire hors du coffre. Le
+        refuser bloquait toute installation d'un coffre qui porte du code.
+        Un lien dans la mémoire **parcourue**, lui, arrête toujours (test voisin).
+        """
+        lien = self.ailleurs()
+        lien.mkdir(exist_ok=True)
+        self.profil(mode="copie")
+        cible = self.cible()
+        cible.mkdir(parents=True)
+        venv = self.memoire() / "projet" / "code" / ".venv"
+        venv.mkdir(parents=True)
+        (venv / "lib64").symlink_to(lien, target_is_directory=True)
+        cache = self.memoire() / ".obsidian"
+        cache.mkdir(parents=True)
+        (cache / "lie").symlink_to(lien, target_is_directory=True)
+        self.poser_les_generateurs()
+
+        resultat = self.lancer("--appliquer", "--installer", str(cible))
+
+        self.assertEqual(resultat.returncode, 0, resultat.stderr)
+        self.assertIn("index et sommaires à jour", resultat.stdout)
+        self.assertEqual(sorted(p.name for p in lien.iterdir()), [],
+                         "la régénération a écrit à travers le lien")
+
+
 class TestLeNettoyageSuitLaCible(BaseInstalleur):
     """Le nettoyage entre deux cas suit `cible()`, pas un chemin qui lui ressemble.
 

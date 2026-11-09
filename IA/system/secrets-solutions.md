@@ -164,8 +164,14 @@ qui *saisit* des secrets (une interface où l'on entre une clé) :
   main, qui serait perdue. On n'y range rien avec `sops`.
 - **Création à l'installation** : un geste unique de l'utilisateur crée le fichier
   du service, chiffré et vide à une variable près — un **témoin** non secret
-  (`OBSIA_FICHIER_DE_SERVICE=1`) que le service réécrit toujours. Sans fichier,
-  `sops exec-env` ne lance rien : l'installation le dit et donne la commande.
+  (`OBSIA_FICHIER_DE_SERVICE=<service>`) que le service réécrit toujours et
+  compare à son propre nom : le fichier d'un autre service injecté par erreur est
+  refusé. Sans fichier, `sops exec-env` ne lance rien : l'installation le dit et
+  donne la commande.
+- **Le fichier commun reste celui de l'utilisateur.** Le service ne l'écrit
+  jamais ; le lanceur peut y ranger une valeur (un jeton tiré à neuf) parce qu'il
+  agit sur commande explicite de l'utilisateur, avec sa clé privée — jamais la
+  valeur en argument, toujours par l'entrée standard.
 - **Aucune écriture sans injection.** Témoin absent de l'environnement (fichier non
   injecté, `sops` absent) : le service refuse toute saisie — jamais un fichier
   réécrit vide ou amputé, jamais une valeur en clair à la place.

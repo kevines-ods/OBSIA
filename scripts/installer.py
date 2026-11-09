@@ -45,6 +45,7 @@ SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS))
 
 import modules as MOD
+from convention_des_notes import dossier_hors_memoire, partie_hors_memoire
 from commun import (MARQUEUR_AGENTS, MARQUEURS_AGENTS, contenu_agents,  # noqa: F401
                     est_un_coffre_parent)
 from generer_prompt import (RACINE_DEFAUT, fichiers_declaratifs, lire_frontmatter,
@@ -399,7 +400,7 @@ def dossiers_a_regenerer(racine: Path) -> list[Path]:
 
 
 def premier_lien(racine: Path) -> Path | None:
-    """Le premier lien symbolique sous `IA/` ou dans la mémoire, ou None.
+    """Le premier lien symbolique sous `IA/` ou dans la mémoire parcourue, ou None.
 
     Tout l'arbre est parcouru, pas seulement les racines : un `IA/system`
     déplacé ailleurs, un `sommaire.md` partagé dans une mémoire liée font écrire
@@ -407,12 +408,21 @@ def premier_lien(racine: Path) -> Path | None:
     `os.walk` ne descend pas dans les liens qu'il croise (`followlinks` est
     faux) : c'est à chaque niveau qu'on teste les noms, dossiers et fichiers.
     """
+    ia = racine / DOSSIER_INDEX
     for depart in dossiers_a_regenerer(racine):
         if depart.is_symlink():
             return depart
         if not depart.is_dir():
             continue
         for chemin, dossiers, fichiers in os.walk(depart):
+            if depart != ia:
+                # Dans la mémoire, on ne regarde que ce que les générateurs
+                # parcourent : un dossier hors mémoire (`code/`, caché, autre
+                # dépôt — §7.3) n'est jamais écrit, et le `.venv` d'un projet,
+                # avec ses `lib64 -> lib`, bloquait toute régénération.
+                dossiers[:] = [d for d in dossiers
+                               if not partie_hors_memoire(d)
+                               and not dossier_hors_memoire(Path(chemin) / d)]
             for nom in dossiers + fichiers:
                 candidat = Path(chemin) / nom
                 if candidat.is_symlink():
