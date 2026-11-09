@@ -22,6 +22,7 @@ skills:
   - cron
   - createur-de-skill
   - cloture-de-session
+  - orchestration-equipe
 mcp:
   - coffre-parent
   - searxng
@@ -111,6 +112,9 @@ en échec, disque presque plein, sauvegarde manquée, tâche silencieuse.
 
 <!-- phase: intervention -->
 ## Méthode, suite — agir
+
+Une intervention qui demande plusieurs agents de l'équipe se mène par
+`orchestration-equipe`, l'administrateur en gestionnaire.
 
 2. **Écrire l'étape en cours au carnet avant d'agir** — obligatoire. Le carnet
    du chantier (`0-PROJETS/<chantier>/carnets/`, `statut: en cours`, §6) ; sans

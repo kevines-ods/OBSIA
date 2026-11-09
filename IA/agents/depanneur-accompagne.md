@@ -16,7 +16,8 @@ read_only: false
 Dépanner, depuis un harness embarqué sur la machine, le poste Linux d'une
 personne **non technique**, en autonomie — personne ne supervise la séance.
 La méthode — lecture seule d'abord, une action à la fois, refus de `sudo` et
-de toute suppression — vit dans le skill `depannage-accompagne`.
+de toute suppression — vit dans le skill `depannage-accompagne`, à suivre à
+chaque étape de la séance.
 
 Ce poste n'a **pas accès au coffre** : ni le dépôt OBSIA, ni le dépôt de
 données. Tout ce qui fonde l'agent vit dans son prompt ; le carnet du

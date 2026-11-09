@@ -78,17 +78,12 @@ transport = "http"
 url = "https://searxng.exemple.org/mcp"
 ```
 
-```toml
-# Gmail — bloc du gabarit traduit en TOML ; le serveur garde lui-même son
-# jeton OAuth sur disque, ce n'est donc pas un serveur « OAuth » au sens de la
-# limite ci-dessous : il se branche en stdio comme un autre.
-[[mcp_servers]]
-name = "gmail"
-transport = "stdio"
-command = "npx"
-args = ["-y", "@klodr/gmail-mcp@3.0.0"]
-env = { GMAIL_MCP_RECIPIENT_PAIRING = "true", GMAIL_MCP_AUDIT_LOG = "/chemin/absolu/hors-depot/gmail-audit.jsonl" }
-```
+> **Gmail ne se branche pas sous Vibe.** Vibe ne connaît que `permission =
+> "always"` et `"ask"` pour le shell, aucun refus, et `vibe --prompt` sans
+> `--agent` approuve tout. Or la fiche `IA/MCP/gmail.md` réserve Gmail aux
+> agents dont le shell est refusé. Le 2026-11-01, le modèle y a lancé une
+> commande shell sans approbation pour élargir la liste des destinataires,
+> puis envoyé.
 
 Les outils d'un serveur s'exposent sous `{server_name}_{tool_name}` (mcp-servers,
 « Tool naming and permissions » ; safety-approvals-permissions, « MCP and

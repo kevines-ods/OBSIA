@@ -344,18 +344,25 @@ def construire_prompt(agents: list[dict], skills: list[dict],
         a("")
 
     if skills:
+        # Ligne A1 (plan d'économie de contexte) : les skills passent par leur
+        # nom, sous l'agent qui les déclare (section ci-dessus) — la Méthode
+        # (§10) choisit l'agent, puis lit sa fiche, puis le skill. Une
+        # description ne se recopie pas ici (§5) : elle vit dans le frontmatter
+        # et dans `skills-index.md`. Un skill qu'aucun agent ne déclare serait
+        # introuvable : il est nommé à part, jamais omis (le vérificateur, lui,
+        # avertit).
+        declares = {s for ag in agents for s in ag.get("skills", [])}
+        orphelins = sorted(sk["name"] for sk in skills if sk["name"] not in declares)
         a("## Skills disponibles")
         a("")
-        a("Un skill se lit dans `IA/skills/` du dépôt, jamais dans le dossier")
-        a("de skills du harness ; il ne se recopie ni ne se lie ailleurs.")
-        a("Ici, la première phrase seulement : le quand et le quand-pas se lisent")
-        a("dans le frontmatter du skill avant de l'ouvrir.")
-        a("")
-        from regenerate_index import premiere_phrase   # import tardif : regenerate_index importe ce module
-        for sk in skills:
-            marque = " [lecture seule]" if sk.get("read_only") else ""
-            desc = premiere_phrase(sk.get("description", "(sans description)"))
-            a(f"- **{sk['name']}**{marque} — {desc}")
+        a("Les skills de chaque agent sont nommés ci-dessus. Leur description se")
+        a("lit dans `OBSIA/IA/system/skills-index.md`, le skill lui-même dans")
+        a("`IA/skills/` du dépôt — jamais dans le dossier de skills du harness ;")
+        a("il ne se recopie ni ne se lie ailleurs. Le quand et le quand-pas se")
+        a("lisent dans son frontmatter avant de l'ouvrir.")
+        if orphelins:
+            a("")
+            a("Déclarés par aucun agent : " + ", ".join(orphelins) + ".")
         a("")
 
     if taches:
@@ -582,6 +589,67 @@ def section_ecriture(racine: Path = RACINE_DEFAUT) -> str:
     return m.group(0).strip("\n")
 
 
+#: Ligne A2 (plan d'économie de contexte) : les sections du noyau qu'un délégué
+#: qui écrit reçoit entières, reconnues par leur numéro ET le premier mot de
+#: leur titre — une renumérotation ou un titre reformulé lève `NoyauIncomplet`
+#: plutôt que d'extraire la mauvaise section en silence. Le critère est « ce
+#: qui protège l'acte d'écrire », jamais une taille : §5 (une information à un
+#: seul endroit), §7.3 et §7.3.1 (où écrire), §9 (la trace), §11 (les générés).
+#: §4 entier (sandbox ET secrets) ; §2 par son repère (`regle_ecriture`).
+SECTIONS_DE_POCHE = (
+    ("##", "4.", "Exécution"),
+    ("##", "5.", "Frontmatter"),
+    ("###", "7.3", "Écriture"),
+    ("###", "7.3.1", "Où"),
+    ("##", "9.", "Trace"),
+    ("##", "11.", "Fichiers"),
+)
+
+
+def section_titree(contrat: str, niveau: str, numero: str, mot: str) -> str:
+    """La section de titre `niveau numero mot…`, jusqu'au titre suivant de même
+    niveau ou plus haut. Lève `NoyauIncomplet` si le titre est introuvable."""
+    titre = re.compile(r"^%s %s %s\b.*$" % (re.escape(niveau), re.escape(numero), re.escape(mot)),
+                       re.MULTILINE)
+    m = titre.search(contrat)
+    if m is None:
+        raise NoyauIncomplet(f"la section « {niveau} {numero} {mot}… » est introuvable dans le noyau")
+    profondeur = len(niveau)
+    suite = re.compile(r"^#{1,%d} " % profondeur, re.MULTILINE)
+    fin = suite.search(contrat, m.end())
+    return contrat[m.start():fin.start() if fin else len(contrat)].strip("\n")
+
+
+def prompt_de_poche(racine: Path = RACINE_DEFAUT) -> str | None:
+    """Le contrat de poche : ce que reçoit un délégué qui écrit (sous-agent,
+    membre d'équipe), à la place de l'`AGENTS.md` et du noyau entier.
+
+    Engendré à chaque appel depuis le noyau, jamais stocké : il ne peut pas
+    être périmé. Rend None s'il n'y a pas de noyau ; lève `NoyauIncomplet` si
+    une règle ou une section attendue manque — un contrat de poche amputé
+    serait la seule règle que le délégué voit.
+    """
+    try:
+        contrat = (Path(racine) / NOYAU).read_text(encoding="utf-8")
+    except OSError:
+        return None
+    ecriture = regle_ecriture(racine)
+    if not ecriture:
+        raise NoyauIncomplet("la règle d'écriture (§2) a perdu ses repères")
+    parties = [
+        "# Contrat de poche — délégué qui écrit",
+        "",
+        "Extrait engendré du noyau `OBSIA/IA/system/VAULT-CONTRACT.md`, qui fait "
+        "foi : ce qui protège l'acte d'écrire. En cas de doute, ne pas écrire et "
+        "le dire dans le compte rendu.",
+        "",
+        "## Écriture (§2)", "", ecriture, "",
+    ]
+    for niveau, numero, mot in SECTIONS_DE_POCHE:
+        parties += [section_titree(contrat, niveau, numero, mot), ""]
+    return "\n".join(parties).rstrip() + "\n"
+
+
 #: Les balises de phase d'une fiche d'agent (`contrat-frontmatter`) : un
 #: commentaire HTML seul sur sa ligne, muet dans Obsidian.
 BALISE_PHASE = re.compile(r"^<!--\s*phase\s*:\s*([a-z0-9-]+)\s*-->\s*$")
@@ -652,7 +720,7 @@ def prompt_compact(racine: Path = RACINE_DEFAUT, nom_agent: str = "",
     Le prompt porte les seules règles graves du noyau — l'écriture et le
     preview (§2), les secrets (§4) —, le **socle** de la fiche, la section de
     la phase demandée s'il y en a une, et les skills **par nom seul**, groupés
-    par phase : leur description se lit dans `skills-index.md`.
+    par phase : leur description se lit dans `OBSIA/IA/system/skills-index.md`.
 
     Rend None si l'agent n'existe pas ou ne se lit pas. Lève
     `BalisageInvalide` sur une fiche mal balisée, `KeyError` sur une phase
@@ -729,6 +797,9 @@ def main() -> int:
     ap.add_argument("--embarque", metavar="AGENT",
                     help="engendre le prompt autonome de cet agent pour un "
                          "poste sans coffre, au lieu du prompt du coffre")
+    ap.add_argument("--poche", action="store_true",
+                    help="engendre le contrat de poche d'un délégué qui écrit "
+                         "(extrait du noyau, jamais stocké)")
     ap.add_argument("--compact", metavar="AGENT",
                     help="engendre le prompt court de cet agent (règles graves, "
                          "fiche, skills en une ligne), plafonné à %d caractères"
@@ -742,6 +813,25 @@ def main() -> int:
     if not racine.is_dir():
         print(f"Racine introuvable : {racine}", file=sys.stderr)
         return 1
+
+    if args.poche and args.sortie:
+        print("--poche ne s'écrit pas dans un fichier : il est engendré à chaque "
+              "appel pour ne jamais vieillir (§2 ferme la liste des générés).",
+              file=sys.stderr)
+        return 1
+
+    if args.poche:
+        try:
+            prompt = prompt_de_poche(racine)
+        except NoyauIncomplet as e:
+            print(f"Noyau incomplet, aucun contrat de poche : {e}", file=sys.stderr)
+            return 1
+        if prompt is None:
+            print("Aucun noyau : pas de contrat de poche.", file=sys.stderr)
+            return 1
+        print(prompt, end="")
+        print(f"\n{len(prompt)} caractères.", file=sys.stderr)
+        return 0
 
     if args.compact and args.embarque:
         print("--compact et --embarque s'excluent : un seul prompt à la fois.",

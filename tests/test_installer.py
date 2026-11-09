@@ -317,7 +317,7 @@ class TestEcritureAgentsMd(BaseInstalleur):
         annexes = sorted(a for a in dossier.glob("*.md")
                          if a.name != "registre.md")
         self.assertTrue(annexes, "aucune annexe trouvée : rien n'est prouvé")
-        self.assertEqual(len(annexes), 6, "le nombre d'annexes a changé")
+        self.assertEqual(len(annexes), 7, "le nombre d'annexes a changé")
 
         def sans_les_copies(texte):
             coupe, n = re.subn(r"^0\. Au démarrage.*?(?=\n1\. |\n## |\Z)", "",

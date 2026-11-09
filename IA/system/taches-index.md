@@ -5,6 +5,7 @@
 | [revue-des-notes-du-coffre](../tâches/revue-des-notes-du-coffre.md) | `0 10 * * *` | Europe/Paris | agent | local | assistant | oui | Traiter les notes brutes du coffre parent — remplir et classer celles d'0-EN-VRAC, compléter celles déposées dans 0-SAVOIRS, et signaler les tags hors vocabulaire contrôlé. À charger via le skill traitement-des-notes. |
 | [revue-hebdomadaire-du-coffre](../tâches/revue-hebdomadaire-du-coffre.md) | `0 9 * * 1` | Europe/Paris | agent | local | assistant | oui | Régénérer index et sommaires, vérifier la cohérence du coffre, et réconcilier le registre des tâches avec ce qui tourne réellement. |
 | [revue-mensuelle-des-lecons](../tâches/revue-mensuelle-des-lecons.md) | `0 11 1 * *` | Europe/Paris | agent | local | assistant | oui | Statuer sur les modifications de skill dont la date de revue est passée — confirmer ou annuler — puis compiler au plus une leçon accumulée. Une par mois, jamais deux. |
+| [scan-secrets-du-coffre](../tâches/scan-secrets-du-coffre.md) | `0 8 * * 1` | Europe/Paris | agent | local | administrateur | oui | Relire tout le coffre à la recherche de valeurs à forme de secret, et signaler — sans corriger, sans supprimer, sans jamais bloquer. |
 
 > Le registre `IA/tâches/` **déclare** ; rien ne s'instancie tout seul.
 > Une tâche listée ici n'est pas forcément planifiée sur la machine

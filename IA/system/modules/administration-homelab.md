@@ -7,6 +7,7 @@ essentiel: false
 question: Veux-tu que les agents t'aident à administrer tes serveurs à la maison (stockage réseau NAS, services auto-hébergés, sauvegardes, surveillance) ?
 requiert:
   - noyau
+  - equipe
   - linux-poste
   - virtualisation
   - conteneurs

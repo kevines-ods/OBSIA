@@ -291,3 +291,53 @@ def verifier_depot_de_donnees(ctx):
                          "le dépôt produit est suivi par le dépôt de données du "
                          "coffre — `%s/` n'entre jamais dans la mémoire (§7.1)"
                          % ctx.racine.name)
+
+
+# ------------------------------------------------------------ ce qui traîne
+
+#: Copie de conflit d'un outil de synchronisation (`x.sync-conflict-…-ABCD.md`).
+#: Ce n'est pas un résidu : c'est une **note concurrente** de la vraie, qui
+#: porte souvent la version d'avant.
+COPIE_DE_CONFLIT = re.compile(r"\.sync[-.]conflict", re.IGNORECASE)
+
+#: Résidus d'exécution ou d'édition. Refusés à la racine seulement : dans
+#: `_MAINTENANCE/`, un journal est quelquefois voulu.
+RESIDU = re.compile(r"\.(log|bak|tmp|orig|rej|swp|swo)$|~$|\.backup"
+                    r"|^\.DS_Store$", re.IGNORECASE)
+
+
+def verifier_fichiers_etrangers(ctx):
+    """§7.4 : ni copie de conflit, ni résidu au ras du coffre.
+
+    La synchronisation travaille sur le dossier, pas sur l'historique : un
+    `llama.log`, une sauvegarde d'éditeur ou une copie de conflit voyage vers
+    tous les postes même quand git l'ignore — le coffre se salit ailleurs sans
+    que rien ne le dise.
+
+    Une copie de conflit est plus grave qu'un résidu : deux postes ont écrit la
+    même note, et l'agent peut lire, citer ou indexer la copie à la place de
+    l'original. Elle est refusée partout.
+
+    Ne s'exécute que sur un coffre parent désigné (`--coffre`) : un clone de la
+    CI n'en a pas. Les dossiers cachés (`.git`, `.worktrees`) sont sautés — un
+    arbre de travail n'est pas la mémoire.
+    """
+    if ctx.coffre is None:
+        return
+    coffre = Path(ctx.coffre)
+    for chemin, sous, fichiers in os.walk(coffre):
+        sous[:] = [d for d in sous if not d.startswith(".")]
+        for nom in sorted(fichiers):
+            relatif = Path(chemin).joinpath(nom).relative_to(coffre)
+            if COPIE_DE_CONFLIT.search(nom):
+                ctx.signaler_memoire(
+                    relatif,
+                    "copie de conflit de synchronisation : c'est une note "
+                    "concurrente de la vraie — la comparer, garder la bonne, "
+                    "retirer la copie (§7.4)")
+            elif Path(chemin) == coffre and RESIDU.search(nom):
+                ctx.signaler_memoire(
+                    relatif,
+                    "résidu à la racine du coffre : il voyage vers les autres "
+                    "postes alors que git l'ignore — le ranger dans "
+                    "`_MAINTENANCE/` ou hors du coffre (§7.4)")

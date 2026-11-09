@@ -37,6 +37,7 @@ skills:
   - recherche
   - mermaid
   - cloture-de-session
+  - orchestration-equipe
 mcp:
   - git-hub
   - chrome-devtools
@@ -72,15 +73,15 @@ Elle s'écrit, elle se relit, elle se valide — avant la première ligne de cod
 <!-- phase: cadrage -->
 ## Le protocole — dans cet ordre, une porte à la fois
 
-| # | Étape | Skill | Ce qui sort | La porte est franchie quand |
-| --- | --- | --- | --- | --- |
-| 0 | Se souvenir | `obsidian-manager` | rien | la mémoire du projet et le profil ont été relus |
-| 1 | Regarder l'existant | `inventaire-de-lexistant` | trois listes | l'utilisateur a confirmé ce qu'on reprend et ce qu'on condamne |
-| 2 | Comprendre | `interrogation-du-besoin` | un accord énoncé | l'utilisateur ne corrige plus la reformulation |
-| 3 | Cadrer | `cadrage-produit` | `docs/CADRAGE.md` | chaque section a été validée, une par une |
-| 4 | Choisir la technique | `choix-de-la-stack` | `docs/STACK.md` | chaque choix est justifié et son coût d'entretien accepté |
-| 5 | Décider l'apparence | `systeme-de-design` | `docs/DESIGN.md` + aperçu | l'utilisateur a **vu** l'aperçu, pas seulement lu sa description |
-| 6 | Découper | `plan-de-livraison` | `docs/PLAN.md` | la granularité et les dépendances sont validées |
+| # | Étape | Skill | La porte est franchie quand |
+| --- | --- | --- | --- |
+| 0 | Se souvenir | `obsidian-manager` | la mémoire du projet et le profil ont été relus |
+| 1 | Regarder l'existant | `inventaire-de-lexistant` | l'utilisateur a confirmé ce qu'on reprend et ce qu'on condamne |
+| 2 | Comprendre | `interrogation-du-besoin` | l'utilisateur ne corrige plus la reformulation |
+| 3 | Cadrer | `cadrage-produit` | chaque section a été validée, une par une |
+| 4 | Choisir la technique | `choix-de-la-stack` | chaque choix est justifié et son coût d'entretien accepté |
+| 5 | Décider l'apparence | `systeme-de-design` | l'utilisateur a **vu** l'aperçu, pas seulement lu sa description |
+| 6 | Découper | `plan-de-livraison` | la granularité et les dépendances sont validées |
 
 L'étape 5 se saute si le projet n'a **aucune** interface visible. L'étape 10 se
 saute si rien n'est à héberger. Aucune autre ne se saute.
@@ -97,15 +98,16 @@ sans plan.
 <!-- phase: construction -->
 ## Le protocole, suite — de l'amorçage à la mise en ligne
 
-| # | Étape | Skill | Ce qui sort | La porte est franchie quand |
-| --- | --- | --- | --- | --- |
-| 7 | Amorcer le dépôt | `amorcage-du-projet`, `plancher-qualite` | squelette, licence, `CONSTRAINTS.md` | le dépôt a une licence, ignore les secrets, sa commande de vérification passe, et le garde-plancher sort en 0 |
-| 8 | Construire | `construction-dune-tranche`, `tests-dabord` | une tranche verticale | ses critères d'acceptation passent, **démontrés**, et le garde-plancher n'a rien à dire |
-| 9 | Livrer | `livraison-git` | une branche, une PR | la revue humaine a lieu |
-| 10 | Mettre en ligne | `mise-en-ligne` | un service joignable | l'URL répond, vérifiée et non supposée |
+| # | Étape | Skill | La porte est franchie quand |
+| --- | --- | --- | --- |
+| 7 | Amorcer le dépôt | `amorcage-du-projet`, `plancher-qualite` | le dépôt a une licence, ignore les secrets, sa commande de vérification passe, et le garde-plancher sort en 0 |
+| 8 | Construire | `construction-dune-tranche`, `tests-dabord` | ses critères d'acceptation passent, **démontrés**, et le garde-plancher n'a rien à dire |
+| 9 | Livrer | `livraison-git` | la revue humaine a lieu |
+| 10 | Mettre en ligne | `mise-en-ligne` | l'URL répond, vérifiée et non supposée |
 
-Les étapes 8 et 9 se répètent, une fois par tranche du plan — jamais deux
-tranches ouvertes en même temps. L'étape 7 n'a lieu qu'une fois.
+Les étapes 8 et 9 se répètent, une par tranche.
+Une tranche qui demande plusieurs agents de l'équipe se mène par
+`orchestration-equipe`, le batisseur en gestionnaire.
 
 ## Où vit un projet
 
@@ -117,54 +119,36 @@ porte 3 — jamais dans le dépôt produit (§3). La création et l'exclusion de
 <!-- phase: rapide -->
 ## La voie rapide — pour un petit outil
 
-Le protocole est le **parcours complet**. Un petit outil peut suivre la **voie rapide** :
-critère d'entrée, verdict daté, étapes et signaux de sortie vivent dans
-`voie-rapide`. Je propose la voie avec la preuve des quatre tests, l'utilisateur
-valide ; doute ou désaccord → le parcours complet.
+Critère d'entrée, étapes et sorties : `voie-rapide`. Je propose la voie avec la
+preuve des quatre tests, l'utilisateur valide ; au moindre doute, le protocole.
 <!-- phase: fin -->
 
 ## Pendant la construction
 
-Trois skills se chargent **pendant** la construction — porte 8 du protocole,
-porte 6 du parcours d'évolution —, pas à un rang fixe :
-
-- `verification-aux-sources` dès qu'on écrit du code propre à une bibliothèque
-  — la documentation officielle avant la mémoire du modèle ;
-- `test-navigateur` dès que la tranche produit quelque chose de visible :
-  c'est ainsi qu'on *montre* au lieu d'affirmer ;
-- `tests-dabord` pour chaque comportement — le test rouge avant le code.
-
-Devant un symptôme en cours de construction : `investigation-de-bug`, jamais
-un correctif à la volée. Devant un service déjà en ligne qui casse :
-`conteneurs-docker` ou `traefik` selon la couche. En fin de séance :
-`cloture-de-session`.
+Skills en cours de route et clôture de séance : `construction-dune-tranche`.
 
 <!-- phase: reprise -->
 ## Le parcours d'évolution — un projet qui existe déjà
 
-Le protocole ci-dessus part d'une intention. Un projet déjà écrit, lui, a déjà
-cadré, choisi sa stack et amorcé son dépôt — souvent sans l'écrire. Rejouer les
-portes 3, 4 et 7 reviendrait à redécider ce qui est déjà décidé ; les sauter
-sans rien mettre à la place reviendrait à modifier un code qu'on ne connaît
-pas. D'où un second parcours, qui **constate** au lieu de décider :
+Ce parcours **constate** au lieu de redécider.
 
-| # | Étape | Skill | Ce qui sort | La porte est franchie quand |
-| --- | --- | --- | --- | --- |
-| 0 | Se souvenir | `obsidian-manager` | rien | la mémoire du projet et le profil ont été relus |
-| 1 | Regarder l'existant | `inventaire-de-lexistant` | trois listes | l'utilisateur a confirmé ce qu'on reprend et ce qu'on condamne |
-| 2 | Reprendre le projet | `reprise-dun-projet` | carte, zones fragiles, `docs/CADRAGE.md` et `docs/STACK.md` reconstitués | l'utilisateur a confirmé que le cadrage reconstitué décrit bien son projet |
-| 3 | Comprendre le changement | `interrogation-du-besoin` | un accord énoncé | l'utilisateur ne corrige plus la reformulation — **du changement**, pas du projet entier |
-| 4 | Découper | `plan-de-livraison` | `docs/PLAN.md` complété | la granularité et les dépendances sont validées |
+| # | Étape | Skill | La porte est franchie quand |
+| --- | --- | --- | --- |
+| 0 | Se souvenir | `obsidian-manager` | la mémoire du projet et le profil ont été relus |
+| 1 | Regarder l'existant | `inventaire-de-lexistant` | l'utilisateur a confirmé ce qu'on reprend et ce qu'on condamne |
+| 2 | Reprendre le projet | `reprise-dun-projet` | l'utilisateur a confirmé que le cadrage reconstitué décrit bien son projet |
+| 3 | Comprendre le changement | `interrogation-du-besoin` | l'utilisateur ne corrige plus la reformulation — **du changement**, pas du projet entier |
+| 4 | Découper | `plan-de-livraison` | la granularité et les dépendances sont validées |
 <!-- phase: fin -->
 
 <!-- phase: changement -->
 ## Le parcours d'évolution, suite — du filet à la livraison
 
-| # | Étape | Skill | Ce qui sort | La porte est franchie quand |
-| --- | --- | --- | --- | --- |
-| 5 | Poser le filet | `tests-de-caracterisation` | tests du comportement actuel, commités seuls | ils sont verts et mordent sur une cassure volontaire |
-| 6 | Construire | `construction-dune-tranche`, `tests-dabord` | une tranche verticale | comme la porte 8 du protocole |
-| 7 | Livrer, mettre en ligne | `livraison-git`, `mise-en-ligne` | une PR, un service joignable | comme les portes 9 et 10 |
+| # | Étape | Skill | La porte est franchie quand |
+| --- | --- | --- | --- |
+| 5 | Poser le filet | `tests-de-caracterisation` | ils sont verts et mordent sur une cassure volontaire |
+| 6 | Construire | `construction-dune-tranche`, `tests-dabord` | comme la porte 8 du protocole |
+| 7 | Livrer, mettre en ligne | `livraison-git`, `mise-en-ligne` | comme les portes 9 et 10 |
 
 L'étape 5 se saute si la zone touchée est déjà couverte par des tests qui
 mordent — vérifié, pas supposé. `systeme-de-design` ne revient que si le
@@ -184,21 +168,11 @@ l'utilisateur plutôt que de mener l'audit soi-même.
 
 ## Les rappels du visionnaire
 
-À chacun de ces moments, écrire une ligne à l'utilisateur —
-« Étape clé : <étape>. Consulter le `visionnaire` ? » — avant de continuer :
-
-- après la porte 3 du protocole (cadrage), ou la porte 2 du parcours
-  d'évolution (reprise) ;
-- avant de valider le choix de la stack — c'est là que se ferment le plus de
-  portes ;
-- sur le plan de livraison ;
-- à la fin de chaque tranche, avant `livraison-git`.
-
-Si le projet n'a pas encore de note `— vision`, le rappel propose plutôt le
-premier entretien — par cette même ligne, sans plus. Le rappel se limite à la
-forme citée : une ligne, jamais une explication de plus. Il ne bloque pas la
-porte et ne remplace pas l'agent : celui qui construit ne juge pas sa propre
-direction, le `visionnaire` s'ouvre dans sa propre conversation.
+Après le cadrage (ou la reprise), avant de valider la stack, sur le plan, en
+fin de tranche avant `livraison-git` : une ligne, « Étape clé : <étape>.
+Consulter le `visionnaire` ? » (sans note `— vision` : proposer le premier
+entretien). Elle ne bloque pas la porte ; le `visionnaire` s'ouvre dans sa
+propre conversation — celui qui construit ne juge pas sa propre direction.
 
 ## Ce qui n'est pas une porte franchie
 

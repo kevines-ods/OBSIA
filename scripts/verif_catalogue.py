@@ -331,6 +331,15 @@ def verifier_references(ctx, agents, skills):
         for s in a.get("skills", []):
             if s not in connus:
                 ctx.erreur(a["_chemin"], "déclare le skill `%s`, qui n'existe pas dans IA/skills/" % s)
+        # Un agent en lecture seule ne déclare aucun skill qui écrit : le skill
+        # lui demanderait un geste (tenir un carnet, écrire une note) que le §2
+        # lui interdit.
+        if a.get("read_only") is True:
+            ecrivains = {s["name"] for s in skills if s.get("read_only") is False}
+            for s in a.get("skills", []):
+                if s in ecrivains:
+                    ctx.erreur(a["_chemin"], "agent en lecture seule qui déclare le skill `%s`, "
+                                             "qui écrit (read_only: false) — §2" % s)
         for m in a.get("mcp", []):
             if m not in mcp_connus:
                 ctx.erreur(a["_chemin"], "déclare le MCP `%s`, qui n'existe pas dans IA/MCP/" % m)

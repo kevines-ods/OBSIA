@@ -82,6 +82,10 @@ class BaseVerificateur(unittest.TestCase):
         valeurs.update(champs)
         if genre == "skill":
             valeurs.setdefault("type", "core")
+            # L'agent de test est en lecture seule : son skill aussi, sauf
+            # mention contraire (§2, contrôle de verifier_references).
+            if "read_only" not in champs:
+                valeurs["read_only"] = "true"
         if genre == "agent":
             valeurs["read_only"] = "true"
         lignes = ["schema: 1", "kind: %s" % genre, "name: %s" % nom,
@@ -1602,6 +1606,69 @@ class TestLaCoutureDesDerives(BaseVerificateur):
         self.executer()
         self.assertIn("index périmés", self.erreurs_texte(),
                       "la ligne de commande ne doit plus taire ce contrôle")
+
+
+class TestFichiersEtrangers(BaseVerificateur):
+    """Ce qui traîne dans le coffre : copies de conflit et résidus.
+
+    Ce qui doit être prouvé : une copie de conflit est refusée partout — c'est
+    une note concurrente de la vraie —, un résidu n'est refusé qu'à la racine
+    (dans `_MAINTENANCE/`, un journal peut être voulu), et sans `--coffre` le
+    contrôle ne dit rien.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self._strict_avant = VC.MEMOIRE_STRICTE
+        self.addCleanup(setattr, VC, "MEMOIRE_STRICTE", self._strict_avant)
+        VC.MEMOIRE_STRICTE = True
+
+    def test_une_copie_de_conflit_est_signalee(self):
+        self.ecrire_coffre("0-PROJETS/chantier.sync-conflict-20261018-140322-ABCD.md",
+                           "# Chantier\n")
+        VC.verifier_fichiers_etrangers()
+        self.assertIn("copie de conflit", self.erreurs_texte())
+
+    def test_une_copie_de_conflit_au_fond_dun_sous_dossier_est_signalee(self):
+        self.ecrire_coffre("0-SAVOIRS/informatique/note.sync-conflict-20261024.md",
+                           "# Note\n")
+        VC.verifier_fichiers_etrangers()
+        self.assertIn("copie de conflit", self.erreurs_texte())
+
+    def test_un_journal_a_la_racine_est_signale(self):
+        self.ecrire_coffre("llama.log", "chargement du modèle\n")
+        VC.verifier_fichiers_etrangers()
+        self.assertIn("résidu à la racine", self.erreurs_texte())
+
+    def test_une_sauvegarde_dediteur_a_la_racine_est_signalee(self):
+        self.ecrire_coffre("opencode.json.backup.2026-10-24", "{}\n")
+        VC.verifier_fichiers_etrangers()
+        self.assertIn("résidu à la racine", self.erreurs_texte())
+
+    def test_un_journal_dans_maintenance_passe(self):
+        """`_MAINTENANCE/` est l'atelier : on y garde des traces d'exécution."""
+        self.ecrire_coffre("_MAINTENANCE/publier-2026-10-24.log", "ok\n")
+        VC.verifier_fichiers_etrangers()
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+
+    def test_un_coffre_ordinaire_passe(self):
+        self.ecrire_coffre("AGENTS.md", "# Consignes\n")
+        self.ecrire_coffre("0-SAVOIRS/informatique/note.md", "# Note\n")
+        VC.verifier_fichiers_etrangers()
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+
+    def test_un_arbre_de_travail_cache_est_ignore(self):
+        """Un worktree est une copie de travail, pas la mémoire."""
+        self.ecrire_coffre(".worktrees/session/llama.log", "bruit\n")
+        VC.verifier_fichiers_etrangers()
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
+
+    def test_sans_coffre_designe_le_controle_ne_dit_rien(self):
+        """Un clone de la CI n'a pas de coffre parent : rien à contrôler."""
+        VC.COFFRE = None
+        (self.parent / "llama.log").write_text("bruit\n", encoding="utf-8")
+        VC.verifier_fichiers_etrangers()
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
 
 
 if __name__ == "__main__":

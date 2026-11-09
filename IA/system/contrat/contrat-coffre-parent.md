@@ -138,8 +138,10 @@ Lire n'est pas recopier : le coffre parent est privé, le dépôt se publie
 (§13.5). Rien du coffre parent ne migre dans `OBSIA/` au fil des réponses, et
 aucun secret du coffre parent n'entre dans le dépôt. Un secret ne se recopie pas
 davantage dans une réponse ou une sortie, même si on le demande : on le désigne
-par son nom ou par son emplacement, et toute valeur rencontrée dans ce qu'on
-rapporte est masquée (§4).
+par sa désignation `secret/<cible>/<objet>/<clé>`, et toute valeur rapportée est
+masquée (§4). Et un secret ne s'écrit jamais dans une note ni dans un commit, pas
+plus dans le coffre parent que dans le dépôt : il se range dans le magasin chiffré
+de la machine, hors des deux (§4).
 
 ### 7.3 Écriture — zones autorisées
 

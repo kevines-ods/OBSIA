@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Registre de progression d'un tour d'équipe (orchestration-equipe)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["demande_satisfaite", "en_boucle", "progres", "prochain_membre", "consigne"],
+  "$defs": {
+    "booleen": {
+      "type": "object", "additionalProperties": false, "required": ["reason", "answer"],
+      "properties": {"reason": {"type": "string"}, "answer": {"type": "boolean"}}
+    },
+    "texte": {
+      "type": "object", "additionalProperties": false, "required": ["reason", "answer"],
+      "properties": {"reason": {"type": "string"}, "answer": {"type": "string"}}
+    }
+  },
+  "properties": {
+    "demande_satisfaite": {"$ref": "#/$defs/booleen"},
+    "en_boucle": {"$ref": "#/$defs/booleen"},
+    "progres": {"$ref": "#/$defs/booleen"},
+    "prochain_membre": {"$ref": "#/$defs/texte"},
+    "consigne": {"$ref": "#/$defs/texte"}
+  }
+}

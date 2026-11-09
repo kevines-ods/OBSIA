@@ -6,8 +6,9 @@ descriptions se marchent-elles dessus ?
 
 `verifier_coffre.py` contrôle la forme : frontmatter valide, chemins qui
 mènent quelque part, index à jour. Il ne dit rien de la seule chose qui
-décide qu'un skill se charge — sa `description`, unique élément toujours
-présent en contexte. Avec plus de trente skills, deux descriptions proches
+décide qu'un skill se charge — sa `description`, que l'agent lit dans
+`skills-index.md` ou le frontmatter après avoir choisi son agent (le prompt
+du coffre ne nomme plus les skills que par leur nom). Avec plus de trente skills, deux descriptions proches
 suffisent à ce que le mauvais réponde, sans qu'aucun contrôle ne bronche.
 
 Deux mesures, toutes deux déterministes et sans réseau :

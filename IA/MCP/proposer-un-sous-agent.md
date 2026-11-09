@@ -28,6 +28,8 @@ où l'adresse est fictive et le jeton se lit dans l'environnement.
 | `chemins` | les fichiers ou dossiers du coffre à lire |
 | `version` | la version d'agent proposée ; l'utilisateur peut la changer |
 
+Le format du ticket et du compte rendu : `IA/system/contrat/contrat-delegation.md`.
+
 La réponse est le **compte rendu** du sous-agent — ou « refusé par
 l'utilisateur », « arrêté par l'utilisateur », « délai dépassé ». L'appel reste
 en attente tant que l'utilisateur n'a pas tranché.
