@@ -75,7 +75,7 @@ un échec.
 | Écritures disque | **0 écriture** pendant le jugement et la carte | `tests/test_porte_entree.py` (`TestAucunOctetSurLeDisque`, `TestPuretePositive`) | chaque poussée |
 | Noms de harnais | **0** dans `serveur/` et le moteur partagé (§3) | `tests/test_plancher_du_projet.py` | chaque poussée |
 | Chemins de machine | **0** chemin absolu ou personnel dans `serveur/` et le moteur partagé (§13) | `tests/test_plancher_du_projet.py` | chaque poussée |
-| Noyau du contrat | **≤ 3 850 mots** — le plafond descend, il ne monte pas en silence | `scripts/verifier_coffre.py`, sur `IA/system/VAULT-CONTRACT.md` | chaque poussée |
+| Noyau du contrat | **≤ 3 950 mots** — le plafond descend, il ne monte pas en silence | `scripts/verifier_coffre.py`, sur `IA/system/VAULT-CONTRACT.md` | chaque poussée |
 | Processus de la suite | **≤ 5 287** processus enfants — la mesure plus 2 % (5 183 le 2026-10-17, pour 1 098 tests) | `scripts/banc_de_processus.py` | chaque tranche qui touche la suite |
 | Lectures du garde | **≤ 2 × modifiés + 1 × (ajoutés + supprimés) + 2** fichiers lus, et le garde **imprime** son compte | `garde_plancher.py` lui-même, constat `budget-de-lectures` | chaque *diff* |
 
@@ -163,3 +163,4 @@ compte pas : le garde ne lit que le tableau, il ne devine pas une intention.
 | --- | --- | --- | --- |
 | E1 | seuil-desserre | CONSTRAINTS.md | relèvement du plafond du noyau (3 940 → 4 016 mots) pour y porter la règle générique « Ce qui n'a pas été vérifié se dit » au §10 ; à réviser le 2027-01-11, en redescendant alors le plafond au niveau atteint |
 | E2 | seuil-desserre | CONSTRAINTS.md | relèvement du plafond du noyau (3 800 → 3 850 mots) pour y porter la règle « délégation : format du ticket/compte rendu, vérification contre la source » au §10 et sa ligne au tableau du préambule (étape 3/C du plan d'optimisation) ; à réviser le 2027-05-06, en redescendant alors le plafond au niveau atteint |
+| E3 | seuil-desserre | CONSTRAINTS.md | relèvement du plafond du noyau (3 850 → 3 950 mots) pour y porter le courrier inter-agents : deux zones du §7.3 (`_MAINTENANCE/courrier/`, `0-MEMOIRES/courrier/`), l'exemption de marquage au §7.4, `courrier/` parmi les mémoires vivantes du §6 et sa ligne au tableau du préambule (annexe `contrat/contrat-courrier.md`) ; à réviser le 2027-05-10, en redescendant alors le plafond au niveau atteint |

@@ -280,7 +280,13 @@ ne garde que la frontière publique.*
 
 1. ~~Magasin machine~~ — **tranché : `SOPS`+`age`** (décision utilisateur, 2026-10-16).
 2. ~~Emplacement et sauvegarde~~ — **tranché le 2026-11-03** : la clé `age` vit sur la VM `ia`, dans `~/.config/sops/age/keys.txt` en `0600`, hors du coffre et hors d'OBSIA, et elle **entre dans la 3-2-1** par le snapshot PBS de la VM (§4).
-3. **Couche famille** : KeePassXC maintenant, Vaultwarden quand F2 arrive ?
+3. ~~Couche famille~~ — **tranché le 2026-11-09 : KeePassXC.** C'est la couche
+   humaine : ce que l'on tape à la main, là où `sops` sert la machine. Un fichier
+   `.kdbx` chiffré, pas de serveur à tenir ni à exposer. `Vaultwarden` — AGPL-3.0,
+   coffre web auto-hébergé — n'entre en jeu que le jour où plusieurs personnes
+   doivent **partager** des accès (famille, F2) ; l'installer avant, c'est un
+   service de plus à maintenir pour un besoin qui n'existe pas. C'est dans cette
+   base, et non dans le coffre, que la copie de secours de la clé `age` a sa place.
 4. ~~Audit~~ — **tranché le 2026-11-03 : oui, en signalement seulement.** La tâche planifiée relance le garde sur **tout** le dépôt, pas sur le diff d'un commit ; elle **signale** et ne bloque jamais — une adresse IP privée et un nom d'hôte interne restent légitimes dans la mémoire privée.
 5. ~~Désignation~~ — **tranché le 2026-11-09** : la grammaire `secret/<cible>/<objet>/<clé>` est retenue et passe dans le contrat (§4, bloc `regle-secrets`), donc dans chaque `AGENTS.md` engendré. Le bloc ne pouvait pas nommer le chemin du magasin : `chemins_absolus` interdit toute racine absolue, `~/` comprise, dans la règle copiée ; le chemin exact vit au §5 de cette note.
 
@@ -292,4 +298,4 @@ ne garde que la frontière publique.*
    (§3) — y compris la correction `Vaultwarden` : **AGPL-3.0**, pas GPL-3.0.
    Restent non vérifiés à la source : les options exactes de `sops exec-env` et
    la page `man` des *credentials* systemd.
-2. Cette note propose ; elle ne tranche que les points 1, 2 et 4 du §9. La règle reste le §4 du contrat.
+2. Cette note propose ; elle ne tranche que les points 1 à 5 du §9. La règle reste le §4 du contrat.

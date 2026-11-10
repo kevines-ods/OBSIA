@@ -57,8 +57,9 @@ module: noyau
       ├── documents/                     cadrages, plans, schémas du chantier
       └── code/                          le dépôt git, quand il n'appartient qu'à lui
 
-  0-MEMOIRES/                             deux mémoires : l'une vit, l'autre est gelée
+  0-MEMOIRES/                             une mémoire qui vit, une qui est gelée
   ├── préférences/<sujet>.md             goûts et règles transversaux, corrigés sur place
+  ├── courrier/<AAAA-MM-JJ>-<agent>-<sujet>.md  messages traités, à plat, corrigés sur place
   ├── <nom-agent>/expériences/<sujet>.md leçons de l'agent, corrigées sur place
   └── <projet>/
       ├── <chantier>/                    chantier clos, gelé — plus jamais modifié
@@ -70,18 +71,19 @@ module: noyau
   └── profil-utilisateur.md              faits stables sur l'utilisateur et sa machine
   ```
 
-  `0-MEMOIRES/` porte **deux mémoires, et une seule est gelée**. La mémoire des
-  agents — `préférences/` et `<nom-agent>/expériences/` — y **vit** : elle se
+  `0-MEMOIRES/` porte **une mémoire qui vit et une qui est gelée**. La mémoire
+  vivante — `préférences/`, `courrier/` et `<nom-agent>/expériences/` — se
   corrige sur place, comme le profil. Seuls les **chantiers clos** y sont
   gelés : le dossier du chantier n'y entre qu'au moment de la clôture, tel quel,
   et ne se modifie plus ensuite. Un dossier `0-MEMOIRES/` par projet n'existe que
   s'il a des chantiers clos.
 
   Un nom de premier niveau sous `0-MEMOIRES/` est donc, et rien d'autre :
-  `préférences`, le nom d'un agent, ou un projet gelé. **Un projet ne peut
-  porter ni `préférences` ni le nom d'un agent** : la collision rendrait la
-  mémoire des agents indistinguable d'un chantier gelé, et `verifier_coffre.py`
-  la refuse.
+  `préférences`, `courrier`, le nom d'un agent, ou un projet gelé. **Un projet
+  ne peut porter aucun de ces trois premiers noms** : la collision rendrait la
+  mémoire vivante indistinguable d'un chantier gelé, et `verifier_coffre.py` la
+  refuse. `courrier/` ne contient en outre **que des notes, à plat** — un
+  sous-dossier y serait un chantier, donc une collision.
 
   L'espace d'un agent porte son nom — jamais `agent 1`, `agent 2` — et c'est le
   **même nom** que celui de son fichier `IA/agents/`. Les noms de projet sont
@@ -105,8 +107,9 @@ module: noyau
 
   Les notes de `0-PROJETS/`, `0-PERSONNELS/`, `0-MEMOIRES/préférences/` et
   `0-SAVOIRS/` ne sont **pas datées** : une préférence qui change se corrige,
-  elle ne s'empile pas ; `expériences/` non plus. Seuls les carnets portent une
-  date, parce qu'ils racontent une chronologie.
+  elle ne s'empile pas ; `expériences/` non plus. Seuls les carnets et les
+  **messages du courrier** portent une date, parce qu'ils racontent une
+  chronologie.
 
   Dans le doute, écrire dans le carnet : un carnet peut être distillé
   plus tard vers `0-MEMOIRES/préférences/` ou `0-MEMOIRES/<agent>/expériences/`,
@@ -209,8 +212,8 @@ module: noyau
   personnelles se cherchent à **tout emplacement qui existe**, dans cet ordre :
   `0-PROJETS/`, l'ancien nom du coffre `-PROJETS/`, puis l'ancien
   `mémoire/projets/` du dépôt ; le profil sous `0-PERSONNELS/`, `-PERSONNELS/`,
-  puis `mémoire/` ; les préférences et les expériences sous `0-MEMOIRES/`
-  (`préférences/`, `<nom-agent>/expériences/`), puis `0-PERSONNELS/`,
+  puis `mémoire/` ; les préférences, les expériences et le courrier sous `0-MEMOIRES/`
+  (`préférences/`, `<nom-agent>/expériences/`, `courrier/`), puis `0-PERSONNELS/`,
   `-PERSONNELS/`, puis `mémoire/`. Des projets
   gardent l'ancienne forme — notes datées à plat dans le dossier du projet,
   vision ou résumé à plat à côté. Leur absence de `carnets/` ne veut pas dire

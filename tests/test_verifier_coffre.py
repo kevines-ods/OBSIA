@@ -678,12 +678,13 @@ class TestGabaritDuCarnet(unittest.TestCase):
 
 
 class TestNomsDeMemoire(BaseVerificateur):
-    """§6 : dans `0-MEMOIRES/`, deux mémoires ne se confondent pas.
+    """§6 : dans `0-MEMOIRES/`, la mémoire vivante et la mémoire gelée ne se confondent pas.
 
-    Le dossier porte la mémoire **vivante** des agents — `préférences/` et
-    `<nom-agent>/expériences/` — **et** les chantiers clos, gelés. Un projet qui
-    prendrait le nom d'un agent ou celui de `préférences/` rendrait les deux
-    indistinguables : le contrôle le refuse, par la forme faute de lire une
+    Le dossier porte la mémoire **vivante** des agents — `préférences/`,
+    `<nom-agent>/expériences/` et `courrier/` — **et** les chantiers clos, gelés.
+    Un projet qui prendrait le nom d'un agent, de `préférences/` ou de `courrier/`
+    rendrait les deux indistinguables : le contrôle le refuse, par la forme faute
+    de lire une
     intention.
     """
 
@@ -717,6 +718,23 @@ class TestNomsDeMemoire(BaseVerificateur):
         VC.verifier_noms_de_memoire()
 
         self.assertIn("Un projet ne peut pas porter ce nom", self.erreurs_texte())
+
+    def test_un_projet_ne_peut_pas_s_appeler_courrier(self):
+        """Sous `courrier/`, un dossier est un projet qui a volé le nom."""
+        self.dossier("0-MEMOIRES/courrier/un-projet")
+
+        VC.verifier_noms_de_memoire()
+
+        self.assertIn("un chantier ne vit pas dans le courrier", self.erreurs_texte())
+
+    def test_les_messages_du_courrier_s_ecrivent_a_plat(self):
+        """Un message daté à plat est la seule forme admise dans `courrier/`."""
+        self.ecrire_coffre("0-MEMOIRES/courrier/2026-11-10-batisseur-sujet.md",
+                           "Corps.\n")
+
+        VC.verifier_noms_de_memoire()
+
+        self.assertEqual([], VC.erreurs, self.erreurs_texte())
 
     def test_un_projet_ne_peut_pas_porter_le_nom_d_un_agent(self):
         self.dossier("0-MEMOIRES/batisseur/chantier-gelat")

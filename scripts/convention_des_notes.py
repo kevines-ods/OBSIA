@@ -80,6 +80,7 @@ TAG = re.compile(r"^[a-zà-ÿ][\wà-ÿ-]*$", re.UNICODE)
 MEMOIRES = "0-MEMOIRES"
 PREFERENCES = "préférences"
 EXPERIENCES = "expériences"
+COURRIER = "courrier"
 
 #: La zone de passage du coffre : previews, actions et registre (§7.3, §7.4).
 MAINTENANCE = "_MAINTENANCE"
@@ -293,7 +294,7 @@ def notes_du_dossier(dossier, *, retenir=None) -> list:
 
 
 # --------------------------------------------------------------- la mémoire
-# `0-MEMOIRES/` porte deux mémoires, et une seule est gelée (§6). Ces règles
+# `0-MEMOIRES/` porte une mémoire vivante et une mémoire gelée (§6). Ces règles
 # vivent ici pour la **tranche qui écrit** : la carte s'en sert pour écarter un
 # chantier clos, et la porte la relit dans le contrôle « mémoire gelée » (P3).
 # Un seul exemplaire, appelé des deux côtés.
@@ -323,14 +324,15 @@ def liste_des_agents(racine_depot) -> set:
 def est_gele(chemin, coffre, agents: set) -> bool:
     """Vrai si ``chemin`` tombe dans un chantier gelé de ``0-MEMOIRES/``.
 
-    ``0-MEMOIRES/`` porte deux mémoires, et une seule est gelée (§6) : les
-    préférences et les expériences **d'un agent** se corrigent sur place, un
-    chantier clos jamais. On le constate par le chemin, sans lire la note : sous
-    ``0-MEMOIRES/``, seuls ``préférences/`` et ``<agent>/expériences/`` sont
-    vivants, ``<agent>`` devant figurer dans ``agents`` (les fichiers de
-    ``IA/agents/``). Tout ce qui est plus profond est un chantier — donc gelé, y
-    compris ce qui ne devrait pas exister (mieux vaut refuser d'écrire que de se
-    tromper).
+    ``0-MEMOIRES/`` porte une mémoire vivante et une mémoire gelée (§6) : les
+    préférences, les expériences **d'un agent** et les messages du courrier se
+    corrigent sur place, un chantier clos jamais. On le constate par le chemin,
+    sans lire la note : sous ``0-MEMOIRES/``, seuls ``préférences/``,
+    ``<agent>/expériences/`` et ``courrier/`` sont vivants — ``<agent>`` devant
+    figurer dans ``agents`` (les fichiers de ``IA/agents/``), et ``courrier/``
+    n'étant vivant **qu'à plat**, pour un message. Tout ce qui est plus profond
+    est un chantier — donc gelé, y compris ce qui ne devrait pas exister (mieux
+    vaut refuser d'écrire que de se tromper).
     """
     try:
         parts = Path(chemin).resolve().relative_to(Path(coffre).resolve()).parts
@@ -341,7 +343,11 @@ def est_gele(chemin, coffre, agents: set) -> bool:
     if len(parts) == 1 or len(parts) == 2:
         return False                      # `0-MEMOIRES/`, `0-MEMOIRES/<projet>/`
     if parts[1] == PREFERENCES:
-        return False                      # `0-MEMOIRES/préférences/…` : vivant
+        return False                      # `0-MEMOIRES/préférences/…` : vivant (§6)
+    if parts[1] == COURRIER and len(parts) == 3 \
+            and Path(chemin).suffix == ".md":
+        return False                      # `0-MEMOIRES/courrier/<message>.md` : vivant (§6)
+                                          # plus profond, ou pas un message : un chantier, donc gelé
     if parts[1] in agents and parts[2] == EXPERIENCES:
         return False                      # `0-MEMOIRES/<agent>/expériences/…` : vivant
     return True                           # tout le reste : chantier gelé

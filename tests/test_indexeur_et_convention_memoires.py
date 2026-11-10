@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 """Indexer 0-MEMOIRES/ — et n'y écrire jamais un chantier gelé.
 
-`0-MEMOIRES/` porte deux mémoires (VAULT-CONTRACT.md §6) :
+`0-MEMOIRES/` porte une mémoire vivante et une mémoire gelée (VAULT-CONTRACT.md §6) :
 
-- **vivante** — `0-MEMOIRES/préférences/` et `0-MEMOIRES/<nom-agent>/expériences/`,
-  corrigées sur place ;
+- **vivante** — `0-MEMOIRES/préférences/`, `0-MEMOIRES/<nom-agent>/expériences/`
+  et les messages de `0-MEMOIRES/courrier/`, corrigés sur place ;
 - **gelée** — `0-MEMOIRES/<projet>/<chantier>/`, jamais retouchée après clôture.
 
 Ces tests vérifient :
@@ -146,6 +146,14 @@ class TestChantierGele(CoffreTemporaire):
             # dossier est un chantier, pas la mémoire vivante d'un agent.
             m / "obsia" / "expériences": True,
             m / "obsia" / "expériences" / "lecon.md": True,
+            # La boîte du courrier est vivante (§6) : on y écrit, on y marque un
+            # message lu, et un message traité peut revenir d'un déplacement.
+            # Mais vivante **à plat seulement** : plus profond, c'est un chantier,
+            # donc gelé — un projet nommé `courrier` ne doit pas ouvrir la porte.
+            m / "courrier": False,
+            m / "courrier" / "2026-11-10-administrateur-faille.md": False,
+            m / "courrier" / "un-chantier": True,
+            m / "courrier" / "un-chantier" / "carnets" / "2026-11-10.md": True,
             self.coffre / "0-SAVOIRS": False,
         }
         for chemin, gele in attendu.items():
