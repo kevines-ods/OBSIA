@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: construction-dune-tranche
-description: Construire une tranche verticale du plan et une seule — relire les documents, écrire de quoi vérifier ses critères d'acceptation avant de coder, traverser toutes les couches, refuser d'élargir le périmètre en cours de route, montrer que ça marche, puis livrer. À charger à chaque tranche de `docs/PLAN.md`, jamais pour en mener deux de front. S'arrête après trois tentatives infructueuses au lieu de s'acharner.
+description: Construire une tranche verticale du plan et une seule — relire les documents et le journal de la tranche, écrire de quoi vérifier ses critères d'acceptation avant de coder, traverser toutes les couches, refuser d'élargir le périmètre en cours de route, montrer que ça marche, faire relire le diff — conformité, puis qualité — avant de livrer. À charger à chaque tranche de `docs/PLAN.md`, jamais pour en mener deux de front. S'arrête après trois tentatives infructueuses au lieu de s'acharner.
 module: construction
 type: outil
 read_only: false
@@ -16,6 +16,10 @@ n'est pas ce qui était prévu, et personne ne sait dire quand ça a dérapé.
 
 Une tranche, une branche, une pull request. Rien d'autre entre les deux.
 
+> **Adaptation.** Le journal de tranche et la revue en deux verdicts sont repris
+> de `obra/superpowers` (MIT), `skills/subagent-driven-development` ; la table
+> des preuves, de `skills/verification-before-completion`.
+
 ## 1. Relire, ne pas se souvenir
 
 `docs/PLAN.md` pour la tranche et ses critères, `docs/STACK.md` pour ce qui a
@@ -25,6 +29,21 @@ lecture évitent une tranche construite sur une décision qu'on croyait prise.
 Énoncer à voix haute, avant de commencer : *« Cette tranche livre X. Elle est
 finie quand Y et Z passent. »* Si l'énoncé est flou, la tranche est mal
 découpée : retourner au plan.
+
+### Le journal de la tranche
+
+Ouvrir dans `docs/PLAN.md`, sous la phase, une ligne par pas **au moment où le
+pas se termine** :
+
+```
+- 2026-11-02 · pas 2 · la route lit le fichier · a1b2c3..d4e5f6 · revue propre
+```
+
+La date, ce qui est fait, les commits, le verdict. Une tranche dépasse rarement
+une séance : le journal est ce qui reste quand le contexte a été compacté, ou
+qu'on reprend huit jours plus tard. **Le relire avant le plan**, et ne repartir
+que de la dernière ligne — sans quoi on refait un pas déjà fait, ou on relit un
+diff déjà relu.
 
 ## 2. Écrire de quoi vérifier — avant de construire
 
@@ -74,11 +93,49 @@ une capture d'écran via le navigateur pour une interface. « Ça devrait
 marcher » n'est pas une démonstration, et c'est la phrase qui précède la
 plupart des retours en arrière.
 
+| L'annonce | Ce qu'elle exige | Ce qui ne suffit pas |
+| --- | --- | --- |
+| « les critères passent » | la commande de vérification, et sa sortie entière | un vert d'il y a une heure, un test vert sur une autre branche |
+| « c'est corrigé » | la reproduction qui échouait, rejouée | la confiance dans le diff |
+| « tout est vert » | le garde `plancher-qualite` en 0, **après** la dernière retouche | la sortie d'avant la dernière retouche |
+| « je n'ai touché qu'à ça » | le diff complet, relu | la phrase elle-même |
+
+**Une preuve a une date.** La commande tourne dans le message qui annonce, pas
+dans un souvenir — et quand la sortie est longue, la tronquer en disant où se
+trouve le reste, pas la résumer.
+
 Pour une interface : `test-navigateur`. Il ouvre la page, lit le DOM rendu et
 la console, et produit la capture. Une interface décrite n'est pas une
 interface vue.
 
-## 6. Cocher, puis livrer
+## 6. Faire relire la tranche, avant de la livrer
+
+Deux verdicts, dans cet ordre — le second ne se pose pas si le premier échoue :
+
+| Le verdict | La question | Ce qui le rend négatif |
+| --- | --- | --- |
+| **Conformité** | le diff fait-il ce que disent les critères, et rien de plus ? | un critère absent, ou une ligne que les critères ne demandent pas |
+| **Qualité** | est-ce au niveau du `plancher-qualite` ? | le garde refuse, ou le diff est illisible sans son auteur |
+
+Celui qui a construit ne s'audite pas : sur une tranche fine, le plancher est une
+**auto-revue sur liste**, diff entier relu ligne à ligne, critère par critère.
+Quand le module `revue` est installé, `revue-de-code` le fait dans une
+conversation neuve — elle ne connaît pas l'intention, donc elle juge ce qui est
+écrit.
+
+**Deux tours de correction, puis on remonte.** Un troisième tour qui trouve
+encore quelque chose de sérieux ne dit pas que le code est mauvais : il dit que
+la tranche est trop grosse ou mal découpée. Retour au plan, pas de rapiéçage.
+
+Les trois phrases qui sautent cette étape :
+
+- « la PR servira de revue » — le relecteur humain arrive une fois la dépense
+  faite, et il relit mal ce qu'on lui présente comme fini ;
+- « je me relirai quand tout sera vert » — à ce moment-là, on ne se souvient
+  plus du pourquoi, et on relit ce qu'on voulait faire, pas ce qu'on a écrit ;
+- « c'est un petit diff » — le risque ne suit pas le nombre de lignes.
+
+## 7. Cocher, puis livrer
 
 Cocher les critères d'acceptation dans `docs/PLAN.md`, committer ce
 changement avec la tranche. Si la tranche change l'installation, la
@@ -105,3 +162,8 @@ qu'on ne saura pas expliquer.
 - Le blocage vient du plan → le dire, et redécouper.
 
 Dans les trois cas, on remonte. On ne force pas.
+
+Un service **déjà en ligne** qui casse n'est pas une tranche : `conteneurs-docker`
+ou `traefik`, selon la couche.
+
+**En fin de séance** — pas seulement en fin de tranche : `cloture-de-session`.

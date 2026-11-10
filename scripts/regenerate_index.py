@@ -91,11 +91,13 @@ def rendre_skills(agents: list[dict], skills: list[dict]) -> str:
     for s in skills:
         par = ", ".join(a["name"] for a in agents if s["name"] in a.get("skills", [])) or "—"
         L.append("| [%s](../skills/%s) | %s | %s | %s |"
-                 % (s["name"], s["_fichier"], s.get("type", "?"),
+                 % (s["name"], s["_fichier"],
+                    s.get("type", "?") + (", lecture seule" if s.get("read_only") else ""),
                     premiere_phrase(s.get("description", "")), par))
     L += ["",
           "> `core` = indispensable au fonctionnement du coffre ; `outil` = compétence",
-          "> ponctuelle. (cf. `VAULT-CONTRACT.md` §5 et `contrat/contrat-frontmatter.md`)",
+          "> ponctuelle ; `lecture seule` = le skill n'écrit jamais (`read_only: true`).",
+         "> (cf. `VAULT-CONTRACT.md` §5 et `contrat/contrat-frontmatter.md`)",
           "",
           "> Fichier **généré** par `scripts/regenerate_index.py`. La colonne reprend la",
           "> première phrase du champ `description` du frontmatter, qui fait foi ; le",

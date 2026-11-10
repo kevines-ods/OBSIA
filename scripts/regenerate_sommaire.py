@@ -41,7 +41,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from convention_des_notes import (  # noqa: E402  (après l'insertion de sys.path)
-    DOSSIERS_HORS_MEMOIRE, dossier_hors_memoire, est_depot_imbrique)
+    DOSSIERS_HORS_MEMOIRE, dossier_hors_memoire, est_depot_imbrique, partie_hors_memoire)
 
 RACINE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 #: Le coffre parent : le dossier qui contient ce dépôt, et donc la mémoire.
@@ -341,7 +341,7 @@ def main(argv=None) -> int:
     for racine_memoire in racines:
         for chemin, sous, _ in os.walk(racine_memoire):
             sous[:] = [d for d in sous
-                       if not d.startswith(".")
+                       if not partie_hors_memoire(d)
                        and not dossier_hors_memoire(os.path.join(chemin, d))]
             dossiers.append(chemin)
     dossiers.sort(key=lambda p: p.count(os.sep), reverse=True)

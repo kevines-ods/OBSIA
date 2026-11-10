@@ -76,7 +76,8 @@
       "args": ["-y", "@klodr/gmail-mcp@3.0.0"],
       "env": {
         "GMAIL_MCP_RECIPIENT_PAIRING": "true",
-        "GMAIL_MCP_AUDIT_LOG": "/chemin/absolu/hors-depot/gmail-audit.jsonl"
+        "GMAIL_MCP_AUDIT_LOG": "/chemin/absolu/hors-depot/gmail-audit.jsonl",
+        "GMAIL_MCP_PAIRED_PATH": "/etc/obsia/gmail-paired.json"
       }
     },
     "nextcloud": {

@@ -35,6 +35,12 @@ une correction menée quand même (§10).
 4. Distinguer explicitement ce qui est **observé** de ce qui est **supposé**.
 5. Ne jamais recopier dans une note du coffre une adresse IP interne, un nom
    d'hôte, une clé ou un identifiant. Voir la section « Secrets ».
+6. **Constater avec les droits de la cible, pas les siens.** Un outil lancé sans
+   les privilèges qu'il suppose échoue *pour cette raison*, et son message se lit
+   comme un défaut de la machine : `dnf` sans root rend `Signing key not found`
+   sur une clé de signature intacte. Si l'on ne peut pas reproduire là où ça
+   compte, le dire et donner la commande à lancer — jamais fabriquer un constat
+   avec les droits qu'on a.
 
 ## Méthode
 

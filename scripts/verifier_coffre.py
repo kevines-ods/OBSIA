@@ -503,6 +503,10 @@ def verifier_depot_de_donnees():
     return VM.verifier_depot_de_donnees(_contexte())
 
 
+def verifier_fichiers_etrangers():
+    return VM.verifier_fichiers_etrangers(_contexte())
+
+
 # Contrôles du contrat : leur code vit dans `verif_contrat.py` ; ces relais
 # leur passent la racine et les deux compteurs du vérificateur.
 
@@ -645,6 +649,7 @@ def main(argv=None) -> int:
     verifier_bascule()
     if options["coffre"]:
         verifier_depot_de_donnees()
+        verifier_fichiers_etrangers()
     verifier_derives()
     verifier_taille_du_fichier_agents()
     verifier_chemins_du_prompt()

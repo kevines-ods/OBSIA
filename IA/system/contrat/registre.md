@@ -31,7 +31,7 @@ contrat.
   de renvoi qui dit *quand* la lire.
 
 Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
-`taches`, `distribution`. Chacune s'appelle `contrat-<x>.md`.
+`taches`, `distribution`, `delegation`. Chacune s'appelle `contrat-<x>.md`.
 
 ## Préambule
 
@@ -174,6 +174,7 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | 10.0 | Étape 0 : la reprise (arbre principal et worktrees, agents en lecture seule dispensés). | N, mot pour mot (l'`AGENTS.md` la recopie) |
 | 10.1–10.4 | Choisir l'agent ; ne charger que les skills et MCP déclarés et nécessaires ; lire la fiche d'un MCP avant de l'appeler ; écrire en mémoire selon le §6 ; **lire la note existante avant d'écrire** ; lire une annexe avant l'acte que sa ligne nomme ; citer les chemins. | N, sans raccourci (A : M10) |
 | 10.5 | Ne pas charger un fichier « pour voir ». Un skill en lecture seule n'exécute aucune commande qui modifie l'état. | N |
+| 10.6 | Délégation : le format du ticket et du compte rendu existe ; l'appelant vérifie le compte rendu contre la source. | N (une phrase) ; détail : A·delegation |
 
 ## §11 Fichiers générés et vérification
 
@@ -252,6 +253,11 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
   l'exception `E1` (`seuil-desserre`), à réviser le 2027-01-11 — en redescendant
   alors le plafond au niveau atteint.
 
+- **Relèvement du 2026-11-06.** Le plafond porté par `CONSTRAINTS.md` est relevé
+  (3 800 → 3 850 mots) pour accueillir au §10 du noyau la règle « délégation :
+  format du ticket/compte rendu, vérification contre la source » (étape 3/C du
+  plan d'optimisation) et sa ligne au tableau du préambule. Tracé par
+  l'exception `E2` (`seuil-desserre`), à réviser le 2027-05-06.
 ### Allègement du 2026-10-10 — trois questions
 
 La règle d'entrée du noyau devient un filtre en trois questions (préambule). Ont

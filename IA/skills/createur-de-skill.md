@@ -2,7 +2,7 @@
 schema: 1
 kind: skill
 name: createur-de-skill
-description: Concevoir un nouveau skill OBSIA ou en réviser un — périmètre, dosage, découpage, frontmatter — et rédiger une fiche MCP de `IA/MCP/`. À charger avant d'écrire ou de modifier un fichier de `IA/skills/` ou de `IA/MCP/`, y compris pour n'en changer que la description. Ne sert pas à exécuter un skill existant.
+description: Concevoir un nouveau skill OBSIA ou en réviser un — périmètre, dosage, forme de la consigne selon l'échec à corriger, découpage, frontmatter — en jouant le scénario à blanc avant de l'écrire, et rédiger une fiche MCP de `IA/MCP/`. À charger avant d'écrire ou de modifier un fichier de `IA/skills/` ou de `IA/MCP/`, y compris pour n'en changer que la description. Ne sert pas à exécuter un skill existant.
 module: noyau
 type: core
 read_only: false
@@ -15,7 +15,9 @@ qu'on en révise un.
 
 > **Adaptation.** Version condensée du `skill-creator` d'origine (357 lignes),
 > traduite et alignée sur les conventions OBSIA. Le principe « la concision est
-> la règle » s'applique d'abord à ce fichier lui-même.
+> la règle » s'applique d'abord à ce fichier lui-même. La section « La forme suit
+> l'échec » et les étapes de test à blanc reprennent `obra/superpowers` (MIT),
+> `skills/writing-skills`.
 
 ## Ce qu'est un skill
 
@@ -51,7 +53,9 @@ Trois niveaux de chargement :
 
 1. **Frontmatter** (`name` + `description`) — toujours en contexte. C'est le seul
    élément qui détermine si le skill se déclenche. Il doit dire clairement
-   *quoi* et *quand*.
+   *quoi* et *quand*. Le **quoi** est le genre d'acte, jamais la suite des
+   étapes : un agent qui lit le résumé de la procédure suit le résumé au lieu
+   d'ouvrir le skill.
 2. **Corps du fichier** — chargé seulement si le skill se déclenche. Viser moins
    de 500 lignes.
 3. **Ressources annexes** — chargées à la demande, ou exécutées sans jamais être
@@ -64,7 +68,8 @@ un fichier qu'on ne sait pas exister n'est jamais consulté.
 ## Structure d'un skill
 
 Par défaut, un skill est **un seul fichier** : `IA/skills/<nom>.md`. C'est la
-forme de tous les skills du coffre aujourd'hui — le plus gros fait 187 lignes.
+forme de tous les skills du coffre aujourd'hui — aucun ne demande encore de
+section repliée.
 
 Quand le corps approche des 500 lignes, ou qu'une information devient
 consultative plutôt que procédurale, passer à la **forme dossier** :
@@ -191,14 +196,63 @@ Deux règles pour qu'elle serve :
 Une table de cinq à sept lignes suffit. Au-delà, on y range des règles qui
 appartiennent au corps du skill.
 
+Elle ne corrige **qu'un** échec : la règle connue, violée sous pression. Sur les
+trois autres — d'où la section suivante — elle ne prend pas, et un interdit peut
+même aggraver.
+
+## La forme suit l'échec
+
+Avant d'écrire une consigne, nommer l'échec qu'elle doit empêcher. La forme qui
+blinde un échec **dégrade** les autres : c'est le constat de `obra/superpowers`
+(MIT) sur des tests de formulation — à vérifier sur nos consignes plutôt qu'à
+supposer.
+
+| L'échec observé | La forme qui le corrige | La forme qui l'aggrave |
+| --- | --- | --- |
+| Il connaît la règle et la viole sous pression | interdit + table des rationalisations + signaux | consigne molle : « préférer… », « penser à… » |
+| Il obéit, mais la **forme** du résultat est fausse (verdict enterré, spec recopiée, réponse gonflée) | **recette positive** : ce que le résultat *est*, ses parties, dans l'ordre | liste d'interdits : « ne recopie pas », « ne raconte pas » |
+| Il **omet** un élément d'un objet qu'il produit déjà | **structure** : un champ obligatoire dans le gabarit qu'il remplit | rappel en prose posé à côté du gabarit |
+| Le comportement doit dépendre d'une condition | **conditionnelle** sur un prédicat observable : « si le brief existe, le citer » | règle inconditionnelle, puis clause d'exemption |
+
+**Pourquoi l'interdit se retourne sur un problème de forme.** Sous un intérêt
+concurrent — « rendre la réponse autosuffisante » — l'agent négocie avec un « ne
+fais pas X » et le contourne. Une recette ne laisse rien à négocier : le
+résultat a la forme annoncée, ou il ne l'a pas.
+
+Deux règles, quelle que soit la forme retenue :
+
+- **aucune clause de nuance** — « ne fais pas X sauf si c'est utile » rouvre la
+  négociation. Une vraie exception s'écrit en conditionnelle sur un prédicat
+  observable, pas en virgule finale.
+- **une clause d'exemption ne borne rien** — « cette limite ne s'applique pas aux
+  blocs de code » supprime encore les blocs de code. Si une partie de la sortie
+  doit échapper à la règle, restructurer pour que la règle ne l'atteigne pas.
+
 ## Procédure de création
 
 1. Écrire d'abord le `description` du frontmatter. S'il est difficile à écrire,
    c'est que le périmètre du skill n'est pas clair : le retravailler avant tout
    le reste.
-2. Écrire le corps minimal : la procédure, rien de plus.
-3. Extraire dans `references/` tout ce qui est consultatif plutôt que procédural.
-4. Relire en supprimant : chaque phrase que le modèle connaît déjà est du poids
+2. **Jouer le scénario à blanc, sans le skill** : un contexte neuf, la demande
+   réelle, aucune consigne. Noter ce qu'il fait et **les phrases qu'il se dit** —
+   ce sont les lignes de la table des rationalisations. Si le scénario ne se
+   trompe pas, il n'y a pas de skill à écrire.
+3. Écrire le corps minimal : la procédure, rien de plus. Chaque règle entre avec
+   **l'échec observé au 2** qu'elle corrige, jamais avec un échec imaginé.
+4. Extraire dans `references/` tout ce qui est consultatif plutôt que procédural.
+5. Relire en supprimant : chaque phrase que le modèle connaît déjà est du poids
    mort.
-5. Vérifier qu'aucune règle du contrat n'a été recopiée par inadvertance.
-6. Écrire la table des rationalisations — les excuses, pas les règles.
+6. Vérifier qu'aucune règle du contrat n'a été recopiée par inadvertance.
+7. Écrire la table des rationalisations, avec les phrases notées au 2.
+8. **Rejouer le même scénario, skill chargé.** S'il trouve une nouvelle
+   échappatoire, l'écrire dans la table et rejouer — jusqu'à ce qu'il n'en trouve
+   plus.
+
+Une révision suit le même chemin : la règle nouvelle se justifie par une
+observation de séance ou par l'étape 2, pas par la lecture qui l'a fait naître.
+
+**Micro-test de formulation**, avant les scénarios complets : le même scénario
+cinq fois en contexte neuf, **plus un témoin sans consigne**. Si le témoin
+réussit, il n'y a rien à corriger et la consigne ne s'écrit pas. Si les cinq
+passages donnent cinq interprétations, resserrer la forme plutôt qu'ajouter des
+mots.

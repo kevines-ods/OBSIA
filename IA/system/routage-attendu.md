@@ -34,6 +34,7 @@ descriptions et tranche.
 |---|---|---|---|
 | « j'ai une idée d'application mais elle est encore floue » | interrogation-du-besoin | 3 | — |
 | « avant de commencer, regarde ce que j'ai déjà essayé de construire » | inventaire-de-lexistant | 3 | — |
+| « mène l'équipe d'agents sur cette demande : plan, puis un membre par tour » | orchestration-equipe | 3 | — |
 | « écris-moi le document qui fige ce qu'on veut construire » | cadrage-produit | 3 | — |
 | « quel langage et quelle base de données pour ce projet ? » | choix-de-la-stack | 3 | — |
 | « il faut choisir les couleurs et la typographie de l'interface » | systeme-de-design | 3 | — |

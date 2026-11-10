@@ -9,6 +9,7 @@ sondes:
   - commande:git
 requiert:
   - noyau
+  - equipe
   - controle-des-sauvegardes
 ---
 

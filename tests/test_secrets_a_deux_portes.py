@@ -14,6 +14,9 @@ Ce fichier relie les deux par une **table unique** : chaque secret de la table
 doit être refusé par les deux portes. Il fige aussi, dans le même mouvement, une
 décision qui n'était écrite qu'en creux : rien ne relit la mémoire **déjà
 écrite** — une note qui portait un secret avant le garde passe, et c'est voulu.
+Une troisième lecture existe, hors de ces portes : `--tout-le-coffre` relit tout
+le coffre et le **signale** sans rien refuser (`TestScanIntegral`). Elle ne
+garde rien, donc elle ne change rien ici.
 """
 
 import shutil

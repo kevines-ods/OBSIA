@@ -195,12 +195,36 @@ l'envoi refusé vers une adresse non appairée, pas le voyant.
       "enabled": true,
       "environment": {
         "GMAIL_MCP_RECIPIENT_PAIRING": "true",
-        "GMAIL_MCP_AUDIT_LOG": "/chemin/absolu/hors-depot/gmail-audit.jsonl"
+        "GMAIL_MCP_AUDIT_LOG": "/chemin/absolu/hors-depot/gmail-audit.jsonl",
+        "GMAIL_MCP_PAIRED_PATH": "/etc/obsia/gmail-paired.json"
       }
     }
   }
 }
 ```
+
+**Qui reçoit Gmail.** La fiche réserve Gmail aux agents dont le shell est
+refusé : pour eux, `bash: "deny"` total et refus d'`edit` sur les
+configurations de harnais (`**/.config/opencode/**`, `**/opencode.json`,
+`**/opencode.jsonc`, `**/.opencode/**` — celle de la racine du coffre comprise —,
+`**/.claude*`, `**/.claude/**`, `**/.vibe/**`) ; pour tous les autres agents, les outils `gmail_*` désactivés.
+En v2, la clé `tools` est l'ancienne forme et n'agit pas sur les outils MCP
+(`opencode debug agents` ne montre aucune règle) : c'est `permission` qui les
+règle, par motif `<serveur>_*`. Dans la configuration utilisateur, au niveau
+global, `"gmail_*": "deny"` ; dans l'agent dédié (un agent `mode: primary`,
+sans `task` — un sous-agent aurait son propre shell —, sans `webfetch` ni
+`websearch`), `"gmail_*": "allow"`. Épreuve : un agent ordinaire ne voit aucun
+outil `gmail_*` ; l'agent dédié lit la boîte et n'a pas de shell.
+
+**Seconde barrière**, qui double ce refus pour tous les agents. `permission.bash`
+refuse `*gmail-mcp*`, `*gmail_mcp*` et `*@klodr/gmail-mcp*`, dans la
+configuration utilisateur **et** dans le profil. `permission.read` refuse
+`**/.gmail-mcp` et `**/.gmail-mcp/**` ; `permission.edit` refuse
+`**/.gmail-mcp/**` et `**/etc/obsia/**`, dans le profil qui porte déjà les
+règles générales (la dernière règle qui correspond l'emporte). Elle porte sur le
+texte d'une commande et se contourne : elle ne remplace pas le refus du shell.
+`opencode debug agents` montre les règles résolues ; la preuve reste un refus
+réel.
 
 ## 5. Modèles
 

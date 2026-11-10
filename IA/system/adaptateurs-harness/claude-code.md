@@ -80,6 +80,25 @@ fiches de ce dossier, qui savent le rendre exécutoire.
 Conséquence pratique : ne déclarer que les serveurs réellement utilisés par les
 agents qu'on fait tourner ici, puisque rien ne les cloisonnera ensuite.
 
+**Un serveur réservé à une session sans shell** — Gmail, par exemple (fiche
+`IA/MCP/gmail.md`) — ne se déclare donc **jamais en portée utilisateur** : toute
+session le chargerait, shell compris. Il se déclare dans un fichier hors dépôt,
+chargé par un lanceur dédié :
+
+```bash
+exec claude --restricted --strict-mcp-config \
+  --mcp-config /chemin/hors-depot/claude-gmail.json \
+  --tools "Read,Glob,Grep" \
+  --settings '{"permissions":{"deny":["Edit(~/.claude/**)", "…"]}}' "$@"
+```
+
+`--strict-mcp-config` ignore toute autre configuration MCP ; `--tools` limite les
+outils intégrés (les outils MCP restent) ; `--restricted` retire le shell,
+confine les outils de fichiers et ignore les réglages utilisateur, d'où
+`--settings`. Épreuve : hors lanceur, `claude mcp get gmail` ne trouve rien ;
+dans le lanceur, la session liste les outils MCP et aucun outil Bash, Edit ni
+Write.
+
 ## 5. Charger le cerveau
 
 Lancer la session depuis la **racine du coffre** (`cd .../<coffre> && claude`),

@@ -26,6 +26,7 @@ import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from pathlib import Path
+from unittest import mock
 
 sys.dont_write_bytecode = True
 SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
@@ -653,6 +654,125 @@ class TestDansLeCrochet(unittest.TestCase):
         git(self.vault, "add", "-A")
         with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
             self.assertEqual(0, self.DD.avant_commit(self.vault, self.produit))
+
+
+class TestScanIntegral(BaseDepot):
+    """`--tout-le-coffre` : relire la mémoire **déjà écrite**, et la signaler.
+
+    Le garde du commit ne voit que ce qu'un commit ajoute : une valeur déjà
+    présente, ou posée hors du crochet, passe sans bruit. Ce mode regarde
+    l'arbre de travail entier — donc aussi ce qui n'est pas indexé — et ne
+    rend qu'un rapport : il ne refuse rien, ne corrige rien, ne supprime rien,
+    et ne montre aucune valeur.
+    """
+
+    def ecrire(self, chemin: str, contenu: str):
+        """Écrit sans indexer : ce que le garde du commit ne verrait jamais."""
+        fichier = self.vault / chemin
+        fichier.parent.mkdir(parents=True, exist_ok=True)
+        fichier.write_text(contenu, encoding="utf-8")
+
+    def secret(self) -> str:
+        return assemble("mot de passe", " : ", JETON)
+
+    def scanner(self, coffre=None):
+        with redirect_stdout(StringIO()) as sortie, redirect_stderr(StringIO()) as err:
+            code = GS.auditer(self.vault if coffre is None else coffre)
+        return code, sortie.getvalue() + err.getvalue()
+
+    def inventaire(self) -> dict:
+        return {chemin.relative_to(self.vault): chemin.read_bytes()
+                for chemin in sorted(self.vault.rglob("*")) if chemin.is_file()}
+
+    def test_signale_une_valeur_deja_ecrite_et_non_indexee(self):
+        self.ecrire("0-PROJETS/ancienne.md", "Corps.\n" + self.secret() + "\n")
+        code, sortie = self.scanner()
+        self.assertEqual(0, code)
+        self.assertIn("0-PROJETS/ancienne.md", sortie)
+        self.assertIn("secret affecté", sortie)
+
+    def test_ne_recopie_aucune_valeur_ni_son_debut(self):
+        self.ecrire("0-PROJETS/ancienne.md", "Corps.\n" + self.secret() + "\n")
+        _, sortie = self.scanner()
+        self.assertNotIn(JETON, sortie)
+        self.assertNotIn(JETON[:4], sortie)
+
+    def test_ne_modifie_rien_et_ne_supprime_rien(self):
+        self.ecrire("0-PROJETS/ancienne.md", "Corps.\n" + self.secret() + "\n")
+        avant = self.inventaire()
+        self.scanner()
+        self.assertEqual(avant, self.inventaire())
+
+    def test_ne_rend_jamais_un_refus(self):
+        self.ecrire("0-PROJETS/ancienne.md", self.secret() + "\n")
+        self.ecrire("0-PROJETS/jeton.md", JETON + "\n")
+        self.ecrire("0-PROJETS/bloc.md", BLOC_BASE64 + "\n")
+        code, sortie = self.scanner()
+        self.assertEqual(0, code)
+        self.assertIn("signalement", sortie.lower())
+
+    def test_signale_un_jeton_isole(self):
+        self.ecrire("0-PROJETS/jeton.md", JETON + "\n")
+        _, sortie = self.scanner()
+        self.assertIn("valeur isolée", sortie)
+
+    def test_signale_un_bloc_de_base64(self):
+        self.ecrire("0-PROJETS/bloc.md", BLOC_BASE64 + "\n")
+        _, sortie = self.scanner()
+        self.assertIn("base64", sortie)
+
+    def test_une_note_propre_ne_signale_rien(self):
+        self.ecrire("0-SAVOIRS/theorie.md",
+                    "Le gabarit `mot de passe : <valeur>` se lit tel quel.\n"
+                    "Empreinte : %s\n" % COMMIT)
+        code, sortie = self.scanner()
+        self.assertEqual(0, code)
+        self.assertNotIn("signalement", sortie.lower())
+
+    def test_un_repertoire_cache_n_est_pas_relu(self):
+        self.ecrire(".obsidian/configuration.json", self.secret() + "\n")
+        _, sortie = self.scanner()
+        self.assertNotIn("configuration.json", sortie)
+
+    def test_un_depot_imbrique_n_est_pas_relu(self):
+        self.ecrire("produit/.git/HEAD", "ref: refs/heads/main\n")
+        self.ecrire("produit/note.md", self.secret() + "\n")
+        self.ecrire("0-PROJETS/temoin.md", self.secret() + "\n")
+        _, sortie = self.scanner()
+        self.assertNotIn("produit/note.md", sortie)
+        self.assertIn("0-PROJETS/temoin.md", sortie)
+
+    def test_un_binaire_est_ecarte_et_le_dit(self):
+        (self.vault / "0-PROJETS" / "image.png").write_bytes(
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR")
+        _, sortie = self.scanner()
+        self.assertIn("écarté", sortie)
+
+    def test_un_fichier_volumineux_est_ecarte_et_le_dit(self):
+        self.ecrire("0-PROJETS/gros.md", self.secret() + "\n")
+        with mock.patch.object(GS, "TAILLE_MAX", 4):
+            _, sortie = self.scanner()
+        self.assertIn("écarté", sortie)
+        self.assertNotIn("secret affecté", sortie)
+
+    def test_le_scan_ne_demande_pas_de_depot(self):
+        with tempfile.TemporaryDirectory() as brut:
+            (Path(brut) / "note.md").write_text(self.secret() + "\n", encoding="utf-8")
+            code, sortie = self.scanner(Path(brut))
+        self.assertEqual(0, code)
+        self.assertIn("secret affecté", sortie)
+
+    def test_un_chemin_absent_ne_se_lit_pas_comme_un_coffre_propre(self):
+        code, sortie = self.scanner(self.vault / "inexistant")
+        self.assertEqual(2, code)
+        self.assertNotIn("Aucun signalement", sortie)
+
+    def test_le_cli_rend_toujours_zero_et_nomme_le_coffre(self):
+        self.ecrire("0-PROJETS/ancienne.md", self.secret() + "\n")
+        with redirect_stdout(StringIO()) as sortie, redirect_stderr(StringIO()) as err:
+            code = GS.main(["--tout-le-coffre", "--coffre", str(self.vault)])
+        self.assertEqual(0, code)
+        self.assertIn("0-PROJETS/ancienne.md", sortie.getvalue() + err.getvalue())
 
 
 if __name__ == "__main__":

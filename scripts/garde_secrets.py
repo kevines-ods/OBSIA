@@ -49,16 +49,23 @@ refuser la mémoire au nom de la publication.
 Tout se lit en octets : un fichier qui n'est pas de l'UTF-8 — binaire ou Latin-1
 — ne doit pas faire tomber le crochet.
 
-Rien ne relit la mémoire **déjà écrite**. Aucun contrôle ne parcourt le coffre à
-la recherche de secrets : les deux portes voient un contenu au moment où il
-arrive — celle du commit, la différence entre `HEAD` et l'index ; celle de
-l'entrée, le texte candidat. Un secret **nommé**, sur une ligne qu'un commit ne
-touche pas, reste donc en place sans être revu : le retirer est un acte humain,
-sur la note et dans l'historique. C'est une décision, pas un oubli. Elle a une
-limite, voulue : un **bloc de base64** ou un **jeton isolé** n'ont de sens que
-dans le fichier entier, donc ils sont relus dans le contenu complet de chaque
-fichier indexé — un bloc déjà écrit est refusé au commit suivant.
+Rien ne relit la mémoire **déjà écrite** — au moment où elle entre. Les deux
+portes voient un contenu quand il arrive : celle du commit, la différence entre
+`HEAD` et l'index ; celle de l'entrée, le texte candidat. Un secret **nommé**,
+sur une ligne qu'un commit ne touche pas, reste donc en place sans être revu : le
+retirer est un acte humain, sur la note et dans l'historique. C'est une décision,
+pas un oubli. Elle a une limite, voulue : un **bloc de base64** ou un **jeton
+isolé** n'ont de sens que dans le fichier entier, donc ils sont relus dans le
+contenu complet de chaque fichier indexé — un bloc déjà écrit est refusé au
+commit suivant.
 `tests/test_secrets_a_deux_portes.py` fixe les deux versants de ce choix.
+
+La relecture existe pourtant, **à part et sur demande** : `--tout-le-coffre`
+parcourt l'arbre de travail entier — donc aussi ce qu'aucun commit n'a touché —
+et **signale** ce qu'il trouve. Il ne refuse rien, ne corrige rien, ne supprime
+rien et ne montre aucune valeur : un rapport, pas une porte. C'est une tâche
+planifiée qui le lance, et la correction reste une rotation humaine (§4).
+`TestScanIntegral` en fixe le comportement.
 
 Bibliothèque standard uniquement.
 """
@@ -67,6 +74,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import os
 import re
 import subprocess
 import sys
@@ -76,6 +84,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import publier as PUB  # noqa: E402
+from commun import depot_reel, est_un_coffre_parent  # noqa: E402
 
 #: Les étiquettes de `publier.BLOQUANTS` qui visent une **valeur de secret**.
 #: Les autres motifs du contrôle de fuite décrivent la frontière publique et ne
@@ -551,12 +560,128 @@ def verifier(coffre) -> int:
     return 1
 
 
+#: Au-delà, un fichier n'est pas une note : le scan l'écarte et le dit.
+TAILLE_MAX = 2 * 1024 * 1024
+
+
+def fichiers_du_coffre(coffre):
+    """Les fichiers à relire, et le nombre de ceux qu'on écarte.
+
+    Ne relit pas ce qui n'est pas la mémoire du coffre : un répertoire caché
+    (`.git`, `.obsidian`, `.trash`) ou un **dépôt imbriqué**, celui qui porte un
+    `.git` à sa racine. Un fichier caché, lui, se relit : un `.env` posé dans le
+    coffre est exactement ce qu'un scan veut voir.
+    """
+    coffre = Path(coffre)
+    notes, ecartes = [], 0
+    for chemin, sous_dossiers, noms in os.walk(coffre):
+        dossier = Path(chemin)
+        sous_dossiers[:] = sorted(
+            nom for nom in sous_dossiers
+            if not nom.startswith(".") and not (dossier / nom / ".git").exists())
+        for nom in sorted(noms):
+            fichier = dossier / nom
+            if fichier.is_symlink() or not fichier.is_file():
+                continue
+            try:
+                if fichier.stat().st_size > TAILLE_MAX:
+                    ecartes += 1
+                    continue
+                brut = fichier.read_bytes()
+            except OSError:
+                ecartes += 1
+                continue
+            if b"\x00" in brut:
+                ecartes += 1
+                continue
+            notes.append((fichier.relative_to(coffre),
+                          brut.decode("utf-8", "replace")))
+    return notes, ecartes
+
+
+def auditer(coffre, sortie=None) -> int:
+    """Relit **tout** le coffre et le signale — sans jamais rien refuser.
+
+    Rend 0 quel que soit le nombre de signalements : c'est un rapport, pas une
+    porte, et une valeur déjà écrite se corrige par une rotation humaine (§4).
+    Ne rend que le lieu et l'étiquette : aucune valeur, même tronquée, ne
+    ressort d'ici — un rapport se lit, se recopie et se relaie.
+    Rend 2 quand le chemin n'est pas un dossier : un scan qui ne lit rien ne
+    doit jamais se lire comme un coffre propre.
+    """
+    coffre = Path(coffre)
+    flux = sortie if sortie is not None else sys.stdout
+    if not coffre.is_dir():
+        print("Scan impossible : « %s » n'est pas un dossier du coffre." % coffre,
+              file=sys.stderr)
+        return 2
+
+    # Comme au commit : les motifs se demandent inconditionnellement, pour
+    # qu'une étiquette disparue fasse tomber le scan au lieu de le laisser muet.
+    motifs_secrets()
+
+    notes, ecartes = fichiers_du_coffre(coffre)
+    trouvailles = []
+    for relatif, contenu in notes:
+        for numero, ligne in enumerate(contenu.splitlines(), 1):
+            trouve = secret_dans_une_ligne(ligne)
+            if trouve is not None:
+                trouvailles.append((relatif, numero, trouve[0], len(trouve[1])))
+        jeton = jeton_isole(contenu, contexte=str(relatif))
+        if jeton is not None:
+            trouvailles.append(
+                (relatif, None, "valeur isolée à forte entropie", len(jeton)))
+            continue
+        bloc = bloc_base64(contenu)
+        if bloc is not None:
+            trouvailles.append(
+                (relatif, None, "bloc de base64 recopié", len(bloc)))
+
+    print("Scan intégral du coffre — %s" % coffre, file=flux)
+    print("%d fichier(s) relu(s), %d écarté(s) : binaire, illisible, ou plus de "
+          "%d octets." % (len(notes), ecartes, TAILLE_MAX), file=flux)
+    for relatif, numero, etiquette, longueur in trouvailles:
+        lieu = "%s:%d" % (relatif, numero) if numero else str(relatif)
+        print("  %s — %s — valeur masquée (%d caractères)"
+              % (lieu, etiquette, longueur), file=flux)
+    if not trouvailles:
+        print("Rien à signaler.", file=flux)
+    else:
+        print("%d signalement(s). Rien n'a été modifié ni bloqué : une valeur "
+              "déjà écrite se corrige par une rotation (§4), jamais par le "
+              "garde." % len(trouvailles), file=flux)
+    return 0
+
+
+def coffre_du_clone():
+    """Le coffre que ce clone habite, ou ``None`` — même règle que le vérificateur.
+
+    Passe par `depot_reel` : lancé depuis un worktree, `..` ne désignerait pas le
+    coffre, et un scan qui relit le mauvais dossier rassure à tort.
+    """
+    racine = Path(__file__).resolve().parent.parent
+    try:
+        parent = depot_reel(racine).parent
+    except (OSError, RuntimeError):
+        return None
+    return parent if est_un_coffre_parent(parent) else None
+
+
 def main(argv=None) -> int:
     analyseur = argparse.ArgumentParser(
-        description="Refuse les valeurs à forme de secret ajoutées au dépôt de données.")
-    analyseur.add_argument("--coffre", default=".", help="racine du coffre parent")
+        description="Le garde anti-secret du coffre — au commit, et en relecture.")
+    analyseur.add_argument("--coffre", default=None, help="racine du coffre parent")
+    analyseur.add_argument("--tout-le-coffre", action="store_true",
+                           help="relire toute la mémoire et signaler, sans rien refuser")
     arguments = analyseur.parse_args(argv)
-    return verifier(Path(arguments.coffre).resolve())
+    if not arguments.tout_le_coffre:
+        return verifier(Path(arguments.coffre or ".").resolve())
+    coffre = Path(arguments.coffre).resolve() if arguments.coffre else coffre_du_clone()
+    if coffre is None:
+        print("Scan impossible : ce clone n'habite aucun coffre parent. "
+              "Donnez --coffre.", file=sys.stderr)
+        return 2
+    return auditer(coffre)
 
 
 if __name__ == "__main__":
