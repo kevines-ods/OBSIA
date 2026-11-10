@@ -29,6 +29,7 @@ SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 import installer as INS                 # noqa: E402
+import modules as MOD                   # noqa: E402
 #: Le motif et le repère du §4 vivent dans le générateur, pas ici :
 #: `verifier_coffre.py` s'en sert pour contrôler le prompt réel du catalogue, et
 #: deux copies finiraient par diverger.
@@ -317,7 +318,7 @@ class TestEcritureAgentsMd(BaseInstalleur):
         annexes = sorted(a for a in dossier.glob("*.md")
                          if a.name != "registre.md")
         self.assertTrue(annexes, "aucune annexe trouvée : rien n'est prouvé")
-        self.assertEqual(len(annexes), 7, "le nombre d'annexes a changé")
+        self.assertEqual(len(annexes), 8, "le nombre d'annexes a changé")
 
         def sans_les_copies(texte):
             coupe, n = re.subn(r"^0\. Au démarrage.*?(?=\n1\. |\n## |\Z)", "",
@@ -1461,6 +1462,59 @@ class TestDossierPersonnel(BaseInstalleur):
         self.assertTrue(INS.parent_est_le_dossier_personnel(self.racine))
         os.environ["HOME"] = str(self.racine)
         self.assertFalse(INS.parent_est_le_dossier_personnel(self.racine))
+
+
+class TestReadmeMemoiresSuitLeContrat(unittest.TestCase):
+    """Le README posé dans `0-MEMOIRES/` de **chaque** coffre neuf dit §6, pas son inverse.
+
+    C'est le premier texte que lit un agent dans un coffre neuf : s'il ignore
+    `courrier/`, l'agent range un message sous un nom de projet, et le contrôle
+    le refuse — ou pire, il croit permis ce que le contrat interdit.
+    """
+
+    def setUp(self):
+        self.texte = MOD.GABARIT_MEMOIRES
+
+    def test_il_nomme_les_trois_memoires_vivantes(self):
+        for nom in ("`préférences/`", "`<nom-agent>/expériences/`", "`courrier/`"):
+            self.assertIn(nom, self.texte,
+                          "le README ne nomme pas %s parmi les mémoires vivantes" % nom)
+
+    def test_il_dit_que_le_courrier_ne_contient_que_des_messages(self):
+        self.assertIn("`<AAAA-MM-JJ>-<agent>-<sujet>.md`", self.texte)
+        self.assertIn("à plat", self.texte)
+        self.assertIn("Un chantier ne vit pas là", self.texte)
+
+    def test_il_refuse_le_nom_courrier_a_un_projet(self):
+        # §6 + §11 : les trois noms vivants sont réservés, `courrier` compris.
+        # La comparaison aplatit les retours à la ligne : un reflow de la phrase
+        # ne doit pas faire échouer un test dont la règle n'a pas bougé.
+        plat = " ".join(self.texte.split())
+        self.assertIn("ni `courrier`", plat,
+                      "le README ne cite pas `courrier` parmi les noms qu'un projet ne peut prendre")
+
+    def test_il_ne_dit_ni_deux_memoires_ni_et_rien_d_autre(self):
+        # Formules de l'ancien monde : « deux mémoires » ignorait le courrier,
+        # « et rien d'autre » fermait une liste devenue fausse.
+        self.assertNotIn("deux mémoires", self.texte)
+        self.assertNotIn("et rien d'autre", self.texte)
+
+    def test_le_coffre_neuf_recoit_bien_ce_texte(self):
+        """Le défaut ne se jouait pas dans la constante mais dans le fichier posé.
+
+        C'est le seul test qui prouve le câblage : ce gabarit-là est celui que
+        `ecrire_memoire_du_coffre` écrit dans un coffre neuf.
+        """
+        with tempfile.TemporaryDirectory() as dossier:
+            coffre = Path(dossier)
+            refus = MOD.ecrire_memoire_du_coffre(coffre)
+
+            self.assertEqual(refus, [])
+            pose = (coffre / "0-MEMOIRES" / "README.md").read_text(encoding="utf-8")
+            self.assertEqual(pose, self.texte)
+            self.assertIn("`courrier/`", pose)
+            self.assertTrue((coffre / "0-MEMOIRES" / "préférences").is_dir(),
+                            "§6 : `préférences/` est posé même vide")
 
 
 if __name__ == "__main__":

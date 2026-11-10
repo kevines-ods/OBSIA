@@ -98,14 +98,16 @@ personne sur sa machine, pas le coffre.
 """
 
 
-GABARIT_MEMOIRES = """# 0-MEMOIRES/ — deux mémoires, une seule est gelée
+GABARIT_MEMOIRES = """# 0-MEMOIRES/ — une mémoire vivante, une mémoire gelée
 
 Ce dossier en porte deux, et il faut les distinguer :
 
-- **`préférences/` et `<nom-agent>/expériences/`** — la mémoire des agents.
-  Elle **vit** : une préférence qui change se corrige sur place, une leçon se
-  révise, comme le profil de `0-PERSONNELS/`. `préférences/` est posé par
-  l'installation, même vide ; `<nom-agent>/expériences/` naît à la première leçon.
+- **`préférences/`, `<nom-agent>/expériences/` et `courrier/`** — la mémoire des
+  agents. Elle **vit** : une préférence qui change se corrige sur place, une leçon
+  se révise, comme le profil de `0-PERSONNELS/`. `préférences/` est posé par
+  l'installation, même vide ; `<nom-agent>/expériences/` naît à la première leçon ;
+  `courrier/` reçoit les messages archivés, **à plat et rien de plus profond** :
+  `<AAAA-MM-JJ>-<agent>-<sujet>.md`. Un chantier ne vit pas là.
 - **`<projet>/<chantier>/`** — les chantiers clos. À la clôture, le **dossier
   entier** du chantier quitte `0-PROJETS/` pour venir ici, tel quel : le résumé
   devient un bilan avec une section « État », les carnets passent
@@ -114,10 +116,10 @@ Ce dossier en porte deux, et il faut les distinguer :
   `0-SAVOIRS/`, `0-MEMOIRES/préférences/` ou `0-MEMOIRES/<nom-agent>/expériences/`.
   Rouvrir un chantier le ramène dans `0-PROJETS/`, sans copie laissée derrière.
 
-Un nom de premier niveau ici est donc, et rien d'autre : `préférences`, le nom
-d'un agent, ou un projet gelé. **Un projet ne peut s'appeler ni `préférences` ni
-le nom d'un agent** — la collision rendrait la mémoire des agents indistinguable
-d'un chantier gelé, et le contrôle la refuse.
+Un nom de premier niveau ici est donc : `préférences`, `courrier`, le nom d'un
+agent, ou un projet gelé. **Un projet ne peut s'appeler ni `préférences`, ni
+`courrier`, ni le nom d'un agent** — la collision rendrait la mémoire des agents
+indistinguable d'un chantier gelé, et le contrôle la refuse.
 
 Les règles sont au §6 de `OBSIA/IA/system/VAULT-CONTRACT.md`, qui fait foi.
 """

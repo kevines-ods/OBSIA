@@ -12,7 +12,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from convention_des_notes import (EXPERIENCES, MEMOIRES, PREFERENCES,
+from convention_des_notes import (COURRIER, EXPERIENCES, MEMOIRES, PREFERENCES,
                                   STATUTS_CARNET, carnet_a_la_forme,
                                   carnet_du_dossier, liste_des_agents)
 from generer_prompt import lire_frontmatter
@@ -197,17 +197,19 @@ def noms_d_agents_declares(ctx) -> set:
 
 
 def verifier_noms_de_memoire(ctx):
-    """§6 : dans `0-MEMOIRES/`, deux mémoires ne se confondent pas.
+    """§6 : dans `0-MEMOIRES/`, la mémoire vivante et la mémoire gelée ne se confondent pas.
 
-    Le dossier porte la mémoire des agents — `préférences/`, vivante, et
-    `<nom-agent>/expériences/`, vivante aussi — **et** les chantiers clos, gelés.
-    Un projet qui s'appellerait `préférences` ou porterait le nom d'un agent
-    rendrait les deux indistinguables : c'est une erreur de nommage, pas un
+    Le dossier porte la mémoire des agents — `préférences/` et
+    `<nom-agent>/expériences/`, vivantes, plus les messages à plat de `courrier/`
+    — **et** les chantiers clos, gelés.
+    Un projet qui s'appellerait `préférences`, `courrier` ou porterait le nom d'un
+    agent rendrait les deux indistinguables : c'est une erreur de nommage, pas un
     détail de rangement.
 
     Faute de lire une intention, la règle se contrôle par la **forme** :
-    `préférences/` ne contient que des notes, la mémoire d'un agent n'a qu'un
-    `expériences/` de notes, et tout autre dossier est un projet gelé — donc il
+    `préférences/` et `courrier/` ne contiennent que des notes, la mémoire d'un
+    agent n'a qu'un `expériences/` de notes, et tout autre dossier est un projet
+    gelé — donc il
     porte au moins un chantier. Le contrôle ne tourne que sur le coffre parent
     (§7.1) : un clone de la CI n'a pas de `0-MEMOIRES/`.
     """
@@ -230,6 +232,13 @@ def verifier_noms_de_memoire(ctx):
                     ctx.signaler_memoire(intrus, "`%s/%s/` est la mémoire des agents : elle ne contient "
                                              "que des notes `<sujet>.md`. Un projet ne peut pas porter "
                                              "ce nom (§6)" % (MEMOIRES, PREFERENCES))
+            continue
+        if entree.name == COURRIER:
+            for intrus in sorted(entree.iterdir()):
+                if intrus.is_dir():
+                    ctx.signaler_memoire(intrus, "`%s/%s/` ne contient que des notes `<sujet>.md` : "
+                                             "un chantier ne vit pas dans le courrier. Un projet ne peut "
+                                             "pas porter ce nom (§6)" % (MEMOIRES, COURRIER))
             continue
         if entree.name in reserves:
             lecons = entree / EXPERIENCES

@@ -873,8 +873,9 @@ def preparer_memoire_du_coffre(produit: Path) -> None:
     """Pose la mémoire du coffre parent : `0-PERSONNELS/` et `0-MEMOIRES/` (§7.1).
 
     `0-PERSONNELS/` reçoit le profil, `0-MEMOIRES/` son README : il explique les
-    deux mémoires qu'il porte — celle des agents, vivante, et les chantiers
-    clos, gelés. `0-MEMOIRES/préférences/` est posé même vide (§6) ;
+    deux mémoires qu'il porte — celle des agents, vivante (`préférences/`,
+    `<nom-agent>/expériences/`, `courrier/`), et les chantiers clos, gelés.
+    `0-MEMOIRES/préférences/` est posé même vide (§6) ;
     `<nom-agent>/expériences/` naît à la première leçon.
 
     Rien n'y est écrasé : un profil rempli fait refuser la pose du gabarit, et

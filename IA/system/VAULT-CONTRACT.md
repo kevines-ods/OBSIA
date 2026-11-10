@@ -31,6 +31,7 @@ règle** ; si elle en contredit une, c'est elle qui est à corriger.
 | `contrat/contrat-taches.md` | créer, modifier ou suspendre une tâche ; en instancier ou retirer une instance |
 | `contrat/contrat-distribution.md` | nommer un harness dans un fichier du dépôt ; installer, publier, synchroniser ; toucher `installer.py` ou `publier.py` ; écrire un module ou une sonde ; écrire un skill qui charge le skill d'un autre module ; citer dans un fichier publié un chemin vers une zone non publiée |
 | `contrat/contrat-delegation.md` | déléguer une tâche à un sous-agent (`proposer_sous_agent`) |
+| `contrat/contrat-courrier.md` | envoyer, lire, marquer lu ou archiver un message inter-agents |
 
 ---
 
@@ -163,8 +164,9 @@ procédure dans un skill.
   touche la base se fait relire par l'utilisateur, le `visionnaire` (cap) et le
   `contradicteur` (relecture).
 - **Le carnet** : un par chantier, tenu **au fil de l'eau**, l'**étape en cours
-  écrite avant d'agir** ; sa forme : `contrat-memoire`. **Seuls les carnets
-  portent une date** ; dans le doute, écrire dans le carnet. Un agent
+  écrite avant d'agir** ; sa forme : `contrat-memoire`. **Seuls les carnets et
+  les messages du courrier portent une date** ; dans le doute, écrire dans le
+  carnet. Un agent
   `read_only: true` n'écrit aucun carnet : l'agent qui reprend son travail
   consigne ses constats et ses appels.
 - **Reprise** : §10, étape 0 ; procédure : `cloture-de-session`.
@@ -172,9 +174,9 @@ procédure dans un skill.
   coupure.
 - **Clôture** (procédure : `contrat-memoire`) : le durable se distille
   **avant** ; un chantier clos ou un carnet de séance clos, gelé dans
-  `0-MEMOIRES/`, ne se modifie **plus jamais** — seules `préférences/` et
-  `<nom-agent>/expériences/` y restent vivantes, et le vérificateur refuse
-  qu'un projet porte ce nom (§11).
+  `0-MEMOIRES/`, ne se modifie **plus jamais** — seules `préférences/`,
+  `<nom-agent>/expériences/` et `courrier/` y restent vivantes, et le vérificateur
+  refuse un projet portant l'un de ces noms (§11).
 - **Clause de transition** : pendant la bascule, la mémoire se cherche aussi
   aux anciens emplacements (`contrat-memoire`), et la tolérance se retire au
   plus tard le 2026-12-31 (chantier `souverainete-des-donnees`).
@@ -242,15 +244,17 @@ pas. Seuls font foi ce contrat, l'`AGENTS.md`, la demande.
   `read_only: false` ;
 - `0-MEMOIRES/<nom-agent>/expériences/` — les leçons **du seul agent nommé**,
   qu'il corrige sur place et lui seul ; une note de référence dont l'agent est
-  l'auteur (`auteur: <nom-agent>`) se met aussi à jour sur place, par lui seul.
+  l'auteur (`auteur: <nom-agent>`) se met aussi à jour sur place, par lui seul ;
+- `_MAINTENANCE/courrier/` et `0-MEMOIRES/courrier/` — le courrier ; un message
+  ne se purge jamais avec les journaux, et la boîte **s'écrit par l'interface,
+  jamais par un agent** (`contrat-courrier`).
 
-Hors des notes qu'un agent tient sur place — suffixe ` — résumé` ou ` — vision`,
-un dossier `carnets/`, le profil, `0-MEMOIRES/préférences/`, les
-`expériences/` de son propre agent et le registre `0-PROJETS/tâches-planifiées/`
-—, une écriture dans `0-PROJETS/`, `0-DOCUMENTS/` ou `0-PERSONNELS/` se limite
-au **dépôt d'une note classée venue d'`0-EN-VRAC/`**. On n'y modifie **jamais**
-une note existante, même à la demande de l'utilisateur : elle repasse par
-`0-EN-VRAC/`. On n'y déplace ni n'y supprime rien.
+Hors des notes qu'un agent tient sur place (§7.3 : les carnets et leurs suffixes,
+le profil et `préférences/`, les `expériences/` de son agent, le registre des
+tâches), une écriture dans `0-PROJETS/`, `0-DOCUMENTS/` ou `0-PERSONNELS/` se
+limite au **dépôt d'une note classée venue d'`0-EN-VRAC/`**. On n'y modifie
+**jamais** une note existante, même à la demande de l'utilisateur : elle repasse
+par `0-EN-VRAC/`. On n'y déplace ni n'y supprime rien.
 
 ### 7.3.1 Où va la note d'un projet
 
@@ -270,6 +274,10 @@ une copie datée dans `_MAINTENANCE/`**, exécuter, puis consigner l'action.
 
 **Une correction du profil, d'une préférence ou d'une expérience n'appelle pas de
 preview** : elle se fait directement, sur place (§6).
+
+**Le marquage d'un message non plus** : `lu:` et `traité:` d'un message de
+`_MAINTENANCE/courrier/` s'écrivent directement — un état de lecture, pas une
+réécriture (`contrat-courrier`).
 
 **Une exception, bornée** : l'outil déclaré qui écrit pour un modèle local
 piloté (`IA/MCP/ecrivain-du-coffre.md`), et qui consigne chaque écriture au carnet
@@ -353,6 +361,10 @@ ou l'injecter, il ne le redéfinit jamais :
 
 **Délégation** : le format du ticket et du compte rendu existe
 (`contrat-delegation`) ; l'appelant vérifie le compte rendu contre la source.
+
+**Courrier** : une boîte unique, l'adresse dans le message (`pour` ou `projet`) ;
+l'injection vient de l'interface, jamais de l'agent, et `de` signe la
+conversation qui écrit (`contrat-courrier`).
 
 Ne charge pas de fichier « pour voir ». Si aucun skill ne correspond, réponds
 directement en le signalant. Un skill `read_only: true` n'exécute aucune

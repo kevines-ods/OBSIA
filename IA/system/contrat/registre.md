@@ -31,7 +31,8 @@ contrat.
   de renvoi qui dit *quand* la lire.
 
 Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
-`taches`, `distribution`, `delegation`. Chacune s'appelle `contrat-<x>.md`.
+`taches`, `distribution`, `delegation`, `courrier`. Chacune s'appelle
+`contrat-<x>.md`.
 
 ## Préambule
 
@@ -105,9 +106,9 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | --- | --- | --- |
 | 6.1 | Les noms de notes sont uniques dans tout le coffre parent. | N |
 | 6.2 | Liens vers le contrat en chemin relatif, profondeur selon la forme du skill. | A·memoire (chemin relatif selon la forme, 2026-10-10) |
-| 6.3 | Arborescence de la mémoire du coffre parent (`0-PROJETS/`, `0-MEMOIRES/` — préférences et `<nom-agent>/expériences/`, **vivantes**, et chantiers clos **gelés** —, `0-PERSONNELS/` : profil ; projets avec résumé, vision, carnets du jour, documents ; **un dossier par chantier** portant ses `carnets/`, ses `documents/` et son résumé, un seul niveau ; plus de dossier `archives/`). | A·memoire (l'arbre est dans l'annexe ; le noyau garde, en une phrase, l'axe de partage de la mémoire) |
+| 6.3 | Arborescence de la mémoire du coffre parent (`0-PROJETS/`, `0-MEMOIRES/` — préférences, `<nom-agent>/expériences/` et `courrier/`, **vivantes**, et chantiers clos **gelés** —, `0-PERSONNELS/` : profil ; projets avec résumé, vision, carnets du jour, documents ; **un dossier par chantier** portant ses `carnets/`, ses `documents/` et son résumé, un seul niveau ; plus de dossier `archives/`). | A·memoire (l'arbre est dans l'annexe ; le noyau garde, en une phrase, l'axe de partage de la mémoire) |
 | 6.4 | Tableau « où écrire selon la nature de l'information ». | A·memoire (le noyau renvoie à l'annexe) |
-| 6.5 | Profil, préférences et expériences ne se datent pas ; seuls les carnets portent une date. Dans le doute, on écrit dans le carnet. | N |
+| 6.5 | Profil, préférences et expériences ne se datent pas ; seuls les carnets et les messages du courrier portent une date. Dans le doute, on écrit dans le carnet. | N |
 | 6.6 | `0-PROJETS/` porte **tout** projet — du coffre comme de l'utilisateur ; `code/` y est exclu du dépôt de mémoire. | N |
 | 6.7 | Un projet du coffre passe par une PR, demande comprise : la description porte la demande et le résumé de séance, jamais la mémoire ni un chemin du coffre parent ; relecture à trois. | Relecture 2026-10-21 : N pour « demande et résumé, jamais un chemin du coffre parent ni un nom de personne ou de client » et pour la relecture à trois d'un changement qui touche la base (décision de l'utilisateur) ; le reste (carnet hors PR) `A·memoire` |
 | 6.8 | Le carnet : son nom, son frontmatter (`agent`, `projet`, `statut`), son contenu, l'étape écrite **avant** d'agir, son dossier — celui du chantier, ou celui du projet pour une séance sans chantier —, un chantier transverse dans `obsia` sauf la part personnelle. | Relecture 2026-10-21 : N pour « un par chantier, au fil de l'eau, étape écrite avant d'agir » ; nom, frontmatter, contenu, dossier et chantier transverse `A·memoire` |
@@ -131,15 +132,15 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | 7.3.1 | Où va la note d'un projet : *est-ce que ça décrit le produit ?* Si oui, le dépôt produit (`IA/system/`, `IA/skills/`, `IA/MCP/`, `IA/tâches/`) et la PR ; sinon le coffre parent, sous `0-…`, jamais `OBSIA/` — **dans le doute, le coffre parent**. | N |
 | 7.4 | Tableau des trois formes, exemples, chemin absolu entre guillemets. | A·coffre-parent |
 | 7.5 | Structure de premier niveau fixe : le dépôt produit (`OBSIA/`) est exclu ; seul l'utilisateur crée, renomme ou supprime un dossier de mémoire de premier niveau. Les noms s'écrivent en majuscules, tels qu'ils sont sur le disque. | N |
-| 7.6 | Tableau des dossiers et de leur rôle, `0-MEMOIRES/` compris (la mémoire des agents y vit, les chantiers clos y sont gelés). | A·coffre-parent (le noyau garde la règle des `0-` et des trois noms) |
+| 7.6 | Tableau des dossiers et de leur rôle, `0-MEMOIRES/` compris (les préférences, les expériences et le courrier y vivent, les chantiers clos y sont gelés). | A·coffre-parent (le noyau garde la règle des `0-` et des trois noms vivants) |
 | 7.7 | Un agent `read_only: false` lit tout le coffre parent. Lire n'est pas recopier : rien du coffre parent ne migre dans `OBSIA/`, aucun secret n'y entre. | N |
-| 7.8 | Zones d'écriture : `0-EN-VRAC/`, compléter dans `0-SAVOIRS/`, `_MAINTENANCE/`, le classement, `0-PROJETS/<projet>/` (résumé, carnets, documents), `code/`, la note de référence `auteur:` de `0-PERSONNELS/`, `0-MEMOIRES/préférences/` et `0-MEMOIRES/<nom-agent>/expériences/` (corrigées sur place), la vision par le seul `visionnaire` ; un dossier de chantier clos de `0-MEMOIRES/` ne s'écrit jamais (gelé). | N (une liste) |
+| 7.8 | Zones d'écriture : `0-EN-VRAC/`, compléter dans `0-SAVOIRS/`, `_MAINTENANCE/`, `_MAINTENANCE/courrier/` et `0-MEMOIRES/courrier/` (le courrier : messages en attente puis traités), le classement, `0-PROJETS/<projet>/` (résumé, carnets, documents), `code/`, la note de référence `auteur:` de `0-PERSONNELS/`, `0-MEMOIRES/préférences/` et `0-MEMOIRES/<nom-agent>/expériences/` (corrigées sur place), la vision par le seul `visionnaire` ; un dossier de chantier clos de `0-MEMOIRES/` ne s'écrit jamais (gelé). | N (une liste) |
 | 7.9 | On ne modifie jamais une note existante de `0-PROJETS/`, `0-DOCUMENTS/` ou `0-PERSONNELS/` dont l'agent n'est pas l'auteur, même à la demande de l'utilisateur ; on n'y déplace ni n'y supprime rien. | N |
 | 7.10 | Pourquoi l'auteur peut corriger son propre texte ; les marques (` — résumé`, ` — vision`, `carnets/`, `auteur:`). | A·coffre-parent (les marques restent au noyau) |
 | 7.11 | `code/` : §3 intégral ; exclusion Obsidian posée par l'installeur ; réserve sur l'effet du motif et sur l'unicité des noms. | A·coffre-parent (la phrase « §3 intégral » reste au noyau) |
 | 7.12 | Jamais une valeur interdite par le §9 dans `OBSIA/` ; le §9 l'emporte sur tout. | N |
 | 7.13 | `0-PERSONNELS/` : on y lit librement ; on n'y écrit que pour classer ou tenir sa note de référence ; son contenu ne migre jamais dans `OBSIA/`. | N |
-| 7.14 | Aperçu, copie datée dans `_MAINTENANCE/`, exécution, puis consignation, avant toute écriture hors `0-EN-VRAC/` ou sur plusieurs fichiers. Exception bornée : l'écriture portée par un outil déclaré en MCP pour un harnais pilotant un modèle local (§5) et consignée au carnet (§9), où l'aperçu est rendu avec l'écriture à condition que l'écriture soit annulable — un acte = un commit ne portant que ses fichiers (jamais `-a`), écritures sérialisées, branche par défaut du dépôt de données, commit reconnaissable ; défait et consigné si le commit est refusé ou inexact. | N pour l'aperçu avant, l'exception bornée, la trace au carnet, l'annulabilité et la garde des secrets ; sérialisation, branche par défaut et commit reconnaissable A·coffre-parent et fiche `ecrivain-du-coffre` (2026-10-10) |
+| 7.14 | Aperçu, copie datée dans `_MAINTENANCE/`, exécution, puis consignation, avant toute écriture hors `0-EN-VRAC/` ou sur plusieurs fichiers. Exemption : les champs `lu:` et `traité:` d'un message de `_MAINTENANCE/courrier/` s'écrivent sans aperçu (état de lecture, pas réécriture). Exception bornée : l'écriture portée par un outil déclaré en MCP pour un harnais pilotant un modèle local (§5) et consignée au carnet (§9), où l'aperçu est rendu avec l'écriture à condition que l'écriture soit annulable — un acte = un commit ne portant que ses fichiers (jamais `-a`), écritures sérialisées, branche par défaut du dépôt de données, commit reconnaissable ; défait et consigné si le commit est refusé ou inexact. | N pour l'aperçu avant, l'exemption des marques, l'exception bornée, la trace au carnet, l'annulabilité et la garde des secrets ; sérialisation, branche par défaut et commit reconnaissable A·coffre-parent et fiche `ecrivain-du-coffre` (2026-10-10) |
 | 7.15 | Une action va au carnet ; à défaut, au journal de `_MAINTENANCE/`. Un carnet dont on est l'auteur se met à jour sans nouvel aperçu. | N |
 | 7.16 | Le registre `notes_remplies.md` : une note qui y figure n'est pas à revérifier, et il se met à jour après chaque traitement. | N |
 | 7.17 | Tags du vocabulaire contrôlé (`IA/system/tags-du-coffre-parent.md`), jamais hors liste. Un lien ne relie que si sa cible existe. Les noms de notes sont uniques. | N |
@@ -175,6 +176,7 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
 | 10.1–10.4 | Choisir l'agent ; ne charger que les skills et MCP déclarés et nécessaires ; lire la fiche d'un MCP avant de l'appeler ; écrire en mémoire selon le §6 ; **lire la note existante avant d'écrire** ; lire une annexe avant l'acte que sa ligne nomme ; citer les chemins. | N, sans raccourci (A : M10) |
 | 10.5 | Ne pas charger un fichier « pour voir ». Un skill en lecture seule n'exécute aucune commande qui modifie l'état. | N |
 | 10.6 | Délégation : le format du ticket et du compte rendu existe ; l'appelant vérifie le compte rendu contre la source. | N (une phrase) ; détail : A·delegation |
+| 10.7 | Courrier inter-agents : une boîte unique, une adresse portée par le message (`pour` ou `projet`, au moins une), une injection dans le tour par l'interface et jamais par l'agent. | N (une phrase) ; détail : A·courrier |
 
 ## §11 Fichiers générés et vérification
 
@@ -258,12 +260,25 @@ Annexes : `frontmatter`, `memoire`, `coffre-parent`, `verification`,
   format du ticket/compte rendu, vérification contre la source » (étape 3/C du
   plan d'optimisation) et sa ligne au tableau du préambule. Tracé par
   l'exception `E2` (`seuil-desserre`), à réviser le 2027-05-06.
+
+- **Relèvement du 2026-11-10.** Le plafond porté par `CONSTRAINTS.md` est relevé
+  (3 850 → 3 950 mots) pour accueillir le courrier inter-agents : les deux zones
+  du §7.3 (`_MAINTENANCE/courrier/` pour les messages en attente et leurs marques,
+  `0-MEMOIRES/courrier/` pour les messages traités), l'exemption de marquage du
+  §7.4, `courrier/` parmi les mémoires vivantes du §6, et sa ligne au tableau du
+  préambule. Détail dans `contrat-courrier.md`. Tracé par l'exception `E3`
+  (`seuil-desserre`), à réviser le 2027-05-10.
+
+- **La convention de notes suit le §6 jusqu'au code.** `scripts/convention_des_notes.py`
+  décide par le chemin si une note est gelée ; `courrier/` y est ajouté vivant au
+  même titre que `préférences/`, faute de quoi un message archivé serait refusé à
+  l'écriture par le contrôle qui protège la mémoire gelée.
 ### Allègement du 2026-10-10 — trois questions
 
 La règle d'entrée du noyau devient un filtre en trois questions (préambule). Ont
 quitté le noyau pour leur annexe, sans perte de règle : le détail du §5
 (contrôlé par le vérificateur) → A·frontmatter ; la clôture, la réouverture, le
-domaine dormant et les deux mémoires du §6 → A·memoire (le gel et la collision
+domaine dormant et le partage vivant/gelé du §6 → A·memoire (le gel et la collision
 restent au noyau) ; les conditions de l'exception du §7.4 → fiche
 `ecrivain-du-coffre` et A·coffre-parent ; le détail du §12 → A·taches ; les
 sondes, modules et profil du §13 → A·distribution.
