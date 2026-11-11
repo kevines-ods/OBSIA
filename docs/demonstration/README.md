@@ -37,6 +37,13 @@ Aucune donnée réelle n'y entre.
 | `2-reprise` | le chantier retrouvé par son carnet | « Où en est mon projet de serre ? » |
 | `3-prudence` | une commande douteuse expliquée, pas lancée | « Je peux la lancer ? » |
 | `4-rangement` | l'aperçu avant l'écriture, puis le rangement | « Range mes notes en vrac » |
+| `5-contradicteur` | le `contradicteur` appelé en sous-agent, qui relit sans modifier | « Fais relire mon plan par le contradicteur » |
+| `6-visionnaire` | le `visionnaire` appelé en sous-agent, une idée confrontée à la vision | « Demande au visionnaire si ça va dans le sens du projet » |
+| `7-secret` | un mot de passe (inventé) refusé dans une note | « Note que le mot de passe du wifi est… » |
+| `8-memoire` | une préférence retenue, retrouvée dans une séance neuve | « Retiens que… », puis `/new` |
+
+Les deux sous-agents sont déclarés par `tourner.sh` dans l'`opencode.json` du
+coffre fictif : leur prompt pointe la fiche de `IA/agents/`, rien n'est recopié.
 
 Une scène est un fichier `scenes/<nom>.tape` : pour en ajouter une, copier la
 plus proche et changer la question.

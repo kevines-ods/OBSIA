@@ -77,6 +77,38 @@ Matériel : un micro-contrôleur ESP32, une pompe 12 V, une cuve de 200 L.
 - `arrosage-automatique` — en cours.
 EOF
 
+cat > "0-PROJETS/serre-connectée/serre-connectée — vision.md" <<'EOF'
+---
+auteur: visionnaire
+projet: "[[serre-connectée — résumé]]"
+révisée: 2026-11-02
+---
+
+# serre-connectée — vision
+
+## Finalité déclarée
+Une serre qui s'occupe d'elle-même une semaine entière, pour partir sans
+demander à un voisin. Tout doit rester réparable avec un tournevis.
+
+## Finalités possibles
+| Finalité | Statut | Raison |
+| --- | --- | --- |
+| arroser sans personne pendant une semaine | validée | le besoin de départ |
+| être prévenu quand la cuve est vide | validée | sans eau, le reste ne sert à rien |
+| fonctionner sans internet | validée | le wifi du jardin décroche |
+| optimiser le rendement des tomates | rejetée | un loisir, pas une exploitation |
+
+## Portes à garder ouvertes
+- aucune pièce qui dépende d'un service en ligne — fonctionner sans internet
+- budget total sous 80 euros — rester un bricolage
+
+## Signaux d'abandon
+Un composant qu'on ne sait plus remplacer soi-même.
+
+## Révisions
+- 2026-11-02 — première version.
+EOF
+
 cat > "0-PROJETS/serre-connectée/arrosage-automatique/arrosage-automatique — résumé.md" <<'EOF'
 ---
 type: projet

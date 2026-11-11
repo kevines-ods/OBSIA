@@ -37,8 +37,27 @@ for scene in "${scenes[@]}"; do
   [ -f "$bande" ] || { echo "Scène inconnue : $scene" >&2; exit 1; }
   echo "── $scene ($modele)"
   "$ici/monter_coffre_fictif.sh" "$dossier" >/dev/null
-  printf '{\n  "$schema": "https://opencode.ai/config.json",\n  "model": "%s"\n}\n' \
-    "$modele" > "$OBSIA_DEMO_COFFRE/opencode.json"
+  # Le visionnaire et le contradicteur sont déclarés en sous-agents : leur prompt
+  # pointe la fiche du dépôt, rien n'est recopié (adaptateurs-harness/opencode.md §3).
+  cat > "$OBSIA_DEMO_COFFRE/opencode.json" <<JSON
+{
+  "\$schema": "https://opencode.ai/config.json",
+  "model": "$modele",
+  "agent": {
+    "visionnaire": {
+      "mode": "subagent",
+      "description": "Garde le cap d'un projet : dit si une décision rapproche ou éloigne de sa vision.",
+      "prompt": "{file:./OBSIA/IA/agents/visionnaire.md}"
+    },
+    "contradicteur": {
+      "mode": "subagent",
+      "description": "Relit sans rien modifier : cherche ce qui cloche dans un plan ou un changement.",
+      "prompt": "{file:./OBSIA/IA/agents/contradicteur.md}",
+      "permission": { "edit": "deny", "bash": "deny" }
+    }
+  }
+}
+JSON
   (cd "$sortie" && vhs "$bande" >/dev/null) || { echo "   échec de vhs" >&2; exit 1; }
   echo "   $sortie/$scene.mp4"
 done
