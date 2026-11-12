@@ -2,7 +2,7 @@
 schema: 1
 kind: contract
 name: contrat-courrier
-description: Détail du courrier inter-agents — où vit la boîte, ce qu'est un message, comment il s'adresse, comment il se marque lu puis traité.
+description: Détail du courrier inter-agents — où vit la boîte, comment un agent propose un message, ce qu'est un message, comment il s'adresse, comment il se marque lu puis traité.
 module: noyau
 ---
 
@@ -65,6 +65,48 @@ Le texte du message.
   les autres conversations du même chantier, et le travail serait cru fait.
 - `traité:` est un geste explicite, daté et signé. C'est lui qui fait quitter la
   boîte, jamais la lecture.
+
+## Proposer un message : le bloc `message`
+
+La boîte s'écrit par l'interface, jamais par un agent (§7.3). Un agent ne crée
+donc pas le fichier : il **propose**, et la personne décide. La proposition se
+pose dans la réponse de l'agent, sous cette forme — l'interface en fait le
+fichier présenté plus haut :
+
+````
+```message
+pour: batisseur
+projet: obsia
+sujet: Faille CVE-2026-0000 dans le service de sauvegarde
+---
+
+Le texte du message.
+```
+````
+
+- Une clé par ligne — `pour`, `projet`, `sujet`, dans n'importe quel ordre — puis
+  une ligne faite de `---` seule. **Ce qui suit est le corps**, pris tel quel
+  jusqu'à la fin du bloc ; ce qui précède est la réponse ordinaire.
+- Un corps qui contient lui-même un bloc de code s'ouvre d'au moins **quatre**
+  accents graves ; ouvert de trois, le message est refusé, jamais coupé.
+- Les adresses suivent la table ci-dessus : au moins l'une des deux. Ni `de`, ni
+  `date`, ni `lu`, ni `traité` : c'est l'interface qui les pose.
+- **`de` ne s'écrit jamais dans le bloc** : un bloc qui signe est refusé, avec
+  son motif. C'est la règle de « Le message », vue du côté de l'auteur.
+- Le nom du fichier ne se choisit pas : l'interface le forme de la date à
+  l'heure, de l'agent et du sujet, et refuse un nom déjà pris plutôt que
+  d'écraser.
+- **Rien ne s'écrit avant une décision explicite** de la personne : elle accepte
+  ou renonce, et renoncer ne laisse aucune trace. Le bloc n'est pas du texte pour
+  le lecteur ; la façon dont l'interface présente et nomme cette décision ne fait
+  pas partie du contrat.
+- Un refus se lit et se corrige : ligne `---` absente, adresse vide ou inconnue,
+  sujet vide, corps vide, `de` signé, clé inconnue, nom déjà pris, sujet ou corps
+  au-delà du **plafond de taille**, sujet et corps, fixé par l'interface, deux
+  blocs `message` dans une même réponse.
+- Un message par bloc.
+- Sans interface, personne ne lit le bloc : le courrier s'y lit, il ne s'y
+  envoie pas (voir « Sous un autre harnais »).
 
 ## L'injection
 
