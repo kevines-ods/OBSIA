@@ -204,7 +204,11 @@ def ecrire_memoire_du_coffre(coffre: Path, produit: Path | None = None) -> list[
 
     Un coffre tiers n'a pas forcément la structure de mémoire du §6 : l'installeur
     la pose — le profil en gabarit, le README qui dit ce que `0-MEMOIRES/` garde,
-    et `0-MEMOIRES/préférences/`, où la première préférence viendra se ranger.
+    `0-MEMOIRES/préférences/`, où la première préférence viendra se ranger, et
+    `0-MEMOIRES/courrier/`, l'archive des messages traités. La boîte du courrier,
+    elle, vit dans `_MAINTENANCE/courrier/` (annexe `contrat-courrier.md`) et se
+    pose à part, par `poser_la_boite_du_courrier` : ce dossier-là est un marqueur
+    de coffre, il attend que le coffre existe.
     Comme `ecrire_gabarits_dinstance`, **rien n'est écrasé** — une réinstallation
     ne doit pas emporter ce qui a déjà été écrit — et rien ne s'écrit à travers un
     lien symbolique.
@@ -238,16 +242,40 @@ def ecrire_memoire_du_coffre(coffre: Path, produit: Path | None = None) -> list[
             # dit, et l'installeur continue ce qu'il a à faire ailleurs.
             refus.append("non écrit : %s (%s)." % (relatif, echec.strerror or echec))
 
-    # `préférences/` est vide tant que rien n'a été préféré : Git n'en gardera
-    # rien, mais l'agent qui écrit sa première préférence le trouve déjà là.
-    preferences = coffre / "0-MEMOIRES" / "préférences"
-    if not preferences.is_dir() and sous_un_lien(coffre, preferences) is None:
-        try:
-            preferences.mkdir(parents=True, exist_ok=True)
-        except OSError as echec:
-            refus.append("non créé : 0-MEMOIRES/préférences/ (%s)."
-                         % (echec.strerror or echec))
+    # Les dossiers vides que le contrat donne pour posés : `préférences/` tant
+    # que rien n'a été préféré, et `courrier/`, qui reçoit les messages traités.
+    refus.extend(_poser_dossier_vide(coffre, coffre / "0-MEMOIRES" / "préférences"))
+    refus.extend(_poser_dossier_vide(coffre, coffre / "0-MEMOIRES" / "courrier"))
     return refus
+
+
+def poser_la_boite_du_courrier(coffre: Path) -> list[str]:
+    """Pose `_MAINTENANCE/courrier/`, la boîte du courrier inter-agents (§7.3).
+
+    Un dossier vide, jamais réécrit : l'agent qui dépose son premier message le
+    trouve déjà là, au lieu d'avoir à ouvrir une zone du coffre qu'il n'a pas le
+    droit d'inventer.
+
+    À appeler **seulement dans un coffre reconnu**, et de préférence après la
+    mémoire : `_MAINTENANCE/` est un marqueur de coffre, l'ouvrir sous un dossier
+    qui n'en porte aucun le ferait passer pour un coffre, et l'installation
+    suivante y poserait un dépôt de données. C'est à l'appelant de vérifier —
+    `est_un_coffre_parent` vit dans `commun`, que ce module ne peut pas importer.
+    """
+    return _poser_dossier_vide(coffre, coffre / "_MAINTENANCE" / "courrier")
+
+
+def _poser_dossier_vide(coffre: Path, dossier: Path) -> list[str]:
+    """Crée un dossier vide que le contrat donne pour posé, sans rien écraser."""
+    if dossier.is_dir() or sous_un_lien(coffre, dossier) is not None:
+        return []
+    try:
+        dossier.mkdir(parents=True, exist_ok=True)
+    except OSError as echec:
+        return ["non créé : %s/ (%s)."
+                % (dossier.relative_to(coffre).as_posix(),
+                   echec.strerror or echec)]
+    return []
 
 
 # ------------------------------------------------------------ YAML minimal

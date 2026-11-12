@@ -279,14 +279,15 @@ preview** : elle se fait directement, sur place (§6).
 `_MAINTENANCE/courrier/` s'écrivent directement — un état de lecture, pas une
 réécriture (`contrat-courrier`).
 
-**Une exception, bornée** : l'outil déclaré qui écrit pour un modèle local
-piloté (`IA/MCP/ecrivain-du-coffre.md`), et qui consigne chaque écriture au carnet
-(§9), peut rendre le preview **avec** l'écriture, à condition qu'elle soit
+**Deux exceptions, bornées** : l'outil déclaré qui écrit pour un modèle local
+piloté (`IA/MCP/ecrivain-du-coffre.md`), et le harnais qui inscrit la ligne de
+tour d'une boucle d'équipe à son carnet, consignant chaque écriture (§9, ou
+journal), peuvent rendre le preview **avec** l'écriture, à condition qu'elle soit
 **annulable** — un acte, un commit limité à ses chemins, défait et consigné s'il
-est refusé ; détail : sa fiche et `contrat-coffre-parent`. La garde des secrets
-reste **avant** l'écriture.
+est refusé ; détail : `contrat-coffre-parent`. La garde des secrets reste
+**avant** l'écriture.
 
-Hors de ce cas, le preview affiché avant exécution reste la règle, sans exception.
+Hors de ces cas, le preview reste la règle, sans exception.
 
 Une action se consigne, sans nouveau preview, à son carnet ou, à défaut, au
 journal de `_MAINTENANCE/`. Le registre des notes traitées est

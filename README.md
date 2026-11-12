@@ -22,6 +22,13 @@ never leaves with it.
 > Folder names, frontmatter keys and file names stay in French: the scripts
 > read them literally.
 
+## Demo
+
+A [4-minute screen recording](https://github.com/kevines-ods/OBSIA/releases/download/demo-2026-11/obsia-demonstration.mp4)
+shows the base system on a fictional vault: agents, skills and project
+management driven from a coding harness. Later recordings go to the same
+[releases page](https://github.com/kevines-ods/OBSIA/releases).
+
 ## How it works
 
 OBSIA rests on three kinds of files:

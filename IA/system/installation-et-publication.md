@@ -89,7 +89,16 @@ l'aperçu le dit (« conservé »). Leur contenu n'est pas copié depuis la sour
 plus : la mémoire et les journaux de l'auteur ne partent pas chez le copié.
 `0-MEMOIRES/préférences/` est posé même vide — l'agent qui écrit sa première
 préférence le trouve déjà là —, et `<nom-agent>/expériences/` naît à la première
-leçon. Le coffre parent reste un dépôt
+leçon. Les deux dossiers du courrier inter-agents le sont aussi (§7.3, annexe
+`contrat-courrier.md`) : `0-MEMOIRES/courrier/` pour les messages traités, et
+`_MAINTENANCE/courrier/` pour la boîte — mais celui-ci **après** la mémoire, et
+seulement si le dossier est un coffre à ce moment-là : `_MAINTENANCE/` est
+elle-même un marqueur, l'ouvrir sous un dossier qui n'en sera pas un le ferait
+passer pour un coffre, et l'installation suivante y poserait un dépôt de données.
+L'ordre fait que le premier `--appliquer` sur un dossier vide pose la boîte du
+même coup : la mémoire qu'il vient d'écrire (`0-PERSONNELS/`, `0-MEMOIRES/`) en
+est un marqueur. Comme le reste, ces dossiers ne sont jamais vidés ni
+réécrits. Le coffre parent reste un dépôt
 Git **distinct** (§7.1) : l'installateur y pose la liste blanche `.gitignore`
 (§7.1) et l'initialise s'il n'est pas encore un dépôt, avec le nom du distant
 déclaré dans `obsia.local.yml` — mais il ne pousse **jamais** de lui-même :
