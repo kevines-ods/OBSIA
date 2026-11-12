@@ -23,6 +23,7 @@ import unittest
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
+from unittest import mock
 
 sys.dont_write_bytecode = True          # ne pas semer de __pycache__ dans le dépôt
 SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
@@ -1398,6 +1399,39 @@ class TestDepotDeDonnees(BaseInstalleur):
         self.assertIn("Quelqu'un, et ce qu'il aime.",
                       ancien.read_text(encoding="utf-8"))
 
+    def test_l_apercu_ne_promet_pas_plus_que_la_boite(self):
+        """L'aperçu dit la condition : la boîte suit le coffre, pas l'horaire.
+
+        Sur un dossier neutre, annoncer « créé » tout court promettrait une boîte
+        que la mémoire peut ne pas rendre (si elle est refusée, rien ne fait du
+        dossier un coffre). L'aperçu le dit en clair, au lieu de la promettre.
+        """
+        self.outiller_le_produit()
+        self.profil()
+
+        resultat = self.lancer("--appliquer")
+
+        lignes = [ligne for ligne in resultat.stdout.splitlines()
+                  if "_MAINTENANCE/courrier/" in ligne]
+        self.assertEqual(1, len(lignes), resultat.stdout)
+        self.assertIn("créé", lignes[0])
+        self.assertIn("si ce passage en fait un coffre", lignes[0],
+                      "dossier neutre : l'aperçu doit dire la condition")
+
+    def test_l_apercu_ne_pose_plus_de_condition_dans_un_coffre(self):
+        """Coffre déjà reconnu : la boîte n'est plus conditionnelle, l'aperçu non plus."""
+        self.marquer_le_coffre()
+        self.outiller_le_produit()
+        self.profil()
+
+        resultat = self.lancer("--appliquer")
+
+        lignes = [ligne for ligne in resultat.stdout.splitlines()
+                  if "_MAINTENANCE/courrier/" in ligne]
+        self.assertEqual(1, len(lignes), resultat.stdout)
+        self.assertIn("créé", lignes[0])
+        self.assertNotIn("si ce passage", lignes[0])
+
     def test_sans_marqueur_de_coffre_rien_n_est_outille(self):
         self.outiller_le_produit()
         self.profil()
@@ -1426,6 +1460,78 @@ class TestDepotDeDonnees(BaseInstalleur):
         self.assertIn("gelé", lireme)
         self.assertIn("ne peut s'appeler", lireme)
         self.assertTrue((self.parent / "0-MEMOIRES" / "préférences").is_dir())
+
+    def test_la_boite_du_courrier_nait_au_premier_passage(self):
+        """Le parcours documenté : un dossier vide, un seul `--appliquer`.
+
+        Aucun marqueur avant ce passage — la reconnaissance faite au début ne voit
+        rien. Mais ce passage écrit `0-PERSONNELS/` et `0-MEMOIRES/`, qui en sont :
+        le dossier est un coffre à la sortie. La boîte doit donc être là sans
+        attendre un deuxième passage, sinon le premier envoi d'un agent tombe sur
+        une zone absente. C'est le résidu qu'a trouvé le contrôle de cap, et ce
+        test le tient : il ne marque rien avant de lancer.
+        """
+        self.outiller_le_produit()
+        self.profil()
+        self.assertFalse((self.parent / "_MAINTENANCE").exists(),
+                         "le dossier de test ne doit porter aucun marqueur")
+
+        resultat = self.lancer("--appliquer")
+
+        self.assertEqual(0, resultat.returncode, resultat.stderr)
+        boite = self.parent / "_MAINTENANCE" / "courrier"
+        archive = self.parent / "0-MEMOIRES" / "courrier"
+        self.assertTrue(boite.is_dir(), "la boîte manque au premier passage")
+        self.assertTrue(archive.is_dir(), "l'archive manque au premier passage")
+        self.assertEqual([], sorted(boite.iterdir()), "la boîte naît vide")
+        self.assertEqual([], sorted(archive.iterdir()), "l'archive naît vide")
+
+    def test_sans_memoire_pas_de_boite(self):
+        """La moitié négative : la boîte ne précède pas la mémoire.
+
+        La mémoire est ce qui fait d'un dossier neutre un coffre — `0-PERSONNELS/`
+        et `0-MEMOIRES/` sont des marqueurs. Si elle est refusée, rien ne l'a fait
+        entrer dans la catégorie, et `_MAINTENANCE/` n'a aucune raison d'être
+        ouverte.
+
+        Ce cas ne se fabrique pas tout seul sur un disque : quand la mémoire
+        échoue vraiment, soit le dossier est fermé à l'écriture — et la boîte
+        échouerait pour la même raison —, soit le dossier porte déjà un marqueur
+        qui l'a fait reconnaître. Le refus est donc posé à la main, ce qui isole
+        exactement ce qu'on juge : la garde, seule.
+        """
+        produit = self.parent / "OBSIA"
+        (produit / "mémoire").mkdir(parents=True, exist_ok=True)
+        self.assertFalse(INS.est_un_coffre_parent(self.parent),
+                         "le dossier de test doit rester neutre")
+        refus = ["non écrit : 0-PERSONNELS/profil-utilisateur.md (Read-only file system)."]
+
+        with mock.patch.object(MOD, "ecrire_memoire_du_coffre", return_value=refus):
+            INS.preparer_memoire_du_coffre(produit)
+
+        self.assertFalse((self.parent / "0-MEMOIRES").exists(),
+                         "la mémoire a été jouée comme refusée : rien ne doit être posé")
+        self.assertFalse((self.parent / "_MAINTENANCE").exists(),
+                         "aucun marqueur de coffre ne doit avoir été ouvert")
+
+    def test_une_reinstallation_ne_touche_pas_au_courrier(self):
+        """Idempotent : ce que la boîte contient reste intact, octet pour octet."""
+        self.outiller_le_produit()
+        self.profil()
+        self.lancer("--appliquer")
+
+        message = (self.parent / "_MAINTENANCE" / "courrier"
+                   / "2026-11-11-0120-assistant--batisseur--un-mot.md")
+        message.write_text("Un mot.\n", encoding="utf-8")
+        archive = (self.parent / "0-MEMOIRES" / "courrier"
+                   / "2026-11-11--un-mot.md")
+        archive.write_text("Un mot rangé.\n", encoding="utf-8")
+
+        resultat = self.lancer("--appliquer")
+
+        self.assertEqual(0, resultat.returncode, resultat.stderr)
+        self.assertEqual("Un mot.\n", message.read_text(encoding="utf-8"))
+        self.assertEqual("Un mot rangé.\n", archive.read_text(encoding="utf-8"))
 
 
 class TestDossierPersonnel(BaseInstalleur):
@@ -1515,6 +1621,30 @@ class TestReadmeMemoiresSuitLeContrat(unittest.TestCase):
             self.assertIn("`courrier/`", pose)
             self.assertTrue((coffre / "0-MEMOIRES" / "préférences").is_dir(),
                             "§6 : `préférences/` est posé même vide")
+            self.assertTrue((coffre / "0-MEMOIRES" / "courrier").is_dir(),
+                            "l'archive du courrier est posée même vide")
+
+    def test_la_boite_se_pose_apres_la_memoire(self):
+        """`_MAINTENANCE/` est un marqueur : la mémoire seule ne l'ouvre jamais.
+
+        La boîte a sa propre fonction, que l'installeur appelle **après** la
+        mémoire — le moment où le dossier est devenu un coffre, même s'il n'en
+        portait aucun marqueur au début. Écrire `_MAINTENANCE/` depuis la mémoire
+        reviendrait à l'ouvrir sous un dossier qui ne deviendra peut-être jamais un
+        coffre, et le passage suivant y poserait un dépôt de données.
+        """
+        with tempfile.TemporaryDirectory() as dossier:
+            coffre = Path(dossier)
+            self.assertEqual([], MOD.ecrire_memoire_du_coffre(coffre))
+            self.assertTrue((coffre / "0-MEMOIRES" / "courrier").is_dir(),
+                            "l'archive du courrier est posée même vide")
+            self.assertFalse((coffre / "_MAINTENANCE").exists(),
+                             "aucun marqueur de coffre inventé par la mémoire")
+
+            self.assertEqual([], MOD.poser_la_boite_du_courrier(coffre))
+            self.assertTrue((coffre / "_MAINTENANCE" / "courrier").is_dir())
+            # Idempotent : repasser ne touche à rien.
+            self.assertEqual([], MOD.poser_la_boite_du_courrier(coffre))
 
 
 if __name__ == "__main__":

@@ -328,7 +328,54 @@ seul commit défait l'acte sans toucher au reste. « Annulable » n'est pas
 **garde des secrets reste avant l'écriture** : elle ne s'appuie jamais sur
 l'annulabilité.
 
-Hors de ce cas, le preview affiché avant exécution reste la règle, sans exception.
+**La seconde exception — la ligne de tour d'une boucle d'équipe.** Elle ne vaut
+que pour **le serveur OBSIA-UI** (`obsia_ui/`), **sur la machine qui porte les
+agents** (§7.1), qui conduit une boucle d'équipe (skill `orchestration-equipe`,
+§6 et §8), et **seulement une fois que son code fait chacun des gestes
+ci-dessous**, ce que prouve sa suite `tests/test_ligne_de_tour.py` (un cas
+par geste). L'exception tombe dès que cette suite manque ou cesse d'être verte
+sur la branche par défaut d'OBSIA-UI ; le preview avant écriture s'applique
+alors. Le constat revient à qui relit ou fusionne une PR d'OBSIA-UI. À chaque
+tour, il ajoute à la fin du carnet du chantier que la boucle
+sert **une ligne physique et une seule**, bornée :
+
+- quatre champs — numéro de tour, membre (un agent de l'équipe déclarée), statut
+  (le vocabulaire fermé `STATUTS_FINAUX` d'OBSIA-UI, jamais un texte du modèle),
+  compteur (un entier) ; longueur plafonnée par la constante `LIGNE_DE_TOUR_MAX`
+  d'OBSIA-UI (200 caractères) ; **hors de ces bornes, refus**, jamais une
+  troncature ;
+- la **garde des secrets** passe sur la ligne **avant** l'ajout ; un motif reconnu
+  ⇒ refus ;
+- un **verrou de fichier propre au serveur**, dans le dépôt de données et sous
+  un autre nom que celui des agents, tenu de la lecture du carnet au commit
+  vérifié, sérialise ses ajouts, même entre deux instances du serveur ; il ne
+  prend pas le verrou d'écriture des agents, qu'il ne bloque donc jamais. Contre
+  les autres écrivains, deux contrôles le remplacent : le carnet doit être
+  **propre** dans le dépôt de données (aucune modification non commitée), et la
+  ligne du tour précédent doit se retrouver **à l'identique** dans la version
+  commitée du carnet — le gestionnaire a pu écrire avant ou après elle ; absente
+  ou modifiée, refus ;
+- un tour = **un commit** du seul carnet, marqué dans son message, sur la branche
+  par défaut du dépôt de données ; avant de commiter, l'index ne doit porter que
+  ce carnet et que cette ligne ajoutée — sinon la ligne est retirée de la copie de
+  travail, rien n'est commité ;
+- un commit fait et reconnu faux après coup ne se défait que par **`git revert`
+  de ce seul commit** ; si le revert lui-même ne s'applique pas proprement, on
+  s'arrête **sans toucher** au dépôt — jamais `reset`, jamais réécriture
+  d'histoire, jamais le commit d'un autre.
+
+Tout refus ou échec est **consigné au journal de `_MAINTENANCE/`** (la cible de la
+consignation de cette exception) et **arrête la boucle** : sans ligne, pas de tour
+suivant. L'annonce et la trace accompagnent la ligne — copie datée du carnet dans
+`_MAINTENANCE/`, action au journal — et l'interface la montre. **Rien d'autre** ne
+passe par là : ni le plan, ni la revue, ni le bilan, ni une autre note, qui gardent
+leur preview avant écriture. Le gestionnaire reste l'auteur du carnet (§1 et §7 du
+skill) : la ligne de tour n'en est qu'un ajout en fin de fichier, et elle cède la
+place — un carnet en cours d'écriture par un autre fait refuser la ligne, jamais
+l'inverse. Raison de l'exception : le carnet est la source de la reprise (§8 du
+skill) et doit survivre à la perte de l'interface.
+
+Hors de ces cas, le preview reste la règle, sans exception.
 
 Le registre des notes traitées est le fichier
 **`Mon coffre/_MAINTENANCE/notes_remplies.md`** — une note Markdown, pour

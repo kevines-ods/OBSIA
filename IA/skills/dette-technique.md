@@ -35,7 +35,8 @@ git -C <dépôt> log --format= --name-only | sort | uniq -c | sort -rn | head -1
 
 Les failles de sécurité ne se collectent pas ici : c'est l'objet de
 `audit-de-securite`, porté par le relecteur (module `revue`). Si un audit a
-été fait, reprendre ses constats comme entrées ; si le module n'est pas
+été fait, reprendre ses `confirmé` et ses `durcissement` comme entrées — jamais
+un `à valider` ni un `écarté` ; si le module n'est pas
 installé, le dire dans `docs/DETTE.md` : la sécurité n'a pas été regardée.
 
 ### 2. Qualifier chaque entrée

@@ -201,11 +201,26 @@ def apercu(modules: list[dict], actifs: set[str], racine: Path,
         print("  ! le coffre parent est votre dossier personnel : --appliquer")
         print("    refusera d'installer. Placez OBSIA dans un dossier de coffre")
         print("    dédié (DEMARRAGE.md, étape 1).")
+    reconnu = est_un_coffre_parent(coffre_parent)
     for rel in ("0-PERSONNELS/profil-utilisateur.md", "0-MEMOIRES/README.md",
-                "0-MEMOIRES/préférences/"):
+                "0-MEMOIRES/préférences/", "0-MEMOIRES/courrier/"):
         chemin = coffre_parent / rel
         print("      %-9s: %s" % ("conservé" if chemin.exists() else "créé", rel))
-    if est_un_coffre_parent(coffre_parent):
+    # La boîte, elle, est conditionnelle, et l'aperçu le dit : `_MAINTENANCE/` est
+    # un marqueur de coffre (§7.1), l'ouvrir sous un dossier qui n'en sera pas un
+    # le ferait passer pour un coffre. Dans un dossier neutre, c'est la mémoire de
+    # ce passage qui l'y fait entrer — `0-PERSONNELS/` et `0-MEMOIRES/` sont des
+    # marqueurs —, et la boîte suit ; si cette mémoire est refusée, elle ne suit
+    # pas. Annoncer « créé » tout court promettrait plus que l'installeur ne tient.
+    boite = coffre_parent / "_MAINTENANCE" / "courrier"
+    if boite.is_dir():
+        print("      %-9s: %s" % ("conservé", "_MAINTENANCE/courrier/"))
+    elif reconnu:
+        print("      %-9s: %s" % ("créé", "_MAINTENANCE/courrier/"))
+    else:
+        print("      %-9s: %s" % ("créé", "_MAINTENANCE/courrier/ "
+                                  "(si ce passage en fait un coffre)"))
+    if reconnu:
         for rel, mot in ((".gitignore", "conservé"),
                          (".githooks/pre-commit", "rafraîchi"),
                          (".githooks/post-commit", "rafraîchi"),
@@ -875,14 +890,27 @@ def preparer_memoire_du_coffre(produit: Path) -> None:
     `0-PERSONNELS/` reçoit le profil, `0-MEMOIRES/` son README : il explique les
     deux mémoires qu'il porte — celle des agents, vivante (`préférences/`,
     `<nom-agent>/expériences/`, `courrier/`), et les chantiers clos, gelés.
-    `0-MEMOIRES/préférences/` est posé même vide (§6) ;
-    `<nom-agent>/expériences/` naît à la première leçon.
+    `0-MEMOIRES/préférences/` et `0-MEMOIRES/courrier/` sont posés même vides
+    (§6, annexe `contrat-courrier.md`) ; `<nom-agent>/expériences/` naît à la
+    première leçon.
+
+    La boîte du courrier, `_MAINTENANCE/courrier/`, vient **après**, et seulement
+    si le coffre est reconnu à ce moment-là : `_MAINTENANCE/` est elle-même un
+    marqueur (§7.1), et l'ouvrir ailleurs ferait croire à un coffre. L'ordre
+    compte pour le parcours documenté — dossier vide, un seul `--appliquer` : la
+    reconnaissance faite avant ce passage ne trouve aucun marqueur, mais les
+    `0-PERSONNELS/` et `0-MEMOIRES/` que ce passage vient d'écrire en sont : le
+    dossier est un coffre à la sortie, et la boîte y a sa place. Reconnaître une
+    fois pour toutes au début la ferait naître au deuxième passage seulement.
 
     Rien n'y est écrasé : un profil rempli fait refuser la pose du gabarit, et
     le refus est dit. La migration le déplacera.
     """
     for refus in MOD.ecrire_memoire_du_coffre(produit.parent, produit):
         print("  ! %s" % refus, file=sys.stderr)
+    if est_un_coffre_parent(produit.parent):
+        for refus in MOD.poser_la_boite_du_courrier(produit.parent):
+            print("  ! %s" % refus, file=sys.stderr)
 
 
 def preparer_depot_de_donnees(produit: Path, racine: Path) -> None:

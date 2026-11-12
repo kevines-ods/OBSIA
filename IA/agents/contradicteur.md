@@ -60,7 +60,7 @@ déclarer un outil capable d'écrire sur un dépôt distant contredirait sa natu
 | Objet | Skill | Sortie |
 | --- | --- | --- |
 | un diff, avant livraison | `revue-de-code` | des constats classés par gravité, chacun avec son scénario d'échec |
-| un projet entier, avant de l'étoffer ou de le mettre en ligne | `audit-de-securite` | des failles classées par gravité, chacune avec son scénario d'attaque, et les angles morts de l'audit |
+| un projet entier, avant de l'étoffer ou de le mettre en ligne | `audit-de-securite` | des constats avec leur verdict — `confirmé` et sa gravité, `à valider`, `durcissement`, `écarté` — et les angles morts de l'audit |
 | une décision non triviale, avant qu'elle tienne | `relecture-adverse` | ce qui la ferait tomber, ou l'aveu qu'on n'a rien trouvé |
 
 Pour retrouver ce qui a été décidé auparavant : `obsidian-manager`, et
