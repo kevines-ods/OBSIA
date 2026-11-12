@@ -45,7 +45,7 @@ pour: batisseur
 projet: obsia
 sujet: Faille CVE-2026-0000 dans le service de sauvegarde
 lu:
-  - "2026-11-10 batisseur 3f2a"      # une ligne par lecture : date, agent, conversation
+  - "2026-11-10 batisseur 7c1e4b0a9d3f42e8b6a2d5c70f18e394"   # une ligne par lecture : date, agent, conversation
 traité: "2026-11-11 utilisateur"
 ---
 
