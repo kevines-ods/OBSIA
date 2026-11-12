@@ -18,8 +18,13 @@ Sleep 700ms
 Enter
 Sleep 6s
 
-Type "J'aimerais ajouter une caméra avec reconnaissance d'images dans le cloud. Demande au visionnaire si ça va dans le sens du projet."
+# « @ » ouvre la liste : Entrée retient le sous-agent, la phrase suit.
+Type "@vision"
+Sleep 1200ms
+Enter
+Sleep 600ms
+Type "j'aimerais ajouter une caméra avec reconnaissance d'images dans le cloud. Est-ce que ça va dans le sens du projet ?"
 Sleep 900ms
 Enter
-Wait+Screen@240s /Build · .+ · [0-9.]+m? ?[0-9.]*s/
+Wait+Screen@300s /Build · .+ · [0-9.]+m? ?[0-9.]*s/
 Sleep 7s

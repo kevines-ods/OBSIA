@@ -37,12 +37,15 @@ for scene in "${scenes[@]}"; do
   [ -f "$bande" ] || { echo "Scène inconnue : $scene" >&2; exit 1; }
   echo "── $scene ($modele)"
   "$ici/monter_coffre_fictif.sh" "$dossier" >/dev/null
+  # external_directory : sans lui, un chemin à espace (« Mon coffre ») échappé par
+  # le modèle passe pour un dossier extérieur et bloque la prise sur une question.
   # Le visionnaire et le contradicteur sont déclarés en sous-agents : leur prompt
   # pointe la fiche du dépôt, rien n'est recopié (adaptateurs-harness/opencode.md §3).
   cat > "$OBSIA_DEMO_COFFRE/opencode.json" <<JSON
 {
   "\$schema": "https://opencode.ai/config.json",
   "model": "$modele",
+  "permission": { "external_directory": "allow" },
   "agent": {
     "visionnaire": {
       "mode": "subagent",

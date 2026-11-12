@@ -18,7 +18,7 @@ Sleep 700ms
 Enter
 Sleep 6s
 
-Type "Range mes notes en vrac, s'il te plaît."
+Type "Montre-moi d'abord comment tu rangerais mes notes en vrac."
 Sleep 900ms
 Enter
 Wait+Screen@180s /Build · .+ · [0-9.]+m? ?[0-9.]*s/
@@ -29,4 +29,4 @@ Sleep 5s
 Type "Oui, vas-y."
 Sleep 900ms
 Enter
-Sleep 75s
+Sleep 170s
