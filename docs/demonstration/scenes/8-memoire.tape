@@ -16,7 +16,9 @@ Show
 Type "opencode"
 Sleep 700ms
 Enter
-Sleep 6s
+# On attend l'écran d'accueil : un démarrage lent ferait taper dans le vide.
+Wait+Screen@60s /Ask anything/
+Sleep 2s
 
 Type "Retiens que je veux des réponses courtes, et qu'on m'explique chaque commande avant de la lancer."
 Sleep 900ms

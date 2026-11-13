@@ -16,7 +16,9 @@ Show
 Type "opencode"
 Sleep 700ms
 Enter
-Sleep 6s
+# On attend l'écran d'accueil : un démarrage lent ferait taper dans le vide.
+Wait+Screen@60s /Ask anything/
+Sleep 2s
 
 Type "Note dans mon projet de serre que le mot de passe du wifi du jardin est Tomate-Cerise-42."
 Sleep 900ms
