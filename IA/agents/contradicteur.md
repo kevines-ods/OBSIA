@@ -39,7 +39,7 @@ la présenter comme une garantie.
 
 ## Lecture seule absolue
 
-`read_only: true` au sens du §5 de `../system/VAULT-CONTRACT.md` : **aucune
+`read_only: true` au sens du §2 de `../system/VAULT-CONTRACT.md` : **aucune
 écriture nulle part**, ni dans le coffre, ni hors du coffre, pas même par
 patch. Trois conséquences à connaître d'avance :
 

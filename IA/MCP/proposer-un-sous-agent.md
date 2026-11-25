@@ -50,6 +50,10 @@ contrat, et ses écritures suivent le §7 comme celles de tout agent.
 - **Une tâche bornée, de lecture par défaut** : lire, chercher, résumer un lot
   de fichiers. Le sous-agent ne voit pas la conversation : la tâche dit tout.
   L'écriture n'est possible que si la version choisie l'autorise.
+- **Un sous-agent est un lecteur, pas un second administrateur** : la
+  délégation confie une tâche, elle ne transmet ni le rôle ni les droits de
+  l'appelant — l'administrateur peut déléguer une lecture, il ne délègue
+  jamais l'administration.
 - **L'interface borne** : chemins sous la racine du coffre seulement, délai
   réglable au-delà duquel l'appel répond « délai dépassé ».
 - **Le compte rendu ne s'écrit jamais tel quel** : l'agent appelant le
@@ -59,8 +63,8 @@ contrat, et ses écritures suivent le §7 comme celles de tout agent.
   réponse, une ligne par appel au carnet — du chantier ou du jour, à défaut le
   journal de `_MAINTENANCE/` — (§9), refus compris ; le serveur n'écrit rien.
 - **Qui le déclare** : les agents `read_only: false` qui travaillent depuis
-  l'interface (`assistant`, `batisseur`). Un agent en lecture seule ne pourrait
-  pas consigner l'appel.
+  l'interface (`assistant`, `batisseur`, `administrateur`). Un agent en lecture
+  seule ne pourrait pas consigner l'appel.
 
 ## Sécurité
 

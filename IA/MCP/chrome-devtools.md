@@ -7,6 +7,12 @@ module: navigateur
 type: tool
 transport: stdio
 permission: elevated
+outils_lecture:
+  - list_pages
+  - list_console_messages
+  - take_screenshot
+outils_effet_externe:
+  - navigate_page
 ---
 
 # MCP — Chrome DevTools

@@ -23,10 +23,18 @@ cd ~/obsia-worktrees/<nom-agent>-<sujet>
 Jamais sous `/tmp` : un dossier temporaire se vide au redémarrage, et le
 worktree part avec lui — ce qui n'est pas commité est perdu.
 
+**Une seule racine, `~/obsia-worktrees/`, pour tous les dépôts** — produit,
+interface, dépôt extérieur —, à plat : `~/obsia-worktrees/<nom-agent>-<sujet>`.
+Ni un dossier par dépôt, ni un dossier caché dans le coffre : c'est le seul
+dossier qu'une interface ouvre à l'écriture d'un agent (le préfixe
+`<nom-agent>-` dit à qui il est), et le seul que `ranger_worktrees.py` signale
+comme rangé.
+
 Un **nouveau chantier** ouvre une branche **et** un worktree neufs : le worktree
 d'un chantier précédent ne se réutilise jamais, même pour un sujet voisin. Dans
 les commandes ci-dessus, `<sujet>` nomme donc le **chantier**, pas la séance, et
-le dossier ne sert qu'à lui — de son ouverture jusqu'à sa pull request (§« Finir »).
+le dossier ne sert qu'à lui — de son ouverture jusqu'à la fusion de sa pull
+request (§« Finir »).
 On repart de `origin/main`, sinon la branche hérite du travail inachevé du chantier
 d'avant.
 
@@ -45,7 +53,10 @@ worktrees.
 
 Avant de créer un worktree, `git worktree list` dit qui travaille déjà, et sur
 quoi. Un worktree ou une branche préfixés du nom d'un autre agent sont à lui :
-on ne les modifie pas, on ne les supprime pas, même fusionnés. On le signale.
+on ne les modifie pas, on ne les supprime pas. On le signale. Seule exception :
+un worktree **fusionné et propre** n'est plus un travail ; n'importe quel agent
+le retire, avec sa branche locale, par `ranger_worktrees.py` et par lui seul —
+jamais par un `git worktree remove` à la main (§« Finir »).
 
 ## Avant de pousser
 
@@ -88,14 +99,65 @@ python3 scripts/publier.py --cible ~/OBSIA-public   # aperçu
 
 ## Finir
 
-Une fois la pull request ouverte, le worktree n'a plus d'usage :
+Le worktree sert jusqu'à la **fusion** : les corrections de relecture s'y
+font. Une fois la pull request fusionnée, il n'a plus d'usage. Le ménage se
+fait pour tous d'un coup, **depuis l'arbre principal du dépôt produit**, les
+autres dépôts touchés (interface, dépôt extérieur) passés en argument :
 
 ```bash
-git worktree remove ~/obsia-worktrees/<nom-agent>-<sujet>
+git -C <depot> fetch --prune origin                          # pour chaque dépôt
+python3 scripts/ranger_worktrees.py . <depot> ...            # aperçu
+python3 scripts/ranger_worktrees.py . <depot> ... --appliquer
 ```
 
-La branche locale peut rester jusqu'à la fusion ; elle se supprime ensuite.
-On ne retire que **ses propres** worktrees.
+Il ne retire un worktree que si sa branche est celle d'un agent, porte au moins
+un commit à elle, descend de la branche par défaut distante, et si le dossier
+est propre (ni modification, ni fichier non suivi, ni fichier ignoré hors des
+caches qui se refont), non verrouillé et sans activité depuis une heure — puis
+sa branche locale, si elle pointe encore sur la tête jugée fusionnée. Un
+worktree **neuf**, encore vide sur `origin/main`, reste donc en place, comme une
+tête détachée (publication, rebase en cours). Il ne force jamais, et dit chaque refus de git. Une branche
+abandonnée sans fusion (PR fermée) ne passe pas par lui : elle se retire à la
+main, par son agent ou sur accord de l'utilisateur.
+
+Côté distant, la branche d'une PR fusionnée se supprime d'elle-même si le dépôt
+l'a réglé (`delete_branch_on_merge` sur GitHub) ; à régler sur chaque dépôt où
+travaillent des agents.
+
+## Les dépôts extérieurs
+
+Le §2.1 vaut pour le dépôt produit ; le §3 du contrat l'étend à tout dépôt
+extérieur sur lequel un agent `read_only: false` travaille : **l'arbre
+principal d'un dépôt extérieur reste sur sa branche par défaut — il ne fait
+que s'y mettre à jour ; tout travail se fait dans un worktree lié.** Un clone
+de déploiement appartient au service qui le lit : une séance qui y change de
+branche, même « juste pour un essai », fait tourner ce service sur une
+branche de travail non relue — l'incident du 2026-11-16, où l'arbre de
+déploiement d'une interface s'est retrouvé sur la branche d'une séance.
+
+Deux objets, deux gestes — un dépôt extérieur se regarde d'abord sous
+l'un ou l'autre :
+
+- le **dépôt de contribution**, où la séance apporte un changement : worktree
+  lié, branche `<agent>/<sujet>`, pull request — les commandes du § «
+  Commencer un travail » ci-dessous ;
+- le **clone de déploiement**, que lit un service (ex. le garde-fou du
+  lanceur d'une interface) : il n'ouvre jamais de worktree de travail ni de
+  branche — seules y passent `fetch` puis `pull --ff-only`, et le service
+  relancé ensuite ; si le déploiement exige un changement, il se fait
+  **ailleurs**, dans le dépôt de contribution, et le clone le suit par sa
+  mise à jour.
+
+Mise à jour de l'arbre principal, sans en changer la branche :
+
+```bash
+git -C <depot> fetch origin
+git -C <depot> pull --ff-only
+```
+
+Tout travail y ouvre un worktree, les commandes du § « Commencer un travail »
+ci-dessus, depuis le dépôt extérieur : worktree hors `/tmp`, un chantier une
+branche, PR sur la branche par défaut du dépôt visé.
 
 ## Activer la garde sur une machine
 

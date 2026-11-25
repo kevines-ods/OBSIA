@@ -7,6 +7,14 @@ module: coffre-obsidian
 type: tool
 transport: stdio
 permission: normal
+outils_lecture:
+  - list_files_in_vault
+  - list_files_in_dir
+  - get_file_contents
+  - search
+outils_ecriture_locale:
+  - append_content
+  - patch_content
 ---
 
 # MCP — Obsidian (API REST locale)

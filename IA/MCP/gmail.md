@@ -7,6 +7,37 @@ module: messagerie
 type: tool
 transport: stdio
 permission: elevated
+outils_lecture:
+  - search_emails
+  - read_email
+  - get_thread
+  - get_inbox_with_threads
+  - list_inbox_threads
+  - list_email_labels
+  - list_drafts
+  - get_draft
+outils_ecriture_locale:
+  - download_attachment
+  - download_all_attachments
+  - download_email
+outils_effet_externe:
+  - send_email
+  - reply_to_email
+  - reply_all
+  - forward_email
+  - send_draft
+  - draft_email
+  - update_draft
+  - delete_draft
+  - modify_email
+  - modify_thread
+  - batch_modify_emails
+  - move_to_spam
+  - move_to_spam_batch
+  - create_label
+  - update_label
+  - delete_label
+  - get_or_create_label
 ---
 
 # MCP — Gmail
@@ -155,7 +186,14 @@ ici, **dans chaque harnais**. La première les commande toutes :
   harnais. Elles portent sur le texte et se contournent : seules, elles ne
   protègent pas.
 - **Journal d'audit** : `GMAIL_MCP_AUDIT_LOG`, **chemin absolu**, hors dépôt.
-  Un chemin relatif n'écrit rien, sans erreur.
+  Un chemin relatif n'écrit rien, sans erreur. Dans un harnais qui range sa
+  configuration hors du dépôt — le `mcp.local.json` d'OBSIA-UI, par exemple —,
+  la place se tient là et non dans le gabarit : tant qu'une valeur d'exemple y
+  subsiste, le harnais n'envoie pas le serveur et ne le dit qu'à la première
+  session (avis « non envoyé : à régler »). Prendre alors le dossier d'état de
+  l'interface — `~/.local/state/obsia-ui/gmail-audit.jsonl`, dossier en `0700` —
+  et non le dossier de données, qui porte `mcp.local.json` et les jetons des
+  autres serveurs.
 
 Les pièces jointes ne se lisent que dans `~/GmailAttachments/` (défaut du
 serveur) : y déposer le document à envoyer.

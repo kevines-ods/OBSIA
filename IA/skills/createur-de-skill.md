@@ -148,6 +148,21 @@ permission: normal       # ou: elevated
 ---
 ```
 
+**La classe d'effet de chaque outil**, facultative, se déclare par trois
+listes : `outils_lecture` (lit sans rien changer), `outils_ecriture_locale`
+(écrit sur la machine) et `outils_effet_externe` (agit hors de la machine :
+envoi, PR, suppression distante). Un client qui expose ces outils à un modèle
+décide d'après elles ; un outil absent des trois est **non déclaré** et se
+demande à chaque appel, jamais accordé d'office. Un même outil dans deux
+listes est refusé par le vérificateur. Dans le doute, ne pas le classer.
+
+```yaml
+outils_lecture:
+  - get_file_contents
+outils_effet_externe:
+  - create_pull_request
+```
+
 Deux pièges, et ils se paient tous les deux plus tard :
 
 - **`type: tool` n'est pas le `type` d'un skill.** Même clé, vocabulaire

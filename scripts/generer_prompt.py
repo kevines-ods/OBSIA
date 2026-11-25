@@ -568,6 +568,9 @@ PLAFOND_COMPACT = 8000
 #: aucune copie à rafraîchir (§5).
 SECTION_ECRITURE = re.compile(r"^## 2\. .*?(?=^##)", re.MULTILINE | re.DOTALL)
 
+#: Une ligne qui n'est qu'un commentaire HTML, retirée du §2 cité.
+COMMENTAIRE_SEUL = re.compile(r"^<!--.*?-->[ \t]*\n", re.MULTILINE)
+
 
 class NoyauIncomplet(ValueError):
     """Un noyau présent auquel manque une règle grave que le prompt compact porte."""
@@ -586,7 +589,10 @@ def section_ecriture(racine: Path = RACINE_DEFAUT) -> str:
     m = SECTION_ECRITURE.search(contrat)
     if m is None:
         raise NoyauIncomplet("le §2 (écriture) est introuvable dans le noyau")
-    return m.group(0).strip("\n")
+    # Les commentaires HTML (repères, renvois au code) sont muets dans
+    # Obsidian mais lus par le modèle : un petit modèle les prend pour des
+    # consignes, et ils mangent le plafond. Ils ne passent pas.
+    return COMMENTAIRE_SEUL.sub("", m.group(0)).strip("\n")
 
 
 #: Ligne A2 (plan d'économie de contexte) : les sections du noyau qu'un délégué

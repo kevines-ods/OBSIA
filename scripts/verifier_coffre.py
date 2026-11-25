@@ -530,6 +530,10 @@ def verifier_regle_des_secrets():
     return VCT.verifier_regle_des_secrets(RACINE, erreur)
 
 
+def verifier_annexes_du_preambule():
+    return VCT.verifier_annexes_du_preambule(RACINE, erreur)
+
+
 def verifier_clauses_datees_du_noyau(aujourdhui=None):
     # Le jour se lit ici : `verifier_dates.py` ne remplace `date` que dans ce module.
     if aujourdhui is None:
@@ -635,6 +639,7 @@ def main(argv=None) -> int:
     verifier_taches_coffre(taches, agents)
     modules = verifier_modules(RACINE / "IA" / "system" / "modules")
     verifier_annexes_contrat(RACINE / "IA" / "system" / "contrat", modules)
+    verifier_annexes_du_preambule()
     verifier_profil(modules)
     verifier_appartenance(modules, agents, skills, mcp, taches)
     verifier_renvois_entre_modules(modules, skills)

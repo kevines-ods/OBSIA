@@ -7,6 +7,11 @@ module: services-nextcloud
 type: tool
 transport: stdio
 permission: elevated
+outils_effet_externe:
+  - nc_calendar_delete_event
+  - nc_notes_delete_note
+  - nc_share_delete
+  - nc_webdav_delete_resource
 ---
 
 # MCP — Nextcloud

@@ -20,6 +20,7 @@ from generer_prompt import (PLAFOND_COMPACT, RACINE_DEFAUT,       # noqa: E402
                             NOYAU, BalisageInvalide, NoyauIncomplet,
                             chemins_absolus, corps_declaratif, decouper_en_phases,
                             lire_frontmatter, prompt_compact, regle_des_secrets,
+                            regle_ecriture,
                             section_ecriture, skills_par_phase)
 
 SCRIPT = RACINE_DEFAUT / "scripts" / "generer_prompt.py"
@@ -55,6 +56,20 @@ class TestLePromptCompact(unittest.TestCase):
         for ligne in regle.splitlines():
             self.assertIn(ligne, prompt)
         self.assertIn("preview", ecriture)
+
+    def test_il_porte_ou_ranger_et_quand_supprimer(self):
+        """Les deux épreuves que les petits modèles ratent (2026-11-19) :
+        ranger un projet personnel, supprimer une préférence. Le prompt compact
+        s'arrête au §2.1 ; si la règle d'écriture redescend sous ce titre, il
+        perd la liste des zones et la règle de suppression sans rien dire."""
+        prompt = compact_ou_saut(self, "assistant")
+        self.assertIn(regle_ecriture(RACINE_DEFAUT), section_ecriture(RACINE_DEFAUT))
+        self.assertNotIn("<!--", prompt)
+        for attendu in ("`0-PROJETS/<projet>/`", "Un projet, même personnel",
+                        "**Supprimer**", "historique Git du dépôt de données",
+                        "création d'un carnet comprise", "`0-PERSONNELS/` décrit la personne"):
+            with self.subTest(attendu=attendu):
+                self.assertIn(attendu, prompt)
 
     def test_il_porte_la_fiche_et_chaque_skill_en_une_ligne(self):
         fiche = RACINE_DEFAUT / "IA" / "agents" / "assistant.md"

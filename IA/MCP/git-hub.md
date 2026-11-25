@@ -7,6 +7,17 @@ module: construction
 type: tool
 transport: http
 permission: elevated
+outils_lecture:
+  - get_file_contents
+  - get_commit
+  - get_pull_request
+  - list_commits
+  - list_issues
+  - list_pull_requests
+outils_effet_externe:
+  - create_issue
+  - create_or_update_file
+  - create_pull_request
 ---
 
 # MCP — Git Hub

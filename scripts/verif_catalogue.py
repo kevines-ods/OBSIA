@@ -126,6 +126,11 @@ def verifier_fichier(ctx, chemin: Path, genre: str, champs_requis: tuple = CHAMP
 
 TRANSPORTS = ("stdio", "http")
 PERMISSIONS = ("normal", "elevated")
+# Classe d'effet d'un outil MCP, déclarée par la fiche (une liste par classe).
+# Un outil absent de toutes les listes est « non déclaré » : un client le
+# demande à chaque appel, il ne l'accorde jamais d'office.
+CLASSES_OUTILS = ("outils_lecture", "outils_ecriture_locale",
+                  "outils_effet_externe")
 
 
 def verifier_mcp(ctx, dossier: Path) -> list[dict]:
@@ -155,6 +160,21 @@ def verifier_mcp(ctx, dossier: Path) -> list[dict]:
         if fm.get("permission") not in PERMISSIONS:
             ctx.erreur(rel, "`permission: %s` — attendu %s (§5)"
                    % (fm.get("permission"), " ou ".join(PERMISSIONS)))
+        vus = {}
+        for classe in CLASSES_OUTILS:
+            if classe not in fm:
+                continue
+            outils = fm[classe]
+            if not isinstance(outils, list) or not all(
+                    isinstance(o, str) and o for o in outils):
+                ctx.erreur(rel, "`%s` — attendu une liste de noms d'outils (§5)"
+                           % classe)
+                continue
+            for outil in outils:
+                if outil in vus:
+                    ctx.erreur(rel, "outil `%s` dans deux classes : `%s` et `%s` (§5)"
+                               % (outil, vus[outil], classe))
+                vus[outil] = classe
         fm["_chemin"] = rel
         resultats.append(fm)
     return resultats

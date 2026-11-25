@@ -1,0 +1,56 @@
+name: Registre des leçons
+
+# Toute PR qui modifie un skill (`IA/skills/`) rend sa trace au registre des
+# leçons (`IA/system/impact-des-skills.md`) : une ligne datée, une colonne
+# « Vérifié par » remplie — et un « non rejoué » qui dit pourquoi.
+#
+# Pourquoi ici, et pas dans « Vérifier le coffre » : comme le plancher, ce
+# contrôle juge un *diff* contre une base, il ne regarde pas l'arbre — il n'a
+# donc rien à dire hors pull request.
+#
+# Pourquoi dans son propre workflow : il ne se déclenche que sur une PR, et
+# n'allonge pas les suites qui tournent à chaque poussée d'une vérification
+# que les poussées hors PR ne peuvent pas satisfaire.
+#
+# Comme le garde-plancher, il échappe au versement de publication : une
+# publication verse d'un coup un arbre déjà relu, PR par PR, par ce même
+# contrôle — juger ce versement comme du travail neuf le ferait crier sur
+# des lignes déjà arbitrées.
+#
+# Et comme « Texte de la pull request », il lit sa règle dans la tête de la
+# PR : une règle neuve s'applique à la PR qui l'ajoute. C'est un demi-verrou —
+# une PR peut réécrire ce garde dans le même geste ; la relecture humaine
+# reste la voie de secours. « Un signal, pas un verrou ».
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+# `contents: read` suffit : on lit le diff, rien de plus.
+permissions:
+  contents: read
+
+jobs:
+  registre:
+    if: ${{ !(github.event.repository.private == false && startsWith(github.head_ref, 'publication/')) }}
+    runs-on: ubuntu-latest
+    steps:
+      # `fetch-depth: 0` : le garde compare la tête à sa base, un clone
+      # superficiel ne connaît pas la base.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Une PR qui touche un skill rend sa trace au registre
+        env:
+          # Passée par l'environnement, jamais interpolée dans le script :
+          # un nom de branche est une donnée de l'auteur, pas du code.
+          BASE: ${{ github.event.pull_request.base.ref || 'main' }}
+        run: |
+          # La base peut manquer selon la façon dont la référence a été
+          # récupérée : on la demande, plutôt que de laisser le garde sortir
+          # en 2 (n'a pas pu tourner) et se lire comme un 0.
+          git fetch --no-tags origin "+refs/heads/$BASE:refs/remotes/origin/$BASE"
+
+          python3 scripts/garde_registre.py \
+            --depot . --base "origin/$BASE"

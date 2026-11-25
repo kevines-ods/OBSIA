@@ -14,6 +14,7 @@ from pathlib import Path
 
 from commun import contenu_agents
 from generer_prompt import chemins_absolus, prompt_du_coffre, regle_des_secrets
+from verif_catalogue import NOM_EXEMPT_CONTRAT     # l'index du dossier, pas une annexe
 
 # AGENTS.md est lu par Codex, qui ne retient en tout que 32 Kio de consignes :
 # le fichier global (~/.codex/AGENTS.md) et ceux du projet comptent **ensemble**.
@@ -38,6 +39,15 @@ LIBELLE_PLAFOND_NOYAU = "Noyau du contrat"
 # admise. Passé le jour, le contrôle avertit : une clause périmée laisse croire
 # qu'un régime tient encore.
 CLAUSE_DATEE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+# Le préambule du noyau porte le tableau qui fait foi : quelle annexe se lit
+# avant quel acte. Rien ne tenait l'accord entre ce tableau et le dossier — une
+# annexe présente et jamais citée (écrite, publiée, lue par personne), ou citée
+# et absente (un renvoi mort), partait en silence. Scinder les annexes par acte
+# agrandirait ce trou : on le ferme d'abord. L'exemption de l'index du dossier
+# ne s'écrit pas ici — elle vient de `verif_catalogue`, son unique endroit (§5).
+DOSSIER_ANNEXES = Path("IA") / "system" / "contrat"
+ENTETE_DU_TABLEAU = "| Annexe | À lire avant de… |"
 
 
 def verifier_taille_du_fichier_agents(racine, erreur, avertir):
@@ -262,3 +272,96 @@ def verifier_chemins_du_prompt(racine, erreur):
            "même chemin ni le même nom ; désigner la racine par son sous-dossier "
            "OBSIA/, ou par le dossier qui le contient"
            % (len(fautives), suite, montre))
+
+
+def lignes_du_tableau(racine):
+    """Les lignes du tableau du préambule, ou `None` si le noyau ne le porte plus.
+
+    Le tableau commence à l'en-tête `ENTETE_DU_TABLEAU` et s'arrête à la
+    première ligne qui n'est pas un tableau : le noyau en porte d'autres plus
+    loin, et un contrôle ne lit que celui qui fait foi.
+    """
+    chemin = Path(racine) / NOYAU
+    if not chemin.is_file():
+        return None
+    lignes = chemin.read_text(encoding="utf-8").splitlines()
+    if ENTETE_DU_TABLEAU not in lignes:
+        return None
+    tableau = []
+    for ligne in lignes[lignes.index(ENTETE_DU_TABLEAU) + 1:]:
+        if not ligne.startswith("|"):
+            break
+        tableau.append(ligne)
+    return tableau
+
+
+def annexes_citees(racine):
+    """Les annexes que le préambule cite, telles qu'écrites dans le tableau.
+
+    La première cellule de chaque ligne, moins la ligne de séparation. Une
+    cellule peut citer plusieurs chemins. Rend `None` si le noyau ou son
+    tableau de préambule a disparu — c'est un défaut, pas une absence.
+    """
+    tableau = lignes_du_tableau(racine)
+    if tableau is None:
+        return None
+    citees = []
+    for ligne in tableau:
+        cellule = ligne.split("|")[1].strip()
+        if not cellule or set(cellule) <= set("-: "):
+            continue                       # la ligne des tirets du tableau
+        for nom in re.findall(r"`([^`]+)`", cellule) or [cellule]:
+            citees.append(nom.strip())
+    return citees
+
+
+def verifier_annexes_du_preambule(racine, erreur):
+    """Le préambule et le dossier des annexes s'accordent, dans les deux sens.
+
+    Une annexe présente que le tableau ne cite jamais est du droit mort ; une
+    annexe citée qui n'existe pas est un renvoi mort. Les deux partaient sans
+    que rien ne le dise, et la scission des annexes par acte multiplierait les
+    occasions. L'index du dossier est exempté — il est l'index, pas une annexe —
+    sous son nom, pris à `verif_catalogue`.
+    """
+    chemin_noyau = Path(racine) / NOYAU
+    citees = annexes_citees(racine)
+    if citees is None:
+        if chemin_noyau.is_file():
+            erreur(NOYAU.as_posix(),
+                   "le tableau du préambule a disparu : plus rien ne dit quelle "
+                   "annexe se lit avant quel acte — le rétablir (en-tête « %s »), "
+                   "ou écrire ailleurs la règle qui le remplace"
+                   % ENTETE_DU_TABLEAU)
+        return None
+    dossier = Path(racine) / DOSSIER_ANNEXES
+    vues = set()
+    for nom in citees:
+        prefixe = "contrat/"
+        court = nom[len(prefixe):]
+        if not nom.startswith(prefixe) or not court or "/" in court:
+            erreur(NOYAU.as_posix(),
+                   "le préambule cite « %s », qui n'est pas un fichier du dossier "
+                   "`%s` : un renvoi mort dans le tableau qui fait foi"
+                   % (nom, DOSSIER_ANNEXES.as_posix()))
+            continue
+        vues.add(court)
+        if not (dossier / court).is_file():
+            erreur(NOYAU.as_posix(),
+                   "le préambule cite `%s`, absent du dossier : le renvoi mène à "
+                   "un fichier qui n'existe pas" % nom)
+    if not dossier.is_dir():
+        return citees
+    if not (dossier / NOM_EXEMPT_CONTRAT).is_file():
+        erreur(DOSSIER_ANNEXES.as_posix(),
+               "l'index du dossier `%s` est absent : l'exemption ne protège qu'un "
+               "fichier qui existe — sans lui, aucune liste ne dit ce que le "
+               "dossier contient" % NOM_EXEMPT_CONTRAT)
+    for fichier in sorted(dossier.glob("*.md")):
+        if fichier.name == NOM_EXEMPT_CONTRAT or fichier.name in vues:
+            continue
+        erreur(DOSSIER_ANNEXES.as_posix(),
+               "`%s` est une annexe présente, jamais citée par le préambule — "
+               "écrite, publiée, lue par personne : l'ajouter au tableau, ou la "
+               "sortir du dossier" % fichier.name)
+    return citees

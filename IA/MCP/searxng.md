@@ -7,6 +7,11 @@ module: recherche-web
 type: tool
 transport: stdio
 permission: elevated
+outils_lecture:
+  - searxng_web_search
+  - searxng_search_suggestions
+  - searxng_instance_info
+  - web_url_read
 ---
 
 # MCP — SearXNG
