@@ -12,8 +12,8 @@ read_only: false
 
 > **Adaptation.** Reprend `/planifie` de `naiersaidane/claude-mastery` (MIT),
 > traduit et aligné sur les conventions du coffre. Les blocs `Interfaces` et
-> `Focus de revue` sont repris de `obra/superpowers` (MIT),
-> `skills/writing-plans`.
+> `Focus de revue`, de même que le critère de césure du §3, sont repris de
+> `obra/superpowers` (MIT), `skills/writing-plans`.
 
 Un projet découpé en couches — « d'abord la base, puis l'API, puis
 l'interface » — n'a rien de fini avant la toute fin, et découvre ses erreurs
@@ -46,6 +46,9 @@ plan ; chaque phase s'y réfère au lieu de les redécider.
 - Une tranche terminée est **démontrable seule** — sinon ce n'est pas une
   tranche.
 - Beaucoup de tranches fines valent mieux que peu de tranches épaisses.
+- Là où un relecteur ne pourrait pas **rejeter l'une sans rejeter l'autre**,
+  deux tranches n'en font qu'une : on ne sépare pas ce qui échoue ensemble —
+  c'est le sens fin de « tranches fines ».
 - Aucun nom de fichier ni de fonction : ils changeront, et le plan mentira.
   Ce qu'une tranche **consomme** et ce qu'elle **produit** se décrit donc par sa
   **forme** — les champs d'un objet, ce qu'une route reçoit et ce qu'elle rend,

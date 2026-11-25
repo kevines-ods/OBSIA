@@ -73,9 +73,9 @@ class TestContratDePoche(unittest.TestCase):
         # noyau reformule l'une d'elles, ce test se relit avec lui.
         for phrase in ("sandbox",
                        "procédure dans un skill.",
-                       "On n'y déplace ni n'y supprime rien.",
+                       "Rien ne s'y déplace ni ne s'y supprime.",
                        "son contenu ne migre jamais dans `OBSIA/`.",
-                       "`contrat-memoire`.",
+                       "`contrat-memoire-carnets`.",
                        "séquence avant un commit : `contrat-verification`."):
             self.assertIn(phrase, self.poche)
 

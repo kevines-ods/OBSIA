@@ -62,6 +62,8 @@ les comptes rendus **qu'il choisit**, jamais l'historique entier. Un ticket
 
 ## 6. Blocage et remise à zéro
 
+**Arbitrer, pas s'arrêter** *(règle reprise de `obra/superpowers` (MIT), `skills/subagent-driven-development`)*. Un plan approuvé tourne : on ne s'arrête plus à chaque doute. Une ambiguïté que le plan ou la consigne laisse ouverte se **tranche** plutôt qu'elle ne bloque : décider, consigner au carnet `Arbitrage : <décision> — <pourquoi> — <coût si erreur>`, continuer. Seules quatre situations arrêtent le travail : une action irréversible ou destructive ; une action sensible côté sécurité ou secret ; un effet hors du chantier (fusion, publication) ; un plan si cassé que toute suite serait une devinette. Ce que ce skill exige déjà — revue du plan, validation d'un ticket qui écrit, limites comptées, blocage du compteur — reste un arrêt, pas une ambiguïté.
+
 - Le **compteur de blocage** : +1 quand `progres` est faux ou `en_boucle` vrai,
   −1 sinon, jamais sous 0. **Il vit au carnet**, sur la ligne du tour (§8).
 - Au-delà de la limite : nommer la cause du blocage en une phrase, refaire les

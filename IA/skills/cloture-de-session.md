@@ -36,7 +36,7 @@ Ne pas se fier à sa mémoire de la conversation : lire le diff.
 | l'outil lui-même — un skill, un agent, un script du dépôt | `Mon coffre/0-PROJETS/obsia/<chantier>/` |
 | un autre projet — du coffre ou de l'utilisateur | `Mon coffre/0-PROJETS/<projet>/<chantier>/` |
 | rien de tout cela — dépannage, correction ponctuelle — qui laisse un suspens | le carnet du jour du projet de domaine (§6) : `Mon coffre/0-PROJETS/obsia/carnets/`, ou `0-PROJETS/<domaine>/carnets/` ; aucun projet : demander |
-| la même chose, bouclée dans la séance | aucun carnet : les actions au journal `Mon coffre/_MAINTENANCE/journal-des-seances.md`, la leçon dans `expériences/` (`contrat-memoire`) |
+| la même chose, bouclée dans la séance | aucun carnet : les actions au journal `Mon coffre/_MAINTENANCE/journal-des-seances.md`, la leçon dans `expériences/` (`contrat-memoire-cloture`) |
 | une tâche terminée qui laisse un état à tenir à jour | `Mon coffre/0-PERSONNELS/<sujet>.md`, avec `auteur: <nom-agent>` |
 
 Test (§7.3.1) : *est-ce que ça décrit le produit ?* Si oui, ça s'écrit dans le
@@ -246,6 +246,15 @@ seulement à la fin : un carnet écrit après coup ne sert pas à reprendre.
   `git worktree list`, existence des fichiers et worktrees cités. Dire à
   l'utilisateur ce qui concorde et ce qui diffère. S'il y en a plusieurs, les
   lister : **l'utilisateur choisit**, l'agent ne reprend pas d'office.
+- **Une attente d'accord se traite à la reprise, pas à la suivante.** Une ligne
+  « en attente d'accord » (ou une question restée sans réponse) relue au
+  démarrage reçoit, **dans la séance** : soit la question reposée en une phrase,
+  avec ce qu'elle débloque ; soit son retrait, avec la raison ; soit, si l'objet
+  du chantier n'a pas bougé depuis plusieurs semaines, la proposition de clore.
+  Recopiée telle quelle d'une reprise à l'autre, elle a l'air d'un travail en
+  cours et cache un chantier arrêté (cas réel : six semaines d'attente, puis un
+  abandon).
+
 - **Avant chaque étape** : écrire `## Étape en cours` — ce qu'on va faire,
   sur quels fichiers. Puis agir.
 - **Après une action à effet externe** : une ligne horodatée sous `## Fait`.

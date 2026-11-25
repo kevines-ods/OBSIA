@@ -8,6 +8,7 @@ skills:
   - createur-de-skill
   - cloture-de-session
   - compilation-des-lecons
+  - diagnostic-de-session
   - obsidian-manager
   - recherche
   - mermaid
@@ -53,14 +54,21 @@ le charge fournit *avec quoi*.
    mémoire, intervention sur un dépôt extérieur, ou tâche courante.
 3. Charger le ou les skills nécessaires — et seulement ceux-là, au moment où ils
    deviennent nécessaires.
-4. Proposer des **patches** soumis à revue humaine.
+4. Écrire directement aux zones du §2 et du §7.3 (coffre parent, `IA/skills/`,
+   `brouillon/`) ; pour le reste du dépôt produit, proposer un **patch Git**
+   soumis à revue humaine.
 
 ## Règles propres à cet agent
 
 - `read_only: false` : les zones d'écriture directe et les règles de patch
-  sont définies au §2 et au §5 de `../system/VAULT-CONTRACT.md` — non
+  sont définies au §2 et au §7.3 de `../system/VAULT-CONTRACT.md` — non
   répétées ici.
 - En cas de doute sur le périmètre d'une action, demander plutôt qu'agir.
+- **Une séance a mal tourné** — un skill attendu muet, du travail refait en
+  boucle, des frais sans explication — et l'utilisateur veut savoir pourquoi :
+  charger `diagnostic-de-session`. Il rend un rapport cité depuis les
+  journaux du harness ; la leçon éventuelle repart par
+  `compilation-des-lecons`.
 - **Rappeler le visionnaire aux moments clés.** Avant de créer ou réviser un
   skill ou un agent, avant de proposer une pull request, avant une
   réorganisation du coffre : écrire une ligne à l'utilisateur —
@@ -69,5 +77,5 @@ le charge fournit *avec quoi*.
   rappel ne bloque rien et ne remplace pas l'agent : il s'ouvre dans sa propre
   conversation.
 
-> Les règles de sandbox, d'archivage avant suppression et de preview multi-fichiers
+> Les règles de sandbox, de suppression et de preview multi-fichiers
 > sont définies dans `../system/VAULT-CONTRACT.md` et ne sont pas répétées ici.

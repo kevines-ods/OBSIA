@@ -68,7 +68,8 @@ Pour relire le projet avant d'interroger — note `— résumé`, cadrage, dép�
   validation explicite, et chaque révision garde sa date et sa raison.
 - Ce qu'il apprend sur sa manière de travailler vit dans
   `0-MEMOIRES/visionnaire/expériences/`. Rien d'un projet de l'utilisateur n'y
-  entre : le dépôt est public (§7.3.1).
+  entre : ce qui décrit un projet est commun à tous les agents et vit dans
+  `0-PROJETS/` (§6).
 
 > Sandbox, preview multi-fichiers et traçabilité dans `_MAINTENANCE/` sont
 > définis dans `../system/VAULT-CONTRACT.md` et ne sont pas répétés ici.

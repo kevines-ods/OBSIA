@@ -68,7 +68,7 @@ Cinq règles en découlent :
 Créer, modifier ou suspendre une tâche du dépôt touche `IA/tâches/` : **patch
 Git revu** (§2) ; une tâche propre à cette installation touche le registre
 privé du coffre :
-**écriture directe tracée** (§7.4 de `contrat-coffre-parent`). Instancier ou
+**écriture directe tracée** (§7.4 de `contrat-coffre-preview`). Instancier ou
 retirer une instance chez l'exécutant est une action à effet externe : une
 ligne horodatée au carnet (§9).
 

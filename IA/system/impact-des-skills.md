@@ -55,21 +55,27 @@ l'annule : une modification que rien n'a confirmée depuis n'est pas acquise.
 | `appliqué` | fusionnée, en attente de confirmation par un cas réel |
 | `confirmé` | un cas réel a montré que le skill modifié fait mieux |
 | `annulé` | `git revert` — la ligne reste, avec la raison en clair |
+| `sans objet` | aucun skill n'était en cause ; la leçon reste, rien ne bouge |
 
 Une ligne ne se supprime jamais. Un changement annulé qu'on efface est un
 changement qu'on refera.
 
+Et la trace n'est plus une habitude : toute PR qui touche `IA/skills/` ajoute
+sa ligne ici, et le workflow « Registre des leçons » le vérifie sur le *diff*
+lui-même — une colonne « Vérifié par » vide, un « non rejoué » sans son
+pourquoi, refusent la PR. Un signal, pas un verrou : la qualité de la preuve
+reste une affaire de relecture humaine.
+
 ## Qui lit la colonne « Revue »
 
 Une date de revue que personne ne relit ne vaut rien : sans lecteur, tout
-resterait indéfiniment `appliqué`. C'est la tâche
-`IA/tâches/revue-mensuelle-des-lecons.md` qui la lit, le 1er de chaque mois.
-Elle statue sur les échues **avant** de compiler quoi que ce soit de nouveau —
-confirmer, annuler, ou repousser une seule fois avec la raison écrite.
+resterait indéfiniment `appliqué`. La tâche `IA/tâches/revue-mensuelle-des-lecons.md` la lit, le 1er de chaque
+mois — elle statue sur les échues, `appliqué` **et `proposé`**, avant de
+compiler quoi que ce soit de nouveau : confirmer, annuler, statuer le sort réel
+d'une proposition, ou repousser une seule fois avec la raison écrite.
 
-Tant que cette tâche n'est pas instanciée chez un exécutant (`actif: false`
-aujourd'hui), la colonne reste déclarative : c'est à qui ouvre ce fichier de
-trancher.
+Elle est instanciée chez l'exécutant local depuis le 2026-11-01 (timer
+`obsia-revue-mensuelle-des-lecons.timer`), première passe faite à cette date.
 
 ## Ce que ce registre ne prouve pas
 

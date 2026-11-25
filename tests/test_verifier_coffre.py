@@ -1689,5 +1689,36 @@ class TestFichiersEtrangers(BaseVerificateur):
         self.assertEqual([], VC.erreurs, self.erreurs_texte())
 
 
+class TestClassesDesOutilsMcp(BaseVerificateur):
+    """§5 : une fiche MCP déclare la classe d'effet de ses outils, une liste
+    par classe. Un outil absent est « non déclaré » ; un outil dans deux
+    classes rendrait la décision du client ambiguë."""
+
+    ENTETE = ("---\nschema: 1\nkind: mcp\nname: bruno\ndescription: Test.\n"
+              "module: noyau\ntype: tool\ntransport: stdio\npermission: normal\n")
+
+    def relire(self, lignes: str) -> str:
+        self.ecrire("IA/MCP/bruno.md", self.ENTETE + lignes + "---\n\nCorps.\n")
+        VC.verifier_mcp(self.racine / "IA" / "MCP")
+        return self.erreurs_texte()
+
+    def test_sans_liste_la_fiche_passe(self):
+        self.assertEqual(self.relire(""), "")
+
+    def test_trois_listes_disjointes_passent(self):
+        fm = self.relire("outils_lecture:\n  - lire\noutils_ecriture_locale:\n"
+                         "  - ecrire\noutils_effet_externe:\n  - envoyer\n")
+        self.assertEqual(fm, "")
+
+    def test_un_outil_dans_deux_classes_est_refuse(self):
+        texte = self.relire("outils_lecture:\n  - envoyer\n"
+                            "outils_effet_externe:\n  - envoyer\n")
+        self.assertIn("outil `envoyer` dans deux classes", texte)
+
+    def test_une_valeur_qui_nest_pas_une_liste_est_refusee(self):
+        texte = self.relire("outils_lecture: lire\n")
+        self.assertIn("`outils_lecture` — attendu une liste", texte)
+
+
 if __name__ == "__main__":
     unittest.main()

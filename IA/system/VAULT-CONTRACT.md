@@ -25,8 +25,12 @@ règle** ; si elle en contredit une, c'est elle qui est à corriger.
 | Annexe | À lire avant de… |
 | --- | --- |
 | `contrat/contrat-frontmatter.md` | écrire ou modifier un agent, un skill, un MCP, une tâche, un module ou un fichier du contrat |
-| `contrat/contrat-memoire.md` | écrire, créer, renommer ou déplacer un projet, un carnet ou une note durable ; changer la forme d'un skill |
-| `contrat/contrat-coffre-parent.md` | écrire dans le coffre parent hors d'`0-EN-VRAC/` |
+| `contrat/contrat-coffre-structure.md` | administrer le coffre : créer, renommer, déplacer un dossier de premier niveau ; lire le coffre ; accéder par le harness ; traiter une note d'`0-EN-VRAC/` |
+| `contrat/contrat-coffre-ecritures.md` | écrire dans le coffre parent hors d'`0-EN-VRAC/` : zones autorisées et leurs raisons, où va une note, rétroliens et tags |
+| `contrat/contrat-coffre-preview.md` | tracer une écriture hors d'`0-EN-VRAC/` : preview, copie datée dans `_MAINTENANCE/`, action consignée — le carnet compris |
+| `contrat/contrat-memoire-structure.md` | écrire, créer, renommer ou déplacer un projet, un chantier ou une note durable ; changer la forme d'un skill |
+| `contrat/contrat-memoire-carnets.md` | tenir ou reprendre un carnet : sa tenue au fil de l'eau, une séance sans chantier, la reprise, le commit à chaque étape, ses limites (§9) |
+| `contrat/contrat-memoire-cloture.md` | clôturer un chantier ; corriger le profil, les préférences ou une expérience ; citer une source dans une note durable (§8) |
 | `contrat/contrat-verification.md` | toucher un script de vérification ou un fichier généré ; relâcher une attente de routage ; travailler sur un clone neuf |
 | `contrat/contrat-taches.md` | créer, modifier ou suspendre une tâche ; en instancier ou retirer une instance |
 | `contrat/contrat-distribution.md` | nommer un harness dans un fichier du dépôt ; installer, publier, synchroniser ; toucher `installer.py` ou `publier.py` ; écrire un module ou une sonde ; écrire un skill qui charge le skill d'un autre module ; citer dans un fichier publié un chemin vers une zone non publiée |
@@ -54,22 +58,37 @@ est un agent est une erreur à corriger.
 part — skill, exemple, diagramme, note. Pour un exemple, prendre un nom de
 skill, jamais un nom d'agent imaginaire. `scripts/verifier_coffre.py` le contrôle.
 
+**Un lieu, un mot** : le **coffre parent** (`Mon coffre/`, privé) porte les
+notes ; le **dépôt de données** est son Git ; le **dépôt produit** (`OBSIA/`,
+privé) porte ce catalogue, et seul le **dépôt public** qui en dérive (§13) est
+publié ; un **dépôt extérieur** est tout autre projet. Seul, « coffre » veut
+dire coffre parent.
+
 ## 2. Écriture dans le coffre
 
 - Le coffre est en **lecture seule** pour les agents dont `read_only: true` :
   **aucune écriture nulle part, même pas par patch**.
-- Un agent `read_only: false` écrit **directement, sans patch** dans le coffre
-  parent, aux zones que le §7.3 autorise, et dans `IA/skills/` s'il déclare le
-  skill `createur-de-skill`. Dans le dépôt produit, `brouillon/` reste la
-  seule zone d'écriture libre ; la mémoire n'y a plus d'emplacement.
-- Tout le reste du dépôt (`IA/agents/`, `IA/system/`, `IA/tâches/`, la
-  structure) passe par un **patch Git** soumis à revue humaine.
-- Toute action touchant plusieurs fichiers exige un **preview** affiché avant
-  exécution, listant les chemins — écriture directe ou patch. Exception bornée : §7.4.
-- Les **fichiers générés** ne s'éditent jamais à la main ni par un agent :
-  `sommaire.md`, `agents-index.md`, `skills-index.md`, `taches-index.md`,
-  `modules-index.md`, `IA/README.md`.
-- Hors du dépôt : un dépôt extérieur suit le §3, le coffre parent le §7.
+- **Dépôt produit**, pour un agent `read_only: false` : en direct, `brouillon/`,
+  et `IA/skills/` s'il déclare `createur-de-skill` ; le reste (`IA/agents/`,
+  `IA/system/`, `IA/tâches/`, la structure) par **patch Git** revu par un humain.
+- Toute action touchant plusieurs fichiers exige un **preview** listant les
+  chemins, avant exécution (exception bornée : §7.4). Un dépôt extérieur suit le §3.
+
+<!-- Repris dans l'AGENTS.md engendré : generer_prompt.regle_ecriture — testé, pas de copie (§5). -->
+<!-- regle-ecriture: debut -->
+- **Coffre parent**, en direct : `0-EN-VRAC/`, `0-SAVOIRS/` (compléter),
+  `_MAINTENANCE/`, `0-PROJETS/<projet>/`, `0-PERSONNELS/profil-utilisateur.md`,
+  `0-MEMOIRES/préférences/`, ses `expériences/` ; ailleurs, rien sans accord (§7.3).
+- **Un projet, même personnel**, va dans `0-PROJETS/<projet>/` ;
+  `0-PERSONNELS/` décrit la personne.
+- **Supprimer** : jamais de soi-même, jamais dans `0-PROJETS/`, `0-DOCUMENTS/`,
+  `0-PERSONNELS/` ; ailleurs, sur accord explicite, et
+  l'historique Git du dépôt de données sert d'archive.
+- **Preview** avant d'écrire hors d'`0-EN-VRAC/`, création d'un carnet comprise ;
+  pas pour mettre à jour un carnet, le profil, une préférence (§7.4).
+- Les générés (`AGENTS.md`, sommaires, index) ne s'éditent jamais à la main :
+  corriger la source, régénérer (§11).
+<!-- regle-ecriture: fin -->
 
 ### 2.1 Plusieurs agents, un seul dépôt
 
@@ -79,7 +98,9 @@ skill, jamais un nom d'agent imaginaire. `scripts/verifier_coffre.py` le contrô
   données du coffre** suit une autre règle : il s'écrit sur sa propre branche par
   défaut (§7.1).
 - **Une branche porte le nom de son agent** : `<nom-agent>/<sujet>`. La branche
-  et le worktree d'un autre agent ne se touchent pas — on le signale.
+  et le worktree d'un autre agent ne se touchent pas — on le signale —, sauf
+  pour retirer, par `scripts/ranger_worktrees.py` seulement, un worktree
+  fusionné et propre et sa branche locale.
 - **Une PR s'ouvre sur la branche par défaut**, jamais sur la branche d'une
   autre PR.
 - **On se resynchronise avant de pousser** : reprise sur la branche par défaut
@@ -87,21 +108,9 @@ skill, jamais un nom d'agent imaginaire. `scripts/verifier_coffre.py` le contrô
 
 Les commandes : `IA/system/travail-en-parallele.md`.
 
-<!-- Repris dans l'AGENTS.md engendré : generer_prompt.regle_ecriture — testé, pas de copie (§5). -->
-<!-- regle-ecriture: debut -->
-- Écrire dans le coffre n'est pas libre : `0-EN-VRAC/`, `0-SAVOIRS/`
-  (compléter), `_MAINTENANCE/` (previews, journal), le carnet de son
-  projet, le profil sur place ; tout le reste par patch revu — rien ne se
-  modifie ni déplace localement (§7.3).
-- Toute écriture hors carnet : preview d'abord, copie datée en
-  `_MAINTENANCE/`, action consignée (§7.4).
-- Les générés (`AGENTS.md`, sommaires, index) ne s'éditent jamais à la
-  main (§11).
-<!-- regle-ecriture: fin -->
-
 ## 3. Périmètre hors du coffre
 
-Le coffre ne dépend d'aucun harness et n'en impose aucun, ni aucune base de
+OBSIA ne dépend d'aucun harness et n'en impose aucun, ni aucune base de
 code extérieure : il décrit *quoi* faire, le harness fournit *avec quoi*.
 
 Nommer un harness pour décrire, illustrer, mesurer ou installer est légitime ;
@@ -113,6 +122,9 @@ Quand un agent `read_only: false` intervient sur un dépôt extérieur :
 
 - Toute modification passe par un **patch Git revu** — jamais de commit direct
   sur la branche par défaut.
+- **L'arbre principal d'un dépôt extérieur reste sur sa branche par défaut** —
+  il ne fait que s'y mettre à jour ; tout travail se fait dans un *worktree*
+  lié (§2.1, les commandes : `IA/system/travail-en-parallele.md`).
 - Les vérifications du projet visé passent **avant** de proposer le patch.
 - **Jamais de secret** dans le code : variables d'environnement ou
   configuration hors dépôt uniquement.
@@ -149,22 +161,21 @@ procédure dans un skill.
   dans `OBSIA/`. Le nom d'une note dit son sujet (pas `notes.md`). Un dossier
   d'agent porte le nom de l'agent, un projet le nom du chantier — jamais
   `agent 1` ni `projets 1`.
-- La mémoire vit **dans le coffre parent**, jamais dans `OBSIA/` : elle
-  appartient à son propriétaire et se versionne dans le dépôt de données du
-  coffre (§7.1). Elle se partage sur un seul axe, **ce que la note décrit** :
+- La mémoire vit **dans le coffre parent**, jamais dans `OBSIA/`, versionnée
+  par le dépôt de données (§7.1). Elle se partage sur un seul axe, **ce que la note décrit** :
   ce qui décrit l'utilisateur, un projet ou un chantier est commun à tous les
   agents ; ce qu'un agent a appris de sa propre manière de travailler reste chez
   lui. L'arborescence, l'ordre des anciens emplacements et le tableau « où
-  écrire » sont dans `contrat-memoire`.
+  écrire » sont dans `contrat-memoire-structure`.
 - **Tout projet vit dans `0-PROJETS/`** : le projet du coffre comme celui de
   l'utilisateur. Le test qui les sépare est le §7.3.1.
 - **Un projet du coffre passe par une PR** : sa description porte la demande
   et le résumé de séance, **jamais un chemin du coffre parent ni un nom de
-  personne ou de client** ; le reste : `contrat-memoire`. Un changement qui
+  personne ou de client** ; le reste : `contrat-memoire-structure`. Un changement qui
   touche la base se fait relire par l'utilisateur, le `visionnaire` (cap) et le
   `contradicteur` (relecture).
 - **Le carnet** : un par chantier, tenu **au fil de l'eau**, l'**étape en cours
-  écrite avant d'agir** ; sa forme : `contrat-memoire`. **Seuls les carnets et
+  écrite avant d'agir** ; sa forme : `contrat-memoire-carnets`. **Seuls les carnets et
   les messages du courrier portent une date** ; dans le doute, écrire dans le
   carnet. Un agent
   `read_only: true` n'écrit aucun carnet : l'agent qui reprend son travail
@@ -172,27 +183,24 @@ procédure dans un skill.
 - **Reprise** : §10, étape 0 ; procédure : `cloture-de-session`.
 - **Le carnet se commite à chaque étape** : seul ce qui est commité survit à la
   coupure.
-- **Clôture** (procédure : `contrat-memoire`) : le durable se distille
+- **Clôture** (procédure : `contrat-memoire-cloture`) : le durable se distille
   **avant** ; un chantier clos ou un carnet de séance clos, gelé dans
   `0-MEMOIRES/`, ne se modifie **plus jamais** — seules `préférences/`,
   `<nom-agent>/expériences/` et `courrier/` y restent vivantes, et le vérificateur
   refuse un projet portant l'un de ces noms (§11).
 - **Clause de transition** : pendant la bascule, la mémoire se cherche aussi
-  aux anciens emplacements (`contrat-memoire`), et la tolérance se retire au
+  aux anciens emplacements (`contrat-memoire-carnets`), et la tolérance se retire au
   plus tard le 2026-12-31 (chantier `souverainete-des-donnees`).
-- **Rien de ce qui décrit l'utilisateur ne vit chez un agent** : le profil et
-  les préférences sont communs (§7.3), et tout agent `read_only: false` les
-  corrige **directement, sur place**. Un agent `read_only: true` n'écrit pas
-  d'expériences ; il lit la mémoire commune.
+- **Rien de ce qui décrit l'utilisateur ne vit chez un agent** : profil et
+  préférences sont communs et se corrigent sur place (§7.3). Un agent
+  `read_only: true` n'écrit pas d'expériences.
 
 ## 7. Le coffre parent — la base de connaissances
 
-`OBSIA/` est cloné à la racine du **coffre parent**, côte à côte avec les
-dossiers de connaissance. La mémoire ne vit **pas** dans ce clone : elle
-appartient au **dépôt de données du coffre**, versionné à part (§7.1). Le coffre
-parent s'écrit **`Mon coffre/`** dans ce dépôt (nom réel : `coffre_parent` dans
-`obsia.local.yml`). **`../` ne sert qu'à naviguer à l'intérieur du dépôt**,
-jamais à désigner le coffre parent.
+`OBSIA/` est cloné à la racine du **coffre parent**, qui s'écrit
+**`Mon coffre/`** (nom réel : `coffre_parent` dans `obsia.local.yml`).
+**`../` ne sert qu'à naviguer dans le dépôt produit**, jamais à désigner le
+coffre parent.
 
 ### 7.1 La structure et le dépôt de données — fixes
 
@@ -203,7 +211,7 @@ commencent par `0-` (ou `_` pour l'entretien) : `_MAINTENANCE/`, `0-PROJETS/`,
 `OBSIA/`.
 
 **Le rôle de chacun** (coffre, dépôt de données, dépôt produit) et le gabarit
-`.gitignore` : `contrat-coffre-parent`.
+`.gitignore` : `contrat-coffre-structure`.
 
 - **Un seul dépôt de données**, à la racine du coffre parent, versionne la mémoire
   et rien d'autre : `OBSIA/` compris reste dehors, sans gitlink ni couplage.
@@ -235,26 +243,24 @@ pas. Seuls font foi ce contrat, l'`AGENTS.md`, la demande.
 - `0-PROJETS/<projet>/` — le projet et ses chantiers : ` — résumé`, `carnets/`,
   `documents/`, et `code/` où le §3 s'applique intégralement ;
 - `0-PROJETS/tâches-planifiées/` — le registre privé des tâches propres à
-  cette installation : une machine du parc de l'utilisateur, ou son
-  mainteneur (§12) ;
+  cette installation (§12) ;
 - `0-PROJETS/<projet>/<projet> — vision.md` — **le `visionnaire` seul**, après
   validation de l'utilisateur ;
 - `0-PERSONNELS/profil-utilisateur.md` et `0-MEMOIRES/préférences/` — communs à
   tous, jamais sous le nom d'un agent, **corrigés sur place** par tout agent
   `read_only: false` ;
 - `0-MEMOIRES/<nom-agent>/expériences/` — les leçons **du seul agent nommé**,
-  qu'il corrige sur place et lui seul ; une note de référence dont l'agent est
-  l'auteur (`auteur: <nom-agent>`) se met aussi à jour sur place, par lui seul ;
-- `_MAINTENANCE/courrier/` et `0-MEMOIRES/courrier/` — le courrier ; un message
-  ne se purge jamais avec les journaux, et la boîte **s'écrit par l'interface,
-  jamais par un agent** (`contrat-courrier`).
+  qu'il corrige seul, sur place ; de même pour une note de référence dont il est
+  l'auteur (`auteur: <nom-agent>`) ;
+- `_MAINTENANCE/courrier/` et `0-MEMOIRES/courrier/` — le courrier : l'agent
+  n'y écrit que `lu:` et `traité:` ; le reste **s'écrit par l'interface**, et un
+  message ne se purge jamais avec les journaux (`contrat-courrier`).
 
-Hors des notes qu'un agent tient sur place (§7.3 : les carnets et leurs suffixes,
-le profil et `préférences/`, les `expériences/` de son agent, le registre des
-tâches), une écriture dans `0-PROJETS/`, `0-DOCUMENTS/` ou `0-PERSONNELS/` se
-limite au **dépôt d'une note classée venue d'`0-EN-VRAC/`**. On n'y modifie
-**jamais** une note existante, même à la demande de l'utilisateur : elle repasse
-par `0-EN-VRAC/`. On n'y déplace ni n'y supprime rien.
+Dans `0-PROJETS/`, `0-DOCUMENTS/` et `0-PERSONNELS/`, un agent fait deux choses
+seulement : tenir les notes listées ci-dessus (carnets, ` — résumé`, profil,
+registre des tâches, ses notes `auteur:`), et **déposer une note classée venue
+d'`0-EN-VRAC/`**. Toute autre note existante reste intacte, même à la demande de
+l'utilisateur : elle repasse par `0-EN-VRAC/`. Rien ne s'y déplace ni ne s'y supprime.
 
 ### 7.3.1 Où va la note d'un projet
 
@@ -263,31 +269,27 @@ dans le dépôt produit (`IA/system/`, `IA/skills/`, `IA/MCP/`, `IA/tâches/`) e
 entre dans la PR, règles et tests ensemble (§3). Sinon elle vit dans le coffre
 parent, sous `0-…`, **jamais dans `OBSIA/`** — dans le doute, le coffre parent.
 Le §9 l'emporte sur tout. On lit `0-PERSONNELS/` librement ; on n'y écrit que
-pour classer une note manifestement personnelle ou tenir sa note de référence, et
+pour classer une note qui décrit la personne ou tenir sa note de référence (un
+projet, même personnel, va dans `0-PROJETS/`), et
 son contenu ne migre jamais dans `OBSIA/`.
 
 ### 7.4 Preview et traçabilité — `_MAINTENANCE/`
 
-Avant toute écriture dans le coffre parent hors d'`0-EN-VRAC/` — un carnet de
-projet compris — : afficher le preview (forme du preview : §2), en **conserver
+Avant toute écriture dans le coffre parent hors d'`0-EN-VRAC/` — la création
+d'un carnet comprise, pas sa mise à jour — : afficher le preview (forme du preview : §2), en **conserver
 une copie datée dans `_MAINTENANCE/`**, exécuter, puis consigner l'action.
 
-**Une correction du profil, d'une préférence ou d'une expérience n'appelle pas de
-preview** : elle se fait directement, sur place (§6).
-
-**Le marquage d'un message non plus** : `lu:` et `traité:` d'un message de
-`_MAINTENANCE/courrier/` s'écrivent directement — un état de lecture, pas une
-réécriture (`contrat-courrier`).
+**Sans preview** : la mise à jour d'un carnet ; la correction du profil, d'une
+préférence ou d'une expérience (§6) ; `lu:` et `traité:` d'un message du
+courrier (`contrat-courrier`).
 
 **Deux exceptions, bornées** : l'outil déclaré qui écrit pour un modèle local
-piloté (`IA/MCP/ecrivain-du-coffre.md`), et le harnais qui inscrit la ligne de
+piloté (`IA/MCP/ecrivain-du-coffre.md`), et le harness qui inscrit la ligne de
 tour d'une boucle d'équipe à son carnet, consignant chaque écriture (§9, ou
 journal), peuvent rendre le preview **avec** l'écriture, à condition qu'elle soit
 **annulable** — un acte, un commit limité à ses chemins, défait et consigné s'il
-est refusé ; détail : `contrat-coffre-parent`. La garde des secrets reste
+est refusé ; détail : `contrat-coffre-preview`. La garde des secrets reste
 **avant** l'écriture.
-
-Hors de ces cas, le preview reste la règle, sans exception.
 
 Une action se consigne, sans nouveau preview, à son carnet ou, à défaut, au
 journal de `_MAINTENANCE/`. Le registre des notes traitées est
@@ -319,7 +321,7 @@ d'`0-EN-VRAC/` n'est **jamais une cible de rétrolien stable**.
 
 ## 8. Sources et citations
 
-Forme d'une note durable (évidence, interprétation, synthèse) : `contrat-memoire`.
+Forme d'une note durable (évidence, interprétation, synthèse) : `contrat-memoire-cloture`.
 
 ## 9. Trace des séances — le carnet
 
@@ -336,7 +338,7 @@ Le carnet peut porter **adresse IP privée, nom d'hôte interne, URL interne,
 identifiant** : le dépôt ne sort pas du poste. Ce qui **sort** du coffre — PR,
 note publiée, dépôt produit — n'en porte jamais ;
 `~/.config/obsia/noms-interdits` ne garde donc que la sortie. Limites :
-`contrat-memoire`.
+`contrat-memoire-carnets`.
 
 ## 10. Méthode d'exécution
 
@@ -418,10 +420,8 @@ propres à chaque agent vivent dans sa fiche.
   cela s'écrit dans `IA/system/routage-attendu.md` avec sa raison.
 - **Les exemptions vivent dans le script, jamais dans le frontmatter d'un
   skill.**
-- **Le sommaire du coffre parent** (`sommaire.md`), généré par
-  `scripts/regenerate_sommaire.py`, s'écrit **dans le coffre parent** (dépôt de
-  données, §7.1), jamais dans `OBSIA/` : il ne se calcule que là où un sommaire
-  a un sens (`0-PROJETS/`, `0-MEMOIRES/`, et l'ancien `mémoire/` s'il existe).
+- **Le sommaire** (`sommaire.md`, `scripts/regenerate_sommaire.py`) s'écrit
+  **dans le coffre parent**, jamais dans `OBSIA/` (`contrat-verification`).
 - **Deux mémoires ne se confondent pas dans `0-MEMOIRES/`** : `verifier_coffre.py`
   refuse la collision (§6).
 - **Le noyau a un plafond contrôlé**, relevé seulement par PR, jamais en silence.
